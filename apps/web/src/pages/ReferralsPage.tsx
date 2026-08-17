@@ -57,14 +57,14 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
     const loadCode = async () => {
       try {
         const user = await pb.collection('users').getOne(userId, { $autoCancel: false })
-        const existing = (user as any).referral_code || null
+        const existing = user.referral_code || null
         if (existing) {
           setReferralCode(existing)
           return
         }
         // Sin código no hay nada que compartir: lo generamos antes de habilitar
         // las acciones de invitación.
-        const generated = await generateReferralCode((user as any).display_name || 'USER')
+        const generated = await generateReferralCode(user.display_name || 'USER')
         setReferralCode(generated)
       } catch { /* */ }
     }

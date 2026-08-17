@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
-import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
+import { loadLogo } from '../../lib/share'
+import { createShareCardCanvas, drawRoutePolyline, exportShareCard } from '../../lib/share-card'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent, trackShareCardShared } from '@calistenia/core/lib/analytics'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
@@ -66,16 +67,9 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
 
   const handleShare = useCallback(async () => {
     try {
-      const scale = 2
-      const w = 1080 / scale  // 540
-      const h = 1920 / scale  // 960
-      const canvas = document.createElement('canvas')
-      canvas.width = 1080
-      canvas.height = 1920
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      ctx.scale(scale, scale)
+      const card = createShareCardCanvas()
+      if (!card) return
+      const { canvas, ctx, w, h } = card
       const pad = 36
       const cw = w - pad * 2
       const logo = await loadLogo()
@@ -411,44 +405,19 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
           ctx.save()
           ctx.translate(pad, routeTop + glyphTop)
 
-          const buildPath = () => {
-            ctx.beginPath()
-            ctx.moveTo(path[0].x, path[0].y)
-            for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y)
-          }
-
-          // Contorno oscuro: mantiene la línea legible sobre el fondo de la tarjeta.
-          buildPath()
-          ctx.strokeStyle = 'rgba(0,0,0,0.55)'
-          ctx.lineWidth = 5.5
-          ctx.lineJoin = 'round'
-          ctx.lineCap = 'round'
-          ctx.stroke()
-
-          buildPath()
-          ctx.strokeStyle = tier.accent
-          ctx.lineWidth = 3
-          ctx.stroke()
-
-          // Salida (hueca) y meta (llena), igual que en la tarjeta de cardio.
-          const first = path[0]
-          const last = path[path.length - 1]
-
-          ctx.beginPath()
-          ctx.arc(first.x, first.y, 4.5, 0, Math.PI * 2)
-          ctx.fillStyle = fg
-          ctx.fill()
-          ctx.strokeStyle = tier.accent
-          ctx.lineWidth = 2
-          ctx.stroke()
-
-          ctx.beginPath()
-          ctx.arc(last.x, last.y, 4.5, 0, Math.PI * 2)
-          ctx.fillStyle = tier.accent
-          ctx.fill()
-          ctx.strokeStyle = fg
-          ctx.lineWidth = 1.5
-          ctx.stroke()
+          // Contorno oscuro, trazo de acento, salida hueca y meta llena: el
+          // mismo dibujo que la tarjeta de cardio, ahora compartido de verdad.
+          drawRoutePolyline(ctx, path, {
+            stroke: tier.accent,
+            strokeWidth: 3,
+            casing: 'rgba(0,0,0,0.55)',
+            casingWidth: 5.5,
+            dotRadius: 4.5,
+            startFill: fg,
+            startRingWidth: 2,
+            endRing: fg,
+            endRingWidth: 1.5,
+          })
 
           ctx.restore()
         }
@@ -478,15 +447,13 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
 
       // ─── EXPORT ───
 
-      const blob = await canvasToBlob(canvas)
-      if (!blob) return
       const suffix = isWinner ? 'winner' : `rank${rank + 1}`
-      const outcome = await shareImage(
-        blob,
-        `race_${race.id}_${suffix}.png`,
-        `${race.name} — #${rank + 1}`,
-        `#${rank + 1} en ${race.name} — ${me.distance_km.toFixed(2)} km\ncalistenia-app.com`,
-      )
+      const outcome = await exportShareCard(canvas, {
+        fileName: `race_${race.id}_${suffix}.png`,
+        title: `${race.name} — #${rank + 1}`,
+        text: `#${rank + 1} en ${race.name} — ${me.distance_km.toFixed(2)} km\ncalistenia-app.com`,
+      })
+      if (!outcome) return
       trackShareCardShared({
         surface: 'race', source: 'race_result', race_id: race.id,
         share_type: 'race_result', participant_count: participants.length,

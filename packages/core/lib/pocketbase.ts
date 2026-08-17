@@ -1,6 +1,7 @@
 import PocketBase, { type RecordModel, type RecordAuthResponse } from 'pocketbase'
 import { getClientInfo, getEnv, getPlatform } from '../platform'
 import { isNetworkError } from './offlineQueue'
+import type { AuthUser } from '../types'
 
 // La URL la resuelve cada plataforma en initCore() (web prod: window.location.origin).
 const PB_URL: string = getEnv().pbUrl
@@ -224,7 +225,7 @@ pb.afterSend = (response: Response, data: unknown) => {
 export const logout = (): void => pb.authStore.clear()
 
 /** Retorna el registro del usuario autenticado, o null. */
-export const getCurrentUser = (): RecordModel | null =>
+export const getCurrentUser = (): AuthUser | null =>
   pb.authStore.isValid ? (pb.authStore as any).record ?? pb.authStore.model : null
 
 /**

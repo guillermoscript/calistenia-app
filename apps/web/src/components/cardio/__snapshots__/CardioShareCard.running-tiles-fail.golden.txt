@@ -1,0 +1,255 @@
+set canvas.width = 1080
+set canvas.height = 1920
+call scale(2, 2)
+set fillStyle = #0a0a0b
+call fillRect(0, 0, 540, 960)
+call save()
+call beginPath()
+call rect(0, 0, 540, 960)
+call clip()
+call restore()
+call beginPath()
+call moveTo(339.136, 480.001)
+call lineTo(333.078, 442.662)
+call lineTo(316.021, 411.749)
+call lineTo(290.855, 392.651)
+call lineTo(261.914, 388.672)
+call lineTo(234.279, 400.486)
+call lineTo(212.655, 426.012)
+call moveTo(200.864, 499.099)
+call lineTo(212.655, 533.989)
+call lineTo(234.279, 559.514)
+call lineTo(261.914, 571.328)
+call lineTo(290.855, 567.349)
+call lineTo(316.021, 548.251)
+call lineTo(333.078, 517.34)
+set strokeStyle = rgba(0,0,0,0.5)
+set lineWidth = 9
+set lineJoin = round
+set lineCap = round
+call stroke()
+call beginPath()
+call moveTo(339.136, 480.001)
+call lineTo(333.078, 442.662)
+call lineTo(316.021, 411.749)
+call lineTo(290.855, 392.651)
+call lineTo(261.914, 388.672)
+call lineTo(234.279, 400.486)
+call lineTo(212.655, 426.012)
+call moveTo(200.864, 499.099)
+call lineTo(212.655, 533.989)
+call lineTo(234.279, 559.514)
+call lineTo(261.914, 571.328)
+call lineTo(290.855, 567.349)
+call lineTo(316.021, 548.251)
+call lineTo(333.078, 517.34)
+set strokeStyle = #84cc16
+set lineWidth = 6
+set lineJoin = round
+set lineCap = round
+call stroke()
+call beginPath()
+call arc(339.136, 480.001, 8, 0, 6.283)
+set fillStyle = #fafafa
+call fill()
+set strokeStyle = #84cc16
+set lineWidth = 3
+call stroke()
+call beginPath()
+call arc(333.078, 517.34, 8, 0, 6.283)
+set fillStyle = #84cc16
+call fill()
+set strokeStyle = #ffffff
+set lineWidth = 2.5
+call stroke()
+call createLinearGradient(0, 0, 0, 307.2)
+set fillStyle = gradient(linear,0,0,0,307.2)[0:rgba(0,0,0,0.55) 1:rgba(0,0,0,0)]
+call fillRect(0, 0, 540, 307.2)
+call createLinearGradient(0, 441.6, 0, 960)
+set fillStyle = gradient(linear,0,441.6,0,960)[0:rgba(10,10,11,0) 0.6:rgba(10,10,11,0.8) 1:rgba(10,10,11,0.99)]
+call fillRect(0, 441.6, 540, 518.4)
+set fillStyle = #84cc16
+call beginPath()
+call arc(34, 48, 4, 0, 6.283)
+call fill()
+set fillStyle = #84cc16
+set font = 700 15px "DM Sans", system-ui, sans-serif
+set letterSpacing = 2px
+call fillText(CARRERA, 44, 52)
+set letterSpacing = 0px
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 12px "DM Sans", system-ui, sans-serif
+call fillText(dom, 15 mar 2026, 44, 68)
+call beginPath()
+call arc(493, 57, 17, 0, 6.283)
+set fillStyle = rgba(10,10,11,0.55)
+call fill()
+set fillStyle = #f5f5f4
+set font = 700 17px "DM Sans", system-ui, sans-serif
+set textAlign = center
+set textBaseline = middle
+call fillText(A, 493, 58)
+set textAlign = left
+set textBaseline = alphabetic
+set fillStyle = rgba(245,245,244,0.18)
+call fillRect(30, 886, 480, 1)
+call drawImage(<image>, 30, 900, 16, 16)
+set fillStyle = #f5f5f4
+set font = 700 13px "DM Sans", system-ui, sans-serif
+set letterSpacing = 1px
+call fillText(CALISTENIA, 52, 913)
+set letterSpacing = 0px
+set fillStyle = rgba(245,245,244,0.40)
+set font = 400 12px "DM Sans", system-ui, sans-serif
+set textAlign = right
+call fillText(calistenia-app.com, 510, 913)
+set textAlign = left
+call beginPath()
+call moveTo(32, 833)
+call lineTo(85.375, 833)
+call quadraticCurveTo(87.375, 833, 87.375, 835)
+call lineTo(87.375, 860)
+call quadraticCurveTo(87.375, 862, 85.375, 862)
+call lineTo(32, 862)
+call quadraticCurveTo(30, 862, 30, 860)
+call lineTo(30, 835)
+call quadraticCurveTo(30, 833, 32, 833)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+call beginPath()
+call moveTo(92.375, 836)
+call lineTo(145.75, 836)
+call quadraticCurveTo(147.75, 836, 147.75, 838)
+call lineTo(147.75, 860)
+call quadraticCurveTo(147.75, 862, 145.75, 862)
+call lineTo(92.375, 862)
+call quadraticCurveTo(90.375, 862, 90.375, 860)
+call lineTo(90.375, 838)
+call quadraticCurveTo(90.375, 836, 92.375, 836)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+call beginPath()
+call moveTo(152.75, 828)
+call lineTo(206.125, 828)
+call quadraticCurveTo(208.125, 828, 208.125, 830)
+call lineTo(208.125, 860)
+call quadraticCurveTo(208.125, 862, 206.125, 862)
+call lineTo(152.75, 862)
+call quadraticCurveTo(150.75, 862, 150.75, 860)
+call lineTo(150.75, 830)
+call quadraticCurveTo(150.75, 828, 152.75, 828)
+call closePath()
+set fillStyle = #84cc16
+call fill()
+call beginPath()
+call moveTo(213.125, 847)
+call lineTo(266.5, 847)
+call quadraticCurveTo(268.5, 847, 268.5, 849)
+call lineTo(268.5, 860)
+call quadraticCurveTo(268.5, 862, 266.5, 862)
+call lineTo(213.125, 862)
+call quadraticCurveTo(211.125, 862, 211.125, 860)
+call lineTo(211.125, 849)
+call quadraticCurveTo(211.125, 847, 213.125, 847)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+call beginPath()
+call moveTo(273.5, 841)
+call lineTo(326.875, 841)
+call quadraticCurveTo(328.875, 841, 328.875, 843)
+call lineTo(328.875, 860)
+call quadraticCurveTo(328.875, 862, 326.875, 862)
+call lineTo(273.5, 862)
+call quadraticCurveTo(271.5, 862, 271.5, 860)
+call lineTo(271.5, 843)
+call quadraticCurveTo(271.5, 841, 273.5, 841)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+call beginPath()
+call moveTo(333.875, 839)
+call lineTo(387.25, 839)
+call quadraticCurveTo(389.25, 839, 389.25, 841)
+call lineTo(389.25, 860)
+call quadraticCurveTo(389.25, 862, 387.25, 862)
+call lineTo(333.875, 862)
+call quadraticCurveTo(331.875, 862, 331.875, 860)
+call lineTo(331.875, 841)
+call quadraticCurveTo(331.875, 839, 333.875, 839)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+call beginPath()
+call moveTo(394.25, 852)
+call lineTo(447.625, 852)
+call quadraticCurveTo(449.625, 852, 449.625, 854)
+call lineTo(449.625, 860)
+call quadraticCurveTo(449.625, 862, 447.625, 862)
+call lineTo(394.25, 862)
+call quadraticCurveTo(392.25, 862, 392.25, 860)
+call lineTo(392.25, 854)
+call quadraticCurveTo(392.25, 852, 394.25, 852)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+call beginPath()
+call moveTo(454.625, 844)
+call lineTo(508, 844)
+call quadraticCurveTo(510, 844, 510, 846)
+call lineTo(510, 860)
+call quadraticCurveTo(510, 862, 508, 862)
+call lineTo(454.625, 862)
+call quadraticCurveTo(452.625, 862, 452.625, 860)
+call lineTo(452.625, 846)
+call quadraticCurveTo(452.625, 844, 454.625, 844)
+call closePath()
+set fillStyle = rgba(245,245,244,0.40)
+call fill()
+set fillStyle = #f5f5f4
+set font = 800 34px "DM Sans", system-ui, sans-serif
+call fillText(40:15, 30, 804)
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 16px "DM Sans", system-ui, sans-serif
+call fillText(Tiempo, 30, 824)
+set fillStyle = #f5f5f4
+set font = 800 34px "DM Sans", system-ui, sans-serif
+call fillText(4:47, 190, 804)
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 16px "DM Sans", system-ui, sans-serif
+call fillText(min/km, 190, 824)
+set fillStyle = rgba(245,245,244,0.15)
+call fillRect(189, 772, 1, 44)
+set fillStyle = #f5f5f4
+set font = 800 34px "DM Sans", system-ui, sans-serif
+call fillText(512, 350, 804)
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 16px "DM Sans", system-ui, sans-serif
+call fillText(kcal, 350, 824)
+set fillStyle = rgba(245,245,244,0.15)
+call fillRect(349, 772, 1, 44)
+call beginPath()
+call moveTo(33, 752)
+call lineTo(117, 752)
+call quadraticCurveTo(120, 752, 120, 755)
+call lineTo(120, 755)
+call quadraticCurveTo(120, 758, 117, 758)
+call lineTo(33, 758)
+call quadraticCurveTo(30, 758, 30, 755)
+call lineTo(30, 755)
+call quadraticCurveTo(30, 752, 33, 752)
+call closePath()
+set fillStyle = #84cc16
+call fill()
+set fillStyle = #f5f5f4
+set font = 800 100px "DM Sans", system-ui, sans-serif
+set textBaseline = alphabetic
+call fillText(8.42, 30, 742)
+set fillStyle = #84cc16
+set font = 800 30px "DM Sans", system-ui, sans-serif
+call fillText(KM, 62, 742)
+set fillStyle = #f5f5f4
+set font = 600 26px "DM Sans", system-ui, sans-serif
+call fillText(Ana, 30, 638)

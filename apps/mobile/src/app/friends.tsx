@@ -233,7 +233,7 @@ export default function FriendsScreen() {
     if (!userId) return
     const displayName = user?.display_name ?? user?.username ?? 'Alguien'
     // shareReferralInvite needs a referral code; use userId as fallback code
-    const referralCode = (user as any)?.referral_code ?? userId
+    const referralCode = user?.referral_code ?? userId
     const { message, url } = shareReferralInvite(displayName, referralCode)
     await shareText({ message, url })
   }

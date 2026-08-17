@@ -185,7 +185,7 @@ export function useComments(userId: string | null) {
         id: rec.id,
         sessionId,
         authorId: userId,
-        authorName: (me as any)?.display_name || (me as any)?.email?.split('@')[0] || '?',
+        authorName: me?.display_name || me?.email?.split('@')[0] || '?',
         authorAvatarUrl: me ? getUserAvatarUrl(me as any, '100x100') : null,
         text: text.trim(),
         parentId: parentId || null,

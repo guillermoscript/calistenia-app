@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
-import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
+import { loadLogo } from '../../lib/share'
+import { createShareCardCanvas, drawRoutePolyline, exportShareCard } from '../../lib/share-card'
 import { trackShareCardShared } from '@calistenia/core/lib/analytics'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { fillRRect, drawInitialAvatar } from '../../lib/canvas-helpers'
@@ -33,16 +34,9 @@ export default function CardioShareCard({ session, referralCode, raceName, userN
   const { t } = useTranslation()
   const handleShare = useCallback(async () => {
     try {
-      const scale = 2
-      const w = 1080 / scale  // 540
-      const h = 1920 / scale  // 960
-      const canvas = document.createElement('canvas')
-      canvas.width = 1080
-      canvas.height = 1920
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      ctx.scale(scale, scale)
+      const card = createShareCardCanvas()
+      if (!card) return
+      const { canvas, ctx, w, h } = card
       const pad = 30
       const contentW = w - pad * 2
       const logo = await loadLogo()
@@ -98,54 +92,23 @@ export default function CardioShareCard({ session, referralCode, raceName, userN
 
           ctx.restore()
 
-          // Route polyline — build path helper (break on gap)
-          const pts = session.gps_points
-          const buildPath = () => {
-            ctx.beginPath()
-            let penDown = false
-            for (const p of pts) {
-              if (p.gap) { penDown = false; continue }
-              const { x, y: py } = pointToPixel(p.lat, p.lng, vp)
-              if (!penDown) { ctx.moveTo(x, py); penDown = true }
-              else ctx.lineTo(x, py)
-            }
-          }
-
-          // Dark casing
-          buildPath()
-          ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-          ctx.lineWidth = 9
-          ctx.lineJoin = 'round'
-          ctx.lineCap = 'round'
-          ctx.stroke()
-
-          // Accent stroke
-          buildPath()
-          ctx.strokeStyle = accent
-          ctx.lineWidth = 6
-          ctx.lineJoin = 'round'
-          ctx.lineCap = 'round'
-          ctx.stroke()
-
-          // Start dot — filled #fafafa, accent ring
-          const firstPt = pointToPixel(pts[0].lat, pts[0].lng, vp)
-          ctx.beginPath()
-          ctx.arc(firstPt.x, firstPt.y, 8, 0, Math.PI * 2)
-          ctx.fillStyle = '#fafafa'
-          ctx.fill()
-          ctx.strokeStyle = accent
-          ctx.lineWidth = 3
-          ctx.stroke()
-
-          // End dot — filled accent, white ring
-          const lastPt = pointToPixel(pts[pts.length - 1].lat, pts[pts.length - 1].lng, vp)
-          ctx.beginPath()
-          ctx.arc(lastPt.x, lastPt.y, 8, 0, Math.PI * 2)
-          ctx.fillStyle = accent
-          ctx.fill()
-          ctx.strokeStyle = '#ffffff'
-          ctx.lineWidth = 2.5
-          ctx.stroke()
+          // Route polyline — los puntos se proyectan aquí (con el viewport de
+          // las teselas) y el trazo lo pone el ayudante compartido.
+          drawRoutePolyline(
+            ctx,
+            session.gps_points.map(p => ({ ...pointToPixel(p.lat, p.lng, vp), gap: p.gap })),
+            {
+              stroke: accent,
+              strokeWidth: 6,
+              casing: 'rgba(0,0,0,0.5)',
+              casingWidth: 9,
+              dotRadius: 8,
+              startFill: '#fafafa',
+              startRingWidth: 3,
+              endRing: '#ffffff',
+              endRingWidth: 2.5,
+            },
+          )
         }
       } else {
         // No route: vertical gradient wash + giant ghost wordmark
@@ -336,18 +299,16 @@ export default function CardioShareCard({ session, referralCode, raceName, userN
       }
 
       // ── Export ──
-      const blob = await canvasToBlob(canvas)
-      if (!blob) return
       const dateStr = session.started_at.split('T')[0]
       const shareText = referralCode
         ? `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}\ngym.guille.tech/invite/${referralCode}`
         : `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}`
-      const outcome = await shareImage(
-        blob,
-        `cardio_${dateStr}.png`,
-        `${i18n.t(`cardio.${session.activity_type}`).toUpperCase()} — ${session.distance_km.toFixed(2)} km`,
-        shareText,
-      )
+      const outcome = await exportShareCard(canvas, {
+        fileName: `cardio_${dateStr}.png`,
+        title: `${i18n.t(`cardio.${session.activity_type}`).toUpperCase()} — ${session.distance_km.toFixed(2)} km`,
+        text: shareText,
+      })
+      if (!outcome) return
       trackShareCardShared({
         surface: 'cardio', source: 'cardio_completion', share_type: 'cardio',
         platform: 'web', result: outcome, share_confirmed: outcome === 'shared',

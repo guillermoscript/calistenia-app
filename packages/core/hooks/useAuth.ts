@@ -9,7 +9,7 @@ import { syncUserTimezone } from '../lib/timezone-sync'
 import { clearUserStorage } from '../lib/storage-keys'
 import { qk } from '../lib/query-keys'
 import i18n from 'i18next'
-import type { UserRole, UserTier } from '../types'
+import type { AuthUser, UserRole, UserTier } from '../types'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
 const EXPRESS_CHALLENGE_KEY = 'calistenia_express_challenge'
@@ -44,7 +44,7 @@ function consumeChallengeId(): string | null {
 }
 
 export async function completeNewUserRegistration(
-  user: RecordModel,
+  user: AuthUser,
   method: 'email' | 'google',
 ): Promise<void> {
   op.identify({ profileId: user.id, firstName: user.display_name || user.name || '', email: user.email, properties: { tier: 'free', role: 'user' } })
@@ -97,7 +97,7 @@ export async function completeNewUserRegistration(
 }
 
 interface UseAuthReturn {
-  user: RecordModel | null
+  user: AuthUser | null
   authReady: boolean
   authError: string | null
   isLoading: boolean
@@ -125,7 +125,7 @@ interface UseAuthReturn {
  */
 export function useAuth(): UseAuthReturn {
   const qc = useQueryClient()
-  const [user, setUser] = useState<RecordModel | null>(getCurrentUser)
+  const [user, setUser] = useState<AuthUser | null>(getCurrentUser)
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)

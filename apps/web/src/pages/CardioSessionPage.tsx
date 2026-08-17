@@ -10,7 +10,7 @@ import { todayStr } from '@calistenia/core/lib/dateUtils'
 // Leaflet + RouteMap is ~150kb gzipped — split into its own chunk and preload on idle
 const RouteMap = lazy(() => import('../components/cardio/RouteMap'))
 import CardioHistory from '../components/cardio/CardioHistory'
-import SplitsTable from '../components/cardio/SplitsTable'
+import CardioSessionStatsPanel from '../components/cardio/CardioSessionStatsPanel'
 import CardioStats from '../components/cardio/CardioStats'
 import CardioShareCard from '../components/cardio/CardioShareCard'
 import ElevationProfile from '../components/cardio/ElevationProfile'
@@ -37,7 +37,7 @@ interface CardioSessionPageProps {
 export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const { t } = useTranslation()
   const { user } = useAuthState()
-  const referralCode = (user as any)?.referral_code || null
+  const referralCode = user?.referral_code || null
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
@@ -276,7 +276,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* History */}
           <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
-            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} referralCode={referralCode} userName={(user as any)?.display_name || undefined} />
+            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} referralCode={referralCode} userName={user?.display_name || undefined} />
           </div>
 
           {/* Stats section */}
@@ -467,78 +467,20 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             <ElevationProfile points={pointsRef.current} height={80} />
           )}
 
-          {/* Track quality warning */}
-          {trackQuality && trackQuality.grade !== 'good' && (
-            <div className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono',
-              trackQuality.grade === 'poor' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400',
-            )}>
-              <span>{trackQuality.grade === 'poor' ? '⚠' : 'ℹ'}</span>
-              <span>
-                {trackQuality.grade === 'poor'
-                  ? t('cardio.trackingIssues')
-                  : t('cardio.estimatedDistance', { km: trackQuality.gapDistanceKm, gaps: trackQuality.gapCount })}
-              </span>
-            </div>
-          )}
-
-          {/* Expanded stats grid */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-4 bg-muted/60 rounded-xl">
-              <div className="font-bebas text-3xl text-lime tabular-nums">
-                {trackQuality && trackQuality.grade !== 'good' ? '~' : ''}{(displaySession?.distance_km ?? distance).toFixed(2)}
-              </div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">KM</div>
-            </div>
-            <div className="text-center p-4 bg-muted/60 rounded-xl">
-              <div className="font-bebas text-3xl tabular-nums">{formatDuration(displaySession?.duration_seconds ?? duration)}</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.duration').toUpperCase()}</div>
-            </div>
-            {isCycling(displaySession?.activity_type ?? activityType) ? (
-              <div className="text-center p-4 bg-muted/60 rounded-xl">
-                <div className="font-bebas text-3xl text-sky-500 tabular-nums">{formatSpeed(displaySession?.avg_speed_kmh ?? 0)}</div>
-                <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">KM/H</div>
-              </div>
-            ) : (
-              <div className="text-center p-4 bg-muted/60 rounded-xl">
-                <div className="font-bebas text-3xl text-sky-500 tabular-nums">{formatPace(displaySession?.avg_pace ?? currentPace)}</div>
-                <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.pace').toUpperCase()}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Secondary stats row */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-3 bg-muted/40 rounded-xl">
-              <div className="font-bebas text-2xl text-amber-400 tabular-nums">{displaySession?.calories_burned ?? 0}</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('nutrition.calories').toUpperCase()}</div>
-            </div>
-            <div className="text-center p-3 bg-muted/40 rounded-xl">
-              <div className="font-bebas text-2xl text-amber-400 tabular-nums">{displaySession?.elevation_gain ?? 0}m</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.elevation').toUpperCase()}</div>
-            </div>
-            <div className="text-center p-3 bg-muted/40 rounded-xl">
-              {isCycling(displaySession?.activity_type ?? activityType) ? (
-                <>
-                  <div className="font-bebas text-2xl text-pink-500 tabular-nums">{formatSpeed(displaySession?.max_speed_kmh ?? 0)}</div>
-                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.maxSpeed').toUpperCase()}</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-bebas text-2xl text-pink-500 tabular-nums">{formatPace(displaySession?.max_pace ?? 0)}</div>
-                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.maxPace').toUpperCase()}</div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Splits table */}
-          {displaySession?.splits && displaySession.splits.length > 0 && (
-            <div>
-              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">{t('cardio.splits')}</div>
-              <SplitsTable splits={displaySession.splits} />
-            </div>
-          )}
+          {/* Stats: track quality · primary · secondary · splits */}
+          <CardioSessionStatsPanel
+            activityType={displaySession?.activity_type ?? activityType}
+            distanceKm={displaySession?.distance_km ?? distance}
+            durationSeconds={displaySession?.duration_seconds ?? duration}
+            avgPace={displaySession?.avg_pace ?? currentPace}
+            avgSpeedKmh={displaySession?.avg_speed_kmh}
+            maxPace={displaySession?.max_pace}
+            maxSpeedKmh={displaySession?.max_speed_kmh}
+            caloriesBurned={displaySession?.calories_burned}
+            elevationGain={displaySession?.elevation_gain}
+            splits={displaySession?.splits}
+            trackQuality={trackQuality}
+          />
 
           {/* Note */}
           <div className="space-y-1.5">
@@ -583,7 +525,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 GPX
               </Button>
             )}
-            {displaySession && <CardioShareCard session={displaySession} referralCode={referralCode} raceName={raceName || undefined} userName={(user as any)?.display_name || undefined} />}
+            {displaySession && <CardioShareCard session={displaySession} referralCode={referralCode} raceName={raceName || undefined} userName={user?.display_name || undefined} />}
           </div>
         </div>
       )}

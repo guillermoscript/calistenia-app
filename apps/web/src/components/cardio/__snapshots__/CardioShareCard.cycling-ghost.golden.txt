@@ -1,0 +1,106 @@
+set canvas.width = 1080
+set canvas.height = 1920
+call scale(2, 2)
+set fillStyle = #0a0a0b
+call fillRect(0, 0, 540, 960)
+call createLinearGradient(0, 0, 0, 624)
+set fillStyle = gradient(linear,0,0,0,624)[0:#0ea5e92e 1:#0a0a0bff]
+call fillRect(0, 0, 540, 960)
+call save()
+set globalAlpha = 0.08
+set fillStyle = #0ea5e9
+set font = 800 220px "DM Sans", system-ui, sans-serif
+set textBaseline = top
+call fillText(CICLISMO, -10, 336)
+set textBaseline = alphabetic
+set globalAlpha = 1
+call restore()
+call createLinearGradient(0, 441.6, 0, 960)
+set fillStyle = gradient(linear,0,441.6,0,960)[0:rgba(10,10,11,0) 0.6:rgba(10,10,11,0.8) 1:rgba(10,10,11,0.99)]
+call fillRect(0, 441.6, 540, 518.4)
+set fillStyle = #0ea5e9
+call beginPath()
+call arc(34, 48, 4, 0, 6.283)
+call fill()
+set fillStyle = #0ea5e9
+set font = 700 15px "DM Sans", system-ui, sans-serif
+set letterSpacing = 2px
+call fillText(CICLISMO, 44, 52)
+set letterSpacing = 0px
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 12px "DM Sans", system-ui, sans-serif
+call fillText(dom, 15 mar 2026, 44, 68)
+call beginPath()
+call arc(493, 57, 17, 0, 6.283)
+set fillStyle = rgba(10,10,11,0.55)
+call fill()
+set fillStyle = #f5f5f4
+set font = 700 17px "DM Sans", system-ui, sans-serif
+set textAlign = center
+set textBaseline = middle
+call fillText(M, 493, 58)
+set textAlign = left
+set textBaseline = alphabetic
+set fillStyle = rgba(245,245,244,0.18)
+call fillRect(30, 886, 480, 1)
+call drawImage(<image>, 30, 900, 16, 16)
+set fillStyle = #f5f5f4
+set font = 700 13px "DM Sans", system-ui, sans-serif
+set letterSpacing = 1px
+call fillText(CALISTENIA, 52, 913)
+set letterSpacing = 0px
+set fillStyle = rgba(245,245,244,0.40)
+set font = 400 12px "DM Sans", system-ui, sans-serif
+set textAlign = right
+call fillText(calistenia-app.com, 510, 913)
+set textAlign = left
+set fillStyle = #f5f5f4
+set font = 800 34px "DM Sans", system-ui, sans-serif
+call fillText(1:02:00, 30, 862)
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 16px "DM Sans", system-ui, sans-serif
+call fillText(Tiempo, 30, 882)
+set fillStyle = #f5f5f4
+set font = 800 34px "DM Sans", system-ui, sans-serif
+call fillText(23.9, 190, 862)
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 16px "DM Sans", system-ui, sans-serif
+call fillText(km/h, 190, 882)
+set fillStyle = rgba(245,245,244,0.15)
+call fillRect(189, 830, 1, 44)
+set fillStyle = #f5f5f4
+set font = 800 34px "DM Sans", system-ui, sans-serif
+call fillText(640, 350, 862)
+set fillStyle = rgba(245,245,244,0.66)
+set font = 500 16px "DM Sans", system-ui, sans-serif
+call fillText(kcal, 350, 882)
+set fillStyle = rgba(245,245,244,0.15)
+call fillRect(349, 830, 1, 44)
+call beginPath()
+call moveTo(33, 810)
+call lineTo(117, 810)
+call quadraticCurveTo(120, 810, 120, 813)
+call lineTo(120, 813)
+call quadraticCurveTo(120, 816, 117, 816)
+call lineTo(33, 816)
+call quadraticCurveTo(30, 816, 30, 813)
+call lineTo(30, 813)
+call quadraticCurveTo(30, 810, 33, 810)
+call closePath()
+set fillStyle = #0ea5e9
+call fill()
+set fillStyle = #f5f5f4
+set font = 800 100px "DM Sans", system-ui, sans-serif
+set textBaseline = alphabetic
+call fillText(24.68, 30, 800)
+set fillStyle = #0ea5e9
+set font = 800 30px "DM Sans", system-ui, sans-serif
+call fillText(KM, 68, 800)
+set fillStyle = #f5f5f4
+set font = 600 26px "DM Sans", system-ui, sans-serif
+call fillText(Marta, 30, 696)
+set fillStyle = #0ea5e9
+set font = 800 22px "DM Sans", system-ui, sans-serif
+set letterSpacing = 1px
+call fillText(VUELTA AL PARQUE, 30, 664)
+set letterSpacing = 0px
