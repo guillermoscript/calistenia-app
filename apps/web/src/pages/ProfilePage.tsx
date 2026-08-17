@@ -17,6 +17,9 @@ import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity }
 import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
 import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
 import { fetchUserHealth, upsertUserHealth } from '@calistenia/core/hooks/useUserHealth'
+import {
+  useProfileForm, fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
+} from '@calistenia/core/hooks/useProfileForm'
 import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
@@ -28,33 +31,32 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [displayName, setDisplayName] = useState(user?.display_name || user?.name || '')
-  const [weight, setWeight] = useState<string>('')
-  const [height, setHeight] = useState<string>('')
-  const [age, setAge] = useState<string>('')
-  const [sex, setSex] = useState<string>('')
+  // Los 16 campos editables son un solo formulario: se hidratan juntos en el
+  // efecto de carga y se envían juntos en `handleSave`, así que viven en un
+  // reducer compartido con móvil en vez de en 16 `useState` sueltos (#478).
+  // Se desestructuran con sus nombres de siempre para que el resto del fichero
+  // no cambie; lo único que cambia es cómo se escriben (`set`/`toggle`).
+  const { form, set, toggle, hydrate } = useProfileForm({
+    displayName: user?.display_name || user?.name || '',
+    timezone: getTimezone(),
+  })
+  const {
+    displayName, weight, height, age, sex, level, goal, goalWeight,
+    activityLevel, pace, medicalConditions, injuries, focusAreas,
+    trainingDays, intensity, timezone,
+  } = form
   // Edad/sexo son PII ocultos en `users` (fix GHSA-wwj3-9h95-wcpf): no se
   // serializan ni se pueden escribir con token de usuario. Su fuente fiable es
   // la fila de `nutrition_goals` (protegida per-user), que además es lo que
   // consume el cálculo de calorías. Guardamos su id para poder actualizarla. (#243 F4a)
   const [bodyGoalId, setBodyGoalId] = useState<string | null>(null)
-  const [level, setLevel] = useState('principiante')
-  const [goal, setGoal] = useState('')
-  const [goalWeight, setGoalWeight] = useState<string>('')
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('')
-  const [pace, setPace] = useState<Pace | ''>('')
-  const [medicalConditions, setMedicalConditions] = useState<ConditionId[]>([])
-  const [injuries, setInjuries] = useState<InjuryId[]>([])
-  const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([])
-  const [trainingDays, setTrainingDays] = useState<DayId[]>([])
-  const [intensity, setIntensity] = useState<Intensity | ''>('')
+  // Estado de UI puro: no se guarda ni se hidrata, así que no entra en el reducer.
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [timezone, setTimezone] = useState(() => getTimezone())
   const [tzSearch, setTzSearch] = useState('')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -100,38 +102,34 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       const available = await isPocketBaseAvailable()
       if (available) {
         try {
-          const rec = await pb.collection('users').getOne(user.id)
-          setDisplayName((rec as any).display_name || (rec as any).name || '')
-          setWeight((rec as any).weight ? String((rec as any).weight) : '')
-          setHeight((rec as any).height ? String((rec as any).height) : '')
-          setLevel((rec as any).level || 'principiante')
-          setGoal((rec as any).goal || '')
-          setGoalWeight((rec as any).goal_weight ? String((rec as any).goal_weight) : '')
-          setActivityLevel((rec as any).activity_level || '')
-          setPace((rec as any).pace || '')
-          setFocusAreas(Array.isArray((rec as any).focus_areas) ? (rec as any).focus_areas : [])
-          setTrainingDays(Array.isArray((rec as any).training_days) ? (rec as any).training_days : [])
-          setIntensity((rec as any).intensity || '')
+          // Tres hidrataciones, no una: conservan el mismo escalonado de
+          // renders que tenían los 16 setters sueltos (los campos de `users`
+          // aparecen antes de esperar a las otras dos colecciones).
+          const rec = await pb.collection('users').getOne(user.id) as Record<string, any>
           setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
-          if ((rec as any).timezone) setTimezone((rec as any).timezone)
-          // Edad/sexo desde la fila de nutrition_goals (PII protegida; en `users`
-          // están ocultos). Si el usuario aún no tiene objetivo, quedan vacíos y
-          // solo se fijarán al crear uno (el wizard los pide). (#243 F4a)
-          try {
-            const goalRec = await pb.collection('nutrition_goals').getFirstListItem(
-              pb.filter('user = {:uid}', { uid: user.id }), { requestKey: null },
-            )
-            setBodyGoalId((goalRec as any).id)
-            setAge((goalRec as any).age ? String((goalRec as any).age) : '')
-            setSex((goalRec as any).sex || '')
-          } catch { /* sin objetivo todavía: edad/sexo vacíos */ }
+          hydrate({
+            displayName: rec.display_name || rec.name || '',
+            ...bodyFromUserRecord(rec),
+            level: rec.level || 'principiante',
+            goal: rec.goal || '',
+            goalWeight: rec.goal_weight ? String(rec.goal_weight) : '',
+            pace: rec.pace || '',
+            focusAreas: Array.isArray(rec.focus_areas) ? rec.focus_areas : [],
+            trainingDays: Array.isArray(rec.training_days) ? rec.training_days : [],
+            intensity: rec.intensity || '',
+            // Sin zona horaria guardada se conserva la detectada del navegador.
+            ...(rec.timezone ? { timezone: rec.timezone } : {}),
+          })
+          // Edad/sexo desde la fila de `nutrition_goals` (PII protegida). Si el
+          // usuario aún no tiene objetivo, quedan vacíos y solo se fijarán al
+          // crear uno (el wizard los pide). (#243 F4a)
+          const body = await fetchProfileBody(user.id)
+          setBodyGoalId(body.bodyGoalId)
+          hydrate({ age: body.age, sex: body.sex })
           // Condiciones/lesiones desde `user_health` (en `users` son PII ocultos
           // que no se serializan ni se pueden escribir con token de usuario). (#247)
           const uh = await fetchUserHealth(user.id)
-          if (uh) {
-            setMedicalConditions(uh.medical_conditions)
-            setInjuries(uh.injuries)
-          }
+          if (uh) hydrate({ medicalConditions: uh.medical_conditions, injuries: uh.injuries })
         } catch (e) {
           console.warn('Failed to load profile:', e)
         }
@@ -186,12 +184,10 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       if (available) {
         await pb.collection('users').update(user.id, {
           display_name: displayName,
-          weight: parseDecimal(weight),
-          height: parseDecimal(height),
+          ...bodyUserPatch(form),
           level,
           goal,
           goal_weight: parseDecimal(goalWeight),
-          activity_level: activityLevel || '',
           pace: pace || '',
           focus_areas: focusAreas,
           training_days: trainingDays,
@@ -201,12 +197,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
         // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
         // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
-        if (bodyGoalId) {
-          await pb.collection('nutrition_goals').update(bodyGoalId, {
-            age: age ? parseInt(age, 10) : null,
-            sex: sex || '',
-          }).catch((e) => console.warn('Failed to save body age/sex:', e))
-        }
+        await saveBodyDemographics(bodyGoalId, age, sex,
+          (e) => console.warn('Failed to save body age/sex:', e))
         // Condiciones/lesiones → `user_health` (upsert per-user; en `users`
         // están ocultos y no se pueden escribir con token de usuario). (#247)
         await upsertUserHealth(user.id, {
@@ -315,7 +307,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               <Input
                 id="profile-name"
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => set('displayName', e.target.value)}
                 placeholder={t('profile.namePlaceholder')}
                 className="h-10"
               />
@@ -330,7 +322,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   step="0.1"
                   min="0"
                   value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  onChange={(e) => set('weight', e.target.value)}
                   placeholder={t('profile.weightPlaceholder')}
                   className="h-10"
                 />
@@ -342,7 +334,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   type="number"
                   min="0"
                   value={height}
-                  onChange={(e) => setHeight(e.target.value)}
+                  onChange={(e) => set('height', e.target.value)}
                   placeholder={t('profile.heightPlaceholder')}
                   className="h-10"
                 />
@@ -355,7 +347,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   min="13"
                   max="120"
                   value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  onChange={(e) => set('age', e.target.value)}
                   placeholder={t('profile.agePlaceholder')}
                   className="h-10"
                 />
@@ -372,7 +364,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setSex(sex === opt.value ? '' : opt.value)}
+                    onClick={() => set('sex', sex === opt.value ? '' : opt.value)}
                     aria-pressed={sex === opt.value}
                     className={cn(
                       'h-10 rounded-md border text-sm transition-colors',
@@ -412,7 +404,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 step="0.1"
                 min="0"
                 value={goalWeight}
-                onChange={(e) => setGoalWeight(e.target.value)}
+                onChange={(e) => set('goalWeight', e.target.value)}
                 placeholder={t('profile.goalWeightPlaceholder')}
                 className="h-10"
               />
@@ -435,7 +427,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   <button
                     key={val}
                     type="button"
-                    onClick={() => setActivityLevel(activityLevel === val ? '' : val)}
+                    onClick={() => set('activityLevel', activityLevel === val ? '' : val)}
                     aria-pressed={activityLevel === val}
                     className={cn(
                       'h-10 rounded-md border text-sm transition-colors',
@@ -461,7 +453,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   <button
                     key={val}
                     type="button"
-                    onClick={() => setPace(pace === val ? '' : val)}
+                    onClick={() => set('pace', pace === val ? '' : val)}
                     aria-pressed={pace === val}
                     className={cn(
                       'h-10 rounded-md border text-sm transition-colors',
@@ -492,7 +484,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setMedicalConditions(active ? medicalConditions.filter(c => c !== id) : [...medicalConditions, id])}
+                      onClick={() => toggle('medicalConditions', id)}
                       aria-pressed={active}
                       className={cn(
                         'px-3 py-1.5 rounded-full border text-xs transition-colors',
@@ -517,7 +509,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setInjuries(active ? injuries.filter(i => i !== id) : [...injuries, id])}
+                      onClick={() => toggle('injuries', id)}
                       aria-pressed={active}
                       className={cn(
                         'px-3 py-1.5 rounded-full border text-xs transition-colors',
@@ -582,7 +574,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                     variant={level === l.value ? 'default' : 'outline'}
                     size="sm"
                     aria-pressed={level === l.value}
-                    onClick={() => setLevel(l.value)}
+                    onClick={() => set('level', l.value)}
                     className={level === l.value
                       ? 'h-8 px-4 text-[11px] bg-lime text-zinc-900 hover:bg-lime/90'
                       : 'h-8 px-4 text-[11px]'
@@ -603,7 +595,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setFocusAreas(active ? focusAreas.filter(x => x !== id) : [...focusAreas, id])}
+                      onClick={() => toggle('focusAreas', id)}
                       aria-pressed={active}
                       className={cn(
                         'px-3 py-1.5 rounded-full border text-xs transition-colors',
@@ -628,7 +620,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                     <button
                       key={d}
                       type="button"
-                      onClick={() => setTrainingDays(active ? trainingDays.filter(x => x !== d) : [...trainingDays, d])}
+                      onClick={() => toggle('trainingDays', d)}
                       aria-pressed={active}
                       className={cn(
                         'h-10 rounded-md border text-xs font-medium transition-colors',
@@ -655,7 +647,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   <button
                     key={val}
                     type="button"
-                    onClick={() => setIntensity(intensity === val ? '' : val)}
+                    onClick={() => set('intensity', intensity === val ? '' : val)}
                     aria-pressed={intensity === val}
                     className={cn(
                       'h-10 rounded-md border text-sm transition-colors',
@@ -675,7 +667,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               <textarea
                 id="profile-goal"
                 value={goal}
-                onChange={(e) => setGoal(e.target.value)}
+                onChange={(e) => set('goal', e.target.value)}
                 placeholder={t('profile.goalPlaceholder')}
                 rows={3}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
@@ -699,7 +691,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               <select
                 id="profile-timezone"
                 value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
+                onChange={(e) => set('timezone', e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {(() => {
