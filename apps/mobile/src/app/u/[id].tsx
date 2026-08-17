@@ -2,7 +2,7 @@
  * Perfil público de usuario — port móvil mínimo de apps/web/src/pages/UserProfilePage.tsx.
  * Ruta: /u/[id] (la usa friends.tsx al tocar un usuario).
  */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { View, ScrollView, Image, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -14,41 +14,16 @@ import { Button } from '@/components/ui/button'
 import { OptionSheet } from '@/components/ui/option-sheet'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { useReports } from '@calistenia/core/hooks/useReports'
 import { ReportReasonSheet } from '@/components/social/ReportReasonSheet'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
-import { WORKOUTS } from '@calistenia/core/data/workouts'
-import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from '@calistenia/core/lib/session-key'
-import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { usePublicProfile } from '@calistenia/core/hooks/usePublicProfile'
+import type { ProfilePRs } from '@calistenia/core/lib/public-profile'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 
-interface RecentSession {
-  id: string
-  workoutTitle: string
-  phase: number
-  completedAt: string
-  note: string
-}
-
-interface ProfileData {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-  memberSince: string
-  totalSessions: number
-  bestStreak: number
-  currentStreak: number
-  level: number
-  phase: number
-  prs: Record<string, number>
-  monthActivity: Record<string, boolean>
-  recentSessions: RecentSession[]
-  activeProgram: { name: string; id: string } | null
-}
-
-const PR_DEFS = [
+const PR_DEFS: { key: keyof ProfilePRs; label: string; unit: string; accent: string }[] = [
   { key: 'pr_pullups', label: 'Pull-ups', unit: 'reps', accent: 'text-sky-500' },
   { key: 'pr_pushups', label: 'Push-ups', unit: 'reps', accent: 'text-lime' },
   { key: 'pr_lsit', label: 'L-sit', unit: 's', accent: 'text-amber-400' },
@@ -86,111 +61,10 @@ export default function UserProfileScreen() {
   const { report } = useReports(currentUserId)
   const [reportOpen, setReportOpen] = useState(false)
 
-  const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!userId) return
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      try {
-        const user = await pb.collection('users').getOne(userId, { $autoCancel: false })
-
-        let stats: any = {}
-        try {
-          stats = await pb.collection('public_user_stats').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: userId }), { $autoCancel: false })
-        } catch { /* sin stats */ }
-
-        let settings: any = {}
-        try {
-          const sRes = await pb.collection('public_prs').getList(1, 1, {
-            filter: pb.filter('user = {:uid}', { uid: userId }), $autoCancel: false })
-          if (sRes.items.length) settings = sRes.items[0]
-        } catch { /* sin settings */ }
-
-        // Calendario del mes actual
-        const today = todayStr()
-        const yearMonth = today.slice(0, 7)
-        const monthActivity: Record<string, boolean> = {}
-        const daysInMonth = new Date(parseInt(yearMonth.slice(0, 4)), parseInt(yearMonth.slice(5, 7)), 0).getDate()
-        for (let d = 1; d <= daysInMonth; d++) {
-          monthActivity[`${yearMonth}-${String(d).padStart(2, '0')}`] = false
-        }
-
-        let recentSessions: RecentSession[] = []
-        try {
-          const ses = await pb.collection('public_sessions').getList(1, 100, {
-            filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
-              uid: userId, start: localMidnightAsUTC(`${yearMonth}-01`),
-            }),
-            sort: '-completed_at', $autoCancel: false,
-          })
-          for (const s of ses.items) {
-            const date = utcToLocalDateStr(s.completed_at)
-            if (date && Object.prototype.hasOwnProperty.call(monthActivity, date)) monthActivity[date] = true
-          }
-          recentSessions = ses.items.slice(0, 10).map((s: any) => {
-            const w = WORKOUTS[s.workout_key]
-            // Sesiones libres (#376): etiqueta genérica en vez de la clave
-            // cruda, y sin fase que enseñar.
-            const { isFree } = sessionKeyParts(s.workout_key || '')
-            const rawTitle = w?.title || sessionKeyLabel(s.workout_key || '') || 'Sesión'
-            return {
-              id: s.id,
-              workoutTitle: typeof rawTitle === 'string' ? rawTitle : l(rawTitle),
-              phase: isFree ? NO_PHASE : (s.phase ?? 1),
-              completedAt: s.completed_at || s.created,
-              note: typeof s.note === 'string' ? s.note : l(s.note) || '',
-            }
-          })
-        } catch { /* sin sesiones */ }
-
-        let activeProgram: { name: string; id: string } | null = null
-        try {
-          const up = await pb.collection('user_programs').getFirstListItem(
-            pb.filter('user = {:uid} && is_current = true', { uid: userId }),
-            { expand: 'program', $autoCancel: false })
-          if (up.expand?.program) {
-            const p = up.expand.program as any
-            const name = l(p.name)
-            activeProgram = { name: typeof name === 'string' ? name : String(name), id: p.id }
-          }
-        } catch { /* sin programa */ }
-
-        if (cancelled) return
-        setProfile({
-          id: user.id,
-          displayName: user.display_name || user.email?.split('@')[0] || '?',
-          avatarUrl: getUserAvatarUrl(user as any, '200x200'),
-          memberSince: user.created ? utcToLocalDateStr(user.created) : '',
-          totalSessions: stats.total_sessions || 0,
-          bestStreak: stats.workout_streak_best || 0,
-          currentStreak: stats.workout_streak_current || 0,
-          level: stats.level || 1,
-          phase: settings.phase || 1,
-          prs: {
-            pr_pullups: settings.pr_pullups || 0,
-            pr_pushups: settings.pr_pushups || 0,
-            pr_lsit: settings.pr_lsit || 0,
-            pr_pistol: settings.pr_pistol || 0,
-            pr_handstand: settings.pr_handstand || 0,
-          },
-          monthActivity,
-          recentSessions,
-          activeProgram,
-        })
-      } catch (e) {
-        console.warn('[u/[id]] load error', e)
-        if (!cancelled) setProfile(null)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [userId, l])
+  // Los datos del perfil viven en core (#473): la pantalla solo pinta. Los
+  // textos llegan crudos (`TranslatableField`) y se localizan con `l()` al
+  // renderizar, para que cambiar de idioma no relance las consultas.
+  const { profile, loading } = usePublicProfile(userId ?? null)
 
   const blocked = userId ? isBlocked(userId) : false
   const canAct = !isOwnProfile && !!currentUserId && !!userId
@@ -259,7 +133,7 @@ export default function UserProfileScreen() {
       <OptionSheet
         visible={menuOpen}
         kicker={t('blocks.menuKicker')}
-        title={profile?.displayName ?? t('blocks.menuKicker')}
+        title={profile?.displayName || t('blocks.menuKicker')}
         cancelLabel={t('blocks.cancel')}
         onClose={() => setMenuOpen(false)}
         options={[
@@ -303,7 +177,9 @@ export default function UserProfileScreen() {
   }
 
   const today = todayStr()
-  const initial = profile.displayName[0]?.toUpperCase() ?? '?'
+  // El hook deja el nombre vacío si el usuario no tiene ni display_name ni email.
+  const displayName = profile.displayName || '?'
+  const initial = displayName[0]?.toUpperCase() ?? '?'
   const following = userId ? isFollowing(userId) : false
 
   return (
@@ -314,14 +190,14 @@ export default function UserProfileScreen() {
         {/* Cabecera de usuario */}
         <View className="mb-6 flex-row items-center gap-4">
           {profile.avatarUrl ? (
-            <Image source={{ uri: profile.avatarUrl }} className="size-16 rounded-full" accessibilityLabel={profile.displayName} />
+            <Image source={{ uri: profile.avatarUrl }} className="size-16 rounded-full" accessibilityLabel={displayName} />
           ) : (
             <View className="size-16 items-center justify-center rounded-full bg-accent">
               <Text className="font-bebas text-2xl text-foreground">{initial}</Text>
             </View>
           )}
           <View className="flex-1">
-            <Text className="font-bebas text-3xl leading-none text-foreground" numberOfLines={1}>{profile.displayName}</Text>
+            <Text className="font-bebas text-3xl leading-none text-foreground" numberOfLines={1}>{displayName}</Text>
             <Text className="mt-1 font-mono text-[11px] text-muted-foreground">
               Miembro desde {profile.memberSince} · Fase {profile.phase}
             </Text>
@@ -400,7 +276,7 @@ export default function UserProfileScreen() {
         {profile.activeProgram ? (
           <View className="mb-6 rounded-xl border border-border bg-card p-4">
             <Text className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Programa actual</Text>
-            <Text className="font-sans-medium text-foreground">{profile.activeProgram.name}</Text>
+            <Text className="font-sans-medium text-foreground">{l(profile.activeProgram.name)}</Text>
             <Text className="font-mono text-[11px] text-muted-foreground">Fase {profile.phase}</Text>
           </View>
         ) : null}
@@ -444,16 +320,19 @@ export default function UserProfileScreen() {
               {profile.recentSessions.map((s) => {
                 const d = new Date(s.completedAt.replace(' ', 'T'))
                 const fdate = d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })
+                // Título y nota llegan crudos del hook: se localizan aquí.
+                const workoutTitle = l(s.workoutTitle)
+                const note = l(s.note)
                 return (
                   <Pressable
                     key={s.id}
                     onPress={() => router.push({ pathname: '/s/[id]', params: { id: s.id } })}
                     className="rounded-md border border-border border-l-[3px] border-l-lime bg-card px-3 py-2.5 active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel={s.workoutTitle}
+                    accessibilityLabel={workoutTitle}
                   >
                     <View className="flex-row items-center justify-between gap-2">
-                      <Text className="flex-1 font-sans-medium text-sm text-foreground" numberOfLines={1}>{s.workoutTitle}</Text>
+                      <Text className="flex-1 font-sans-medium text-sm text-foreground" numberOfLines={1}>{workoutTitle}</Text>
                       <ChevronRight size={15} color="hsl(0 0% 40%)" />
                     </View>
                     <View className="mt-0.5 flex-row items-center gap-2">
@@ -462,9 +341,9 @@ export default function UserProfileScreen() {
                       )}
                       <Text className="text-[10px] text-muted-foreground">{fdate}</Text>
                     </View>
-                    {s.note ? (
+                    {note ? (
                       <Text className="mt-1.5 border-t border-border/50 pt-1.5 text-[11px] italic text-muted-foreground" numberOfLines={1}>
-                        &quot;{s.note}&quot;
+                        &quot;{note}&quot;
                       </Text>
                     ) : null}
                   </Pressable>

@@ -2,8 +2,9 @@ import { useMemo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import * as Sentry from '@sentry/react'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
-import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
+import { usePantryDepletion } from '@calistenia/core/hooks/usePantryDepletion'
 import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import type { FoodItem } from '@calistenia/core/types'
@@ -16,6 +17,19 @@ import type { AnalyzeResult } from '@calistenia/core/hooks/useMealLoggerActions'
 interface MealLoggerPageProps {
   userId: string | null
 }
+
+/** La comida analizada que devuelve un job de IA. Antiguos y nuevos jobs difieren:
+ *  unos anidan el análisis bajo `analysis` y otros lo devuelven plano. */
+type LegacyOrCurrentFood = Parameters<typeof migrateLegacyFood>[0] & { baseCal100?: number }
+type AnalyzedMeal = {
+  foods?: LegacyOrCurrentFood[]
+  meal_description?: string
+  quality?: AnalyzeResult['quality']
+}
+type AnalyzeJobResult = AnalyzedMeal & { analysis?: AnalyzedMeal }
+
+/** El paso de éxito se queda visible un momento antes de volver a /nutrition. */
+const SUCCESS_DWELL_MS = 1200
 
 export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   const { t } = useTranslation()
@@ -46,11 +60,11 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   const [jobLoading, setJobLoading] = useState(false)
   const jobId = searchParams.get('job')
 
-  const loadJobResult = useCallback((result: any) => {
-    const analysis = result.analysis ?? result
+  const loadJobResult = useCallback((result: AnalyzeJobResult) => {
+    const analysis = 'analysis' in result && result.analysis ? result.analysis : result
     setInitialAnalysis({
-      foods: (analysis.foods ?? []).map((f: any) =>
-        !f.baseCal100 ? migrateLegacyFood(f) : f
+      foods: (analysis.foods ?? []).map(f =>
+        !f.baseCal100 ? migrateLegacyFood(f) : f as FoodItem
       ),
       meal_description: analysis.meal_description || '',
       quality: analysis.quality || undefined,
@@ -127,7 +141,9 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   // La página navega a /nutrition tras guardar; si hay match en vuelo o filas
   // pendientes, la navegación espera a que el usuario confirme/omita el dialog
   // (si no, el dialog se desmontaría antes de mostrarse).
-  const pantryDepletion = usePantryDepletion(userId)
+  const pantryDepletion = usePantryDepletion(userId, {
+    captureException: (e, op) => Sentry.captureException(e, { tags: { feature: 'pantry', op } }),
+  })
   const [matchPending, setMatchPending] = useState(false)
   const [wantNav, setWantNav] = useState(false)
 
@@ -137,7 +153,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   }, [pantryDepletion])
 
   const handleSaveSuccess = useCallback(() => {
-    setTimeout(() => setWantNav(true), 1200)
+    setTimeout(() => setWantNav(true), SUCCESS_DWELL_MS)
   }, [])
 
   useEffect(() => {

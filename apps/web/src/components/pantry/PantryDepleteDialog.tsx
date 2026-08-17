@@ -9,13 +9,8 @@ import { Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { cn } from '../../lib/utils'
 import type { PantryItem } from '@calistenia/core/types'
-import type { DepleteRow } from './use-pantry-depletion'
-
-function parseNum(v: string): number | null {
-  if (v.trim() === '') return null
-  const n = Number(v.replace(',', '.'))
-  return Number.isFinite(n) ? n : null
-}
+import type { DepleteRow } from '@calistenia/core/hooks/usePantryDepletion'
+import { parseLocaleNumber } from '@calistenia/core/lib/money'
 
 interface RowState { checked: boolean; qty: string }
 
@@ -47,7 +42,7 @@ export function PantryDepleteDialog({ rows, onConfirm, onDismiss }: {
     const bad = new Set<number>()
     const selected = rows.flatMap((r, i) => {
       if (!state[i].checked) return []
-      const qty = parseNum(state[i].qty)
+      const qty = parseLocaleNumber(state[i].qty)
       if (qty == null || qty <= 0) { bad.add(i); return [] }
       return [{ item: r.item, qtyConsumed: qty }]
     })

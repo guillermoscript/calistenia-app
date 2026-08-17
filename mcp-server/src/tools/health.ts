@@ -2,6 +2,7 @@ import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
+import { listWaterEntries } from "../api/repos/index.js";
 
 export function registerHealthTools(server: AppServer, pbUrl: string) {
   // ══════════════════════════════════════════════════════════════
@@ -177,10 +178,7 @@ export function registerHealthTools(server: AppServer, pbUrl: string) {
 
         // Get today's total
         const todayStr = today(tz);
-        const todayEntries = await pb.collection("water_entries").getFullList({
-          filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
-          fields: 'amount_ml',
-        });
+        const todayEntries = await listWaterEntries(pb, userId, { from: todayStr, fields: 'amount_ml' });
         const totalMl = todayEntries.reduce((s, e) => s + (e.amount_ml as number), 0);
 
         return {
@@ -213,11 +211,7 @@ export function registerHealthTools(server: AppServer, pbUrl: string) {
         const userId = auth.getUserId();
         const tz = auth.getTimezone();
         const todayStr = today(tz);
-        const entries = await pb.collection("water_entries").getFullList({
-          filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
-          sort: "logged_at",
-          fields: 'amount_ml',
-        });
+        const entries = await listWaterEntries(pb, userId, { from: todayStr, fields: 'amount_ml', sort: "logged_at" });
 
         const totalMl = entries.reduce((s, e) => s + (e.amount_ml as number), 0);
         const count = entries.length;

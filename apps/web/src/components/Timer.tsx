@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
-import { TIMER_CUE_THRESHOLDS } from '@calistenia/core/lib/countdown'
+import { TIMER_CUE_THRESHOLDS, formatCountdown } from '@calistenia/core/lib/countdown'
 import { timerCues } from '../lib/training-cues'
 import { useResyncOnVisible } from '../hooks/useResyncOnVisible'
 import { notifyTimerDone } from '../lib/notifications'
@@ -217,7 +217,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
                   fontSize: seconds >= 600 ? '36px' : '44px',
                   animation: phase === 'running' ? 'tickPulse 0.3s cubic-bezier(0.22, 1, 0.36, 1)' : undefined,
                 }}>
-                  {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+                  {formatCountdown(seconds)}
                 </div>
               )}
               <div className="font-mono text-[10px] text-muted-foreground/60 tracking-[2px] mt-1">

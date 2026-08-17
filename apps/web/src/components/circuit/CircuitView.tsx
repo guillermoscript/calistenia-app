@@ -14,12 +14,14 @@ import {
   DialogFooter,
 } from '../ui/dialog'
 import { useCircuitSession } from '../../contexts/CircuitSessionContext'
+import { useWakeLock } from '../../hooks/useWakeLock'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
 import * as sounds from '../../lib/sounds'
 import { circuitCues } from '../../lib/training-cues'
 import type { CircuitDefinition } from '@calistenia/core/types'
 import { getLocalQuote } from '@calistenia/core/lib/quotes'
+import { formatCountdown } from '@calistenia/core/lib/countdown'
 
 // ── Timer ring (simplified from Timer.tsx for inline use) ────────────────────
 
@@ -82,7 +84,7 @@ function CountdownRing({ seconds: initialSeconds, totalSeconds, isPaused, label,
             className={`font-bebas leading-none ${isUrgent ? 'text-destructive' : 'text-foreground'}`}
             style={{ fontSize: remaining >= 600 ? '36px' : '44px' }}
           >
-            {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}
+            {formatCountdown(remaining)}
           </div>
           <div
             className="font-mono text-[10px] tracking-[2px] mt-1"
@@ -94,14 +96,6 @@ function CountdownRing({ seconds: initialSeconds, totalSeconds, isPaused, label,
       </div>
     </div>
   )
-}
-
-// ── Format elapsed time ─────────────────────────────────────────────────────
-
-function formatElapsed(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 // ── Main Component ──────────────────────────────────────────────────────────
@@ -133,35 +127,8 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
   const [saving, setSaving] = useState(false)
   const quote = useMemo(() => getLocalQuote(), [])
 
-  // ── Wake lock to prevent screen sleep during circuit ──────────────────────
-
-  useEffect(() => {
-    let wakeLock: WakeLockSentinel | null = null
-
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen')
-        }
-      } catch {
-        // Wake lock request failed (e.g., low battery, not supported)
-      }
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        requestWakeLock()
-      }
-    }
-
-    requestWakeLock()
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      wakeLock?.release()
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [])
+  // La pantalla no debe apagarse durante el circuito.
+  useWakeLock(true)
 
   // ── Elapsed timer ──────────────────────────────────────────────────────────
 
@@ -353,7 +320,7 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
               {t('circuit.elapsed').toUpperCase()}
             </div>
             <div className="font-bebas text-lg leading-none tabular-nums">
-              {formatElapsed(elapsed)}
+              {formatCountdown(elapsed)}
             </div>
           </div>
 

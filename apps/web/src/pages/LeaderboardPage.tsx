@@ -4,12 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 import { cn } from '../lib/utils'
 import { op } from '@calistenia/core/lib/analytics'
+import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 
 type TimeFilter = 'week' | 'month'
-
-const MEDALS = ['🥇', '🥈', '🥉']
 
 interface LeaderboardPageProps {
   userId: string
@@ -150,7 +149,7 @@ interface RankRowProps {
 
 function RankRow({ entry, position, unit, onTap }: RankRowProps) {
   const { t } = useTranslation()
-  const medal = MEDALS[position - 1]
+  const medal = RANK_MEDALS[position - 1]
 
   return (
     <button

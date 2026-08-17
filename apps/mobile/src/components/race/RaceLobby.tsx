@@ -9,8 +9,8 @@ import { useRaceContext } from '@/contexts/RaceContext'
 import { haptics } from '@/lib/haptics'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
-const WEB_ORIGIN = 'https://gym.guille.tech'
 
 export default function RaceLobby({ displayName }: { displayName: string }) {
   const { t } = useTranslation()
@@ -34,7 +34,7 @@ export default function RaceLobby({ displayName }: { displayName: string }) {
     : `${Math.round(race.target_duration_seconds / 60)} min`
 
   const handleShare = async () => {
-    const result = await Share.share({ message: `${race.name} — ${WEB_ORIGIN}/race/${race.id}` })
+    const result = await Share.share({ message: `${race.name} — ${WEB_BASE_URL}/race/${race.id}` })
     if (result.action !== Share.sharedAction) return
     // En Android `Share.share` devuelve siempre `sharedAction`, también al
     // descartar la hoja: solo iOS confirma el envío. `share_confirmed` deja ver

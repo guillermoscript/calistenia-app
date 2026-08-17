@@ -1,8 +1,6 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -52,57 +50,12 @@ const CrossInsightSchema = z.object({
 
 export type CrossInsight = z.infer<typeof CrossInsightSchema>;
 
-// ── Input (the compact rollup from packages/core buildInsightContext) ─────────
-// Typed locally to avoid a cross-package import; matches InsightContext's JSON shape.
+// ── Input ────────────────────────────────────────────────────────────────────
+// The compact rollup built by @calistenia/core (client) or
+// insight-context-server.ts (cron) — ONE declaration, in core (#480).
 
-interface InsightDayRow {
-  date: string;
-  workouts?: number;
-  workoutMinutes?: number;
-  cardioSessions?: number;
-  cardioKm?: number;
-  cardioMinutes?: number;
-  circuitSessions?: number;
-  meals?: number;
-  calories?: number;
-  waterMl?: number;
-  sleepMinutes?: number;
-  sleepQuality?: number;
-  weightKg?: number;
-  waistCm?: number;
-  bodyFatPct?: number;
-  steps?: number;
-  restingHr?: number;
-  hrvMs?: number;
-  vo2max?: number;
-}
-
-interface InsightSummary {
-  days: number;
-  daysWithAnyData: number;
-  workouts: { total: number; daysTrained: number };
-  cardio: { sessions: number; totalKm: number; totalMinutes: number };
-  circuits: { sessions: number };
-  nutrition: { daysLogged: number; avgCalories: number | null; avgMeals: number | null };
-  water: { daysLogged: number; avgMl: number | null };
-  sleep: { daysLogged: number; avgMinutes: number | null; avgQuality: number | null };
-  weight: { firstKg: number | null; lastKg: number | null; deltaKg: number | null };
-  // Composición corporal (#227) — puede faltar en contexts generados por cores viejos.
-  waist?: { firstCm: number | null; lastCm: number | null; deltaCm: number | null };
-  bodyFat?: { firstPct: number | null; lastPct: number | null; deltaPct: number | null };
-  watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null };
-  streaks: { currentTrainingStreak: number; longestTrainingStreak: number };
-}
-
-export interface InsightContext {
-  period: { type: "weekly" | "monthly"; days: number; start: string; end: string };
-  rows: InsightDayRow[];
-  summary: InsightSummary;
-  previousSummary?: InsightSummary;
-  watchAvailable: boolean;
-  // Objetivo principal declarado en el onboarding (#226), p. ej. "recomposicion".
-  primaryGoal?: string;
-}
+import type { InsightContext } from "@calistenia/core/lib/insightContext";
+export type { InsightContext };
 
 interface CrossInsightInput {
   context: InsightContext;
@@ -210,21 +163,15 @@ function buildUserText(ctx: InsightContext): string {
 // ── Generator ────────────────────────────────────────────────────────────────
 
 export async function generateCrossInsight({ context, tier }: CrossInsightInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt } = await getPromptWithMeta("cross-metric-insight");
-
   const userText = buildUserText(context);
 
-  const { object } = await generateObject({
-    model,
+  const { object, modelName } = await runStructuredGeneration({
+    promptName: "cross-metric-insight",
+    telemetryId: "cross-insight-generator",
+    tier,
     schema: CrossInsightSchema,
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: userText },
-    ],
-    telemetry: langfuseTelemetry("cross-insight-generator", {
-      metadata: { tier, modelName, periodType: context.period.type },
-    }),
+    user: userText,
+    metadata: { periodType: context.period.type },
   });
 
   return {

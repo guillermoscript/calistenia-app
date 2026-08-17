@@ -21,7 +21,7 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
 import { AvatarPicker } from '@/components/profile/AvatarPicker'
-import { BASE_URL } from '@/lib/share'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -472,7 +472,7 @@ export default function ProfileScreen() {
         {/* Privacidad y condiciones (#300): las tiendas exigen que la política
             sea accesible desde dentro de la app, no solo desde la ficha. Vive
             en la web, así que se abre en el navegador. */}
-        <Pressable onPress={() => Linking.openURL(`${BASE_URL}/legal#privacy`).catch(() => {})}>
+        <Pressable onPress={() => Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {})}>
           <Card>
             <CardContent className="flex-row items-center gap-3 py-4">
               <View className="size-10 items-center justify-center rounded-full bg-lime/10">

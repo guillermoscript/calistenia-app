@@ -9,7 +9,7 @@
 import type { AppServer } from "./auth-bridge.js";
 import PocketBase from "pocketbase";
 import config from "../api/config.js";
-import { getAvailableProviders } from "../api/model-resolver.js";
+import { getAvailableProviders, resolveTier } from "../api/model-resolver.js";
 import { analyzeMealImage, scoreMealQuality, type UserContext } from "../api/meal-analyzer.js";
 import { lookupFoodByName } from "../api/food-lookup.js";
 import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
@@ -69,9 +69,9 @@ async function getAuthUser(c: any, pbUrl: string): Promise<any | null> {
 
 // ── Tier helper ───────────────────────────────────────────────────────────────
 
-function getTier(user: any): Tier {
-  return user?.tier === "pro" || user?.tier === "premium" ? "pro" : "free";
-}
+// resolveTier() (model-resolver.ts) is the single implementation of the
+// user.tier → Tier rule; keep this alias so the routes read the same as before.
+const getTier = (user: any): Tier => resolveTier(user);
 
 // ── Error handler ──────────────────────────────────────────────────────────────
 
@@ -230,7 +230,27 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
     }
     try {
       const body = await c.req.json().catch(() => ({}));
-      const { user_id, title, body: notifBody, url } = body ?? {};
+      const { user_id, user_ids, title, body: notifBody, url } = body ?? {};
+
+      // Fan-out en lote (#481): los hooks de PocketBase mandan la lista completa de
+      // destinatarios en UNA llamada en vez de un POST por seguidor dentro del hook
+      // de escritura. Solo con la clave interna — un usuario nunca puede pushear a
+      // terceros — y con despacho en segundo plano: el hook no debe esperar N envíos.
+      if (Array.isArray(user_ids)) {
+        if (!isInternal) {
+          return c.json({ error: "Solo llamadas internas pueden enviar en lote" }, 403);
+        }
+        if (!title) return c.json({ error: "Se requiere title" }, 400);
+        const ids = [...new Set(user_ids.filter((id): id is string => typeof id === "string" && id.length > 0))].slice(0, 500);
+        if (ids.length === 0) return c.json({ error: "Se requiere al menos un user_id" }, 400);
+        void Promise.allSettled(ids.map((id) => sendPushToUser(id, { title, body: notifBody, url })))
+          .then((results) => {
+            const failed = results.filter((r) => r.status === "rejected").length;
+            if (failed > 0) console.error(`[send-push] lote: ${failed}/${ids.length} envíos fallaron`);
+          });
+        return c.json({ queued: ids.length }, 202);
+      }
+
       if (!user_id || !title) return c.json({ error: "Se requiere user_id y title" }, 400);
       // Non-internal callers may only push to their own account (prevent IDOR).
       if (!isInternal && user_id !== authUser!.id) {

@@ -29,12 +29,13 @@ import * as notif from '../lib/notifications'
 import { restCues } from '../lib/training-cues'
 import { useResyncOnVisible } from '../hooks/useResyncOnVisible'
 import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
-import type { CountdownCue } from '@calistenia/core/lib/countdown'
+import { formatCountdown, type CountdownCue } from '@calistenia/core/lib/countdown'
 import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { buildSteps, type Step } from '@calistenia/core/lib/session-machine'
 
 /** Format a structured tempo object into a compact human-readable string.
  *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
@@ -48,27 +49,6 @@ function formatTempo(tempo: ExerciseTempo | undefined): string | null {
   if (tempo.concentric != null)  parts.push(tempo.concentric === 1 ? 'sube explosivo' : `sube ${tempo.concentric}s`)
   if (tempo.pauseTop != null)    parts.push(`pausa ${tempo.pauseTop}s arriba`)
   return parts.length > 0 ? parts.join(' · ') : null
-}
-
-interface Step {
-  exercise: Exercise
-  setNumber: number
-  totalSets: number
-  section: 'warmup' | 'main' | 'cooldown'
-}
-
-function buildSteps(exercises: Exercise[]): Step[] {
-  const steps: Step[] = []
-  exercises.forEach(ex => {
-    // sets=0 explícito → 0 steps; fallback de 1 solo para sets no parseable.
-    // Mantener en sync con flatSteps de ActiveSessionContext.tsx.
-    const parsed = parseInt(String(ex.sets), 10)
-    const total = ex.sets === 'múltiples' ? 3 : Number.isFinite(parsed) ? Math.max(0, parsed) : 1
-    for (let s = 1; s <= total; s++) {
-      steps.push({ exercise: ex, setNumber: s, totalSets: total, section: ex.section || 'main' })
-    }
-  })
-  return steps
 }
 
 // ─── Rest screen ──────────────────────────────────────────────────────────────
@@ -105,7 +85,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
 
   const handleComplete = useCallback(() => { onSkipRef.current() }, [])
 
-  const { secondsLeft: remaining, totalSeconds: totalSecs, progress, resync, adjust } =
+  const { secondsLeft: remaining, progress, resync, adjust } =
     usePausableCountdown({
       seconds: initialSeconds,
       onCue: handleCue,
@@ -134,8 +114,6 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
     if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
-  const mins = Math.floor(remaining / 60)
-  const secs = String(remaining % 60).padStart(2, '0')
   const pct  = progress
   const ringR = 62
   const ringSize = 148
@@ -201,7 +179,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
             )}
             style={{ animation: 'restTickPulse 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}
           >
-            {mins}:{secs}
+            {formatCountdown(remaining)}
           </span>
         </div>
       </div>

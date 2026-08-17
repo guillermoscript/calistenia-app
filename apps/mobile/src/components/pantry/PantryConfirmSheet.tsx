@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { PANTRY_CATEGORY_ORDER, normalizePantryName } from '@calistenia/core/lib/pantry'
-import { currencySymbol } from '@calistenia/core/lib/money'
+import { currencySymbol, parseLocaleNumber } from '@calistenia/core/lib/money'
 import { formatMoney } from '@calistenia/core/lib/shopping'
 import { Chip } from '@/components/ui/chip'
 import type { PantryItem, PantryParsedItem, PantryParseResult, PantryUnit } from '@calistenia/core/types'
@@ -15,12 +15,6 @@ const UNITS: (PantryUnit | null)[] = [null, 'g', 'kg', 'ml', 'l', 'unidad', 'paq
 export interface ConsumeMatch {
   parsed: PantryParsedItem
   match: PantryItem | null
-}
-
-function parseNum(v: string): number | null {
-  if (v.trim() === '') return null
-  const n = Number(v.replace(',', '.'))
-  return Number.isFinite(n) ? n : null
 }
 
 export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onConfirmConsume, onClose, receipt, pricing }: {
@@ -55,7 +49,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
   const isAdd = result.intent === 'add'
   const matched = matches.filter(m => m.match != null)
   const currency = pricing?.currency ?? 'USD'
-  const rate = parseNum(rateStr)
+  const rate = parseLocaleNumber(rateStr)
   const hasPrices = draft.some(d => d.price_total != null)
   // precios en moneda ≠ USD exigen tasa: sin ella el $ de referencia sería inventado
   const needsRate = isAdd && currency !== 'USD' && hasPrices
@@ -167,7 +161,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                     <View className="mt-2 flex-row items-center gap-2">
                       <TextInput
                         value={it.quantity == null ? '' : String(it.quantity)}
-                        onChangeText={v => updateDraft(i, { quantity: parseNum(v) })}
+                        onChangeText={v => updateDraft(i, { quantity: parseLocaleNumber(v) })}
                         keyboardType="numeric"
                         placeholder="—"
                         placeholderTextColor="hsl(0 0% 45%)"
@@ -175,7 +169,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                       />
                       <TextInput
                         value={it.price_total == null ? '' : String(it.price_total)}
-                        onChangeText={v => updateDraft(i, { price_total: parseNum(v) })}
+                        onChangeText={v => updateDraft(i, { price_total: parseLocaleNumber(v) })}
                         keyboardType="numeric"
                         placeholder="$"
                         placeholderTextColor="hsl(0 0% 45%)"

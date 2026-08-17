@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { inferNutritionGoalType, ONBOARDING_ACTIVITY_TO_NUTRITION, previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
@@ -17,7 +18,7 @@ import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
 import { PlanTab } from '../components/nutrition/plan/PlanTab'
-import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
+import { usePantryDepletion } from '@calistenia/core/hooks/usePantryDepletion'
 import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob } from '@calistenia/core/lib/ai-jobs-api'
@@ -32,23 +33,13 @@ import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
+import { NUTRITION_GOALS, GOAL_LABEL_KEYS } from '../components/nutrition/nutrition-goal-options'
 import type { NutritionGoal, NutritionGoalType, NutritionEntry, Sex } from '@calistenia/core/types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
-// #243 F2: mismas etiquetas/iconos que NutritionGoalSetup.GOALS, para el picker inline.
-const GOAL_LABEL_KEYS: Record<NutritionGoalType, string> = {
-  muscle_gain: 'nutrition.goal.muscleGain',
-  fat_loss: 'nutrition.goal.fatLoss',
-  recomp: 'nutrition.goal.recomp',
-  maintain: 'nutrition.goal.maintain',
-}
-const GOAL_CHOICES: { id: NutritionGoalType; labelKey: string; icon: string }[] = [
-  { id: 'muscle_gain', labelKey: GOAL_LABEL_KEYS.muscle_gain, icon: '💪' },
-  { id: 'fat_loss', labelKey: GOAL_LABEL_KEYS.fat_loss, icon: '🔥' },
-  { id: 'recomp', labelKey: GOAL_LABEL_KEYS.recomp, icon: '⚖️' },
-  { id: 'maintain', labelKey: GOAL_LABEL_KEYS.maintain, icon: '✅' },
-]
+// #243 F2: el picker inline reusa la lista del wizard (#477).
+const GOAL_CHOICES = NUTRITION_GOALS
 
 interface NutritionPageProps {
   userId: string | null
@@ -143,7 +134,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   const { data: pantryItems = [] } = usePantryItems(userId)
   const pantryCount = pantryItems.length
   const spendData = useSpendSummary(userId, startOfWeekStr()).data
-  const pantryDepletion = usePantryDepletion(userId)
+  const pantryDepletion = usePantryDepletion(userId, {
+    captureException: (e, op) => Sentry.captureException(e, { tags: { feature: 'pantry', op } }),
+  })
 
   const nutrition = useNutrition(userId)
   const {

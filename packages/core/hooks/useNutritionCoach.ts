@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
-import { AI_API_URL } from '../lib/ai-api'
+import { aiApiFetch } from '../lib/ai-api'
 import { todayStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
 import type {
@@ -296,11 +296,6 @@ export function useNutritionCoach(userId: string | null) {
     }): Promise<NutritionCoachInsight | null> => {
       if (!userId) return null
 
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (pb.authStore.token) {
-        headers['Authorization'] = `Bearer ${pb.authStore.token}`
-      }
-
       const meals = entries.map(e => ({
         mealType: e.mealType,
         foods: e.foods.map(f => f.name).join(', '),
@@ -309,10 +304,9 @@ export function useNutritionCoach(userId: string | null) {
         loggedAt: e.loggedAt,
       }))
 
-      const res = await fetch(`${AI_API_URL}/api/generate-weekly-insight`, {
+      const res = await aiApiFetch('/api/generate-weekly-insight', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ meals, goal, previous_week_score: previousWeekScore }),
+        json: { meals, goal, previous_week_score: previousWeekScore },
       })
 
       if (!res.ok) return null

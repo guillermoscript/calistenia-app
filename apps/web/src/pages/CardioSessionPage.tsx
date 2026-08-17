@@ -149,7 +149,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       {/* Header — hidden during tracking to save screen space */}
       {!isTracking && (
         <div className="mb-8">
-          <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO <span className="text-lime text-xs align-top">build-v3</span></h1>
+          <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
             {t('cardio.gpsTracking')}
           </p>

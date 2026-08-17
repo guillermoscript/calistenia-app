@@ -7,6 +7,22 @@
  * agrégala aquí también.
  */
 import { storage } from '../platform'
+import { LEGACY_CIRCUIT_UNSAVED_KEY } from './circuitSessionQueue'
+
+// Sesiones en curso / colas locales (#456). Declaradas aquí y no en los
+// contexts para que entrar al registro no dependa de recordar este archivo.
+/** Sesión de fuerza en curso — ActiveSessionContext (web y mobile). */
+export const STRENGTH_ACTIVE_KEY = 'calistenia_strength_active'
+/** Sesión de cardio en curso — CardioSessionContext (web y mobile). */
+export const CARDIO_ACTIVE_KEY = 'calistenia_cardio_active'
+/** Sesiones de cardio pendientes de subir — CardioSessionContext (web y mobile). */
+export const CARDIO_UNSAVED_KEY = 'calistenia_cardio_unsaved'
+/** Sesión de circuito en curso — CircuitSessionContext (web y mobile). */
+export const CIRCUIT_ACTIVE_KEY = 'calistenia_circuit_active'
+/** Cola de sesiones libres pendientes — ActiveSessionContext / FreeSessionPage (web). */
+export const FREE_SESSION_QUEUE_KEY = 'calistenia_free_session_queue'
+/** Días con chequeo lumbar hecho — LumbarCheckModal / SleepLumbarSection (web). */
+export const LUMBAR_CHECKS_KEY = 'calistenia_lumbar_checks'
 
 export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   // useProgress
@@ -45,6 +61,19 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   'calistenia_battle_invite_token',
   // React Query persister (caché serializado offline)
   'calistenia_rq_cache',
+  // Sesiones en curso y colas locales — sin esto, la sesión activa/no guardada
+  // del usuario anterior sobrevive al cambio de cuenta y las colas pendientes
+  // se suben con la cuenta nueva (#456).
+  STRENGTH_ACTIVE_KEY,
+  CARDIO_ACTIVE_KEY,
+  CARDIO_UNSAVED_KEY,
+  CIRCUIT_ACTIVE_KEY,
+  FREE_SESSION_QUEUE_KEY,
+  LUMBAR_CHECKS_KEY,
+  // Cola casera de circuitos anterior a #464: ya solo se lee para migrarla,
+  // pero una cola vieja del usuario saliente se migraría y subiría con la
+  // cuenta nueva si no se limpia aquí.
+  LEGACY_CIRCUIT_UNSAVED_KEY,
 ]
 
 /**

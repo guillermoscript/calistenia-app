@@ -7,6 +7,7 @@ import type { Exercise, Workout } from '@calistenia/core/types'
 import catalogData from '@calistenia/core/data/exercise-catalog.json'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
+import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 
 interface AIExercise {
   id: string
@@ -69,6 +70,15 @@ function buildCatalogMap(): Map<string, Exercise> {
   return map
 }
 
+/**
+ * Looks up an AI-generated exercise id in the local catalog map. The AI can
+ * return a slug variant that doesn't match the map's local id directly, so
+ * route it through the shared identity rule before falling back to the raw id.
+ */
+function lookupCatalogEntry(map: Map<string, Exercise>, aiId: string): Exercise | undefined {
+  return map.get(catalogExerciseIdentity({ id: aiId })) ?? map.get(aiId)
+}
+
 /** Parse JSON exercise blocks from AI markdown response */
 export function parseExercisesFromMarkdown(text: string): AIExercise[] {
   const jsonBlockRegex = /```json\s*([\s\S]*?)```/g
@@ -97,7 +107,7 @@ export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }
   const resolvedExercises = useMemo(() => {
     return exercises
       .map(aiEx => {
-        const catalogEx = catalogMap.get(aiEx.id)
+        const catalogEx = lookupCatalogEntry(catalogMap, aiEx.id)
         if (!catalogEx) return null
         return {
           ...catalogEx,
@@ -142,7 +152,7 @@ export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }
 
       <div className="px-2 py-2 max-h-[40vh] overflow-y-auto space-y-0.5">
         {exercises.map((aiEx, idx) => {
-          const resolved = catalogMap.get(aiEx.id)
+          const resolved = lookupCatalogEntry(catalogMap, aiEx.id)
           const name = resolved
             ? (typeof resolved.name === 'string' ? resolved.name : aiEx.id)
             : aiEx.id

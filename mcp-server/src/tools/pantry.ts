@@ -20,6 +20,7 @@ import { pantryItemsAddedPropsSchema } from "../views/pantry-items-added.schema.
 import { receiptScanResultPropsSchema } from "../views/receipt-scan-result.schema.js";
 import { pantryConsumptionMatchPropsSchema } from "../views/pantry-consumption-match.schema.js";
 import { pantryConsumedPropsSchema } from "../views/pantry-consumed.schema.js";
+import { getNutritionGoals } from "../api/repos/index.js";
 
 function mapPantryItems(records: Array<Record<string, unknown>>): PantrySnapshotItem[] {
   return records.slice(0, 200).map((r) => ({
@@ -64,10 +65,7 @@ interface PantryPlanInputs {
 async function loadPantryPlanInputs(pb: PocketBase, userId: string): Promise<PantryPlanInputs> {
   const [pantryRecords, goalsRecord, userRecord] = await Promise.all([
     getActivePantryItems(pb, userId),
-    pb
-      .collection("nutrition_goals")
-      .getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null })
-      .catch(() => null),
+    getNutritionGoals(pb, userId),
     pb.collection("users").getOne(userId, { requestKey: null }).catch(() => null),
   ]);
   return { pantryRecords, goals: mapGoals(goalsRecord), userRecord };

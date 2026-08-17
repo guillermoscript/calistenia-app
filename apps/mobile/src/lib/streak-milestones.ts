@@ -1,16 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { STREAK_MILESTONES, pickActiveMilestone } from '@calistenia/core/lib/streak-milestones'
 
-export const MILESTONES = [7, 14, 30, 60, 100] as const
+export const MILESTONES = STREAK_MILESTONES
 
 const storageKey = (userId: string) => `streak_milestones_${userId}`
 
 /** Highest milestone <= streak not yet shown; null if none. */
 export function getActiveMilestone(streak: number, shown: number[]): number | null {
-  return (
-    [...MILESTONES]
-      .reverse()
-      .find((m) => streak >= m && !shown.includes(m)) ?? null
-  )
+  return pickActiveMilestone(streak, (m) => shown.includes(m))
 }
 
 export async function getShownMilestones(userId: string): Promise<number[]> {

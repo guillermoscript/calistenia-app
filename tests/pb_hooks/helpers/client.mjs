@@ -187,10 +187,15 @@ export async function resetPushes() {
   await fetch(`${MOCK_URL}/_reset`, { method: "POST" })
 }
 
-/** Pushes a /api/send-push para un user concreto. */
+/**
+ * Pushes a /api/send-push para un user concreto. Cubre las dos formas del
+ * payload: `user_id` (envío individual) y `user_ids` (fan-out en lote, #481).
+ */
 export async function pushesFor(userId) {
   const all = await pushes()
-  return all.filter((p) => p.path === "/api/send-push" && p.body && p.body.user_id === userId)
+  return all.filter((p) =>
+    p.path === "/api/send-push" && p.body &&
+    (p.body.user_id === userId || (Array.isArray(p.body.user_ids) && p.body.user_ids.includes(userId))))
 }
 
 export async function waitForPush(pred, msg) {

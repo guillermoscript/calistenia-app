@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import { formatCountdown } from '@calistenia/core/lib/countdown'
 
 // ── Types for the PB record ────────────────────────────────────────────────
 
@@ -39,12 +40,6 @@ interface CircuitSessionRecord {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-function formatDuration(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60)
-  const s = totalSeconds % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
 
 function formatDate(isoStr: string, language: string): string {
   const d = new Date(isoStr)
@@ -170,7 +165,7 @@ export default function CircuitSessionDetailPage() {
         />
         <StatCard
           label={t('session.duration')}
-          value={formatDuration(session.duration_seconds)}
+          value={formatCountdown(session.duration_seconds, { padMinutes: true })}
         />
         <StatCard
           label={t('circuit.totalExercises', { count: exercises.length })}

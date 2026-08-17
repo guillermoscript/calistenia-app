@@ -5,7 +5,7 @@
  *
  * Ruta: /session-detail?date=YYYY-MM-DD&workoutKey=p1_lun&title=...
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { View, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -14,12 +14,13 @@ import type { TFunction } from 'i18next'
 import { ArrowLeft } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
-import { CATALOG } from '@/lib/catalog'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { useSessionDetail } from '@calistenia/core/hooks/useSessionDetail'
-import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { useExerciseCatalog } from '@calistenia/core/hooks/useExerciseCatalog'
+import { useSessionHrMetrics } from '@calistenia/core/hooks/useSessionHrMetrics'
+import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
@@ -27,24 +28,6 @@ import WorkoutShareButton from '@/components/share/WorkoutShareButton'
 import SessionDetailBody from '@/components/session/SessionDetailBody'
 
 const MUTED = 'hsl(0 0% 55%)'
-
-// ── Catálogo de ejercicios (nombre + músculos) ───────────────────────────────
-// CATALOG cubre la biblioteca completa (incluye ejercicios de sesiones libres);
-// WORKOUTS añade cualquier ejercicio que sólo viva en un programa.
-function buildExerciseCatalog(): Record<string, { name: TranslatableField; muscles: TranslatableField }> {
-  const catalog: Record<string, { name: TranslatableField; muscles: TranslatableField }> = {}
-  for (const ex of CATALOG) {
-    if (!catalog[ex.id]) catalog[ex.id] = { name: ex.name, muscles: ex.muscles }
-  }
-  Object.values(WORKOUTS).forEach(workout => {
-    workout.exercises.forEach(ex => {
-      if (!catalog[ex.id]) catalog[ex.id] = { name: ex.name, muscles: ex.muscles }
-    })
-  })
-  return catalog
-}
-
-const STATIC_CATALOG = buildExerciseCatalog()
 
 function formatSessionDate(dateStr: string, locale: string): string {
   try {
@@ -88,36 +71,13 @@ export default function SessionDetailScreen() {
     return out
   }, [workoutKey, getWorkout])
 
-  // Las sesiones libres pueden incluir ejercicios que sólo viven en PB (custom).
-  // Enriquece el catálogo una vez si algún nombre no se resolvió contra el
-  // catálogo empaquetado. Espejo de la web SessionDetailPage; sin coste de red
-  // en el caso normal (programa/biblioteca estándar).
-  const [catalog, setCatalog] = useState(STATIC_CATALOG)
+  // Catálogo de ejercicios (bundle + `exercises_catalog` de PB) desde core
+  // (#473): las sesiones libres pueden incluir ejercicios que sólo viven en PB.
+  const catalog = useExerciseCatalog()
   // Nombres del programa tienen prioridad sobre el catálogo estático/PB para las
   // claves de slot que sólo el programa conoce.
   const mergedCatalog = useMemo(() => ({ ...catalog, ...programCatalog }), [catalog, programCatalog])
   const { session, exercises } = useSessionDetail(progress, date, workoutKey, mergedCatalog)
-  const enrichedRef = useRef(false)
-  useEffect(() => {
-    if (enrichedRef.current) return
-    if (!exercises.some(e => typeof e.name === 'string' && e.name === e.exerciseId)) return
-    enrichedRef.current = true
-    let cancelled = false
-    void (async () => {
-      try {
-        if (!(await isPocketBaseAvailable())) return
-        const res = await pb.collection('exercises_catalog').getList(1, 200, { $autoCancel: false })
-        if (cancelled) return
-        const items = res.items as unknown as { id: string; name?: TranslatableField; muscles?: TranslatableField }[]
-        const merged = { ...STATIC_CATALOG }
-        items.forEach(it => {
-          if (!merged[it.id]) merged[it.id] = { name: it.name ?? it.id, muscles: it.muscles ?? '' }
-        })
-        setCatalog(merged)
-      } catch { /* mantiene el catálogo empaquetado */ }
-    })()
-    return () => { cancelled = true }
-  }, [exercises])
 
   const totalSets = useMemo(
     () => exercises.reduce((sum, ex) => sum + ex.sets.length, 0),
@@ -125,28 +85,9 @@ export default function SessionDetailScreen() {
   )
 
   // FC/calorías reales del reloj (Health Connect) para esta sesión. Viven en el
-  // record PB `sessions` (no en el ProgressMap en memoria) → fetch aislado.
-  const [hrMetrics, setHrMetrics] = useState<{ hr_avg?: number; hr_max?: number; calories_actual?: number } | null>(null)
-  useEffect(() => {
-    if (!date || !workoutKey || !me?.id) return
-    let cancelled = false
-    void (async () => {
-      try {
-        if (!(await isPocketBaseAvailable())) return
-        const rec = await pb.collection('sessions').getFirstListItem(
-          pb.filter('user = {:u} && workout_key = {:w} && completed_at >= {:d1} && completed_at <= {:d2}', {
-            u: me.id, w: workoutKey, d1: `${date} 00:00:00`, d2: `${date} 23:59:59`,
-          }),
-          { $autoCancel: false, fields: 'hr_avg,hr_max,calories_actual' },
-        )
-        if (cancelled) return
-        if (rec && (rec.hr_avg || rec.calories_actual)) {
-          setHrMetrics({ hr_avg: rec.hr_avg, hr_max: rec.hr_max, calories_actual: rec.calories_actual })
-        }
-      } catch { /* sesión sin métricas de reloj */ }
-    })()
-    return () => { cancelled = true }
-  }, [date, workoutKey, me?.id])
+  // record PB `sessions` (no en el ProgressMap en memoria) → consulta aparte en
+  // core (#473).
+  const hrMetrics = useSessionHrMetrics(date ?? null, workoutKey ?? null, me?.id ?? null)
 
   // Título: el que computó la pantalla de origen (programa activo) → WORKOUTS por
   // defecto → versión humanizada. Evita mostrar la clave cruda "p1_lun".

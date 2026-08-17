@@ -3,17 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
-import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
-import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from '@calistenia/core/lib/session-key'
+import { usePublicProfile } from '@calistenia/core/hooks/usePublicProfile'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { useReports } from '@calistenia/core/hooks/useReports'
@@ -24,28 +23,6 @@ import { shareProfile, shareReferralInvite } from '../lib/share'
 import { useReferrals } from '@calistenia/core/hooks/useReferrals'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { ShareMethod } from '../lib/share'
-
-interface ProfileData {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-  email: string
-  memberSince: string
-  // From user_stats
-  totalSessions: number
-  bestStreak: number
-  currentStreak: number
-  level: number
-  xp: number
-  // From settings
-  phase: number
-  prs: Record<string, number>
-  // Activity
-  monthActivity: Record<string, boolean>
-  recentSessions: { id: string; workoutKey: string; workoutTitle: string; phase: number; completedAt: string; note: string }[]
-  // Active program
-  activeProgram: { name: string; id: string } | null
-}
 
 const PR_DEFS = [
   { key: 'pr_pullups',   label: 'Pull-ups',        unit: 'reps', goal: 20, accent: 'text-sky-500' },
@@ -66,8 +43,10 @@ export default function UserProfilePage() {
   const currentUserSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
-  const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
+  // El perfil público lo sirve core (#473): mismas cinco consultas, en una sola
+  // ola y con caché. Devuelve los textos crudos, así que aquí se localizan al
+  // pintar en vez de dentro del efecto.
+  const { profile, loading } = usePublicProfile(userId ?? null)
   const [comparing, setComparing] = useState(false)
   const isOwnProfile = currentUserId === userId
   const { isFollowing, follow, unfollow, followingCount, followersCount } = useFollows(currentUserId || null)
@@ -83,126 +62,6 @@ export default function UserProfilePage() {
   // Compare: fetch extended stats for both the viewed user and the current user
   const { stats: otherCompareStats, loading: otherCompareLoading, load: loadOtherCompare } = useProfileCompare()
   const { stats: myCompareStats, loading: myCompareLoading, load: loadMyCompare } = useProfileCompare()
-
-  useEffect(() => {
-    if (!userId) return
-    const load = async () => {
-      setLoading(true)
-      try {
-        // Fetch user
-        const user = await pb.collection('users').getOne(userId, { $autoCancel: false })
-
-        // Fetch user_stats
-        let stats: any = {}
-        try {
-          stats = await pb.collection('public_user_stats').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: userId }),
-            { $autoCancel: false }
-          )
-        } catch { /* no stats yet */ }
-
-        // Fetch settings
-        let settings: any = {}
-        try {
-          const settingsRes = await pb.collection('public_prs').getList(1, 1, {
-            filter: pb.filter('user = {:uid}', { uid: userId }),
-            $autoCancel: false,
-          })
-          if (settingsRes.items.length > 0) settings = settingsRes.items[0]
-        } catch { /* no settings yet */ }
-
-        // Fetch recent sessions for activity calendar
-        const today = todayStr()
-        const yearMonth = today.slice(0, 7) // "YYYY-MM"
-        const monthActivity: Record<string, boolean> = {}
-        // Fill all days of the month
-        const daysInMonth = new Date(parseInt(yearMonth.slice(0, 4)), parseInt(yearMonth.slice(5, 7)), 0).getDate()
-        for (let d = 1; d <= daysInMonth; d++) {
-          const date = `${yearMonth}-${String(d).padStart(2, '0')}`
-          monthActivity[date] = false
-        }
-
-        let recentSessions: ProfileData['recentSessions'] = []
-        try {
-          const sessions = await pb.collection('public_sessions').getList(1, 100, {
-            filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
-              uid: userId,
-              start: localMidnightAsUTC(`${yearMonth}-01`),
-            }),
-            sort: '-completed_at',
-            $autoCancel: false,
-          })
-          for (const s of sessions.items) {
-            const date = utcToLocalDateStr(s.completed_at)
-            if (date && monthActivity.hasOwnProperty(date)) {
-              monthActivity[date] = true
-            }
-          }
-          recentSessions = sessions.items
-            .filter((s: any) => s.completed_at || s.created)
-            .sort((a: any, b: any) => new Date(b.completed_at || b.created).getTime() - new Date(a.completed_at || a.created).getTime())
-            .slice(0, 10)
-            .map((s: any) => {
-              const workout = WORKOUTS[s.workout_key]
-              // Sesiones libres (#376): etiqueta genérica en vez de la clave
-              // cruda, y sin fase que enseñar.
-              const { isFree } = sessionKeyParts(s.workout_key || '')
-              const rawTitle = workout?.title || sessionKeyLabel(s.workout_key || '') || 'Sesión'
-              return {
-                id: s.id,
-                workoutKey: s.workout_key,
-                workoutTitle: typeof rawTitle === 'string' ? rawTitle : l(rawTitle),
-                phase: isFree ? NO_PHASE : (s.phase ?? 1),
-                completedAt: s.completed_at || s.created,
-                note: typeof s.note === 'string' ? s.note : l(s.note) || '',
-              }
-            })
-        } catch { /* no sessions collection or access */ }
-
-        // Fetch active program
-        let activeProgram: { name: string; id: string } | null = null
-        try {
-          const upRes = await pb.collection('user_programs').getFirstListItem(
-            pb.filter('user = {:uid} && is_current = true', { uid: userId }),
-            { expand: 'program', $autoCancel: false }
-          )
-          if (upRes.expand?.program) {
-            const progName = l((upRes.expand.program as any).name)
-            activeProgram = { name: typeof progName === 'string' ? progName : String(progName), id: (upRes.expand.program as any).id }
-          }
-        } catch { /* no active program */ }
-
-        setProfile({
-          id: user.id,
-          displayName: user.display_name || user.email?.split('@')[0] || '',
-          avatarUrl: getUserAvatarUrl(user as any, '200x200'),
-          email: user.email,
-          memberSince: user.created ? utcToLocalDateStr(user.created) : '',
-          totalSessions: stats.total_sessions || 0,
-          bestStreak: stats.workout_streak_best || 0,
-          currentStreak: stats.workout_streak_current || 0,
-          level: stats.level || 1,
-          xp: stats.xp || 0,
-          phase: settings.phase || 1,
-          prs: {
-            pr_pullups: settings.pr_pullups || 0,
-            pr_pushups: settings.pr_pushups || 0,
-            pr_lsit: settings.pr_lsit || 0,
-            pr_pistol: settings.pr_pistol || 0,
-            pr_handstand: settings.pr_handstand || 0,
-          },
-          monthActivity,
-          recentSessions,
-          activeProgram,
-        })
-      } catch (e) {
-        console.error('UserProfilePage: load error', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [userId, l])
 
   // Load extended compare stats when user toggles compare mode
   useEffect(() => {
@@ -423,7 +282,7 @@ export default function UserProfilePage() {
             <div className="text-[10px] text-muted-foreground tracking-widest mb-2 uppercase">Programa actual</div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium">{profile.activeProgram.name}</div>
+                <div className="text-sm font-medium">{l(profile.activeProgram.name)}</div>
                 <div className="text-xs text-muted-foreground">Fase {profile.phase}</div>
               </div>
               <Button
@@ -545,6 +404,10 @@ export default function UserProfilePage() {
               const phaseColor = PHASE_COLORS[session.phase]
               const dateObj = new Date(session.completedAt.replace(' ', 'T'))
               const formattedDate = dateObj.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })
+              // El hook devuelve título y nota crudos: se localizan aquí, y la
+              // nota se comprueba ya localizada (un `{"es":""}` sería truthy).
+              const workoutTitle = l(session.workoutTitle)
+              const note = l(session.note)
               return (
                 <button
                   key={session.id}
@@ -556,7 +419,7 @@ export default function UserProfilePage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{session.workoutTitle}</div>
+                      <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{workoutTitle}</div>
                       <div className="flex items-center gap-2 mt-0.5">
                         {session.phase > 0 && (
                           <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">Fase {session.phase}</span>
@@ -566,8 +429,8 @@ export default function UserProfilePage() {
                     </div>
                     <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
                   </div>
-                  {session.note && (
-                    <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{session.note}"</div>
+                  {note && (
+                    <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{note}"</div>
                   )}
                 </button>
               )

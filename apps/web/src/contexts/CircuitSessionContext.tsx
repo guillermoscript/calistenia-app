@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
 import type { CircuitDefinition } from '@calistenia/core/types'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { CIRCUIT_ACTIVE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
 import { op } from '@calistenia/core/lib/analytics'
 import { persistOrQueue, processQueue, newClientId } from '@calistenia/core/lib/offlineQueue'
 import {
@@ -54,7 +55,6 @@ interface CircuitSessionContextType {
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'calistenia_circuit_active'
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 const INITIAL_PROGRESS: CircuitProgress = {

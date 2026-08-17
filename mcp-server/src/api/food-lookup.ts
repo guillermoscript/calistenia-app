@@ -5,6 +5,7 @@ import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.
 import { getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
 import { sanitizeFoodTexts } from "./text-sanitizer.js";
+import { sumStepsUsage } from "./structured-generation.js";
 
 interface FoodLookupInput {
   foodName: string;
@@ -91,18 +92,7 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
     ],
   });
 
-  const totalUsage = steps.reduce(
-    (acc, step) => ({
-      promptTokens: acc.promptTokens + (step.usage?.inputTokens ?? 0),
-      completionTokens: acc.completionTokens + (step.usage?.outputTokens ?? 0),
-    }),
-    { promptTokens: 0, completionTokens: 0 }
-  );
-
-  const toolCallCount = steps.reduce(
-    (acc, step) => acc + (step.toolCalls?.length ?? 0),
-    0
-  );
+  const { usage, toolCalls: toolCallCount } = sumStepsUsage(steps);
 
   // #336: mismo FoodItemSchema + web_search que meal-analyzer → misma fuga de citas
   if (output) {
@@ -114,10 +104,6 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
     model_used: modelName,
     agent_steps: steps.length,
     tool_calls: toolCallCount,
-    usage: {
-      prompt_tokens: totalUsage.promptTokens,
-      completion_tokens: totalUsage.completionTokens,
-      total_tokens: totalUsage.promptTokens + totalUsage.completionTokens,
-    },
+    usage,
   };
 }

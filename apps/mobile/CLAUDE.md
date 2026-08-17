@@ -69,7 +69,7 @@ Instalar deps: `pnpm install` desde la raíz del repo.
 ## Módulos críticos y peligros conocidos
 
 - `components/SessionView.tsx` — timer + UI de la sesión + audio/haptics +
-  compartir. La lógica pura de pasos/fases vive en `lib/session-machine.ts`
+  compartir. La lógica pura de pasos/fases vive en `packages/core/lib/session-machine.ts`
   (testeada); `RestScreen`/`ExerciseTimer` en `components/session/`. Cambios
   aquí son delicados; toca lo mínimo.
   Desde el #402 esos dos son solo la **composición** de la sesión: la cuenta
@@ -103,7 +103,7 @@ Instalar deps: `pnpm install` desde la raíz del repo.
   config de vitest, NO hay `@testing-library/react-native`, NO hay jest-expo.
 - **No se pueden renderizar componentes ni contexts de React** en los tests.
 - La única estrategia válida es **extraer funciones puras y testearlas**.
-  Ejemplares: `src/lib/__tests__/session-machine.test.ts` y
+  Ejemplares: `packages/core/lib/session-machine.test.ts` y
   `live-activity-state.test.ts` importan funciones puras y asercian sobre su
   retorno.
 - Tests de core viven en `packages/core/lib/*.test.ts`. Core **no tiene script

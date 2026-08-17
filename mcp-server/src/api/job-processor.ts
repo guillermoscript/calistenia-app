@@ -11,7 +11,7 @@ import { generateDailyMealPlan, generateWeeklyMealPlan } from "./meal-plan-gener
 import { generatePantryPlan } from "./pantry-plan-generator.js";
 import { sendPushToUser } from "./push-sender.js";
 import { getAdminPB } from "./admin-pb.js";
-import type { Tier } from "./model-resolver.js";
+import { resolveTier, type Tier } from "./model-resolver.js";
 
 // Re-export for any existing consumers
 export { getAdminPB } from "./admin-pb.js";
@@ -52,7 +52,7 @@ export async function processJob(jobId: string): Promise<void> {
   await pb.collection("ai_jobs").update(jobId, { status: "processing" });
 
   const input = typeof job.input === "string" ? JSON.parse(job.input) : job.input;
-  const tier: Tier = input.tier === "pro" || input.tier === "premium" ? "pro" : "free";
+  const tier: Tier = resolveTier(input);
 
   let result: any;
   let notifTitle: string;

@@ -19,6 +19,7 @@ import {
   getShownMilestones,
   markMilestoneShown,
 } from '@/lib/streak-milestones'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
 export interface StreakMilestoneProps {
   streak: number
@@ -97,7 +98,7 @@ export default function StreakMilestone({
           streak_days: milestone,
         })
       } else {
-        await shareText({ message, url: 'https://gym.guille.tech' })
+        await shareText({ message, url: WEB_BASE_URL })
       }
     } catch {
       // User cancelled the share sheet or capture failed — no-op.

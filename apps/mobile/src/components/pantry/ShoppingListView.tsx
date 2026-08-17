@@ -28,17 +28,12 @@ import {
 } from '@calistenia/core/lib/shopping'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import type { ShoppingListItem, ShoppingReason } from '@calistenia/core/types'
+import { parseLocaleNumber } from '@calistenia/core/lib/money'
 
 const REASON_CLS: Record<ShoppingReason, string> = {
   plan: 'border-border text-muted-foreground',
   se_acabo: 'border-amber-500/40 text-amber-500',
   vence: 'border-red-500/40 text-red-500',
-}
-
-function parseNum(s: string): number | null {
-  if (s.trim() === '') return null // blur sin escribir ≠ precio $0
-  const n = Number(s.replace(',', '.'))
-  return Number.isFinite(n) && n >= 0 ? n : null
 }
 
 export function ShoppingListView({ userId }: { userId: string | null }) {
@@ -102,7 +97,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
 
   const onPriceCommit = (index: number) => {
     if (!list) return
-    const price = parseNum(priceDrafts[index] ?? '')
+    // min: 0 — blur sin escribir ≠ precio $0, y un precio negativo tampoco vale
+    const price = parseLocaleNumber(priceDrafts[index] ?? '', { min: 0 })
     toggle.mutate({ listId: list.id, index, checked: true, actualPrice: price })
   }
 

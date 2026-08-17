@@ -1,6 +1,6 @@
 import { streamText, tool, isStepCount, convertToModelMessages } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
+import { resolveModel, resolveTier, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
 import config from "./config.js";
@@ -248,7 +248,7 @@ export async function handleGenerateFreeSession(req: any, res: any) {
     return res.status(400).json({ error: "Se requiere al menos un mensaje" });
   }
 
-  const tier: Tier = req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+  const tier: Tier = resolveTier(req.user);
   const { model, name: modelName } = resolveModel(tier);
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("free-session-generator");
 
@@ -290,7 +290,7 @@ export async function runFreeSession(
   userContext: any,
   user: any
 ): Promise<Response> {
-  const tier: Tier = user?.tier === "pro" || user?.tier === "premium" ? "pro" : "free";
+  const tier: Tier = resolveTier(user);
   const { model, name: modelName } = resolveModel(tier);
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("free-session-generator");
 

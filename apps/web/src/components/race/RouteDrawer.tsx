@@ -286,10 +286,12 @@ export default function RouteDrawer({ points, onChange, height = '250px', classN
           </button>
         </div>
       )}
-      {/* Debug panel — can remove later */}
-      <div className="rounded bg-red-500/10 border border-red-500/30 px-2 py-1 text-[9px] font-mono text-red-300 break-words">
-        [v2] {debug}
-      </div>
+      {/* GPS debug panel — dev builds only */}
+      {import.meta.env.DEV && (
+        <div className="rounded bg-red-500/10 border border-red-500/30 px-2 py-1 text-[9px] font-mono text-red-300 break-words">
+          {debug}
+        </div>
+      )}
       <div className={cn('relative rounded-xl overflow-hidden', className)} style={{ height }}>
       <div ref={containerRef} className="h-full w-full" />
 

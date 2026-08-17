@@ -7,8 +7,8 @@ import { cn } from '../../lib/utils'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { shareContent } from '../../lib/share'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
-const BASE_URL = 'https://gym.guille.tech'
 
 interface ChallengeExpressFormProps {
   referralCode: string | null
@@ -68,7 +68,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
     setSubmitting(false)
 
     if (challengeId && referralCode) {
-      const inviteUrl = `${BASE_URL}/invite/${referralCode}/challenge/${challengeId}`
+      const inviteUrl = `${WEB_BASE_URL}/invite/${referralCode}/challenge/${challengeId}`
       await shareContent({
         title: t('share.challengeInviteTitle'),
         text: t('share.challengeInviteText'),

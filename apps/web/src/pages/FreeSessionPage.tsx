@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { FREE_SESSION_QUEUE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
 import catalogData from '@calistenia/core/data/exercise-catalog.json'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
+import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
@@ -63,8 +65,6 @@ const CAT_TEXT: Record<string, string> = {
   core: 'text-amber-400', lumbar: 'text-red-500', full: 'text-amber-400',
   movilidad: 'text-emerald-400', skill: 'text-violet-400',
 }
-
-const STORAGE_KEY = 'calistenia_free_session_queue'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -150,7 +150,7 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
 
 function mapPBRecord(rec: any): CatalogExercise {
   return {
-    id: rec.id ?? '', name: rec.name ?? '', muscles: rec.muscles ?? '',
+    id: catalogExerciseIdentity(rec), name: rec.name ?? '', muscles: rec.muscles ?? '',
     category: rec.category || 'full', priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3, reps: rec.default_reps || '8-12',
     rest: rec.default_rest ?? 90, note: rec.note || (rec.description ?? ''),

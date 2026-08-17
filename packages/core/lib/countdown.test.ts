@@ -47,6 +47,20 @@ describe('formatCountdown', () => {
   it('trata lo negativo como cero', () => {
     expect(formatCountdown(-3)).toBe('0:00')
   })
+
+  it('con padMinutes rellena los minutos a dos dígitos (resúmenes en tabla)', () => {
+    expect(formatCountdown(90, { padMinutes: true })).toBe('01:30')
+    expect(formatCountdown(5, { padMinutes: true })).toBe('00:05')
+  })
+
+  it('padMinutes no recorta los minutos de tres dígitos', () => {
+    expect(formatCountdown(6000, { padMinutes: true })).toBe('100:00')
+  })
+
+  it('los segundos van rellenos con o sin padMinutes', () => {
+    expect(formatCountdown(61)).toBe('1:01')
+    expect(formatCountdown(61, { padMinutes: true })).toBe('01:01')
+  })
 })
 
 describe('countdownCues', () => {

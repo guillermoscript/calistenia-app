@@ -21,6 +21,7 @@ import { ReferralErrorState } from '../components/referrals/ReferralErrorState'
 import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
 import { Copy, Check, Share2 } from 'lucide-react'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
 interface ReferralsPageProps {
   userId: string
@@ -178,7 +179,7 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
 function ReferralLinkCard({ referralCode }: { referralCode: string }) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
-  const inviteUrl = `https://gym.guille.tech/invite/${referralCode}`
+  const inviteUrl = `${WEB_BASE_URL}/invite/${referralCode}`
 
   const copyLink = useCallback(async () => {
     try {

@@ -22,6 +22,7 @@ import {
   getWorkout as fallbackGetWorkout,
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
+import { fetchProgramDetailRows } from '../lib/programDetailQuery'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
@@ -208,27 +209,27 @@ async function fetchCatalog(): Promise<ProgramMeta[]> {
   }))
 }
 
-interface ProgramDetail {
+export interface ProgramDetail {
   phases: Phase[]
   weekDays: WeekDay[]
   workoutsMap: WorkoutsMap
   cardioDayConfigs: Record<string, CardioDayConfig>
 }
 
-/** phases + exercises + day config del programa → estructuras derivadas. */
-async function fetchProgramDetail(programId: string): Promise<ProgramDetail> {
-  const filter = pb.filter('program = {:pid}', { pid: programId })
-  const [phasesRes, exercisesRes, dayConfigRes] = await Promise.all([
-    pb.collection('program_phases').getList(1, 20, { filter, sort: 'sort_order', $autoCancel: false }),
-    pb.collection('program_exercises').getList(1, 2000, { filter, sort: 'phase_number,sort_order', $autoCancel: false }),
-    pb.collection('program_day_config').getList(1, 200, { filter, sort: 'phase_number,sort_order', $autoCancel: false })
-      .catch((e: any) => { if (e?.status !== 404) console.warn('usePrograms: day config fetch failed', e); return { items: [] } }),
-  ])
+/**
+ * phases + exercises + day config del programa → estructuras derivadas.
+ *
+ * Exportada (#474): `ProgramDetailPage` tenía su propia copia de esta consulta,
+ * idéntica salvo en la forma de la salida. La consulta vive ahora en
+ * `lib/programDetailQuery.ts` y la comparten las dos.
+ */
+export async function fetchProgramDetail(programId: string): Promise<ProgramDetail> {
+  const { phases, exercises, dayConfigs } = await fetchProgramDetailRows(programId)
   return {
-    phases: buildPhases(phasesRes.items),
-    weekDays: buildWeekDays(exercisesRes.items, dayConfigRes.items),
-    workoutsMap: buildWorkoutsMap(exercisesRes.items),
-    cardioDayConfigs: buildCardioDayConfigs(dayConfigRes.items),
+    phases: buildPhases(phases),
+    weekDays: buildWeekDays(exercises, dayConfigs),
+    workoutsMap: buildWorkoutsMap(exercises),
+    cardioDayConfigs: buildCardioDayConfigs(dayConfigs),
   }
 }
 

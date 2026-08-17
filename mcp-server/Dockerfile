@@ -7,6 +7,19 @@ COPY packages/core/ ./packages/core/
 WORKDIR /app/mcp-server
 RUN npm ci
 
+# `@calistenia/core` entra como `file:../packages/core`: npm lo enlaza con un
+# symlink pero NO instala sus dependencias, y Node resuelve por la ruta REAL —
+# un `import 'dayjs'` dentro de packages/core/lib/*.ts busca en
+# packages/core/node_modules, que aquí no existe (lo crea el `pnpm install` de
+# la raíz del monorepo, que esta imagen no ejecuta). Sin esto, `npm run build`
+# muere al evaluar la entrada (#517).
+#
+# Sólo hace falta en el builder: el bundle inlinea el código de core y deja los
+# paquetes de terceros como imports externos ("dayjs"), que en runtime se
+# resuelven contra mcp-server/node_modules. Por eso todo lo que core necesite
+# en runtime debe estar declarado en mcp-server/package.json igualmente.
+RUN ln -s ../../mcp-server/node_modules ../packages/core/node_modules
+
 COPY mcp-server/tsconfig.json ./
 COPY mcp-server/src/ ./src/
 COPY mcp-server/views/ ./views/

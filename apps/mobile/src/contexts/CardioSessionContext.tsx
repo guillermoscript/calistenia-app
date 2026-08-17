@@ -1,15 +1,18 @@
 /**
- * Port del CardioSessionContext de apps/web a React Native.
- * Cambios respecto a la web:
- *  - navigator.geolocation.watchPosition → cardio-tracker (expo-location + FGS Android)
+ * Hub de la sesión de cardio nativa. Port del de apps/web; los hooks de
+ * `hooks/cardio/` llevan el mismo nombre y la misma firma en las dos apps, y
+ * sólo cambia el sustrato de plataforma:
+ *  - navigator.geolocation.watchPosition → cardio-tracker (expo-location + FGS)
  *  - localStorage → syncStorage (caché síncrona sobre AsyncStorage)
  *  - wake lock → expo-keep-awake
  *  - visibilitychange → AppState
- * La lógica de filtrado (accuracy, jitter, gaps, Kalman) es idéntica a la web.
+ * La lógica de filtrado (accuracy, jitter, gaps, Kalman) es la de core.
  */
-import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode, type MutableRefObject } from 'react'
+import {
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  type ReactNode, type MutableRefObject,
+} from 'react'
 import { AppState } from 'react-native'
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import i18n from 'i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -17,26 +20,23 @@ import { qk } from '@calistenia/core/lib/query-keys'
 import {
   calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
-  type KalmanState,
 } from '@calistenia/core/lib/geo'
-import { processCardioFix, type CardioFixState } from '@calistenia/core/lib/cardio-fix'
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
-import { syncStorage } from '@/lib/storage'
-import { onOnline } from '@/lib/connectivity'
 import { haptics } from '@/lib/haptics'
-import {
-  setCardioFixListener, startCardioTracking, stopCardioTracking,
-  requestCardioPermission, type CardioFix,
-} from '@/lib/cardio-tracker'
 import {
   startCardioLive, updateCardioLive, pauseCardioLive, resumeCardioLive,
   endCardioLive, setCardioLiveActionHandler,
 } from '@/lib/cardio-live'
 import { syncCardioWidget } from '@/lib/sync-cardio-widget'
-import { Sentry } from '@/lib/instrument'
+import { useKeepAwakeWhile } from '@/hooks/useKeepAwakeWhile'
+import { useCardioMetrics } from '@/hooks/cardio/useCardioMetrics'
+import { useCardioPersistence, type PersistedCardioSession } from '@/hooks/cardio/useCardioPersistence'
+import { useCardioTimer } from '@/hooks/cardio/useCardioTimer'
+import { useCardioTracking } from '@/hooks/cardio/useCardioTracking'
+import { useUnsavedCardioQueue } from '@/hooks/cardio/useUnsavedCardioQueue'
 
 const KEEP_AWAKE_TAG = 'cardio-session'
 
@@ -74,77 +74,6 @@ interface CardioSessionContextValue {
 
 const CardioSessionContext = createContext<CardioSessionContextValue | null>(null)
 
-// ── Snapshot persistido (restaurar sesión tras matar la app) ────────────────
-
-const STORAGE_KEY = 'calistenia_cardio_active'
-const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000
-
-interface PersistedSession {
-  state: 'tracking' | 'paused'
-  activityType: CardioActivityType
-  startTime: number
-  pausedDuration: number
-  pauseStart: number | null
-  points: GpsPoint[]
-  distance: number
-  lastSplitKm: number
-  lastSplitTime: number
-  maxSpeed: number
-  programId: string | null
-  programDayKey: string | null
-}
-
-function saveToStorage(data: PersistedSession) {
-  try {
-    syncStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  } catch { /* ignore */ }
-}
-
-function loadFromStorage(): PersistedSession | null {
-  try {
-    const raw = syncStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const data: PersistedSession = JSON.parse(raw)
-    if (Date.now() - data.startTime > MAX_SESSION_AGE_MS) {
-      syncStorage.removeItem(STORAGE_KEY)
-      return null
-    }
-    return data
-  } catch {
-    syncStorage.removeItem(STORAGE_KEY)
-    return null
-  }
-}
-
-function clearStorage() {
-  syncStorage.removeItem(STORAGE_KEY)
-}
-
-// ── Cola de sesiones sin guardar (reintento si PB falla) ────────────────────
-
-const UNSAVED_KEY = 'calistenia_cardio_unsaved'
-const MAX_UNSAVED = 5
-
-function loadUnsaved(): Record<string, unknown>[] {
-  try {
-    const raw = syncStorage.getItem(UNSAVED_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function pushUnsaved(session: Record<string, unknown>) {
-  try {
-    const queue = loadUnsaved()
-    queue.push(session)
-    while (queue.length > MAX_UNSAVED) queue.shift()
-    syncStorage.setItem(UNSAVED_KEY, JSON.stringify(queue))
-  } catch { /* ignore */ }
-}
-
-function clearUnsaved() {
-  syncStorage.removeItem(UNSAVED_KEY)
-}
-
 // ── Provider ─────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -155,174 +84,130 @@ interface Props {
 
 export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const queryClient = useQueryClient()
+
   const [state, setState] = useState<SessionState>('idle')
   const [activityType, setActivityType] = useState<CardioActivityType>('running')
-  const [distance, setDistance] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [currentPace, setCurrentPace] = useState(0)
-  const [currentSpeed, setCurrentSpeed] = useState(0)
-  const [currentSplit, setCurrentSplit] = useState<{ km: number; elapsed: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [pointsCount, setPointsCount] = useState(0)
   const [note, setNote] = useState('')
-  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
   const [programId, setProgramId] = useState<string | null>(null)
-  const [unsavedCount, setUnsavedCount] = useState(0)
-
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const startTimeRef = useRef<number>(0)
-  const pausedDurationRef = useRef<number>(0)
-  const pauseStartRef = useRef<number>(0)
-  const lastSplitKmRef = useRef<number>(0)
-  const lastSplitTimeRef = useRef<number>(0)
-  const maxSpeedRef = useRef<number>(0)
-  const pointsRef = useRef<GpsPoint[]>([])
-  const distanceRef = useRef<number>(0)
-  const restoredRef = useRef(false)
-  const stateRef = useRef<SessionState>('idle')
-  const activityTypeRef = useRef<CardioActivityType>('running')
-  const lastGpsTimestampRef = useRef<number>(0)
-  const lastGpsRestartRef = useRef<number>(0)
-  const kalmanRef = useRef<KalmanState | null>(null)
-  const programIdRef = useRef<string | null>(null)
-  const programDayKeyRef = useRef<string | null>(null)
-  // programDayKey expuesto como estado para la UI, ref para snapshots
   const [programDayKey, setProgramDayKey] = useState<string | null>(null)
 
-  // ── Snapshot periódico ───────────────────────────────────────────────────
+  // Espejo en refs de lo que leen los callbacks de larga vida (el listener de
+  // fixes del FGS y el intervalo del cronómetro): allí un valor capturado por
+  // closure llega obsoleto.
+  const stateRef = useRef<SessionState>('idle')
+  const activityTypeRef = useRef<CardioActivityType>('running')
+  const startTimeRef = useRef(0)
+  const pausedDurationRef = useRef(0)
+  const pauseStartRef = useRef(0)
+  const programIdRef = useRef<string | null>(null)
+  const programDayKeyRef = useRef<string | null>(null)
+  const restoredRef = useRef(false)
 
-  const persistSnapshot = useCallback(() => {
+  const setSessionState = useCallback((next: SessionState) => {
+    stateRef.current = next
+    setState(next)
+  }, [])
+
+  const isTracking = useCallback(() => stateRef.current === 'tracking', [])
+  const getActivityType = useCallback(() => activityTypeRef.current, [])
+  const getStartTime = useCallback(() => startTimeRef.current, [])
+  const getPausedDuration = useCallback(() => pausedDurationRef.current, [])
+
+  const {
+    points, pointsCount, distance, currentPace, currentSpeed, currentSplit, gpsAccuracy,
+    applyFix, reset: resetMetrics, restore: restoreMetrics, snapshot: snapshotMetrics,
+  } = useCardioMetrics({ isTracking, getActivityType, getStartTime })
+
+  // El health-check del cronómetro relanza el GPS, pero el tracking se declara
+  // después (necesita `noteGpsFix`): el ref rompe el ciclo.
+  const restartGpsRef = useRef<() => void>(() => {})
+  const {
+    duration, setDuration, start: startTimer, stop: stopTimer, noteGpsFix, resetGpsHealth,
+  } = useCardioTimer({
+    getStartTime,
+    getPausedDuration,
+    // Sólo con la app activa: Android prohíbe arrancar un FGS desde background.
+    canRestartGps: useCallback(
+      () => stateRef.current === 'tracking' && AppState.currentState === 'active',
+      [],
+    ),
+    onGpsStalled: useCallback(() => restartGpsRef.current(), []),
+  })
+
+  const {
+    requestPermission, start: startGps, stop: stopGps, restart: restartGps,
+  } = useCardioTracking({
+    onFix: (fix) => {
+      const accepted = applyFix(fix)
+      if (!accepted) return
+      noteGpsFix()
+      if (accepted.splitCompleted) {
+        // Km completado — vibración estilo Strava (el teléfono suele ir en el
+        // bolsillo o el brazalete: la háptica es el único feedback que llega).
+        void haptics.success()
+      }
+      // Notificación en vivo (el throttle vive dentro del módulo).
+      updateCardioLive({
+        distanceKm: accepted.distanceKm,
+        paceMinKm: accepted.paceMinKm,
+        speedKmh: accepted.speedKmh,
+      })
+    },
+    onUnavailable: () => setError(i18n.t('cardioSession.geoNotAvailable')),
+  })
+  restartGpsRef.current = restartGps
+
+  // ── Copia de seguridad de la sesión ─────────────────────────────────────
+
+  const buildSnapshot = useCallback((): PersistedCardioSession | null => {
     const s = stateRef.current
-    if (s !== 'tracking' && s !== 'paused') return
-    saveToStorage({
+    if (s !== 'tracking' && s !== 'paused') return null
+    const m = snapshotMetrics()
+    return {
       state: s,
       activityType: activityTypeRef.current,
       startTime: startTimeRef.current,
       pausedDuration: pausedDurationRef.current,
       pauseStart: s === 'paused' ? pauseStartRef.current : null,
-      points: pointsRef.current,
-      distance: distanceRef.current,
-      lastSplitKm: lastSplitKmRef.current,
-      lastSplitTime: lastSplitTimeRef.current,
-      maxSpeed: maxSpeedRef.current,
+      points: m.points,
+      distance: m.distance,
+      lastSplitKm: m.lastSplitKm,
+      lastSplitTime: m.lastSplitTime,
+      maxSpeed: m.maxSpeed,
       programId: programIdRef.current,
       programDayKey: programDayKeyRef.current,
-    })
-  }, [])
-
-  useEffect(() => {
-    if (state !== 'tracking' && state !== 'paused') return
-    const id = setInterval(persistSnapshot, 5000)
-    return () => clearInterval(id)
-  }, [state, persistSnapshot])
-
-  // Persistir al pasar a background (el FGS sigue trackeando, pero si Android
-  // mata el proceso el snapshot permite restaurar)
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next !== 'active') persistSnapshot()
-    })
-    return () => sub.remove()
-  }, [persistSnapshot])
-
-  // ── Procesado de fixes GPS (mismo pipeline que la web) ──────────────────
-
-  const processFix = useCallback((fix: CardioFix) => {
-    if (stateRef.current !== 'tracking') return
-
-    const pts = pointsRef.current
-    const state: CardioFixState = {
-      lastPoint: pts.length > 0 ? pts[pts.length - 1] : null,
-      kalman: kalmanRef.current,
-      distanceKm: distanceRef.current,
-      lastSplitKm: lastSplitKmRef.current,
-      lastSplitTime: lastSplitTimeRef.current,
-      startTime: startTimeRef.current,
-      maxSpeedKmh: maxSpeedRef.current,
     }
+  }, [snapshotMetrics])
 
-    const result = processCardioFix(state, fix, activityTypeRef.current)
+  const isLive = state === 'tracking' || state === 'paused'
+  const {
+    persist, load: loadSnapshot, clear: clearSnapshot,
+  } = useCardioPersistence({ active: isLive, buildSnapshot })
+  useKeepAwakeWhile(isLive, KEEP_AWAKE_TAG)
 
-    if (result.accuracy != null) setGpsAccuracy(result.accuracy)
-    if (!result.accepted || !result.point) return
+  const { unsavedCount, enqueue } = useUnsavedCardioQueue({
+    userId,
+    onFlushed: () => {
+      if (!userId) return
+      // Se subió al menos una sesión por la cola de reintento: refrescar la
+      // caché para que aparezca en actividad reciente e historial sin esperar a
+      // un cold load (finish() ya invalida, pero este es el camino del retry).
+      void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+      void syncCardioWidget(userId)
+    },
+  })
 
-    // Aplicar nextState de vuelta a los refs.
-    kalmanRef.current = result.nextState.kalman
-    distanceRef.current = result.nextState.distanceKm
-    lastSplitKmRef.current = result.nextState.lastSplitKm
-    lastSplitTimeRef.current = result.nextState.lastSplitTime
-    maxSpeedRef.current = result.nextState.maxSpeedKmh
+  useEffect(() => { void syncCardioWidget(userId) }, [userId])
 
-    pts.push(result.point)
-    setPointsCount(pts.length)
-    lastGpsTimestampRef.current = Date.now()
+  // ── Acciones de sesión ──────────────────────────────────────────────────
 
-    setDistance(result.distanceKm)
-    if (result.split) setCurrentSplit(result.split)
-    if (result.splitCompleted) {
-      // Km completado — vibración estilo Strava (el teléfono suele ir en el
-      // bolsillo/brazalete: la háptica es el único feedback que llega).
-      void haptics.success()
-    }
-    if (result.speedKmh > 0 || result.paceMinKm > 0) {
-      setCurrentPace(result.paceMinKm)
-      setCurrentSpeed(result.speedKmh)
-    }
-
-    // Notificación en vivo: distancia + ritmo (throttled dentro del módulo).
-    updateCardioLive({
-      distanceKm: result.distanceKm,
-      paceMinKm: result.paceMinKm,
-      speedKmh: result.speedKmh,
-    })
-  }, [])
-
-  // Listener de módulo registrado una sola vez — procesa lotes del FGS/watch
-  useEffect(() => {
-    setCardioFixListener((fixes) => {
-      for (const f of fixes) processFix(f)
-    })
-    return () => setCardioFixListener(null)
-  }, [processFix])
-
-  const startTracking = useCallback(() => {
-    startCardioTracking().catch(() => {
-      setError(i18n.t('cardioSession.geoNotAvailable'))
-    })
-  }, [])
-
-  const stopTracking = useCallback(() => {
-    void stopCardioTracking()
-  }, [])
-
-  // ── Timer ────────────────────────────────────────────────────────────────
-
-  const startTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
-      setDuration(elapsed)
-
-      // Health check: relanzar tracking si murió en silencio (cooldown 30s).
-      // Solo con la app activa — Android prohíbe arrancar un FGS desde background.
-      const now = Date.now()
-      if (
-        stateRef.current === 'tracking' &&
-        AppState.currentState === 'active' &&
-        lastGpsTimestampRef.current > 0 &&
-        now - lastGpsTimestampRef.current > 15000 &&
-        now - lastGpsRestartRef.current > 30000
-      ) {
-        lastGpsRestartRef.current = now
-        startCardioTracking().catch(() => {})
-      }
-    }, 1000)
-  }, [])
-
-  // ── Acciones de sesión ───────────────────────────────────────────────────
-
-  const start = useCallback(async (type: CardioActivityType, startProgramId?: string, startProgramDayKey?: string): Promise<boolean> => {
-    const granted = await requestCardioPermission()
+  const start = useCallback(async (
+    type: CardioActivityType,
+    startProgramId?: string,
+    startProgramDayKey?: string,
+  ): Promise<boolean> => {
+    const granted = await requestPermission()
     if (!granted) {
       setError(i18n.t('cardioSession.geoNotAvailable'))
       void haptics.error()
@@ -331,67 +216,53 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     setActivityType(type)
     activityTypeRef.current = type
-    pointsRef.current = []
-    distanceRef.current = 0
-    setPointsCount(0)
-    setDistance(0)
+    resetMetrics()
     setDuration(0)
-    setCurrentPace(0)
-    setCurrentSpeed(0)
-    setCurrentSplit(null)
+    resetGpsHealth()
     setError(null)
     setNote('')
-    setGpsAccuracy(null)
     setProgramId(startProgramId || null)
     setProgramDayKey(startProgramDayKey || null)
     programIdRef.current = startProgramId || null
     programDayKeyRef.current = startProgramDayKey || null
     pausedDurationRef.current = 0
     startTimeRef.current = Date.now()
-    lastSplitKmRef.current = 0
-    lastSplitTimeRef.current = Date.now()
-    maxSpeedRef.current = 0
-    lastGpsTimestampRef.current = 0
-    lastGpsRestartRef.current = 0
-    kalmanRef.current = null
 
-    setState('tracking')
-    stateRef.current = 'tracking'
+    setSessionState('tracking')
     void haptics.medium()
-    // El FGS (notificación) debe arrancar con la app en foreground y permiso
-    // ya concedido — mantiene el GPS vivo al bloquear la pantalla
+    // El FGS (notificación) debe arrancar con la app en foreground y el permiso
+    // ya concedido — es lo que mantiene el GPS vivo con la pantalla bloqueada.
     await startCardioLive(type, startTimeRef.current)
-    startTracking()
-    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {})
+    startGps()
     startTimer()
     return true
-  }, [startTracking, startTimer])
+  }, [
+    requestPermission, startGps, resetMetrics,
+    setDuration, resetGpsHealth, startTimer, setSessionState,
+  ])
 
   const pause = useCallback(() => {
-    setState('paused')
-    stateRef.current = 'paused'
-    // En el contexto (no en el botón) para que también vibre al pausar desde
-    // la notificación con el teléfono bloqueado
+    setSessionState('paused')
+    // En el contexto y no en el botón, para que también vibre al pausar desde
+    // la notificación con el teléfono bloqueado.
     void haptics.medium()
-    stopTracking()
+    stopGps()
     pauseStartRef.current = Date.now()
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    stopTimer()
     void pauseCardioLive()
-    persistSnapshot()
-  }, [stopTracking, persistSnapshot])
+    persist()
+  }, [stopGps, stopTimer, persist, setSessionState])
 
   const resume = useCallback(() => {
-    setState('tracking')
-    stateRef.current = 'tracking'
+    setSessionState('tracking')
     void haptics.medium()
     pausedDurationRef.current += Date.now() - pauseStartRef.current
-    startTracking()
+    startGps()
     void resumeCardioLive(startTimeRef.current + pausedDurationRef.current)
-    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {})
     startTimer()
-  }, [startTracking, startTimer])
+  }, [startGps, startTimer, setSessionState])
 
-  // Botones de la notificación → pausar/reanudar la sesión
+  // Botones de la notificación → pausar/reanudar la sesión.
   const pauseRef = useRef(pause)
   const resumeRef = useRef(resume)
   pauseRef.current = pause
@@ -405,31 +276,25 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   }, [])
 
   const finish = useCallback(async (finishNote?: string): Promise<CardioSession | null> => {
-    stopTracking()
+    stopGps()
     void endCardioLive()
-    deactivateKeepAwake(KEEP_AWAKE_TAG)
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
-    setState('finished')
-    stateRef.current = 'finished'
+    stopTimer()
+    setSessionState('finished')
     void haptics.success()
-    clearStorage()
+    clearSnapshot()
 
     const finalDuration = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
     setDuration(finalDuration)
 
-    const points = pointsRef.current
-    const { splits, totalDistanceKm: totalDistance } = calculateSplitsAndDistance(points)
-    const elevationGain = calculateElevationGain(points)
+    const finalPoints = points.current
+    const { splits, totalDistanceKm: totalDistance } = calculateSplitsAndDistance(finalPoints)
+    const elevationGain = calculateElevationGain(finalPoints)
     const avgPace = finalDuration > 0 && totalDistance > 0 ? (finalDuration / 60) / totalDistance : 0
-    const maxPace = calculateMaxPace(points)
-    const maxSpeedKmh = calculateMaxSpeed(points)
-    const avgSpeedKmh = calculateAvgSpeed(totalDistance, finalDuration)
     const currentActivity = activityTypeRef.current
-    const calories = estimateCalories(currentActivity, finalDuration, userWeight)
 
     const session: CardioSession = {
       activity_type: currentActivity,
-      gps_points: points,
+      gps_points: finalPoints,
       distance_km: Math.round(totalDistance * 100) / 100,
       duration_seconds: finalDuration,
       avg_pace: Math.round(avgPace * 100) / 100,
@@ -437,10 +302,10 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       started_at: new Date(startTimeRef.current).toISOString(),
       finished_at: new Date().toISOString(),
       note: finishNote,
-      calories_burned: calories,
-      max_pace: maxPace,
-      avg_speed_kmh: avgSpeedKmh,
-      max_speed_kmh: maxSpeedKmh,
+      calories_burned: estimateCalories(currentActivity, finalDuration, userWeight),
+      max_pace: calculateMaxPace(finalPoints),
+      avg_speed_kmh: calculateAvgSpeed(totalDistance, finalDuration),
+      max_speed_kmh: calculateMaxSpeed(finalPoints),
       splits,
       program: programIdRef.current || undefined,
       program_day_key: programDayKeyRef.current || undefined,
@@ -459,40 +324,34 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
       } catch (e) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
-        pushUnsaved(saveData)
-        setUnsavedCount(loadUnsaved().length)
+        enqueue(saveData)
         void haptics.warning()
       }
     }
 
     return session
-  }, [stopTracking, userId, userWeight, queryClient])
+  }, [
+    stopGps, stopTimer, setDuration, clearSnapshot, points,
+    setSessionState, userId, userWeight, queryClient, enqueue,
+  ])
 
   const discard = useCallback(() => {
-    stopTracking()
+    stopGps()
     void endCardioLive()
-    deactivateKeepAwake(KEEP_AWAKE_TAG)
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
-    setState('idle')
-    stateRef.current = 'idle'
-    clearStorage()
-    pointsRef.current = []
-    distanceRef.current = 0
-    kalmanRef.current = null
-    setPointsCount(0)
-    setDistance(0)
+    stopTimer()
+    setSessionState('idle')
+    clearSnapshot()
+    resetMetrics()
     setDuration(0)
-    setCurrentPace(0)
-    setCurrentSpeed(0)
-    setCurrentSplit(null)
     setError(null)
     setNote('')
-    setGpsAccuracy(null)
     setProgramId(null)
     setProgramDayKey(null)
     programIdRef.current = null
     programDayKeyRef.current = null
-  }, [stopTracking])
+  }, [stopGps, stopTimer, setDuration, clearSnapshot, resetMetrics, setSessionState])
+
+  // ── CRUD de sesiones guardadas ──────────────────────────────────────────
 
   const deleteSession = useCallback(async (id: string): Promise<void> => {
     if (!userId) return
@@ -505,7 +364,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   }, [userId, queryClient])
 
   // Persiste la nota escrita en la pantalla de resumen (la sesión ya se guardó
-  // al pulsar "parar", así que aquí solo actualizamos el registro existente).
+  // al pulsar "parar", así que aquí sólo se actualiza el registro existente).
   const updateSessionNote = useCallback(async (id: string, sessionNote: string): Promise<void> => {
     if (!userId || !id) return
     try {
@@ -523,7 +382,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         filter: pb.filter('user = {:userId}', { userId }),
         sort: '-started_at',
       })
-      // Las rutas viven aparte (#299): segunda consulta, solo en el historial
+      // Las rutas viven aparte (#299): segunda consulta, sólo en el historial
       // propio. El muro nunca las pide.
       return hydrateCardioRoutes(res.items.map((r: any) => ({
         id: r.id,
@@ -546,128 +405,78 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     } catch { return [] }
   }, [userId])
 
-  // ── Restaurar sesión persistida al montar ────────────────────────────────
+  // ── Restaurar la sesión persistida al montar ────────────────────────────
 
   useEffect(() => {
     if (restoredRef.current) return
     restoredRef.current = true
 
-    const saved = loadFromStorage()
+    const saved = loadSnapshot()
     if (!saved) return
 
-    pointsRef.current = saved.points
-    distanceRef.current = saved.distance
     startTimeRef.current = saved.startTime
-    lastSplitKmRef.current = saved.lastSplitKm
-    lastSplitTimeRef.current = saved.lastSplitTime
-    maxSpeedRef.current = saved.maxSpeed
+    pausedDurationRef.current = saved.pausedDuration
     programIdRef.current = saved.programId
     programDayKeyRef.current = saved.programDayKey
+    restoreMetrics(saved)
 
     setActivityType(saved.activityType)
     activityTypeRef.current = saved.activityType
-    setDistance(saved.distance)
-    setPointsCount(saved.points.length)
     setProgramId(saved.programId)
     setProgramDayKey(saved.programDayKey)
 
     if (saved.state === 'paused') {
-      pausedDurationRef.current = saved.pausedDuration
       pauseStartRef.current = saved.pauseStart ?? Date.now()
-      setState('paused')
-      stateRef.current = 'paused'
-      const elapsed = Math.floor((pauseStartRef.current - saved.startTime - saved.pausedDuration) / 1000)
-      setDuration(elapsed)
+      setSessionState('paused')
+      setDuration(Math.floor((pauseStartRef.current - saved.startTime - saved.pausedDuration) / 1000))
     } else {
-      pausedDurationRef.current = saved.pausedDuration
-      setState('tracking')
-      stateRef.current = 'tracking'
-      const elapsed = Math.floor((Date.now() - saved.startTime - saved.pausedDuration) / 1000)
-      setDuration(elapsed)
+      setSessionState('tracking')
+      setDuration(Math.floor((Date.now() - saved.startTime - saved.pausedDuration) / 1000))
       void startCardioLive(saved.activityType, saved.startTime + saved.pausedDuration)
-      startTracking()
-      void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {})
+      startGps()
       startTimer()
     }
-  }, [startTracking, startTimer])
+  }, [loadSnapshot, restoreMetrics, setDuration, startTimer, startGps, setSessionState])
 
-  // ── Reintentar sesiones sin guardar ──────────────────────────────────────
-  // Triggers: montar, volver a foreground y recuperar conexión. NetInfo no
-  // detecta que el PB de dev (adb reverse) se cae al desenchufar el USB, así
-  // que el reintento al volver a foreground es el que salva ese caso.
-  const flushingRef = useRef(false)
-  const flushUnsaved = useCallback(async () => {
-    if (!userId || flushingRef.current) return
-    const queue = loadUnsaved()
-    setUnsavedCount(queue.length)
-    if (queue.length === 0) return
-    flushingRef.current = true
-    try {
-      const remaining: Record<string, unknown>[] = []
-      for (const session of queue) {
-        try {
-          // La cola guarda la sesión entera, ruta incluida: se parte aquí para
-          // que una entrada encolada antes de #299 también funcione.
-          const { record, points: routePoints } = splitRoute(session)
-          const saved = await pb.collection('cardio_sessions').create(record)
-          await saveCardioRoute(saved.id, userId, routePoints)
-        } catch (e) {
-          Sentry.captureException(e, { tags: { feature: 'cardio', op: 'flush_unsaved_session' } })
-          remaining.push(session)
-        }
-      }
-      if (remaining.length > 0) {
-        try { syncStorage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
-      } else {
-        clearUnsaved()
-      }
-      setUnsavedCount(remaining.length)
-      if (remaining.length < queue.length) {
-        // Se subió al menos una sesión por la cola de reintento: refrescar la
-        // caché para que aparezca en actividad reciente / historial sin esperar
-        // a un cold load (finish() ya invalida, pero este camino es el del retry).
-        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
-        void syncCardioWidget(userId)
-      }
-    } finally {
-      flushingRef.current = false
-    }
-  }, [userId, queryClient])
-
-  useEffect(() => {
-    void flushUnsaved()
-    void syncCardioWidget(userId)
-    const appStateSub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') void flushUnsaved()
-    })
-    const offOnline = onOnline(() => void flushUnsaved())
-    return () => {
-      appStateSub.remove()
-      offOnline()
-    }
-  }, [flushUnsaved, userId])
-
-  // ── Cleanup al desmontar (logout) ────────────────────────────────────────
+  // ── Cleanup al desmontar (cerrar sesión) ────────────────────────────────
 
   useEffect(() => {
     return () => {
-      persistSnapshot()
-      void stopCardioTracking()
+      persist()
+      stopGps()
       void endCardioLive()
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-        timerRef.current = null
-      }
-      deactivateKeepAwake(KEEP_AWAKE_TAG)
+      stopTimer()
     }
-  }, [persistSnapshot])
+  }, [persist, stopGps, stopTimer])
 
-  const value: CardioSessionContextValue = {
-    state, activityType, points: pointsRef, pointsCount, distance, duration,
-    currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
-    programId, programDayKey,
-    start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote, unsavedCount,
-  }
+  // Memoizado: durante una sesión el provider re-renderiza cada segundo (el
+  // cronómetro) y a cada fix de GPS. Sin memo, cada render recrea este objeto y
+  // re-renderiza a todos los consumidores de useCardioSessionContext().
+  const value = useMemo<CardioSessionContextValue>(() => ({
+    state,
+    activityType,
+    points,
+    pointsCount,
+    distance,
+    duration,
+    currentPace,
+    currentSpeed,
+    currentSplit,
+    error,
+    note,
+    setNote,
+    gpsAccuracy,
+    programId,
+    programDayKey,
+    start, pause, resume, finish, discard,
+    getHistory, deleteSession, updateSessionNote,
+    unsavedCount,
+  }), [
+    state, activityType, error, note, programId, programDayKey,
+    points, pointsCount, distance, currentPace, currentSpeed, currentSplit, gpsAccuracy,
+    duration, unsavedCount,
+    start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote,
+  ])
 
   return (
     <CardioSessionContext.Provider value={value}>
