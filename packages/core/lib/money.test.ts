@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { canonCurrency, currencySymbol, toUSD } from './money'
+import { canonCurrency, currencySymbol, parseLocaleNumber, toUSD } from './money'
 
 describe('canonCurrency', () => {
   it('mapea alias de bolívar a VES', () => {
@@ -39,5 +39,41 @@ describe('toUSD', () => {
     expect(toUSD(100, 0)).toBeNull()
     expect(toUSD(100, -5)).toBeNull()
     expect(toUSD(100, NaN)).toBeNull()
+  })
+})
+
+describe('parseLocaleNumber', () => {
+  it('acepta el punto y la coma como separador decimal', () => {
+    expect(parseLocaleNumber('4.5')).toBe(4.5)
+    expect(parseLocaleNumber('4,5')).toBe(4.5)
+  })
+
+  it('el campo vacío es null, NO cero: no haber escrito nada no es un precio de $0', () => {
+    expect(parseLocaleNumber('')).toBeNull()
+    expect(parseLocaleNumber('   ')).toBeNull()
+  })
+
+  it('un cero escrito a mano sí es cero', () => {
+    expect(parseLocaleNumber('0')).toBe(0)
+  })
+
+  it('lo que no es número es null', () => {
+    expect(parseLocaleNumber('abc')).toBeNull()
+    expect(parseLocaleNumber('1,2,3')).toBeNull()
+    expect(parseLocaleNumber('-')).toBeNull()
+  })
+
+  it('sin min los negativos pasan (los sheets de despensa nunca los filtraron)', () => {
+    expect(parseLocaleNumber('-3')).toBe(-3)
+  })
+
+  it('con min: 0 los negativos son null (listas de la compra)', () => {
+    expect(parseLocaleNumber('-3', { min: 0 })).toBeNull()
+    expect(parseLocaleNumber('0', { min: 0 })).toBe(0)
+    expect(parseLocaleNumber('3', { min: 0 })).toBe(3)
+  })
+
+  it('Infinity no es un número aceptable', () => {
+    expect(parseLocaleNumber('Infinity')).toBeNull()
   })
 })

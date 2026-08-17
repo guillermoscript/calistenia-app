@@ -4,8 +4,8 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareContent, type ShareMethod } from '../../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
-const BASE_URL = 'https://gym.guille.tech'
 
 interface InviteButtonProps {
   referralCode: string | null
@@ -34,7 +34,7 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
 
   if (!referralCode) return null
 
-  const inviteUrl = `${BASE_URL}/invite/${referralCode}`
+  const inviteUrl = `${WEB_BASE_URL}/invite/${referralCode}`
 
   const handleQuickInvite = async (method: ShareMethod) => {
     const ok = await shareContent({

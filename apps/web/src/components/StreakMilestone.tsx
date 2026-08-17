@@ -4,8 +4,8 @@ import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
 import { op } from '@calistenia/core/lib/analytics'
-
-const MILESTONES = [7, 14, 30, 60, 100] as const
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { pickActiveMilestone } from '@calistenia/core/lib/streak-milestones'
 
 const MILESTONE_KEY_PREFIX = 'calistenia_streak_milestone'
 
@@ -23,7 +23,7 @@ export function markMilestoneShown(days: number, userId: string): void {
 
 /** Find the highest reached milestone that hasn't been shown yet */
 export function getActiveMilestone(streak: number, userId: string): number | null {
-  return [...MILESTONES].reverse().find(m => streak >= m && !isMilestoneShown(m, userId)) ?? null
+  return pickActiveMilestone(streak, m => isMilestoneShown(m, userId))
 }
 
 interface StreakMilestoneProps {
@@ -43,7 +43,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
     await shareContent({
       title: t('streak.milestone.title', { days: streak }),
       text: t('streak.milestone.shareText', { days: streak }),
-      url: referralCode ? `https://gym.guille.tech/invite/${referralCode}` : window.location.origin,
+      url: referralCode ? `${WEB_BASE_URL}/invite/${referralCode}` : window.location.origin,
     })
   }, [streak, t, referralCode])
 

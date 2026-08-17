@@ -4,14 +4,8 @@ import { KeyboardAvoidingView, KeyboardProvider } from 'react-native-keyboard-co
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import { currencySymbol } from '@calistenia/core/lib/money'
+import { currencySymbol, parseLocaleNumber } from '@calistenia/core/lib/money'
 import type { PantryItem } from '@calistenia/core/types'
-
-function parseNum(v: string): number | null {
-  if (v.trim() === '') return null
-  const n = Number(v.replace(',', '.'))
-  return Number.isFinite(n) ? n : null
-}
 
 export function PantryEditSheet({ item, onSave, onDelete, onClose, onVerify, onGone }: {
   item: PantryItem | null
@@ -139,7 +133,7 @@ export function PantryEditSheet({ item, onSave, onDelete, onClose, onVerify, onG
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => onSave(item, parseNum(qty), parseNum(price))}
+                onPress={() => onSave(item, parseLocaleNumber(qty), parseLocaleNumber(price))}
                 className="h-11 flex-1 items-center justify-center bg-lime active:bg-lime/80"
               >
                 <Text className="font-mono text-xs uppercase tracking-[2px] text-black">{t('pantry.save')}</Text>

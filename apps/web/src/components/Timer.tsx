@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { playTimerComplete, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
 import { notifyTimerDone } from '../lib/notifications'
+import { formatCountdown } from '@calistenia/core/lib/countdown'
 
 interface TimerProps {
   initialSeconds?: number
@@ -223,7 +224,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
                   fontSize: seconds >= 600 ? '36px' : '44px',
                   animation: phase === 'running' ? 'tickPulse 0.3s cubic-bezier(0.22, 1, 0.36, 1)' : undefined,
                 }}>
-                  {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+                  {formatCountdown(seconds)}
                 </div>
               )}
               <div className="font-mono text-[10px] text-muted-foreground/60 tracking-[2px] mt-1">

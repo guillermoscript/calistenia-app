@@ -36,6 +36,30 @@ export function currencySymbol(code: string | null | undefined): string {
   }
 }
 
+export interface ParseLocaleNumberOptions {
+  /** Cota inferior inclusiva; por debajo se trata como inválido (null). */
+  min?: number
+}
+
+/**
+ * Lee un número escrito a mano en un input, aceptando la coma decimal (#468).
+ *
+ * Devuelve `null`, y no 0, cuando el campo está vacío o no es un número: en la
+ * despensa "no he escrito nada" y "vale 0" son cosas distintas —un precio 0
+ * borraría el precio real del item— y por eso el vacío nunca colapsa a cero.
+ *
+ * Estaba copiado como `parseNum` en ocho componentes de despensa entre las dos
+ * apps; seis eran idénticos y dos (las listas de la compra) además rechazaban
+ * los negativos, que aquí es `{ min: 0 }`.
+ */
+export function parseLocaleNumber(raw: string, options: ParseLocaleNumberOptions = {}): number | null {
+  if (raw.trim() === '') return null
+  const n = Number(raw.replace(',', '.'))
+  if (!Number.isFinite(n)) return null
+  if (options.min != null && n < options.min) return null
+  return n
+}
+
 /**
  * Convierte a USD con la tasa "unidades de la moneda por 1 USD" (ej. VES 143.5).
  * Precisión completa. Tasa inválida (≤0/NaN) → null (nunca inventar dinero).

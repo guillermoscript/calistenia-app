@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { inferNutritionGoalType, ONBOARDING_ACTIVITY_TO_NUTRITION, previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
@@ -17,7 +18,7 @@ import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
 import { PlanTab } from '../components/nutrition/plan/PlanTab'
-import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
+import { usePantryDepletion } from '@calistenia/core/hooks/usePantryDepletion'
 import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob } from '@calistenia/core/lib/ai-jobs-api'
@@ -143,7 +144,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   const { data: pantryItems = [] } = usePantryItems(userId)
   const pantryCount = pantryItems.length
   const spendData = useSpendSummary(userId, startOfWeekStr()).data
-  const pantryDepletion = usePantryDepletion(userId)
+  const pantryDepletion = usePantryDepletion(userId, {
+    captureException: (e, op) => Sentry.captureException(e, { tags: { feature: 'pantry', op } }),
+  })
 
   const nutrition = useNutrition(userId)
   const {

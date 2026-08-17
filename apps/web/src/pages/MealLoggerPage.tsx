@@ -2,8 +2,9 @@ import { useMemo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import * as Sentry from '@sentry/react'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
-import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
+import { usePantryDepletion } from '@calistenia/core/hooks/usePantryDepletion'
 import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import type { FoodItem } from '@calistenia/core/types'
@@ -127,7 +128,9 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   // La página navega a /nutrition tras guardar; si hay match en vuelo o filas
   // pendientes, la navegación espera a que el usuario confirme/omita el dialog
   // (si no, el dialog se desmontaría antes de mostrarse).
-  const pantryDepletion = usePantryDepletion(userId)
+  const pantryDepletion = usePantryDepletion(userId, {
+    captureException: (e, op) => Sentry.captureException(e, { tags: { feature: 'pantry', op } }),
+  })
   const [matchPending, setMatchPending] = useState(false)
   const [wantNav, setWantNav] = useState(false)
 

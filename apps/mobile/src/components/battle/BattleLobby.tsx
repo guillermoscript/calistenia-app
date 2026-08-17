@@ -10,8 +10,8 @@ import { haptics } from '@/lib/haptics'
 import { useBattleContext } from '@/contexts/BattleContext'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { battleExerciseName, findBattlePreset } from '@calistenia/core/data/battle-presets'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
-const WEB_ORIGIN = 'https://gym.guille.tech'
 
 export default function BattleLobby() {
   const { t, i18n } = useTranslation()
@@ -39,7 +39,7 @@ export default function BattleLobby() {
       // que se escape de la conversación puede gastar como mucho una plaza.
       const invite = await actions.invite()
       const result = await Share.share({
-        message: `${t('battle.inviteMessage')} ${WEB_ORIGIN}/battle-invite/${invite.token}`,
+        message: `${t('battle.inviteMessage')} ${WEB_BASE_URL}/battle-invite/${invite.token}`,
       })
       if (result.action !== Share.sharedAction) return
       // El token JAMÁS viaja en analytics: solo el id de la batalla.
