@@ -33,23 +33,13 @@ import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
+import { NUTRITION_GOALS, GOAL_LABEL_KEYS } from '../components/nutrition/nutrition-goal-options'
 import type { NutritionGoal, NutritionGoalType, NutritionEntry, Sex } from '@calistenia/core/types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
-// #243 F2: mismas etiquetas/iconos que NutritionGoalSetup.GOALS, para el picker inline.
-const GOAL_LABEL_KEYS: Record<NutritionGoalType, string> = {
-  muscle_gain: 'nutrition.goal.muscleGain',
-  fat_loss: 'nutrition.goal.fatLoss',
-  recomp: 'nutrition.goal.recomp',
-  maintain: 'nutrition.goal.maintain',
-}
-const GOAL_CHOICES: { id: NutritionGoalType; labelKey: string; icon: string }[] = [
-  { id: 'muscle_gain', labelKey: GOAL_LABEL_KEYS.muscle_gain, icon: '💪' },
-  { id: 'fat_loss', labelKey: GOAL_LABEL_KEYS.fat_loss, icon: '🔥' },
-  { id: 'recomp', labelKey: GOAL_LABEL_KEYS.recomp, icon: '⚖️' },
-  { id: 'maintain', labelKey: GOAL_LABEL_KEYS.maintain, icon: '✅' },
-]
+// #243 F2: el picker inline reusa la lista del wizard (#477).
+const GOAL_CHOICES = NUTRITION_GOALS
 
 interface NutritionPageProps {
   userId: string | null

@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import type { NutritionGoal, NutritionGoalType, ActivityLevel, Sex } from '@calistenia/core/types'
+import { NUTRITION_GOALS } from './nutrition-goal-options'
 
 interface NutritionGoalSetupProps {
   onSave: (goals: NutritionGoal) => void
@@ -35,12 +36,7 @@ const ACTIVITY_LEVELS: { id: ActivityLevel; labelKey: string; descKey: string }[
   { id: 'very_active', labelKey: 'nutrition.activity.veryActive', descKey: 'nutrition.activity.veryActiveDesc' },
 ]
 
-const GOALS: { id: NutritionGoalType; labelKey: string; icon: string; descKey: string }[] = [
-  { id: 'muscle_gain', labelKey: 'nutrition.goal.muscleGain', icon: '💪', descKey: 'nutrition.goal.muscleGainDesc' },
-  { id: 'fat_loss', labelKey: 'nutrition.goal.fatLoss', icon: '🔥', descKey: 'nutrition.goal.fatLossDesc' },
-  { id: 'recomp', labelKey: 'nutrition.goal.recomp', icon: '⚖️', descKey: 'nutrition.goal.recompDesc' },
-  { id: 'maintain', labelKey: 'nutrition.goal.maintain', icon: '✅', descKey: 'nutrition.goal.maintainDesc' },
-]
+const GOALS = NUTRITION_GOALS
 
 export default function NutritionGoalSetup({
   onSave, onCancel, calculateMacros,
