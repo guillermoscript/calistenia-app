@@ -1,6 +1,19 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mem = new Map<string, string>()
+
+vi.mock('../platform', () => ({
+  storage: {
+    getItem: (k: string) => (mem.has(k) ? mem.get(k)! : null),
+    setItem: (k: string, v: string) => { mem.set(k, v) },
+    removeItem: (k: string) => { mem.delete(k) },
+  },
+  getPlatform: () => ({ analytics: { track: vi.fn(), identify: vi.fn(), clear: vi.fn() } }),
+}))
+
 import {
   CANONICAL_ANALYTICS_EVENTS,
+  emitOnce,
   normalizeCanonicalAnalyticsProperties,
 } from './analytics'
 
@@ -72,5 +85,34 @@ describe('canonical analytics contract', () => {
       surface: 'post_workout',
       workout_id: 'p1_lun',
     })
+  })
+})
+
+describe('emitOnce', () => {
+  beforeEach(() => { mem.clear() })
+
+  it('emite la primera vez y deja marcador en storage', () => {
+    const emit = vi.fn()
+    emitOnce('k1', emit)
+    expect(emit).toHaveBeenCalledTimes(1)
+    expect(mem.get('k1')).toBe('true')
+  })
+
+  it('no vuelve a emitir con la marca puesta (aunque la puso otro código)', () => {
+    // Compat con los marcadores previos hand-rolled: cualquier valor truthy vale
+    // (program_started guardaba un timestamp).
+    mem.set('k2', '1755300000000')
+    const emit = vi.fn()
+    emitOnce('k2', emit)
+    expect(emit).not.toHaveBeenCalled()
+  })
+
+  it('con storage roto prefiere emitir a perder el evento', async () => {
+    const platform = await import('../platform')
+    const spy = vi.spyOn(platform.storage, 'getItem').mockImplementation(() => { throw new Error('quota') })
+    const emit = vi.fn()
+    emitOnce('k3', emit)
+    expect(emit).toHaveBeenCalledTimes(1)
+    spy.mockRestore()
   })
 })

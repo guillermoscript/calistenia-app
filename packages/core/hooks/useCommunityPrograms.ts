@@ -13,8 +13,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { storage } from '../platform'
-import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, emitOnce, trackCanonicalEvent } from '../lib/analytics'
 import { addDays, localMidnightAsUTC, nowLocalForPB, todayStr, utcToLocalDateStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
 import { findExistingPresetChallenge, getBeginnerChallengePreset, type PresetParticipantRecord } from '../lib/challenge-presets'
@@ -274,23 +273,8 @@ export function useCommunityPrograms(userId: string | null) {
 
 // ─── Detalle + progreso ──────────────────────────────────────────────────────
 
-/**
- * Marca de una sola emisión para los eventos DERIVADOS. Como el progreso se
- * recalcula en cada lectura, sin esto se emitiría un evento de hito completado
- * en cada refresco. Contrapartida conocida (la misma que en `useProgress`): si
- * el usuario borra el entreno que completaba el hito, la marca ya está puesta y
- * no se vuelve a emitir aunque lo recupere.
- */
-function emitOnce(key: string, emit: () => void): void {
-  try {
-    if (storage.getItem(key)) return
-    storage.setItem(key, 'true')
-  } catch {
-    // Sin storage disponible se prefiere emitir a perder el evento.
-  }
-  emit()
-}
-
+// Los eventos DERIVADOS usan emitOnce (lib/analytics): el progreso se recalcula
+// en cada lectura y sin la marca se emitiría un hito completado en cada refresco.
 function emitDerivedEvents(userId: string, programId: string, progress: CommunityProgramProgress): void {
   for (const milestone of progress.milestones) {
     if (!milestone.isComplete) continue

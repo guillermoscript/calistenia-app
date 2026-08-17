@@ -21,7 +21,7 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
-import { AI_API_URL } from '../lib/ai-api'
+import { aiApiFetch } from '../lib/ai-api'
 import { qk } from '../lib/query-keys'
 import { buildInsightContext } from '../lib/buildInsightContext'
 import { getPlatform } from '../platform'
@@ -135,13 +135,9 @@ export function useSleepInsight(
       setNeedsMoreData(false)
       setNotSaved(false) // nos comprometemos a generar — resetea el estado de guardado previo
 
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
-
-      const res = await fetch(`${AI_API_URL}/api/generate-sleep-insight`, {
+      const res = await aiApiFetch('/api/generate-sleep-insight', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ context }),
+        json: { context },
       })
       if (!res.ok) return null
       const data = await res.json()

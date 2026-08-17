@@ -2,7 +2,7 @@
  * Facade de analytics — misma API op.track/identify/clear en web y mobile.
  * La implementación real (OpenPanel web o react-native) se inyecta vía initCore().
  */
-import { getPlatform, type CoreAnalytics } from '../platform'
+import { getPlatform, storage, type CoreAnalytics } from '../platform'
 
 /** Canonical growth-loop events shared by web and mobile. */
 export const CANONICAL_ANALYTICS_EVENTS = {
@@ -127,4 +127,21 @@ export function trackCanonicalEvent(
 /** Punto único para el contrato de `share_card_shared` en web y móvil. */
 export function trackShareCardShared(properties: ShareCardAnalyticsProperties): unknown {
   return trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, properties)
+}
+
+/**
+ * Emite `emit()` una sola vez por `key`, usando un marcador en storage.
+ *
+ * Contrapartida conocida: si el usuario borra el dato que disparó el evento, la
+ * marca ya está puesta y no se vuelve a emitir aunque lo recupere. Antes vivía
+ * hand-rolled en useProgress (×2) y useCommunityPrograms.
+ */
+export function emitOnce(key: string, emit: () => void): void {
+  try {
+    if (storage.getItem(key)) return
+    storage.setItem(key, 'true')
+  } catch {
+    // Sin storage disponible se prefiere emitir a perder el evento.
+  }
+  emit()
 }
