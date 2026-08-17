@@ -58,10 +58,21 @@ export function countdownProgress(remainingSeconds: number, totalSeconds: number
   return Math.max(0, Math.min(1, remainingSeconds / totalSeconds))
 }
 
+export interface FormatCountdownOptions {
+  /**
+   * Rellena los minutos a dos dígitos (`01:30`). Lo usan las pantallas que
+   * enseñan una duración YA CERRADA en una tabla o una tarjeta de resumen,
+   * donde el ancho fijo evita que el número baile entre filas. Un temporizador
+   * en marcha NO lo quiere: ahí el `0` de más solo mete ruido.
+   */
+  padMinutes?: boolean
+}
+
 /** `m:ss`. Los minutos no se rellenan con cero — un descanso son 1:30, no 01:30. */
-export function formatCountdown(seconds: number): string {
+export function formatCountdown(seconds: number, options: FormatCountdownOptions = {}): string {
   const total = Math.max(0, Math.floor(seconds))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+  const minutes = String(Math.floor(total / 60))
+  return `${options.padMinutes ? minutes.padStart(2, '0') : minutes}:${String(total % 60).padStart(2, '0')}`
 }
 
 /**

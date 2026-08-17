@@ -19,6 +19,7 @@ import * as sounds from '../../lib/sounds'
 import { circuitCues } from '../../lib/training-cues'
 import type { CircuitDefinition } from '@calistenia/core/types'
 import { getLocalQuote } from '@calistenia/core/lib/quotes'
+import { formatCountdown } from '@calistenia/core/lib/countdown'
 
 // ── Confetti (reused from SessionView pattern) ──────────────────────────────
 
@@ -141,7 +142,7 @@ function CountdownRing({ seconds: initialSeconds, totalSeconds, isPaused, label,
             className={`font-bebas leading-none ${isUrgent ? 'text-destructive' : 'text-foreground'}`}
             style={{ fontSize: remaining >= 600 ? '36px' : '44px' }}
           >
-            {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}
+            {formatCountdown(remaining)}
           </div>
           <div
             className="font-mono text-[10px] tracking-[2px] mt-1"
@@ -153,14 +154,6 @@ function CountdownRing({ seconds: initialSeconds, totalSeconds, isPaused, label,
       </div>
     </div>
   )
-}
-
-// ── Format elapsed time ─────────────────────────────────────────────────────
-
-function formatElapsed(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 // ── Main Component ──────────────────────────────────────────────────────────
@@ -412,7 +405,7 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
               {t('circuit.elapsed').toUpperCase()}
             </div>
             <div className="font-bebas text-lg leading-none tabular-nums">
-              {formatElapsed(elapsed)}
+              {formatCountdown(elapsed)}
             </div>
           </div>
 

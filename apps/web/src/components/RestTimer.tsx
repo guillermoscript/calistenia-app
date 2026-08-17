@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { playRestStart, playGetReady, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
+import { formatCountdown } from '@calistenia/core/lib/countdown'
 
 interface RestTimerProps {
   seconds?: number
@@ -89,7 +90,7 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone, 
       <div>
         <div className="font-mono text-[10px] text-muted-foreground tracking-[2px] mb-0.5">{t('common.rest').toUpperCase()}</div>
         <div className={`font-bebas text-[36px] leading-none ${s < 10 ? 'text-destructive' : 'text-[hsl(var(--lime))]'}`}>
-          {Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}
+          {formatCountdown(s)}
         </div>
       </div>
       <div className="flex flex-col gap-1.5">
