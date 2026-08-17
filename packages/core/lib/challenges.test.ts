@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest'
 import i18n from 'i18next'
-import { getMetricUnit, getMetricLabel, daysRemaining } from './challenges'
+import { getMetricUnit, getMetricLabel, daysRemaining, RANK_MEDALS } from './challenges'
 import es from '../locales/es/translation.json'
 import en from '../locales/en/translation.json'
 
@@ -96,5 +96,21 @@ describe('daysRemaining', () => {
     expect(daysRemaining('2026-08-01T00:00:00Z', '2026-07-02T00:00:00Z')).toBe(
       i18n.t('challenge.finished'),
     )
+  })
+})
+
+/**
+ * #455: la constante estaba duplicada en seis ficheros y en dos de ellos los
+ * emoji se habían perdido (`['', '', '']`), así que las medallas no se pintaban.
+ * Ni el typecheck ni el lint distinguen '🥇' de '', y por eso esto se comprueba
+ * byte a byte aquí, en el único sitio donde vive ya la constante.
+ */
+describe('RANK_MEDALS', () => {
+  it('son los tres emoji de medalla, en orden', () => {
+    expect(RANK_MEDALS).toEqual(['🥇', '🥈', '🥉'])
+  })
+
+  it('no tiene cuarto puesto: a partir del cuarto la UI cae al número', () => {
+    expect(RANK_MEDALS[3]).toBeUndefined()
   })
 })

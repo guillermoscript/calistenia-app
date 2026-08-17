@@ -11,10 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
-
-// ── Medals ────────────────────────────────────────────────────────────────────
-
-const MEDALS = ['🥇', '🥈', '🥉']
+import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 
 // ── Category definitions ──────────────────────────────────────────────────────
 
@@ -201,7 +198,7 @@ interface RankRowProps {
 }
 
 function RankRow({ entry, position, unit }: RankRowProps) {
-  const medal = MEDALS[position - 1]
+  const medal = RANK_MEDALS[position - 1]
 
   return (
     <View

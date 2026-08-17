@@ -87,7 +87,23 @@ export const qk = {
   workoutReminders: (userId: string | null) =>
     ['workout_reminders', userId] as const,
 
+  // Catálogo de ejercicios de PB (`exercises_catalog`), fusionado con el estático
+  // de WORKOUTS. Sin userId: es un catálogo global, igual para todo el mundo.
+  exerciseCatalog: ['exercise-catalog'] as const,
+  // Frecuencia cardiaca / calorías que el reloj dejó en la sesión de ese día.
+  sessionHrMetrics: (userId: string | null, date: string, workoutKey: string) =>
+    ['session-hr-metrics', userId, date, workoutKey] as const,
+
   // — Stats / leaderboard / perfil —
+  // Perfil público de otro usuario (o el propio visto como público): stats, PRs,
+  // calendario del mes, últimas sesiones y programa activo en una sola query.
+  publicProfile: (userId: string | null, yearMonth: string) =>
+    ['public-profile', userId, yearMonth] as const,
+  // Rutina completa del programa activo de un usuario (fases × días × ejercicios).
+  routineView: (userId: string | null) => ['routine-view', userId] as const,
+  // Landing de invitación: quien invita + su programa, o la vista previa del reto.
+  inviteLanding: (code: string | null, challengeId: string | null) =>
+    ['invite-landing', code, challengeId] as const,
   leaderboard: (userId: string | null, weekStart: string, monthStart: string) =>
     ['leaderboard', userId, weekStart, monthStart] as const,
   profileCompare: (userId: string | null, weekStart: string, monthYYYYMM: string) =>

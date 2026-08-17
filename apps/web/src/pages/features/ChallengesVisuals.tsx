@@ -10,12 +10,14 @@
  *
  * Reproduce `apps/web/src/pages/ChallengeDetailPage.tsx`: chip de métrica en
  * lima, chip de meta en ámbar, días restantes, medallas para los tres primeros
- * y la fila propia resaltada. Las medallas son las mismas de `MEDALS:14`.
+ * y la fila propia resaltada. Las medallas son las mismas del producto:
+ * `RANK_MEDALS` de `packages/core/lib/challenges.ts`.
  *
  * `BeyondVisual` se deja en paz: la landing sigue usando `index={3}` para retos
  * (`apps/web/src/pages/LandingPage.tsx:204`) y el registro lo conserva.
  */
 import { useTranslation } from 'react-i18next'
+import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 
 /**
  * Participantes de ejemplo. Nombres propios cortos, iguales en los dos idiomas
@@ -30,8 +32,6 @@ const STANDINGS = [
   { name: 'Leo', value: 287, you: true },
   { name: 'Mar', value: 244, you: false },
 ] as const
-
-const MEDALS = ['🥇', '🥈', '🥉']
 
 /**
  * Hero: la tarjeta de un reto con su meta y sus días, y debajo la clasificación.
@@ -72,7 +72,7 @@ export function ChallengeCardPanel() {
               row.you ? 'border-lime/30 border-l-[3px] border-l-lime bg-lime/[.08]' : 'border-white/10 bg-white/[.02]'
             }`}
           >
-            <span aria-hidden="true" className="w-6 shrink-0 text-center text-base">{MEDALS[i]}</span>
+            <span aria-hidden="true" className="w-6 shrink-0 text-center text-base">{RANK_MEDALS[i]}</span>
             <span
               aria-hidden="true"
               className={`grid h-8 w-8 shrink-0 place-items-center rounded-full font-bebas text-xs ${

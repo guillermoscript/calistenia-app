@@ -48,6 +48,19 @@ export const METRIC_UNITS: Record<ChallengeMetric, string> = {
 }
 
 /**
+ * Medallas del top 3 de cualquier ranking (retos, amigos, leaderboard global).
+ *
+ * Vivía duplicada como `const MEDALS` en seis ficheros de web y móvil, y en dos
+ * de ellos los emoji se habían perdido por el camino: la constante decía
+ * `['', '', '']` y las medallas simplemente no se pintaban, sin que typecheck ni
+ * lint pudieran verlo (#455). Un único origen evita que vuelva a pasar.
+ *
+ * Se indexa por posición 0-based: `RANK_MEDALS[position - 1]` es `undefined`
+ * a partir del cuarto puesto, que es lo que la UI usa para caer al número.
+ */
+export const RANK_MEDALS: readonly string[] = ['🥇', '🥈', '🥉']
+
+/**
  * Human status for a challenge window.
  *
  * Pass `startsAt` whenever it's available: a challenge that hasn't started yet

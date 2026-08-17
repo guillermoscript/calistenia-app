@@ -17,13 +17,15 @@ import LeaderboardWidget from '../components/friends/LeaderboardWidget'
  * Guardarraíl para #455: `LeaderboardPage` y `LeaderboardWidget` llevaban
  * `const MEDALS = ['', '', '']` (cadenas vacías, los emoji se perdieron por el
  * camino) y las medallas nunca se pintaban. Ni el typecheck ni el lint ven la
- * diferencia entre '🥇' y '', así que el único guardarraíl posible es leer los
- * ficheros como TEXTO y comprobar los bytes — igual que hace el guard de claves
- * duplicadas de los locales (#379).
+ * diferencia entre '🥇' y '', así que el guardarraíl tiene que leer el fuente
+ * como TEXTO — igual que hace el guard de claves duplicadas de los locales
+ * (#379).
  *
- * Mientras la constante siga duplicada en seis sitios, este test los vigila a
- * todos. Cuando se unifique en `packages/core` (la otra mitad de #455), esto se
- * sustituye por un test normal sobre la constante exportada.
+ * La constante ya vive en un solo sitio (`RANK_MEDALS` en
+ * `packages/core/lib/challenges.ts`), y sus bytes los comprueba
+ * `packages/core/lib/challenges.test.ts`. Lo que queda por vigilar aquí es que
+ * nadie vuelva a hacerse una copia local: seis ficheros de web y móvil la
+ * tenían, y bastó con que dos se desincronizaran para romper la UI.
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..')
@@ -37,20 +39,19 @@ const FILES = [
   'apps/mobile/src/app/challenges/[id].tsx',
 ]
 
-const DECLARATION = /const MEDALS = \[([^\]]*)\]/
+/** Cualquier array de medallas declarado en local, se llame como se llame. */
+const LOCAL_COPY = /const \w+ = \[\s*'(?:🥇|🥈|🥉|)'/
 
 describe('medallas del ranking (#455)', () => {
   for (const file of FILES) {
-    it(`${file} declara las tres medallas`, () => {
+    it(`${file} usa RANK_MEDALS de core, sin copia local`, () => {
       const source = fs.readFileSync(path.join(repoRoot, file), 'utf8')
-      const match = source.match(DECLARATION)
-      expect(match, `no se encontró "const MEDALS = [...]" en ${file}`).not.toBeNull()
 
-      const medals = match![1]
-        .split(',')
-        .map(entry => entry.trim().replace(/^['"]|['"]$/g, ''))
-
-      expect(medals).toEqual(['🥇', '🥈', '🥉'])
+      expect(
+        LOCAL_COPY.test(source),
+        `${file} vuelve a declarar sus medallas en local; usa RANK_MEDALS de @calistenia/core/lib/challenges`,
+      ).toBe(false)
+      expect(source, `${file} no importa RANK_MEDALS de core`).toContain('RANK_MEDALS')
     })
   }
 })
