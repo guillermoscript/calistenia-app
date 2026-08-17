@@ -16,6 +16,7 @@ import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { resolveExerciseId } from '@calistenia/core/lib/resolveExerciseId'
+import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 import { toast } from 'sonner'
 import type { DayId } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
@@ -71,9 +72,9 @@ function extractCatalog(): CatalogItem[] {
 
 function mapPBCatalog(rec: any): CatalogItem {
   // Identity MUST be the stable, human-meaningful slug — never the random PB
-  // primary key (rec.id), which silently fragments score history. slug is a
-  // required field on every exercises_catalog record (migration 1774000001).
-  return { id: rec.slug || rec.id || '', name: rec.name ?? '', muscles: rec.muscles ?? '' }
+  // primary key (rec.id), which silently fragments score history. See
+  // `catalogExerciseIdentity()` for why (#474).
+  return { id: catalogExerciseIdentity(rec), name: rec.name ?? '', muscles: rec.muscles ?? '' }
 }
 
 function makeCustomId(name: string): string {
@@ -122,10 +123,9 @@ export default function LogWorkoutPage() {
             })
             for (const rec of items) {
               const mapped = mapPBCatalog(rec)
-              const canonical = resolveExerciseId(mapped.id)
-              if (seen.has(canonical)) continue
-              seen.add(canonical)
-              base.push({ ...mapped, id: canonical })
+              if (seen.has(mapped.id)) continue
+              seen.add(mapped.id)
+              base.push(mapped)
             }
           } catch { /* PB list failed — bundled catalog is enough */ }
         }

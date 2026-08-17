@@ -2,17 +2,32 @@ import { useState, useEffect, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../components/ui/button'
 import type { ProgramMeta } from '@calistenia/core/types'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { RecordModel } from 'pocketbase'
 import ProgramDetailPage from './ProgramDetailPage'
 import { ArrowLeftIcon } from '../components/icons/nav-icons'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+/**
+ * Los campos de texto de PocketBase son `TranslatableField`: o un string plano
+ * (registros antiguos) o un `{es, en}`. Se guardan en crudo y se traducen al
+ * pintar, para que un cambio de idioma no exija volver a consultar (#474).
+ */
 interface PreviewExercise {
-  name: string
+  name: TranslatableField
   sets: number | string
   reps: string
-  muscles: string
+  muscles: TranslatableField
+}
+
+interface PreviewProgram {
+  id: string
+  name: TranslatableField
+  description?: TranslatableField
+  duration_weeks: number
+  created_by?: string
 }
 
 // ── SharedProgramPage ──────────────────────────────────────────────────────
@@ -72,7 +87,8 @@ function SharedLanding({
   onBack: () => void
   onLogin: () => void
 }) {
-  const [program, setProgram] = useState<ProgramMeta | null>(null)
+  const l = useLocalize()
+  const [program, setProgram] = useState<PreviewProgram | null>(null)
   const [exercises, setExercises] = useState<PreviewExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [phaseCount, setPhaseCount] = useState(0)
@@ -89,8 +105,8 @@ function SharedLanding({
       const progRecord = await pb.collection('programs').getOne(programId)
       setProgram({
         id: progRecord.id,
-        name: progRecord.name,
-        description: progRecord.description,
+        name: progRecord.name ?? '',
+        description: progRecord.description ?? '',
         duration_weeks: progRecord.duration_weeks,
         created_by: progRecord.created_by || undefined,
       })
@@ -110,10 +126,10 @@ function SharedLanding({
           sort: 'phase_number,sort_order',
         })
         setExercises(exRes.items.map((r: RecordModel) => ({
-          name: r.exercise_name,
+          name: r.exercise_name ?? '',
           sets: r.sets,
           reps: r.reps,
-          muscles: r.muscles,
+          muscles: r.muscles ?? '',
         })))
       } catch { /* ok */ }
     } catch {
@@ -175,10 +191,10 @@ function SharedLanding({
       </div>
 
       {/* Program name */}
-      <h1 className="font-bebas text-4xl md:text-7xl leading-none tracking-wide mb-4">{program.name}</h1>
+      <h1 className="font-bebas text-4xl md:text-7xl leading-none tracking-wide mb-4">{l(program.name)}</h1>
 
-      {program.description && (
-        <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mb-6">{program.description}</p>
+      {l(program.description) && (
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mb-6">{l(program.description)}</p>
       )}
 
       {/* Stats */}
@@ -220,10 +236,10 @@ function SharedLanding({
                   {ex.sets}x{ex.reps}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium text-foreground truncate">{ex.name}</div>
-                  {ex.muscles && (
+                  <div className="text-[13px] font-medium text-foreground truncate">{l(ex.name)}</div>
+                  {l(ex.muscles) && (
                     <div className="text-[11px] text-muted-foreground">
-                      {ex.muscles.split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
+                      {l(ex.muscles).split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
                     </div>
                   )}
                 </div>

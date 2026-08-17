@@ -13,35 +13,14 @@ import { useWorkout } from '../contexts/WorkoutContext'
 import { useWgerSearch } from '@calistenia/core/hooks/useWgerSearch'
 import { useFavorites } from '@calistenia/core/hooks/useFavorites'
 import WgerResultCard from '../components/WgerResultCard'
-import type { Exercise, Priority, DifficultyLevel } from '@calistenia/core/types'
-import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import type { Priority, DifficultyLevel } from '@calistenia/core/types'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
 import { op } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-interface CatalogExercise {
-  id: string
-  slug: string
-  name: TranslatableField
-  muscles: TranslatableField
-  category: string
-  priority: Priority
-  sets: number | string
-  reps: string
-  rest: number
-  note: TranslatableField
-  youtube: string
-  isTimer?: boolean
-  timerSeconds?: number
-  demoImages?: string[]
-  demoVideo?: string
-  difficulty?: DifficultyLevel
-  equipment?: string[]
-  muscle_groups?: string[]
-}
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -95,56 +74,6 @@ const DIFFICULTY_STYLE: Record<DifficultyLevel, { text: string; bg: string; bord
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function inferCategory(exercise: Exercise, dayType: string): string {
-  const name = localize(exercise.name, 'en').toLowerCase()
-  const muscles = localize(exercise.muscles, 'en').toLowerCase()
-  const note = localize(exercise.note, 'en').toLowerCase()
-
-  // Skills
-  if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
-      name.includes('front lever') || name.includes('back lever') || name.includes('planche') ||
-      name.includes('human flag') || name.includes('skill')) return 'skill'
-
-  // Movilidad
-  if (name.includes('stretch') || name.includes('yoga') || name.includes('mobility') ||
-      name.includes('movilidad') || name.includes('cat-cow') || name.includes('pigeon') ||
-      name.includes('child') || name.includes('forward fold') || name.includes('hip flexor') ||
-      name.includes('thoracic') || name.includes('cossack') || name.includes('jefferson') ||
-      name.includes('world') || name.includes('90/90')) return 'movilidad'
-
-  // Core
-  if (muscles.includes('core') || name.includes('hollow') || name.includes('plank') ||
-      name.includes('dead bug') || name.includes('side plank')) return 'core'
-
-  // Lumbar
-  if (dayType === 'lumbar' || name.includes('bird-dog') || name.includes('superman') ||
-      name.includes('glute bridge') || note.includes('lumbar')) {
-    if (muscles.includes('gluteo') || name.includes('glute bridge')) return 'lumbar'
-    return 'lumbar'
-  }
-
-  // Push
-  if (name.includes('push-up') || name.includes('push up') || name.includes('dip') ||
-      name.includes('pike') || name.includes('hspu')) return 'push'
-
-  // Pull
-  if (name.includes('pull-up') || name.includes('pull up') || name.includes('chin-up') ||
-      name.includes('row') || name.includes('face pull') || name.includes('retraccion') ||
-      name.includes('australian') || name.includes('renegade') || name.includes('inverted')) return 'pull'
-
-  // Legs
-  if (name.includes('squat') || name.includes('lunge') || name.includes('bulgarian') ||
-      name.includes('pistol') || name.includes('nordic') || name.includes('step-up') ||
-      name.includes('calf') || name.includes('wall sit') || name.includes('jump squat') ||
-      name.includes('box jump') || name.includes('shrimp') || name.includes('good morning') ||
-      dayType === 'legs') return 'legs'
-
-  // Full body
-  if (name.includes('burpee') || dayType === 'full') return 'full'
-
-  return dayType || 'full'
-}
 
 function inferDifficulty(phase: number): DifficultyLevel {
   if (phase <= 1) return 'beginner'
@@ -248,28 +177,6 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
 
   return Array.from(seen.values()).sort((a, b) => localize(a.name, locale).localeCompare(localize(b.name, locale)))
 }
-
-function mapPBRecord(rec: any): CatalogExercise {
-  return {
-    id: rec.id,
-    slug: rec.slug || rec.id,
-    name: rec.name ?? '',
-    muscles: rec.muscles ?? '',
-    category: rec.category || 'full',
-    priority: rec.priority || 'med',
-    sets: rec.default_sets ?? 3,
-    reps: rec.default_reps || '8-12',
-    rest: rec.default_rest ?? 90,
-    note: rec.note || rec.description || '',
-    youtube: rec.youtube || '',
-    isTimer: rec.is_timer || false,
-    timerSeconds: rec.timer_seconds,
-    demoImages: rec.default_images ? (Array.isArray(rec.default_images) ? rec.default_images : [rec.default_images]) : undefined,
-    demoVideo: rec.demo_video,
-    difficulty: rec.difficulty_level || undefined,
-  }
-}
-
 
 // ── Category placeholder icons ───────────────────────────────────────────────
 
@@ -396,7 +303,7 @@ export default function ExerciseLibraryPage() {
           try {
             const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
             if (!cancelled && res.items.length > 0) {
-              setExercises(res.items.map(mapPBRecord))
+              setExercises(res.items.map(mapCatalogRecord))
               setLoading(false)
               return
             }
@@ -857,7 +764,7 @@ export default function ExerciseLibraryPage() {
                     // Optimistic update: add to local exercises
                     try {
                       const rec = await pb.collection('exercises_catalog').getOne(recordId)
-                      setExercises(prev => [...prev, mapPBRecord(rec)].sort((a, b) => l(a.name).localeCompare(l(b.name))))
+                      setExercises(prev => [...prev, mapCatalogRecord(rec)].sort((a, b) => l(a.name).localeCompare(l(b.name))))
                     } catch { /* Will show on next load */ }
                   } catch (err) {
                     console.error('Import failed:', err)

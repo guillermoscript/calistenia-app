@@ -20,6 +20,7 @@ import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import { catalogExerciseIdentity, inferCategory } from '@calistenia/core/lib/exerciseCatalog'
 
 interface ExerciseCatalogPickerProps {
   onAdd: (exercise: EditorExercise) => void
@@ -64,21 +65,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   low:  'text-emerald-400 border-emerald-400/30',
 }
 
-function inferCategory(muscles: string, name: string): string {
-  const ml = muscles.toLowerCase()
-  const nl = name.toLowerCase()
-  if (ml.includes('lumbar') || ml.includes('columna') || nl.includes('lumbar')) return 'lumbar'
-  if (ml.includes('pecho') || ml.includes('tríceps') || ml.includes('hombro') || ml.includes('deltoid') || nl.includes('push') || nl.includes('dip') || nl.includes('pike')) return 'push'
-  if (ml.includes('dorsal') || ml.includes('bíceps') || ml.includes('romboid') || nl.includes('pull') || nl.includes('chin') || nl.includes('row')) return 'pull'
-  if (ml.includes('cuádriceps') || ml.includes('glúteo') || ml.includes('isquio') || ml.includes('pantorrilla') || nl.includes('squat') || nl.includes('lunge')) return 'legs'
-  if (ml.includes('core') || ml.includes('oblicuo') || ml.includes('abdominal') || nl.includes('plank') || nl.includes('hollow')) return 'core'
-  if (ml.includes('full') || nl.includes('burpee') || nl.includes('full')) return 'full'
-  if (nl.includes('asana') || nl.includes('surya') || nl.includes('namaskar') || nl.includes('pranayama') || nl.includes('savasana') || nl.includes('padma')) return 'yoga'
-  if (nl.includes('stretch') || nl.includes('movilidad') || nl.includes('pose') || nl.includes('fold') || nl.includes('rotation')) return 'mobility'
-  if (nl.includes('l-sit') || nl.includes('handstand') || nl.includes('muscle up') || nl.includes('front lever')) return 'skill'
-  return 'full'
-}
-
 function extractFallbackCatalog(): CatalogExercise[] {
   const seen = new Set<string>()
   const catalog: CatalogExercise[] = []
@@ -99,7 +85,7 @@ function extractFallbackCatalog(): CatalogExercise[] {
         priority: ex.priority,
         isTimer: ex.isTimer || false,
         timerSeconds: ex.timerSeconds || 0,
-        category: inferCategory(ex.muscles, ex.name),
+        category: inferCategory(ex),
       })
     })
   })
@@ -126,7 +112,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
           const items = await pb.collection('exercises_catalog').getFullList({ batch: 500, sort: 'name', $autoCancel: false })
           if (items.length > 0) {
             setCatalog(items.map(r => ({
-              exerciseId: r.exercise_id || r.id,
+              exerciseId: catalogExerciseIdentity(r),
               name: r.name,
               sets: r.sets ?? 3,
               reps: r.reps ?? '10',
@@ -137,7 +123,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
               priority: r.priority ?? 'med',
               isTimer: r.is_timer ?? false,
               timerSeconds: r.timer_seconds ?? 0,
-              category: r.category || inferCategory(localize(r.muscles, 'es') || '', localize(r.name, 'es')),
+              category: r.category || inferCategory({ name: r.name, muscles: r.muscles, note: r.note }),
             })))
             setLoading(false)
             return
@@ -287,7 +273,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                     // Fetch the created record and add to program
                     const rec = await pb.collection('exercises_catalog').getOne(recordId)
                     onAdd({
-                      exerciseId: rec.exercise_id || rec.id,
+                      exerciseId: catalogExerciseIdentity(rec),
                       name: l(rec.name),
                       sets: rec.default_sets ?? 3,
                       reps: rec.default_reps ?? '8-12',

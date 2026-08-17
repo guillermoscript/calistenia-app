@@ -7,6 +7,7 @@ import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exe
 import catalogData from '@calistenia/core/data/exercise-catalog.json'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
+import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
@@ -149,7 +150,7 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
 
 function mapPBRecord(rec: any): CatalogExercise {
   return {
-    id: rec.id ?? '', name: rec.name ?? '', muscles: rec.muscles ?? '',
+    id: catalogExerciseIdentity(rec), name: rec.name ?? '', muscles: rec.muscles ?? '',
     category: rec.category || 'full', priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3, reps: rec.default_reps || '8-12',
     rest: rec.default_rest ?? 90, note: rec.note || (rec.description ?? ''),

@@ -16,32 +16,13 @@ import { Button } from '../components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
 import { ArrowLeftIcon } from '../components/icons/nav-icons'
-import type { Exercise, Priority } from '@calistenia/core/types'
+import type { Priority } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
-import { localize } from '@calistenia/core/lib/i18n-db'
+import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-interface CatalogExercise {
-  id: string
-  slug: string
-  name: TranslatableField
-  muscles: TranslatableField
-  category: string
-  priority: Priority
-  sets: number | string
-  reps: string
-  rest: number
-  note: TranslatableField
-  youtube: string
-  isTimer?: boolean
-  timerSeconds?: number
-  demoImages?: string[]
-  demoVideo?: string
-  description?: TranslatableField
-}
 
 interface RelatedProgram {
   id: string
@@ -77,36 +58,6 @@ const PRIORITY_COLORS: Record<Priority, { text: string; bg: string; border: stri
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function inferCategory(exercise: Exercise, dayType: string): string {
-  const name = localize(exercise.name, 'en').toLowerCase()
-  const muscles = localize(exercise.muscles, 'en').toLowerCase()
-
-  if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
-      name.includes('front lever') || name.includes('back lever') || name.includes('planche') ||
-      name.includes('human flag') || name.includes('skill')) return 'skill'
-  if (name.includes('stretch') || name.includes('yoga') || name.includes('mobility') ||
-      name.includes('cat-cow') || name.includes('pigeon') || name.includes('child') ||
-      name.includes('forward fold') || name.includes('hip flexor') || name.includes('thoracic') ||
-      name.includes('cossack') || name.includes('jefferson') || name.includes('90/90')) return 'movilidad'
-  if (muscles.includes('core') || name.includes('hollow') || name.includes('plank') ||
-      name.includes('dead bug') || name.includes('side plank')) return 'core'
-  if (dayType === 'lumbar' || name.includes('bird-dog') || name.includes('superman') ||
-      name.includes('glute bridge')) return 'lumbar'
-  if (name.includes('push-up') || name.includes('push up') || name.includes('dip') ||
-      name.includes('pike') || name.includes('hspu')) return 'push'
-  if (name.includes('pull-up') || name.includes('pull up') || name.includes('chin-up') ||
-      name.includes('row') || name.includes('face pull') || name.includes('retraccion') ||
-      name.includes('australian') || name.includes('renegade') || name.includes('inverted')) return 'pull'
-  if (name.includes('squat') || name.includes('lunge') || name.includes('bulgarian') ||
-      name.includes('pistol') || name.includes('nordic') || name.includes('step-up') ||
-      name.includes('calf') || name.includes('wall sit') || name.includes('jump squat') ||
-      name.includes('box jump') || name.includes('shrimp') || name.includes('good morning') ||
-      dayType === 'legs') return 'legs'
-  if (name.includes('burpee') || dayType === 'full') return 'full'
-
-  return dayType || 'full'
-}
 
 function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
   // Check catalog JSON first (has i18n translations)
@@ -207,27 +158,6 @@ function findRelatedWorkouts(exerciseId: string, t: (key: string, opts?: Record<
   return results
 }
 
-function mapPBRecord(rec: any): CatalogExercise {
-  return {
-    id: rec.id,
-    slug: rec.slug || rec.id,
-    name: rec.name ?? '',
-    muscles: rec.muscles ?? '',
-    category: rec.category || 'full',
-    priority: rec.priority || 'med',
-    sets: rec.default_sets ?? 3,
-    reps: rec.default_reps || '8-12',
-    rest: rec.default_rest ?? 90,
-    note: rec.note ?? '',
-    youtube: rec.youtube || '',
-    isTimer: rec.is_timer || false,
-    timerSeconds: rec.timer_seconds,
-    demoImages: rec.default_images ? (Array.isArray(rec.default_images) ? rec.default_images : [rec.default_images]) : undefined,
-    demoVideo: rec.demo_video,
-    description: rec.description || rec.note || '',
-  }
-}
-
 // ── Icons ────────────────────────────────────────────────────────────────────
 
 
@@ -288,7 +218,7 @@ export default function ExerciseDetailPage() {
               filter: pb.filter('slug = {:val} || id = {:val}', { val: id }),
             })
             if (!cancelled && res.items.length > 0) {
-              setExercise(mapPBRecord(res.items[0]))
+              setExercise(mapCatalogRecord(res.items[0]))
               setLoading(false)
               return
             }

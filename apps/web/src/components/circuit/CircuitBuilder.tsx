@@ -8,6 +8,7 @@ import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import type { CircuitDefinition, CircuitExercise } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 
 // ── Catalog item (lightweight shape for the picker) ───────────────────────────
 
@@ -53,7 +54,7 @@ function useCatalog() {
           if (!cancelled && res.items.length > 0) {
             setCatalog(
               res.items.map((r) => ({
-                exerciseId: r.exercise_id || r.id,
+                exerciseId: catalogExerciseIdentity(r),
                 name: r.name as TranslatableField,
                 muscles: (r.muscles ?? '') as TranslatableField,
                 reps: r.reps ?? '10',
