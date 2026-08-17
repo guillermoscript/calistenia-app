@@ -6,30 +6,29 @@ import {
   trackCanonicalEvent,
   trackShareCardShared,
 } from '@calistenia/core/lib/analytics'
-
-export const BASE_URL = 'https://gym.guille.tech'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
 // ── URL builders ──────────────────────────────────────────────────────────────
 
 export function profileUrl(userId: string): string {
-  return `${BASE_URL}/u/${userId}`
+  return `${WEB_BASE_URL}/u/${userId}`
 }
 
 export function sessionUrl(date: string, workoutKey: string): string {
-  return `${BASE_URL}/session/${date}/${workoutKey}`
+  return `${WEB_BASE_URL}/session/${date}/${workoutKey}`
 }
 
 export function raceUrl(id: string): string {
-  return `${BASE_URL}/race/${id}`
+  return `${WEB_BASE_URL}/race/${id}`
 }
 
 export function inviteUrl(code: string): string {
-  return `${BASE_URL}/invite/${code}`
+  return `${WEB_BASE_URL}/invite/${code}`
 }
 
 /** Deep link to a single saved cardio session's detail page (web, universally openable). */
 export function cardioUrl(id: string): string {
-  return `${BASE_URL}/cardio/session/${id}`
+  return `${WEB_BASE_URL}/cardio/session/${id}`
 }
 
 // ── Primitive share helpers ───────────────────────────────────────────────────
@@ -231,8 +230,8 @@ export function sharePR(input: PRShareInput): PRShareResult {
   if (referralCode) {
     message += `\n${inviteUrl(referralCode)}`
   }
-  // PR events don't have a canonical deep-link; point to BASE_URL
-  return { message, url: BASE_URL }
+  // PR events don't have a canonical deep-link; point to WEB_BASE_URL
+  return { message, url: WEB_BASE_URL }
 }
 
 export interface CardioShareInput {
@@ -251,7 +250,7 @@ export interface CardioShareResult {
 
 export function shareCardioSession(input: CardioShareInput): CardioShareResult {
   const { userName, activityLabel, distanceKm, durationLabel, sessionId, referralCode } = input
-  const url = sessionId ? cardioUrl(sessionId) : BASE_URL
+  const url = sessionId ? cardioUrl(sessionId) : WEB_BASE_URL
   let message = `${userName ? `${userName}: ` : ''}${activityLabel} — ${distanceKm.toFixed(2)} km en ${durationLabel} 🏃`
   if (referralCode) {
     message += `\n${inviteUrl(referralCode)}`
@@ -324,7 +323,7 @@ export interface BattleResultShareResult {
  */
 export function shareBattleResult(input: BattleResultShareInput): BattleResultShareResult {
   const { userName, circuitName, rank, contenders, tied, referralCode } = input
-  const url = referralCode ? inviteUrl(referralCode) : BASE_URL
+  const url = referralCode ? inviteUrl(referralCode) : WEB_BASE_URL
   const who = userName ? `${userName}: ` : ''
 
   // Terminar en solitario no es ganar a nadie, y decirle "1.º de 1" a quien se quedó
@@ -342,7 +341,7 @@ export function shareBattleResult(input: BattleResultShareInput): BattleResultSh
 
 /** Deep link to the web nutrition page for a specific date. */
 export function nutritionUrl(date: string): string {
-  return `${BASE_URL}/nutrition?date=${date}`
+  return `${WEB_BASE_URL}/nutrition?date=${date}`
 }
 
 export interface NutritionDayShareInput {

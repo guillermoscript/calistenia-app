@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
 import { op } from '@calistenia/core/lib/analytics'
+import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
 const MILESTONES = [7, 14, 30, 60, 100] as const
 
@@ -43,7 +44,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
     await shareContent({
       title: t('streak.milestone.title', { days: streak }),
       text: t('streak.milestone.shareText', { days: streak }),
-      url: referralCode ? `https://gym.guille.tech/invite/${referralCode}` : window.location.origin,
+      url: referralCode ? `${WEB_BASE_URL}/invite/${referralCode}` : window.location.origin,
     })
   }, [streak, t, referralCode])
 
