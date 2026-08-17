@@ -4,14 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { ConfirmDialog } from '../ui/confirm-dialog'
-import { currencySymbol } from '@calistenia/core/lib/money'
+import { currencySymbol, parseLocaleNumber } from '@calistenia/core/lib/money'
 import type { PantryItem } from '@calistenia/core/types'
-
-function parseNum(v: string): number | null {
-  if (v.trim() === '') return null
-  const n = Number(v.replace(',', '.'))
-  return Number.isFinite(n) ? n : null
-}
 
 export function PantryEditDialog({ item, onSave, onDelete, onClose, onVerify, onGone }: {
   item: PantryItem | null
@@ -120,7 +114,7 @@ export function PantryEditDialog({ item, onSave, onDelete, onClose, onVerify, on
               {t('pantry.delete')}
             </Button>
             <Button
-              onClick={() => onSave(item, parseNum(qty), parseNum(price))}
+              onClick={() => onSave(item, parseLocaleNumber(qty), parseLocaleNumber(price))}
               className="flex-1 bg-lime-400 font-mono text-xs uppercase tracking-[2px] text-zinc-900 hover:bg-lime-300"
             >
               {t('pantry.save')}

@@ -6,7 +6,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Spinner } from '../ui/spinner'
 import { PANTRY_CATEGORY_ORDER, normalizePantryName } from '@calistenia/core/lib/pantry'
-import { currencySymbol } from '@calistenia/core/lib/money'
+import { currencySymbol, parseLocaleNumber } from '@calistenia/core/lib/money'
 import { formatMoney } from '@calistenia/core/lib/shopping'
 import { cn } from '../../lib/utils'
 import type { PantryItem, PantryParsedItem, PantryParseResult, PantryUnit } from '@calistenia/core/types'
@@ -16,12 +16,6 @@ const UNITS: (PantryUnit | null)[] = [null, 'g', 'kg', 'ml', 'l', 'unidad', 'paq
 export interface ConsumeMatch {
   parsed: PantryParsedItem
   match: PantryItem | null
-}
-
-function parseNum(v: string): number | null {
-  if (v.trim() === '') return null
-  const n = Number(v.replace(',', '.'))
-  return Number.isFinite(n) ? n : null
 }
 
 export function PantryConfirmDialog({
@@ -58,7 +52,7 @@ export function PantryConfirmDialog({
   const isAdd = result.intent === 'add'
   const matched = matches.filter(m => m.match != null)
   const currency = pricing.currency
-  const rate = parseNum(rateStr)
+  const rate = parseLocaleNumber(rateStr)
   const hasPrices = draft.some(d => d.price_total != null)
   // precios en moneda ≠ USD exigen tasa: sin ella el $ de referencia sería inventado
   const needsRate = isAdd && currency !== 'USD' && hasPrices
@@ -152,14 +146,14 @@ export function PantryConfirmDialog({
                 <div className="mt-2 flex items-center gap-2">
                   <Input
                     value={it.quantity == null ? '' : String(it.quantity)}
-                    onChange={e => updateDraft(i, { quantity: parseNum(e.target.value) })}
+                    onChange={e => updateDraft(i, { quantity: parseLocaleNumber(e.target.value) })}
                     inputMode="decimal"
                     placeholder="—"
                     className="h-9 w-16 text-center font-mono text-xs"
                   />
                   <Input
                     value={it.price_total == null ? '' : String(it.price_total)}
-                    onChange={e => updateDraft(i, { price_total: parseNum(e.target.value) })}
+                    onChange={e => updateDraft(i, { price_total: parseLocaleNumber(e.target.value) })}
                     inputMode="decimal"
                     placeholder="$"
                     className="h-9 w-24 text-center font-mono text-xs"
