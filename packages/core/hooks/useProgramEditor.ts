@@ -46,12 +46,26 @@ const PROGRAM_TRANSLATABLE_FIELDS = [
   'note',
 ] as const
 
-/** Adapta una colección de PocketBase a la interfaz que espera executePlans. */
+/**
+ * Adapta una colección de PocketBase a la interfaz que espera executePlans.
+ *
+ * `requestKey: null` no es cosmético (issue #536). El SDK de PocketBase deriva
+ * la clave de auto-cancelación de `MÉTODO + ruta`, y **todos los `create` de una
+ * colección comparten ruta** (`POST /api/collections/X/records`): de las N altas
+ * que `executePlans` lanza con un solo `Promise.all` sobrevivía únicamente la
+ * última, y el resto se abortaban. Un programa de 4 fases se guardaba con 1 fase,
+ * 1 día y 1 ejercicio. El error de aborto llega con el cuerpo vacío, que es de
+ * donde salía el «({})» del mensaje de error que veía el usuario.
+ *
+ * En `update` y `delete` la ruta lleva el id del registro, así que entre sí no
+ * colisionan; se pasa el flag igual para que una escritura no se aborte al
+ * coincidir con otra en vuelo sobre el mismo registro.
+ */
 function collectionWriter(collection: string): CollectionWriter {
   return {
-    create: (data: Row) => pb.collection(collection).create(data),
-    update: (id: string, data: Row) => pb.collection(collection).update(id, data),
-    delete: (id: string) => pb.collection(collection).delete(id),
+    create: (data: Row) => pb.collection(collection).create(data, { requestKey: null }),
+    update: (id: string, data: Row) => pb.collection(collection).update(id, data, { requestKey: null }),
+    delete: (id: string) => pb.collection(collection).delete(id, { requestKey: null }),
   }
 }
 

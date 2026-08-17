@@ -47,6 +47,17 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     }
   }, [programId]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // La fase seleccionada puede desaparecer al eliminar fases (issue #536). Sin
+  // esto el índice se quedaba apuntando a una fase que ya no existe y los pasos
+  // 3 y 4 se renderizaban vacíos —las guardas `if (!day) return null` evitan el
+  // crash, pero también dejan la pantalla en blanco hasta pulsar otra pestaña.
+  // El editor nativo ya hace este reajuste.
+  useEffect(() => {
+    if (selectedPhaseTab >= state.phases.length) {
+      setSelectedPhaseTab(Math.max(0, state.phases.length - 1))
+    }
+  }, [state.phases.length, selectedPhaseTab])
+
   const handleClose = () => {
     navigate('/programs')
   }

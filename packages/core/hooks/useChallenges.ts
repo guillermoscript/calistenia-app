@@ -181,14 +181,20 @@ export function useChallenges(userId: string | null) {
         status: 'active',
       })
 
-      // Añadir creador + usuarios invitados como participantes
+      // Añadir creador + usuarios invitados como participantes.
+      //
+      // `requestKey: null` por lo mismo que en useProgramEditor (issue #536):
+      // estas altas comparten ruta, así que sin el flag el SDK auto-cancelaba
+      // todas menos la última y el `.catch` de duplicados se tragaba el aborto
+      // en silencio — un reto creado con invitados se quedaba con un solo
+      // participante, y a veces sin el propio creador.
       const allParticipants = [userId, ...createData.invitedUserIds]
       await Promise.all(
         allParticipants.map(uid =>
           pb.collection('challenge_participants').create({
             challenge: challenge.id,
             user: uid,
-          }).catch(() => {}) // ignorar duplicados
+          }, { requestKey: null }).catch(() => {}) // ignorar duplicados
         )
       )
 
