@@ -12,8 +12,8 @@ const MUTED = '#8a8782' as const
 const FG = '#fafaf9' as const
 
 const STRINGS = {
-  es: { today: 'ENTRENAMIENTO DE HOY', done: 'COMPLETADO', rest: 'DÍA DE DESCANSO', none: 'ELIGE UN PROGRAMA', stale: 'ABRE LA APP PARA ACTUALIZAR', streak: 'RACHA' },
-  en: { today: "TODAY'S WORKOUT", done: 'COMPLETED', rest: 'REST DAY', none: 'PICK A PROGRAM', stale: 'OPEN THE APP TO UPDATE', streak: 'STREAK' },
+  es: { today: 'ENTRENAMIENTO DE HOY', done: 'COMPLETADO', rest: 'DÍA DE DESCANSO', none: 'ELIGE UN PROGRAMA', stale: 'ABRE LA APP PARA ACTUALIZAR', streak: 'RACHA', week: 'SEMANA' },
+  en: { today: "TODAY'S WORKOUT", done: 'COMPLETED', rest: 'REST DAY', none: 'PICK A PROGRAM', stale: 'OPEN THE APP TO UPDATE', streak: 'STREAK', week: 'WEEK' },
 }
 
 function label(snapshot: WidgetSnapshot | null, today: string) {
@@ -41,8 +41,19 @@ export function TodayWidget({ snapshot, today }: { snapshot: WidgetSnapshot | nu
       }}
     >
       <FlexWidget style={{ flexDirection: 'column', width: 'match_parent' }}>
-        {top !== '' && (
-          <TextWidget text={top} style={{ fontSize: 9, color: MUTED, fontFamily: 'JetBrainsMono_400Regular', letterSpacing: 0.3 }} />
+        {/* Kicker: título a la izquierda, avance semanal a la derecha. El
+            contador va aquí y no en la fila inferior porque un 4x2 de 250dp no
+            traga puntos + semana + racha en la misma línea. */}
+        {(top !== '' || fresh) && (
+          <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', justifyContent: 'space-between', alignItems: 'center' }}>
+            <TextWidget text={top} style={{ fontSize: 9, color: MUTED, fontFamily: 'JetBrainsMono_400Regular', letterSpacing: 0.3 }} />
+            {fresh && (
+              <TextWidget
+                text={`${snapshot!.weeklyDone}/${snapshot!.weeklyGoal} ${tr.week}`}
+                style={{ fontSize: 9, color: MUTED, fontFamily: 'JetBrainsMono_400Regular', letterSpacing: 0.3 }}
+              />
+            )}
+          </FlexWidget>
         )}
         <TextWidget text={title} truncate="END" maxLines={1}
           style={{ fontSize: 30, color, fontFamily: 'BebasNeue_400Regular', marginTop: 2 }} />

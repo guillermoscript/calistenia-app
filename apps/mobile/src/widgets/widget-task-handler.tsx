@@ -6,6 +6,7 @@ import type { WidgetTaskHandlerProps } from 'react-native-android-widget'
 import * as Sentry from '@sentry/react-native'
 import { todayStrInTz } from '@calistenia/core/lib/dateUtils'
 import { TodayWidget } from './TodayWidget'
+import { StreakWidget } from './StreakWidget'
 import { CardioWidget } from './CardioWidget'
 import { NutritionWidget } from './NutritionWidget'
 import { NutritionRingWidget } from './NutritionRingWidget'
@@ -54,6 +55,9 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
         const raw = await readSnapshot<NutritionWidgetSnapshot>(NUTRITION_WIDGET_SNAPSHOT_KEY)
         const today = todayInTz(raw?.tz)
         props.renderWidget(<NutritionRingWidget snapshot={rolloverSnapshot(raw, today)} today={today} />)
+      } else if (props.widgetInfo.widgetName === 'StreakWidget') {
+        const snapshot = await readSnapshot<WidgetSnapshot>(WIDGET_SNAPSHOT_KEY)
+        props.renderWidget(<StreakWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
       } else {
         const snapshot = await readSnapshot<WidgetSnapshot>(WIDGET_SNAPSHOT_KEY)
         props.renderWidget(<TodayWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
