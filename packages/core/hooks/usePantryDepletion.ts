@@ -1,18 +1,21 @@
 /**
- * usePantryDepletion — F4 (#173), port web del hook mobile. Tras guardar un
- * meal log, matchea los foods contra la despensa (AI, stateless) y expone rows
- * para PantryDepleteDialog.
+ * usePantryDepletion — F4 (#173). Tras guardar un meal log, matchea los foods
+ * contra la despensa (AI, stateless) y expone rows para el diálogo/sheet de
+ * descuento.
  * REGLAS: despensa vacía = no llamar al endpoint; cualquier fallo = silencioso
  * a Sentry (el log de comida NUNCA se ve afectado); nunca descuento sin confirmar.
+ *
+ * Lo específico de plataforma se inyecta (#468): `captureException` (el Sentry
+ * de cada app, que no es el mismo paquete en web y en móvil) y las hápticas de
+ * confirmación, que solo existen en móvil.
  */
 import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import * as Sentry from '@sentry/react'
 
-import { qk } from '@calistenia/core/lib/query-keys'
-import { matchConsumption } from '@calistenia/core/lib/pantry-api'
-import { fetchActivePantryItems, useConsumePantryMatches } from '@calistenia/core/hooks/usePantry'
-import type { FoodItem, PantryConfidence, PantryItem } from '@calistenia/core/types'
+import { qk } from '../lib/query-keys'
+import { matchConsumption } from '../lib/pantry-api'
+import { fetchActivePantryItems, useConsumePantryMatches } from './usePantry'
+import type { FoodItem, PantryConfidence, PantryItem } from '../types'
 
 export interface DepleteRow {
   item: PantryItem
@@ -23,7 +26,20 @@ export interface DepleteRow {
   checked: boolean
 }
 
-export function usePantryDepletion(userId: string | null) {
+/** La operación que falló, tal cual viajaba en el tag `op` de Sentry. */
+export type PantryDepletionOp = 'match-consumption' | 'deplete-confirm'
+
+export interface PantryDepletionOptions {
+  /** Reporta la excepción al Sentry de la plataforma, con la operación que falló. */
+  captureException?: (e: unknown, op: PantryDepletionOp) => void
+  /** Feedback extra al descontar con éxito (haptics en móvil). */
+  onConfirmSuccess?: () => void
+  /** Feedback extra al fallar el descuento (haptics en móvil). */
+  onConfirmError?: () => void
+}
+
+export function usePantryDepletion(userId: string | null, options: PantryDepletionOptions = {}) {
+  const { captureException, onConfirmSuccess, onConfirmError } = options
   const qc = useQueryClient()
   const consumeMatches = useConsumePantryMatches(userId)
   const [pending, setPending] = useState<{ rows: DepleteRow[]; entryId: string } | null>(null)
@@ -56,9 +72,9 @@ export function usePantryDepletion(userId: string | null) {
       })
       if (rows.length > 0) setPending({ rows, entryId })
     } catch (e) {
-      Sentry.captureException(e, { tags: { feature: 'pantry', op: 'match-consumption' } })
+      captureException?.(e, 'match-consumption')
     }
-  }, [userId, qc])
+  }, [userId, qc, captureException])
 
   const confirm = useCallback(async (selected: { item: PantryItem; qtyConsumed: number }[]) => {
     if (!pending) return
@@ -66,11 +82,13 @@ export function usePantryDepletion(userId: string | null) {
     setPending(null)
     try {
       await consumeMatches.mutateAsync({ matches: selected, linkedEntry: entryId })
+      onConfirmSuccess?.()
     } catch (e) {
-      // Descuento parcial posible (la mutation aísla fallos por item)
-      Sentry.captureException(e, { tags: { feature: 'pantry', op: 'deplete-confirm' } })
+      // Descuento parcial posible (la mutation aísla fallos por item): avisar con haptic
+      onConfirmError?.()
+      captureException?.(e, 'deplete-confirm')
     }
-  }, [pending, consumeMatches])
+  }, [pending, consumeMatches, captureException, onConfirmSuccess, onConfirmError])
 
   const dismiss = useCallback(() => setPending(null), [])
 

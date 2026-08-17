@@ -9,7 +9,7 @@ import { Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { cn } from '../../lib/utils'
 import type { PantryItem } from '@calistenia/core/types'
-import type { DepleteRow } from './use-pantry-depletion'
+import type { DepleteRow } from '@calistenia/core/hooks/usePantryDepletion'
 
 function parseNum(v: string): number | null {
   if (v.trim() === '') return null

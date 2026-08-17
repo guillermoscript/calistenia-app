@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Check, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import type { PantryItem } from '@calistenia/core/types'
-import type { DepleteRow } from './use-pantry-depletion'
+import type { DepleteRow } from '@calistenia/core/hooks/usePantryDepletion'
 
 function parseNum(v: string): number | null {
   if (v.trim() === '') return null

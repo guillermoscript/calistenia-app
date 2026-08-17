@@ -65,7 +65,7 @@ import ChangeGoalCard from '@/components/nutrition/ChangeGoalCard'
 import FrequentMealsRow from '@/components/nutrition/FrequentMealsRow'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
 import { PantryPlanSection } from '@/components/nutrition/PantryPlanSection'
-import { usePantryDepletion } from '@/components/pantry/use-pantry-depletion'
+import { usePantryDepletion } from '@calistenia/core/hooks/usePantryDepletion'
 import { PantryDepleteSheet } from '@/components/pantry/PantryDepleteSheet'
 import CoachInsights from '@/components/nutrition/CoachInsights'
 import NutritionShareButton from '@/components/share/NutritionShareButton'
@@ -94,7 +94,11 @@ export default function NutritionTab() {
 
   // ─── Core hooks ─────────────────────────────────────────────────────────────
   const nutrition = useNutrition(userId)
-  const pantryDepletion = usePantryDepletion(userId)
+  const pantryDepletion = usePantryDepletion(userId, {
+    captureException: (e, op) => Sentry.captureException(e, { tags: { feature: 'pantry', op } }),
+    onConfirmSuccess: () => haptics.success(),
+    onConfirmError: () => haptics.error(),
+  })
   const {
     goals,
     entries: allEntries,
