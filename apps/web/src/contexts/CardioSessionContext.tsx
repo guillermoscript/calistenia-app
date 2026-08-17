@@ -94,12 +94,17 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const getStartTime = useCallback(() => startTimeRef.current, [])
   const getPausedDuration = useCallback(() => pausedDurationRef.current, [])
 
-  const metrics = useCardioMetrics({ isTracking, getActivityType, getStartTime })
+  const {
+    points, pointsCount, distance, currentPace, currentSpeed, currentSplit, gpsAccuracy,
+    applyFix, reset: resetMetrics, restore: restoreMetrics, snapshot: snapshotMetrics,
+  } = useCardioMetrics({ isTracking, getActivityType, getStartTime })
 
-  // El health-check del cronómetro relanza el GPS, pero `geo` se declara
-  // después (necesita `timer.noteGpsFix`): el ref rompe el ciclo.
+  // El health-check del cronómetro relanza el GPS, pero el watch se declara
+  // después (necesita `noteGpsFix`): el ref rompe el ciclo.
   const restartGpsRef = useRef<() => void>(() => {})
-  const timer = useCardioTimer({
+  const {
+    duration, setDuration, start: startTimer, stop: stopTimer, noteGpsFix, resetGpsHealth,
+  } = useCardioTimer({
     getStartTime,
     getPausedDuration,
     canRestartGps: useCallback(
@@ -109,19 +114,21 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     onGpsStalled: useCallback(() => restartGpsRef.current(), []),
   })
 
-  const geo = useGeolocationWatch({
-    onFix: (fix) => { if (metrics.applyFix(fix)) timer.noteGpsFix() },
+  const {
+    start: startGps, stop: stopGps, restart: restartGps, captureOnce,
+  } = useGeolocationWatch({
+    onFix: (fix) => { if (applyFix(fix)) noteGpsFix() },
     onUnavailable: () => setError(i18n.t('cardioSession.geoNotAvailable')),
     onError: (err) => setError(`Error GPS: ${err.message}`),
   })
-  restartGpsRef.current = geo.restart
+  restartGpsRef.current = restartGps
 
   // ── Copia de seguridad de la sesión ─────────────────────────────────────
 
   const buildSnapshot = useCallback((): PersistedCardioSession | null => {
     const s = stateRef.current
     if (s !== 'tracking' && s !== 'paused') return null
-    const m = metrics.snapshot()
+    const m = snapshotMetrics()
     return {
       state: s,
       activityType: activityTypeRef.current,
@@ -134,13 +141,15 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       lastSplitTime: m.lastSplitTime,
       maxSpeed: m.maxSpeed,
     }
-  }, [metrics.snapshot])
+  }, [snapshotMetrics])
 
   const isLive = state === 'tracking' || state === 'paused'
-  const persistence = useCardioPersistence({ active: isLive, buildSnapshot })
+  const {
+    persist, load: loadSnapshot, clear: clearSnapshot,
+  } = useCardioPersistence({ active: isLive, buildSnapshot })
   useWakeLock(isLive)
 
-  const queue = useUnsavedCardioQueue({
+  const { unsavedCount, enqueue } = useUnsavedCardioQueue({
     userId,
     onFlushed: () => {
       if (userId) void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
@@ -153,11 +162,11 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState !== 'hidden' || stateRef.current !== 'tracking') return
-      geo.captureOnce((fix) => { if (metrics.applyFix(fix)) persistence.persist() })
+      captureOnce((fix) => { if (applyFix(fix)) persist() })
     }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
-  }, [geo.captureOnce, metrics.applyFix, persistence.persist])
+  }, [captureOnce, applyFix, persist])
 
   // ── Acciones de sesión ──────────────────────────────────────────────────
 
@@ -168,9 +177,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   ) => {
     setActivityType(type)
     activityTypeRef.current = type
-    metrics.reset()
-    timer.setDuration(0)
-    timer.resetGpsHealth()
+    resetMetrics()
+    setDuration(0)
+    resetGpsHealth()
     setError(null)
     setNote('')
     setProgramId(startProgramId || null)
@@ -179,43 +188,43 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     startTimeRef.current = Date.now()
 
     setSessionState('tracking')
-    geo.start()
-    timer.start()
-  }, [metrics.reset, timer.setDuration, timer.resetGpsHealth, timer.start, geo.start, setSessionState])
+    startGps()
+    startTimer()
+  }, [resetMetrics, setDuration, resetGpsHealth, startTimer, startGps, setSessionState])
 
   const pause = useCallback(() => {
     setSessionState('paused')
-    geo.stop()
+    stopGps()
     pauseStartRef.current = Date.now()
-    timer.stop()
-    persistence.persist()
-  }, [geo.stop, timer.stop, persistence.persist, setSessionState])
+    stopTimer()
+    persist()
+  }, [stopGps, stopTimer, persist, setSessionState])
 
   const resume = useCallback(() => {
     setSessionState('tracking')
     pausedDurationRef.current += Date.now() - pauseStartRef.current
-    geo.start()
-    timer.start()
-  }, [geo.start, timer.start, setSessionState])
+    startGps()
+    startTimer()
+  }, [startGps, startTimer, setSessionState])
 
   const finish = useCallback(async (finishNote?: string): Promise<CardioSession | null> => {
-    geo.stop()
-    timer.stop()
+    stopGps()
+    stopTimer()
     setSessionState('finished')
-    persistence.clear()
+    clearSnapshot()
 
     const finalDuration = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
-    timer.setDuration(finalDuration)
+    setDuration(finalDuration)
 
-    const points = metrics.points.current
-    const { splits, totalDistanceKm: totalDistance } = calculateSplitsAndDistance(points)
-    const elevationGain = calculateElevationGain(points)
+    const finalPoints = points.current
+    const { splits, totalDistanceKm: totalDistance } = calculateSplitsAndDistance(finalPoints)
+    const elevationGain = calculateElevationGain(finalPoints)
     const avgPace = finalDuration > 0 && totalDistance > 0 ? (finalDuration / 60) / totalDistance : 0
     const currentActivity = activityTypeRef.current
 
     const session: CardioSession = {
       activity_type: currentActivity,
-      gps_points: points,
+      gps_points: finalPoints,
       distance_km: Math.round(totalDistance * 100) / 100,
       duration_seconds: finalDuration,
       avg_pace: Math.round(avgPace * 100) / 100,
@@ -224,9 +233,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       finished_at: new Date().toISOString(),
       note: finishNote,
       calories_burned: estimateCalories(currentActivity, finalDuration, userWeight),
-      max_pace: calculateMaxPace(points),
+      max_pace: calculateMaxPace(finalPoints),
       avg_speed_kmh: calculateAvgSpeed(totalDistance, finalDuration),
-      max_speed_kmh: calculateMaxSpeed(points),
+      max_speed_kmh: calculateMaxSpeed(finalPoints),
       splits,
       program: programId || undefined,
       program_day_key: programDayKey || undefined,
@@ -246,28 +255,28 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
       } catch (e) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
-        queue.enqueue(saveData)
+        enqueue(saveData)
       }
     }
 
     return session
   }, [
-    geo.stop, timer.stop, timer.setDuration, persistence.clear, metrics.points, setSessionState,
-    userId, userWeight, programId, programDayKey, queryClient, queue.enqueue,
+    stopGps, stopTimer, setDuration, clearSnapshot, points, setSessionState,
+    userId, userWeight, programId, programDayKey, queryClient, enqueue,
   ])
 
   const discard = useCallback(() => {
-    geo.stop()
-    timer.stop()
+    stopGps()
+    stopTimer()
     setSessionState('idle')
-    persistence.clear()
-    metrics.reset()
-    timer.setDuration(0)
+    clearSnapshot()
+    resetMetrics()
+    setDuration(0)
     setError(null)
     setNote('')
     setProgramId(null)
     setProgramDayKey(null)
-  }, [geo.stop, timer.stop, timer.setDuration, persistence.clear, metrics.reset, setSessionState])
+  }, [stopGps, stopTimer, setDuration, clearSnapshot, resetMetrics, setSessionState])
 
   // ── CRUD de sesiones guardadas ──────────────────────────────────────────
 
@@ -329,12 +338,12 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     if (restoredRef.current) return
     restoredRef.current = true
 
-    const saved = persistence.load()
+    const saved = loadSnapshot()
     if (!saved) return
 
     startTimeRef.current = saved.startTime
     pausedDurationRef.current = saved.pausedDuration
-    metrics.restore(saved)
+    restoreMetrics(saved)
     setActivityType(saved.activityType)
     activityTypeRef.current = saved.activityType
 
@@ -342,26 +351,26 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       pauseStartRef.current = saved.pauseStart ?? Date.now()
       setSessionState('paused')
       // Tiempo transcurrido hasta el momento de la pausa.
-      timer.setDuration(Math.floor((pauseStartRef.current - saved.startTime - saved.pausedDuration) / 1000))
+      setDuration(Math.floor((pauseStartRef.current - saved.startTime - saved.pausedDuration) / 1000))
     } else {
       // Estaba en marcha: la duración incluye el rato en segundo plano.
       setSessionState('tracking')
-      timer.setDuration(Math.floor((Date.now() - saved.startTime - saved.pausedDuration) / 1000))
-      geo.start()
-      timer.start()
+      setDuration(Math.floor((Date.now() - saved.startTime - saved.pausedDuration) / 1000))
+      startGps()
+      startTimer()
     }
-  }, [persistence.load, metrics.restore, timer.setDuration, timer.start, geo.start, setSessionState])
+  }, [loadSnapshot, restoreMetrics, setDuration, startTimer, startGps, setSessionState])
 
   // ── Cleanup al desmontar (p. ej. al cerrar sesión) ──────────────────────
 
   useEffect(() => {
     return () => {
       // Un último snapshot antes del teardown para poder restaurar la sesión.
-      persistence.persist()
-      geo.stop()
-      timer.stop()
+      persist()
+      stopGps()
+      stopTimer()
     }
-  }, [persistence.persist, geo.stop, timer.stop])
+  }, [persist, stopGps, stopTimer])
 
   // Memoizado: durante una sesión el provider re-renderiza cada segundo (el
   // cronómetro) y a cada fix de GPS. Sin memo, cada render recrea este objeto y
@@ -369,27 +378,26 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const value = useMemo<CardioSessionContextValue>(() => ({
     state,
     activityType,
-    points: metrics.points,
-    pointsCount: metrics.pointsCount,
-    distance: metrics.distance,
-    duration: timer.duration,
-    currentPace: metrics.currentPace,
-    currentSpeed: metrics.currentSpeed,
-    currentSplit: metrics.currentSplit,
+    points,
+    pointsCount,
+    distance,
+    duration,
+    currentPace,
+    currentSpeed,
+    currentSplit,
     error,
     note,
     setNote,
-    gpsAccuracy: metrics.gpsAccuracy,
+    gpsAccuracy,
     programId,
     programDayKey,
     start, pause, resume, finish, discard,
     getHistory, deleteSession, updateSessionNote,
-    unsavedCount: queue.unsavedCount,
+    unsavedCount,
   }), [
     state, activityType, error, note, programId, programDayKey,
-    metrics.points, metrics.pointsCount, metrics.distance, metrics.currentPace,
-    metrics.currentSpeed, metrics.currentSplit, metrics.gpsAccuracy,
-    timer.duration, queue.unsavedCount,
+    points, pointsCount, distance, currentPace, currentSpeed, currentSplit, gpsAccuracy,
+    duration, unsavedCount,
     start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote,
   ])
 

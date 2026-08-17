@@ -105,7 +105,9 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
 
   // Único punto de fin de carrera: los cinco disparadores de abajo pasan por
   // `finishSelf` o `endRace`, nunca por `finishParticipant`/`finishRace` a pelo.
-  const finish = useRaceFinish({ raceId, getRace, getMe, trackerRef, latestStatsRef, onError: setError })
+  const {
+    hasFinishedSelf, finishSelf, endRace, reset: resetFinish,
+  } = useRaceFinish({ raceId, getRace, getMe, trackerRef, latestStatsRef, onError: setError })
 
   const { myStats } = useRaceTracker({
     raceId,
@@ -115,9 +117,9 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     trackerRef,
     latestStatsRef,
     getRace,
-    hasFinishedSelf: finish.hasFinishedSelf,
-    onTargetReached: useCallback(() => { void finish.finishSelf('target_reached') }, [finish.finishSelf]),
-    onStop: finish.reset,
+    hasFinishedSelf,
+    onTargetReached: useCallback(() => { void finishSelf('target_reached') }, [finishSelf]),
+    onStop: resetFinish,
     onError: setError,
     onGpsFix: useCallback(() => clearErrorKind('gps'), [clearErrorKind]),
   })
@@ -136,28 +138,28 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
 
     const check = () => {
       if (serverNow() - startAtMs < targetMs) return
-      void finish.finishSelf('time_deadline')
+      void finishSelf('time_deadline')
     }
     check()
     const id = setInterval(check, 500)
     return () => clearInterval(id)
-  }, [phase, meId, startsAt, raceMode, targetDurationSeconds, finish.finishSelf])
+  }, [phase, meId, startsAt, raceMode, targetDurationSeconds, finishSelf])
 
   // Todos han terminado o abandonado: cualquier cliente puede cerrar la carrera.
   useEffect(() => {
     if (phase !== 'racing' || participants.length === 0) return
     if (!participants.every(p => p.status === 'finished' || p.status === 'dnf')) return
-    void finish.endRace()
-  }, [phase, participants, finish.endRace])
+    void endRace()
+  }, [phase, participants, endRace])
 
   // Watchdog: cierra las carreras que pasaron de `ends_at`.
   useEffect(() => {
     if (phase !== 'racing' || !endsAt) return
-    const check = () => { if (msUntil(endsAt) <= 0) void finish.endRace() }
+    const check = () => { if (msUntil(endsAt) <= 0) void endRace() }
     check()
     const id = setInterval(check, 30000)
     return () => clearInterval(id)
-  }, [phase, endsAt, finish.endRace])
+  }, [phase, endsAt, endRace])
 
   // ── Ciclo de vida de la carrera ───────────────────────────────────────────
 
@@ -250,8 +252,8 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const finishRaceAction = useCallback(async () => {
     // Congelarse primero con las stats finales y la traza; después cerrar la
     // carrera. Ambos pasos son idempotentes y viven en useRaceFinish.
-    await finish.finishSelf('manual')
-    const err = await finish.endRace()
+    await finishSelf('manual')
+    const err = await endRace()
     if (err) {
       setError('push', err.message)
       return
@@ -263,7 +265,7 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
       my_distance_km: stats?.distance_km ?? 0,
       my_duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
     })
-  }, [raceId, finish.finishSelf, finish.endRace, setError])
+  }, [raceId, finishSelf, endRace, setError])
 
   const leaveAction = useCallback(async () => {
     const current = meRef.current
