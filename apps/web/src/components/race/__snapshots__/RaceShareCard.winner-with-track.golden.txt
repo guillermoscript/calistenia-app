@@ -711,6 +711,8 @@ call lineTo(219.394, 16.92)
 call lineTo(200.094, 6)
 set strokeStyle = #fbbf24
 set lineWidth = 3
+set lineJoin = round
+set lineCap = round
 call stroke()
 call beginPath()
 call arc(200.094, 126, 4.5, 0, 6.283)
