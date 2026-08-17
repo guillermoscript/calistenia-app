@@ -1,97 +1,20 @@
 import { pb, isPocketBaseAvailable } from './pocketbase'
 import { localMidnightAsUTC, utcToLocalDateStr } from './dateUtils'
 import type { CardioSession, SleepEntry } from '../types'
+import { emptyMonthActivity } from './monthActivity.types'
+import type {
+  BodyMeasurementLite,
+  CircuitSessionLite,
+  LumbarCheckLite,
+  MonthActivity,
+  WeightEntryLite,
+} from './monthActivity.types'
 
-// Resumen de nutrición agregado por día (un cuadro en el calendario).
-export interface DayNutritionSummary {
-  meals: number
-  calories: number
-}
+// Las formas de datos viven en `./monthActivity.types` (sin runtime de
+// cliente, para que mcp-server pueda importarlas); se reexportan aquí para que
+// los sitios que ya hacían `from './monthActivity'` sigan igual.
+export * from './monthActivity.types'
 
-// Resumen de agua agregado por día.
-export interface DayWaterSummary {
-  totalMl: number
-}
-
-// Sesión de circuito/HIIT con solo los campos que el calendario necesita.
-export interface CircuitSessionLite {
-  id: string
-  circuit_name?: unknown
-  mode?: 'circuit' | 'timed'
-  rounds_completed?: number
-  rounds_target?: number
-  duration_seconds?: number
-  started_at: string
-  finished_at?: string
-  note?: string
-}
-
-// Registro de peso corporal (forma mínima para el calendario).
-export interface WeightEntryLite {
-  id: string
-  weight_kg: number
-  date: string
-  note?: string
-}
-
-// Medidas corporales (cinta métrica) — el calendario solo necesita presencia +
-// fecha; cintura/cuello/cadera alimentan la señal de composición corporal de
-// los insights (#227) y son opcionales por registro.
-export interface BodyMeasurementLite {
-  id: string
-  date: string
-  waist?: number
-  neck?: number
-  hips?: number
-}
-
-// Foto de progreso individual (id + URL servible desde PocketBase).
-export interface DayPhotoEntry {
-  id: string
-  url: string
-}
-
-// Resumen de fotos de progreso por día (cuántas + sus URLs, para el visor).
-export interface DayPhotoSummary {
-  count: number
-  photos: DayPhotoEntry[]
-}
-
-// Chequeo lumbar diario (forma mínima: la puntuación y la fecha).
-export interface LumbarCheckLite {
-  id: string
-  date: string
-  lumbar_score: number
-}
-
-// Todo lo que el usuario registró en un mes, agrupado por fecha local.
-// Los entrenamientos NO se incluyen aquí: viven en WorkoutContext (progress)
-// y se mezclan en el componente.
-export interface MonthActivity {
-  cardio: CardioSession[]
-  circuits: CircuitSessionLite[]
-  nutritionByDate: Record<string, DayNutritionSummary>
-  waterByDate: Record<string, DayWaterSummary>
-  sleepByDate: Record<string, SleepEntry>
-  weightByDate: Record<string, WeightEntryLite>
-  measurementByDate: Record<string, BodyMeasurementLite>
-  photosByDate: Record<string, DayPhotoSummary>
-  lumbarByDate: Record<string, LumbarCheckLite>
-}
-
-export function emptyMonthActivity(): MonthActivity {
-  return {
-    cardio: [],
-    circuits: [],
-    nutritionByDate: {},
-    waterByDate: {},
-    sleepByDate: {},
-    weightByDate: {},
-    measurementByDate: {},
-    photosByDate: {},
-    lumbarByDate: {},
-  }
-}
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const ymd = (year: number, month0: number, day: number) => `${year}-${pad(month0 + 1)}-${pad(day)}`

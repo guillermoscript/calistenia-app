@@ -46,6 +46,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `@calistenia/core` es un `file:../packages/core`, así que npm lo enlaza
+      # con un symlink pero NO instala sus dependencias. Node resuelve por la
+      # ruta REAL, de modo que un `import 'dayjs'` dentro de
+      # packages/core/lib/*.ts busca en packages/core/node_modules → ausente
+      # aquí (sólo el `pnpm install` de la raíz lo crea, y este job no lo
+      # corre) → `mcp-use build` moría al evaluar la entrada (#517).
+      #
+      # Apuntamos las dependencias de core al árbol que acaba de instalar
+      # `npm ci`. No es un apaño: el bundle de `mcp-use build` INLINEA el
+      # código de core y deja los paquetes de terceros como imports externos
+      # ("dayjs"), que en producción se resuelven contra
+      # mcp-server/node_modules. O sea que todo lo que core necesite en runtime
+      # tiene que estar declarado en mcp-server/package.json de todas formas
+      # (dayjs y pocketbase ya lo están); esto sólo hace que el build falle
+      # ruidosamente aquí en vez de en el arranque del contenedor.
+      - name: Resolve core deps from the mcp-server tree
+        run: test -e ../packages/core/node_modules || ln -s ../../mcp-server/node_modules ../packages/core/node_modules
+
       # Va ANTES del typecheck a propósito: `mcp-use build` bundlea las views
       # (Vite, sin tipar), valida el `view` ↔ `outputSchema` de cada tool al
       # evaluar la entrada, y genera `mcp-env.d.ts` — que es lo que da a

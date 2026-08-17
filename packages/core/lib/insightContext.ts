@@ -21,6 +21,13 @@
  * matemáticas puras de sueño/composición corporal y tipos. Por eso mcp-server
  * puede importarlo tal cual.
  *
+ * Ojo con los `import type`: no emiten nada en runtime, pero TypeScript SÍ
+ * carga y typechequea el módulo. Por eso `MonthActivity` viene de
+ * `./monthActivity.types` y no de `./monthActivity`, que importa el singleton
+ * de PocketBase y `./dateUtils` para su `fetchMonthActivity` — con el import
+ * al fichero grande el `tsc` de mcp-server pedía i18next (que no es
+ * dependencia suya) aunque el bundle nunca lo necesitara.
+ *
  * Fuentes:
  *  - calendario (cardio/circuitos/nutrición/agua/sueño/peso/medidas) vía
  *    `deps.fetchActivity`;
@@ -34,7 +41,7 @@
  */
 
 import type PocketBase from 'pocketbase'
-import type { MonthActivity } from './monthActivity'
+import type { MonthActivity } from './monthActivity.types'
 import { addDaysIn, diffDaysIn, localMidnightAsUTCIn, todayStrIn, utcToLocalDateStrIn } from './tzDate'
 import { bedtimeConsistencyMinutes, pctTrue, avgDefined } from './sleepStats'
 import { estimateBodyFatNavy } from './body-composition'
