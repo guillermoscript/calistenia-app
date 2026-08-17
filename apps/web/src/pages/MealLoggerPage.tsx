@@ -18,6 +18,19 @@ interface MealLoggerPageProps {
   userId: string | null
 }
 
+/** La comida analizada que devuelve un job de IA. Antiguos y nuevos jobs difieren:
+ *  unos anidan el análisis bajo `analysis` y otros lo devuelven plano. */
+type LegacyOrCurrentFood = Parameters<typeof migrateLegacyFood>[0] & { baseCal100?: number }
+type AnalyzedMeal = {
+  foods?: LegacyOrCurrentFood[]
+  meal_description?: string
+  quality?: AnalyzeResult['quality']
+}
+type AnalyzeJobResult = AnalyzedMeal & { analysis?: AnalyzedMeal }
+
+/** El paso de éxito se queda visible un momento antes de volver a /nutrition. */
+const SUCCESS_DWELL_MS = 1200
+
 export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -47,11 +60,11 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   const [jobLoading, setJobLoading] = useState(false)
   const jobId = searchParams.get('job')
 
-  const loadJobResult = useCallback((result: any) => {
-    const analysis = result.analysis ?? result
+  const loadJobResult = useCallback((result: AnalyzeJobResult) => {
+    const analysis = 'analysis' in result && result.analysis ? result.analysis : result
     setInitialAnalysis({
-      foods: (analysis.foods ?? []).map((f: any) =>
-        !f.baseCal100 ? migrateLegacyFood(f) : f
+      foods: (analysis.foods ?? []).map(f =>
+        !f.baseCal100 ? migrateLegacyFood(f) : f as FoodItem
       ),
       meal_description: analysis.meal_description || '',
       quality: analysis.quality || undefined,
@@ -140,7 +153,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   }, [pantryDepletion])
 
   const handleSaveSuccess = useCallback(() => {
-    setTimeout(() => setWantNav(true), 1200)
+    setTimeout(() => setWantNav(true), SUCCESS_DWELL_MS)
   }, [])
 
   useEffect(() => {
