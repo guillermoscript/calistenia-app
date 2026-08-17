@@ -1,10 +1,11 @@
-import { generateText, generateObject, Output, tool, isStepCount } from "ai";
+import { generateText, Output, tool, isStepCount } from "ai";
 import { z } from "zod";
 import { MealAnalysisSchema, QualityBlockSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
 import { sanitizeMealAnalysis, sanitizeQualityTexts } from "./text-sanitizer.js";
+import { runStructuredGeneration, sumStepsUsage } from "./structured-generation.js";
 
 interface ImageInput {
   buffer: Buffer;
@@ -230,18 +231,7 @@ export async function analyzeMealImage({
   });
 
   // Compute total usage across all steps
-  const totalUsage = steps.reduce(
-    (acc, step) => ({
-      promptTokens: acc.promptTokens + (step.usage?.inputTokens ?? 0),
-      completionTokens: acc.completionTokens + (step.usage?.outputTokens ?? 0),
-    }),
-    { promptTokens: 0, completionTokens: 0 }
-  );
-
-  const toolCallCount = steps.reduce(
-    (acc, step) => acc + (step.toolCalls?.length ?? 0),
-    0
-  );
+  const { usage, toolCalls: toolCallCount } = sumStepsUsage(steps);
 
   // Post-processing: fix caloric consistency (P×4 + C×4 + F×9 ≈ kcal)
   if (output?.foods) {
@@ -272,11 +262,7 @@ export async function analyzeMealImage({
     model_used: modelName,
     agent_steps: steps.length,
     tool_calls: toolCallCount,
-    usage: {
-      prompt_tokens: totalUsage.promptTokens,
-      completion_tokens: totalUsage.completionTokens,
-      total_tokens: totalUsage.promptTokens + totalUsage.completionTokens,
-    },
+    usage,
   };
 }
 
@@ -298,9 +284,6 @@ export async function scoreMealQuality({
   userContext,
 }: ScoreMealQualityInput): Promise<z.infer<typeof QualityBlockSchema> | null> {
   try {
-    const { model, name: modelName } = resolveModel(tier);
-    const { prompt: systemPrompt } = await getPromptWithMeta("meal-quality-scorer");
-
     let userText = `Evalúa la calidad nutricional de esta comida (${mealType}):\n\n`;
     userText += `Alimentos:\n`;
     for (const f of foods) {
@@ -312,14 +295,11 @@ export async function scoreMealQuality({
       userText += buildUserContextBlock(userContext);
     }
 
-    const { object } = await generateObject({
-      model,
+    const { object } = await runStructuredGeneration({
+      promptName: "meal-quality-scorer",
+      tier,
       schema: QualityBlockSchema,
-      instructions: systemPrompt,
-      messages: [
-        { role: "user", content: userText },
-      ],
-      telemetry: langfuseTelemetry("meal-quality-scorer", { metadata: { tier, modelName } }),
+      user: userText,
     });
 
     return sanitizeQualityTexts(object);

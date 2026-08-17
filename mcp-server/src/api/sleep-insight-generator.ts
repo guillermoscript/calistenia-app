@@ -1,8 +1,6 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -27,44 +25,12 @@ const SleepInsightSchema = z.object({
 
 export type SleepInsight = z.infer<typeof SleepInsightSchema>;
 
-// ── Input (the compact rollup from packages/core buildInsightContext) ─────────
-// Typed locally to avoid a cross-package import; matches InsightContext's JSON
-// shape (only the fields the sleep summary actually reads).
+// ── Input ────────────────────────────────────────────────────────────────────
+// The compact rollup built by @calistenia/core (client) or
+// insight-context-server.ts (cron) — ONE declaration, in core (#480).
 
-interface InsightDayRow {
-  date: string;
-  sleepMinutes?: number;
-  sleepQuality?: number;
-  awakenings?: number;
-  caffeine?: boolean;
-  screenBeforeBed?: boolean;
-  stressLevel?: number;
-  bedtime?: string;
-}
-
-interface InsightSummarySleep {
-  daysLogged: number;
-  avgMinutes: number | null;
-  avgQuality: number | null;
-  avgAwakenings: number;
-  pctCaffeine: number;
-  pctScreenBeforeBed: number;
-  avgStress: number;
-  bedtimeConsistencyMin: number;
-}
-
-interface InsightSummary {
-  days: number;
-  daysWithAnyData: number;
-  sleep: InsightSummarySleep;
-}
-
-export interface InsightContext {
-  period: { type: "weekly" | "monthly"; days: number; start: string; end: string };
-  rows: InsightDayRow[];
-  summary: InsightSummary;
-  previousSummary?: InsightSummary;
-}
+import type { InsightContext } from "@calistenia/core/lib/insightContext";
+export type { InsightContext };
 
 interface SleepInsightInput {
   context: InsightContext;
@@ -137,21 +103,15 @@ function buildSleepUserText(ctx: InsightContext): string {
 // ── Generator ────────────────────────────────────────────────────────────────
 
 export async function generateSleepInsight({ context, tier }: SleepInsightInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt } = await getPromptWithMeta("sleep-pattern-summary");
-
   const userText = buildSleepUserText(context);
 
-  const { object } = await generateObject({
-    model,
+  const { object, modelName } = await runStructuredGeneration({
+    promptName: "sleep-pattern-summary",
+    telemetryId: "sleep-insight-generator",
+    tier,
     schema: SleepInsightSchema,
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: userText },
-    ],
-    telemetry: langfuseTelemetry("sleep-insight-generator", {
-      metadata: { tier, modelName, periodType: context.period.type },
-    }),
+    user: userText,
+    metadata: { periodType: context.period.type },
   });
 
   return {

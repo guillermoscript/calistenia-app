@@ -10,6 +10,22 @@ import { todayDashboardPropsSchema } from "../views/today-dashboard.schema.js";
 import { localize } from "../lib/i18n.js";
 import { pickLocale, readiness as readinessMsg } from "../lib/tool-i18n.js";
 import { calculateMacroDetails, calculateMacros } from "@calistenia/core/lib/nutritionGoal";
+import {
+  getSettings,
+  getNutritionGoals,
+  upsertNutritionGoals,
+  getLatestLumbarCheck,
+  getCurrentProgram,
+  listSessions,
+  listSets,
+  listExerciseSets,
+  listWeightEntries,
+  listNutritionEntries,
+  listTodayNutritionEntries,
+  listProgramExercises,
+  SET_FIELDS,
+  NUTRITION_TOTALS_FIELDS,
+} from "../api/repos/index.js";
 
 export function registerSmartTools(server: AppServer, pbUrl: string) {
 
@@ -148,26 +164,15 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const weekStart = startOfWeek(tz);
         const todayStr = today(tz);
 
-        const [lastLumbar, weekSessions, lastSession, settings, userPrograms] = await Promise.all([
-          pb
-            .collection("lumbar_checks")
-            .getFirstListItem(pb.filter('user = {:userId}', { userId }), { sort: "-date", requestKey: null })
-            .catch(() => null),
-          pb.collection("sessions").getFullList({
-            filter: pb.filter('user = {:userId} && completed_at >= {:weekStart}', { userId, weekStart }),
-            fields: 'id,workout_key,phase,day,completed_at',
-            requestKey: null,
-          }),
+        const [lastLumbar, weekSessions, lastSession, settings, current] = await Promise.all([
+          getLatestLumbarCheck(pb, userId),
+          listSessions(pb, userId, { from: weekStart }),
           pb
             .collection("sessions")
             .getFirstListItem(pb.filter('user = {:userId}', { userId }), { sort: "-completed_at", fields: 'id,workout_key,phase,day,completed_at', requestKey: null })
             .catch(() => null),
-          pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
-          pb.collection("user_programs").getFullList({
-            filter: pb.filter('user = {:userId} && is_current = true', { userId }),
-            expand: "program",
-            requestKey: null,
-          }),
+          getSettings(pb, userId),
+          getCurrentProgram(pb, userId),
         ]);
 
         // ── Score components ────────────────────────────────
@@ -254,28 +259,26 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const todayDayId = dayIds[new Date().getDay()];
         const currentPhase = (settings?.phase as number) ?? 1;
 
-        if (userPrograms.length > 0) {
-          const program = userPrograms[0].expand?.program as Record<string, unknown>;
-          if (program) {
-            const exercises = await pb.collection("program_exercises").getFullList({
-              filter: pb.filter('program = {:programId} && phase_number = {:phase} && day_id = {:dayId}', { programId: program.id as string, phase: currentPhase, dayId: todayDayId }),
-              sort: "priority",
-            });
+        if (current) {
+          const exercises = await listProgramExercises(pb, current.program.id as string, {
+            phase: currentPhase,
+            dayId: todayDayId,
+            sort: "priority",
+          });
 
-            if (exercises.length > 0) {
-              scheduledWorkout = {
-                workout_key: `p${currentPhase}_${todayDayId}`,
-                day_name: localize(exercises[0].day_name),
-                day_focus: localize(exercises[0].day_focus),
-                workout_title: localize(exercises[0].workout_title),
-                exercise_count: exercises.length,
-                exercises: exercises.slice(0, 5).map((e) => ({
-                  name: localize(e.exercise_name),
-                  sets: e.sets,
-                  reps: e.reps,
-                })),
-              };
-            }
+          if (exercises.length > 0) {
+            scheduledWorkout = {
+              workout_key: `p${currentPhase}_${todayDayId}`,
+              day_name: localize(exercises[0].day_name),
+              day_focus: localize(exercises[0].day_focus),
+              workout_title: localize(exercises[0].workout_title),
+              exercise_count: exercises.length,
+              exercises: exercises.slice(0, 5).map((e) => ({
+                name: localize(e.exercise_name),
+                sets: e.sets,
+                reps: e.reps,
+              })),
+            };
           }
         }
 
@@ -391,11 +394,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
 
         // Get recent sets for this exercise (last 90 days)
         const ninetyDaysAgo = daysAgo(90, tz);
-        const sets = await pb.collection("sets_log").getFullList({
-          filter: pb.filter('user = {:userId} && exercise_id = {:exerciseId} && logged_at >= {:from}', { userId, exerciseId: exercise_id, from: ninetyDaysAgo }),
-          sort: "logged_at",
-          fields: 'id,exercise_id,reps,logged_at,workout_key',
-        });
+        const sets = await listExerciseSets(pb, userId, exercise_id, { from: ninetyDaysAgo, fields: SET_FIELDS });
 
         if (sets.length === 0) {
           return {
@@ -522,41 +521,23 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const from = daysAgo(weeks * 7, tz);
 
         // Get current program schedule
-        const userPrograms = await pb.collection("user_programs").getFullList({
-          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
-          expand: "program",
-        });
+        const current = await getCurrentProgram(pb, userId);
 
-        if (userPrograms.length === 0) {
+        if (!current) {
           return {
             content: [{ type: "text", text: "No active program. Set one with `cal_set_current_program` first." }],
             isError: true as const,
           };
         }
 
-        const programId = (userPrograms[0].expand?.program as Record<string, unknown>)?.id as string;
-        const settings = await pb
-          .collection("settings")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
+        const programId = current.program.id as string;
+        const settings = await getSettings(pb, userId);
         const currentPhase = (settings?.phase as number) ?? 1;
 
         const [programExercises, sessions, setsLog] = await Promise.all([
-          pb.collection("program_exercises").getFullList({
-            filter: pb.filter('program = {:programId} && phase_number = {:phase}', { programId, phase: currentPhase }),
-            sort: "day_id,priority",
-            requestKey: null,
-          }),
-          pb.collection("sessions").getFullList({
-            filter: pb.filter('user = {:userId} && completed_at >= {:from}', { userId, from }),
-            fields: 'id,workout_key,phase,day,completed_at',
-            requestKey: null,
-          }),
-          pb.collection("sets_log").getFullList({
-            filter: pb.filter('user = {:userId} && logged_at >= {:from}', { userId, from }),
-            fields: 'id,exercise_id,reps,logged_at,workout_key',
-            requestKey: null,
-          }),
+          listProgramExercises(pb, programId, { phase: currentPhase, sort: "day_id,priority" }),
+          listSessions(pb, userId, { from }),
+          listSets(pb, userId, { from }),
         ]);
 
         // Expected workouts per day
@@ -749,48 +730,14 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
           currentNutrition,
           previousNutrition,
         ] = await Promise.all([
-          pb.collection("sessions").getFullList({
-            filter: pb.filter('user = {:userId} && completed_at >= {:from} && completed_at <= {:to}', { userId, from: currentFrom, to: todayEnd }),
-            fields: 'id,workout_key,phase,day,completed_at',
-            requestKey: null,
-          }),
-          pb.collection("sessions").getFullList({
-            filter: pb.filter('user = {:userId} && completed_at >= {:from} && completed_at <= {:to}', { userId, from: previousFrom, to: previousEnd }),
-            fields: 'id,workout_key,phase,day,completed_at',
-            requestKey: null,
-          }),
-          pb.collection("sets_log").getFullList({
-            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: currentFrom, to: todayEnd }),
-            fields: 'id,exercise_id,reps,logged_at,workout_key',
-            requestKey: null,
-          }),
-          pb.collection("sets_log").getFullList({
-            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: previousFrom, to: previousEnd }),
-            fields: 'id,exercise_id,reps,logged_at,workout_key',
-            requestKey: null,
-          }),
-          pb.collection("weight_entries").getFullList({
-            filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from: currentFrom, to: todayStr }),
-            sort: "date",
-            fields: 'id,weight_kg,date',
-            requestKey: null,
-          }),
-          pb.collection("weight_entries").getFullList({
-            filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from: previousFrom, to: previousTo }),
-            sort: "date",
-            fields: 'id,weight_kg,date',
-            requestKey: null,
-          }),
-          pb.collection("nutrition_entries").getFullList({
-            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: currentFrom, to: todayEnd }),
-            fields: 'id,total_calories,total_protein,total_carbs,total_fat,logged_at,meal_type',
-            requestKey: null,
-          }),
-          pb.collection("nutrition_entries").getFullList({
-            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: previousFrom, to: previousEnd }),
-            fields: 'id,total_calories,total_protein,total_carbs,total_fat,logged_at,meal_type',
-            requestKey: null,
-          }),
+          listSessions(pb, userId, { from: currentFrom, to: todayEnd }),
+          listSessions(pb, userId, { from: previousFrom, to: previousEnd }),
+          listSets(pb, userId, { from: currentFrom, to: todayEnd }),
+          listSets(pb, userId, { from: previousFrom, to: previousEnd }),
+          listWeightEntries(pb, userId, { from: currentFrom, to: todayStr }),
+          listWeightEntries(pb, userId, { from: previousFrom, to: previousTo }),
+          listNutritionEntries(pb, userId, { from: currentFrom, to: todayEnd, fields: NUTRITION_TOTALS_FIELDS }),
+          listNutritionEntries(pb, userId, { from: previousFrom, to: previousEnd, fields: NUTRITION_TOTALS_FIELDS }),
         ]);
 
         const delta = (curr: number, prev: number) => ({
@@ -885,22 +832,9 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const todayEnd = `${todayStr} 23:59:59`;
 
         const [weightEntries, sets, sessions] = await Promise.all([
-          pb.collection("weight_entries").getFullList({
-            filter: pb.filter("user = {:userId} && date >= {:from} && date <= {:to}", { userId, from: fromStr, to: todayStr }),
-            sort: "date",
-            fields: "id,weight_kg,date",
-            requestKey: null,
-          }),
-          pb.collection("sets_log").getFullList({
-            filter: pb.filter("user = {:userId} && logged_at >= {:from} && logged_at <= {:to}", { userId, from: fromStr, to: todayEnd }),
-            fields: "id,logged_at",
-            requestKey: null,
-          }),
-          pb.collection("sessions").getFullList({
-            filter: pb.filter("user = {:userId} && completed_at >= {:from} && completed_at <= {:to}", { userId, from: fromStr, to: todayEnd }),
-            fields: "id,completed_at",
-            requestKey: null,
-          }),
+          listWeightEntries(pb, userId, { from: fromStr, to: todayStr }),
+          listSets(pb, userId, { from: fromStr, to: todayEnd, fields: "id,logged_at" }),
+          listSessions(pb, userId, { from: fromStr, to: todayEnd, fields: "id,completed_at" }),
         ]);
 
         // Weight points (one per logged date, in kg)
@@ -1029,16 +963,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
           activity_level,
         };
 
-        const existing = await pb
-          .collection("nutrition_goals")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
-
-        if (existing) {
-          await pb.collection("nutrition_goals").update(existing.id, goalData);
-        } else {
-          await pb.collection("nutrition_goals").create({ user: userId, ...goalData });
-        }
+        await upsertNutritionGoals(pb, userId, goalData);
 
         const goalLabels: Record<string, string> = {
           muscle_gain: "Muscle Gain",
@@ -1110,38 +1035,24 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const userId = auth.getUserId();
         const tz = auth.getTimezone();
         // Get current program
-        const userPrograms = await pb.collection("user_programs").getFullList({
-          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
-          expand: "program",
-        });
+        const current = await getCurrentProgram(pb, userId);
 
-        if (userPrograms.length === 0) {
+        if (!current) {
           return { content: [{ type: "text", text: "No active program. Use `cal_set_current_program` to select one." }], isError: true };
         }
 
-        const program = userPrograms[0].expand?.program as Record<string, unknown>;
-        const programId = program?.id as string;
-        const programName = localize(program?.name as string);
+        const program = current.program;
+        const programId = program.id as string;
+        const programName = localize(program.name as string);
 
-        const settings = await pb
-          .collection("settings")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
+        const settings = await getSettings(pb, userId);
         const currentPhase = (settings?.phase as number) ?? 1;
 
         // Get this week's sessions and program exercises
         const weekStart = startOfWeek(tz);
         const [thisWeekSessions, programExercises] = await Promise.all([
-          pb.collection("sessions").getFullList({
-            filter: pb.filter('user = {:userId} && completed_at >= {:weekStart}', { userId, weekStart }),
-            fields: 'id,workout_key,phase,day,completed_at',
-            requestKey: null,
-          }),
-          pb.collection("program_exercises").getFullList({
-            filter: pb.filter('program = {:programId} && phase_number = {:phase}', { programId, phase: currentPhase }),
-            sort: "day_id,sort_order",
-            requestKey: null,
-          }),
+          listSessions(pb, userId, { from: weekStart }),
+          listProgramExercises(pb, programId, { phase: currentPhase, sort: "day_id,sort_order" }),
         ]);
 
         // Group exercises by day
@@ -1243,24 +1154,13 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const weekStart = startOfWeek(tz);
 
         // Parallel: nutrition + sessions + lumbar + settings + active program
-        const [nutritionEntries, nutritionGoals, weekSessions, lastLumbar, settings, userPrograms] = await Promise.all([
-          pb.collection("nutrition_entries").getFullList({
-            filter: pb.filter("user = {:userId} && logged_at >= {:from}", { userId, from: `${todayStr} 00:00:00` }),
-            requestKey: null,
-          }),
-          pb.collection("nutrition_goals").getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null }).catch(() => null),
-          pb.collection("sessions").getFullList({
-            filter: pb.filter("user = {:userId} && completed_at >= {:weekStart}", { userId, weekStart }),
-            fields: "id,workout_key,phase,day,completed_at",
-            requestKey: null,
-          }),
-          pb.collection("lumbar_checks").getFirstListItem(pb.filter("user = {:userId}", { userId }), { sort: "-date", requestKey: null }).catch(() => null),
-          pb.collection("settings").getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null }).catch(() => null),
-          pb.collection("user_programs").getFullList({
-            filter: pb.filter("user = {:userId} && is_current = true", { userId }),
-            expand: "program",
-            requestKey: null,
-          }),
+        const [nutritionEntries, nutritionGoals, weekSessions, lastLumbar, settings, current] = await Promise.all([
+          listTodayNutritionEntries(pb, userId, todayStr),
+          getNutritionGoals(pb, userId),
+          listSessions(pb, userId, { from: weekStart }),
+          getLatestLumbarCheck(pb, userId),
+          getSettings(pb, userId),
+          getCurrentProgram(pb, userId),
         ]);
 
         // Nutrition totals
@@ -1301,17 +1201,13 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
           week_progress: { completed: number; total: number }; workout_key: string;
         } | null = null;
 
-        if (userPrograms.length > 0) {
-          const program = userPrograms[0].expand?.program as Record<string, unknown>;
-          const programId = program?.id as string;
-          const programName = localize(program?.name as string);
+        if (current) {
+          const program = current.program;
+          const programId = program.id as string;
+          const programName = localize(program.name as string);
           const currentPhase = (settings?.phase as number) ?? 1;
 
-          const programExercises = await pb.collection("program_exercises").getFullList({
-            filter: pb.filter("program = {:programId} && phase_number = {:phase}", { programId, phase: currentPhase }),
-            sort: "day_id,sort_order",
-            requestKey: null,
-          });
+          const programExercises = await listProgramExercises(pb, programId, { phase: currentPhase, sort: "day_id,sort_order" });
 
           const dayMap = new Map<string, { name: string; focus: string; exercises: Array<{ name: string; sets: number; reps: string; rest: number }> }>();
           for (const ex of programExercises) {

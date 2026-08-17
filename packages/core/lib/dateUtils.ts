@@ -13,6 +13,7 @@ import relativeTimePlugin from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/es'
 import 'dayjs/locale/en'
 import i18n from 'i18next'
+import { addDaysIn, diffDaysIn, localMidnightAsUTCIn, todayStrIn, utcToLocalDateStrIn } from './tzDate'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -61,7 +62,7 @@ export function toLocalDateStr(date: Date = new Date()): string {
 
 /** Today as YYYY-MM-DD in the user's timezone. */
 export function todayStr(): string {
-  return now().format('YYYY-MM-DD')
+  return todayStrIn(_tz)
 }
 
 /**
@@ -71,7 +72,7 @@ export function todayStr(): string {
  */
 export function todayStrInTz(tz: string): string {
   try {
-    return dayjs().tz(tz).format('YYYY-MM-DD')
+    return todayStrIn(tz)
   } catch {
     return dayjs().format('YYYY-MM-DD')
   }
@@ -84,7 +85,7 @@ export function daysAgoStr(n: number): string {
 
 /** Navigate a YYYY-MM-DD date by `offset` days and return YYYY-MM-DD. */
 export function addDays(dateStr: string, offset: number): string {
-  return dayjs.tz(dateStr, _tz).add(offset, 'day').format('YYYY-MM-DD')
+  return addDaysIn(dateStr, offset, _tz)
 }
 
 /** Start of current week (Monday) as YYYY-MM-DD in user's timezone. */
@@ -130,7 +131,7 @@ export function localHMFromPB(pbTimestamp: string): { hour: string; minute: stri
 
 /** Convert a UTC timestamp string to YYYY-MM-DD in user's timezone. */
 export function utcToLocalDateStr(utcTimestamp: string): string {
-  return dayjs.utc(utcTimestamp).tz(_tz).format('YYYY-MM-DD')
+  return utcToLocalDateStrIn(utcTimestamp, _tz)
 }
 
 /**
@@ -140,8 +141,7 @@ export function utcToLocalDateStr(utcTimestamp: string): string {
  * Example: for EST (UTC-5) on 2026-03-24 → "2026-03-24 05:00:00"
  */
 export function localMidnightAsUTC(dateStr?: string): string {
-  const target = dateStr || todayStr()
-  return dayjs.tz(target, _tz).utc().format('YYYY-MM-DD HH:mm:ss')
+  return localMidnightAsUTCIn(dateStr || todayStr(), _tz)
 }
 
 /**
@@ -162,7 +162,7 @@ export function localDateForPB(dateStr: string): string {
 
 /** Number of days between two YYYY-MM-DD date strings (a - b), timezone-aware. */
 export function diffDays(a: string, b: string): number {
-  return dayjs.tz(a, _tz).diff(dayjs.tz(b, _tz), 'day')
+  return diffDaysIn(a, b, _tz)
 }
 
 /**

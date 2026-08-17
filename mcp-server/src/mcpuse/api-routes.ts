@@ -9,7 +9,7 @@
 import type { AppServer } from "./auth-bridge.js";
 import PocketBase from "pocketbase";
 import config from "../api/config.js";
-import { getAvailableProviders } from "../api/model-resolver.js";
+import { getAvailableProviders, resolveTier } from "../api/model-resolver.js";
 import { analyzeMealImage, scoreMealQuality, type UserContext } from "../api/meal-analyzer.js";
 import { lookupFoodByName } from "../api/food-lookup.js";
 import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
@@ -69,9 +69,9 @@ async function getAuthUser(c: any, pbUrl: string): Promise<any | null> {
 
 // ── Tier helper ───────────────────────────────────────────────────────────────
 
-function getTier(user: any): Tier {
-  return user?.tier === "pro" || user?.tier === "premium" ? "pro" : "free";
-}
+// resolveTier() (model-resolver.ts) is the single implementation of the
+// user.tier → Tier rule; keep this alias so the routes read the same as before.
+const getTier = (user: any): Tier => resolveTier(user);
 
 // ── Error handler ──────────────────────────────────────────────────────────────
 

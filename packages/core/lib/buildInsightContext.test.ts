@@ -1,29 +1,24 @@
-import { describe, it, expect, beforeAll } from 'vitest'
-import { initCore } from '../platform'
-import { setTimezone } from './dateUtils'
+import { describe, it, expect } from 'vitest'
 import type { MonthActivity } from './monthActivity'
-import type { InsightDayRow } from './buildInsightContext'
+import {
+  monthsInRange,
+  mergeInsightActivity,
+  buildDayRows,
+  summarizeRows,
+  previousWindow,
+  emptyInsightActivity,
+  buildInsightContext,
+  type InsightDayRow,
+  type InsightDeps,
+} from './insightContext'
 
-// pocketbase.ts (importado transitivamente por monthActivity.ts / buildInsightContext.ts)
-// lanza si initCore() no corrió antes — lo simulamos con una plataforma mínima y
-// cargamos el resto vía import dinámico para que se evalúe DESPUÉS de esta línea
-// (los imports estáticos se evalúan antes que cualquier código de este archivo).
-initCore({
-  storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
-  env: { pbUrl: 'http://localhost:8090', aiApiUrl: '', isDev: true },
-  analytics: { track: () => {}, identify: () => {}, clear: () => {} },
-  connectivity: { isOnline: () => true, onOnline: () => () => {} },
-})
-
-const { emptyMonthActivity } = await import('./monthActivity')
-const { monthsInRange, mergeMonthActivity, buildDayRows, summarizeRows, previousWindow } = await import(
-  './buildInsightContext'
-)
-
-beforeAll(() => {
-  // Determinismo: las fechas de estos tests no deben depender del tz del runner.
-  setTimezone('UTC')
-})
+// `insightContext.ts` no importa `./pocketbase` ni `./dateUtils`: se puede
+// importar estáticamente sin initCore(), y la zona horaria es un argumento
+// explícito (determinismo: las fechas de estos tests no dependen del tz del
+// runner). La fachada de cliente `buildInsightContext.ts` sólo inyecta el
+// singleton — no hay lógica que probar ahí.
+const TZ = 'UTC'
+const emptyMonthActivity = emptyInsightActivity
 
 describe('monthsInRange', () => {
   it('a window inside a single month returns just that month', () => {
@@ -45,7 +40,7 @@ describe('monthsInRange', () => {
   })
 })
 
-describe('mergeMonthActivity', () => {
+describe('mergeInsightActivity', () => {
   it('concatenates arrays and merges *ByDate records across months', () => {
     const june = {
       ...emptyMonthActivity(),
@@ -58,7 +53,7 @@ describe('mergeMonthActivity', () => {
       nutritionByDate: { '2026-07-01': { meals: 3, calories: 2000 } },
     } as unknown as MonthActivity
 
-    const merged = mergeMonthActivity([june, july])
+    const merged = mergeInsightActivity([june, july])
 
     expect(merged.cardio.map((c) => c.id)).toEqual(['c1', 'c2'])
     expect(merged.nutritionByDate).toEqual({
@@ -98,7 +93,7 @@ describe('buildDayRows', () => {
   const strengthByDate = { '2026-06-26': { workouts: 1, workoutMinutes: 45 } }
   const watchByDate = { '2026-06-27': { steps: 8000, restingHr: 58 } }
 
-  const rows = buildDayRows(merged, strengthByDate, watchByDate, '2026-06-25', '2026-07-01')
+  const rows = buildDayRows({ activity: merged, strengthByDate, watchByDate, start: '2026-06-25', end: '2026-07-01', tz: TZ })
   const byDate = new Map(rows.map((r) => [r.date, r]))
 
   it('only keeps days within [start, end], sorted ascending', () => {
@@ -155,7 +150,7 @@ describe('buildDayRows — medidas corporales (#227)', () => {
   } as unknown as MonthActivity
 
   it('con perfil completo añade waistCm y bodyFatPct cuando hay cuello', () => {
-    const rows = buildDayRows(merged, {}, {}, '2026-06-25', '2026-07-01', { sex: 'male', heightCm: 177.8 })
+    const rows = buildDayRows({ activity: merged, strengthByDate: {}, watchByDate: {}, start: '2026-06-25', end: '2026-07-01', tz: TZ, bodyProfile: { sex: 'male', heightCm: 177.8 } })
     const byDate = new Map(rows.map((r) => [r.date, r]))
     expect(byDate.get('2026-06-26')).toMatchObject({ waistCm: 85.09, bodyFatPct: 16.5 })
     expect(byDate.get('2026-06-28')).toMatchObject({ waistCm: 84 })
@@ -164,7 +159,7 @@ describe('buildDayRows — medidas corporales (#227)', () => {
   })
 
   it('sin perfil (sexo/altura) las filas llevan cintura pero no BF%', () => {
-    const rows = buildDayRows(merged, {}, {}, '2026-06-25', '2026-07-01')
+    const rows = buildDayRows({ activity: merged, strengthByDate: {}, watchByDate: {}, start: '2026-06-25', end: '2026-07-01', tz: TZ })
     const byDate = new Map(rows.map((r) => [r.date, r]))
     expect(byDate.get('2026-06-26')).toMatchObject({ waistCm: 85.09 })
     expect(byDate.get('2026-06-26')!.bodyFatPct).toBeUndefined()
@@ -173,11 +168,11 @@ describe('buildDayRows — medidas corporales (#227)', () => {
 
 describe('previousWindow', () => {
   it('weekly window: returns the 7 days immediately before start, no overlap', () => {
-    expect(previousWindow('2026-06-25', 7)).toEqual({ end: '2026-06-24', start: '2026-06-18' })
+    expect(previousWindow('2026-06-25', 7, TZ)).toEqual({ end: '2026-06-24', start: '2026-06-18' })
   })
 
   it('monthly window crossing a month boundary (Mar 1 → Feb 28, non-leap year)', () => {
-    expect(previousWindow('2026-03-01', 30)).toEqual({ end: '2026-02-28', start: '2026-01-30' })
+    expect(previousWindow('2026-03-01', 30, TZ)).toEqual({ end: '2026-02-28', start: '2026-01-30' })
   })
 })
 
@@ -188,13 +183,13 @@ describe('summarizeRows — cintura/BF% (#227)', () => {
       { date: '2026-06-28', waistCm: 85 },
       { date: '2026-07-01', waistCm: 84.5, bodyFatPct: 16.4 },
     ]
-    const summary = summarizeRows(rows, 7, '2026-07-01', false)
+    const summary = summarizeRows(rows, { days: 7, end: '2026-07-01', tz: TZ, watchAvailable: false })
     expect(summary.waist).toEqual({ firstCm: 86, lastCm: 84.5, deltaCm: -1.5 })
     expect(summary.bodyFat).toEqual({ firstPct: 17.2, lastPct: 16.4, deltaPct: -0.8 })
   })
 
   it('sin medidas → bloques a null', () => {
-    const summary = summarizeRows([], 7, '2026-07-01', false)
+    const summary = summarizeRows([], { days: 7, end: '2026-07-01', tz: TZ, watchAvailable: false })
     expect(summary.waist).toEqual({ firstCm: null, lastCm: null, deltaCm: null })
     expect(summary.bodyFat).toEqual({ firstPct: null, lastPct: null, deltaPct: null })
   })
@@ -202,7 +197,7 @@ describe('summarizeRows — cintura/BF% (#227)', () => {
 
 describe('summarizeRows', () => {
   it('returns all-null/zero aggregates for an empty window (no divide-by-zero)', () => {
-    const summary = summarizeRows([], 7, '2026-07-01', false)
+    const summary = summarizeRows([], { days: 7, end: '2026-07-01', tz: TZ, watchAvailable: false })
     expect(summary.daysWithAnyData).toBe(0)
     expect(summary.workouts).toEqual({ total: 0, daysTrained: 0 })
     expect(summary.nutrition).toEqual({ daysLogged: 0, avgCalories: null, avgMeals: null })
@@ -235,7 +230,7 @@ describe('summarizeRows', () => {
       { date: '2026-07-05', workouts: 1, workoutMinutes: 40, weightKg: 80.0, steps: 11000, restingHr: 52 },
     ]
 
-    const summary = summarizeRows(rows, 10, '2026-07-05', true)
+    const summary = summarizeRows(rows, { days: 10, end: '2026-07-05', tz: TZ, watchAvailable: true })
 
     expect(summary.daysWithAnyData).toBe(6)
     expect(summary.workouts).toEqual({ total: 5, daysTrained: 5 })
@@ -260,7 +255,7 @@ describe('summarizeRows', () => {
 
   it('gates watch averages behind watchAvailable even if steps happen to be present', () => {
     const rows: InsightDayRow[] = [{ date: '2026-07-01', steps: 5000 }]
-    const summary = summarizeRows(rows, 7, '2026-07-01', false)
+    const summary = summarizeRows(rows, { days: 7, end: '2026-07-01', tz: TZ, watchAvailable: false })
     expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null, avgHrvMs: null })
   })
 
@@ -298,7 +293,7 @@ describe('summarizeRows', () => {
       },
     ]
 
-    const summary = summarizeRows(rows, 7, '2026-06-26', false)
+    const summary = summarizeRows(rows, { days: 7, end: '2026-06-26', tz: TZ, watchAvailable: false })
 
     expect(summary.sleep).toEqual({
       daysLogged: 3,
@@ -310,5 +305,104 @@ describe('summarizeRows', () => {
       avgStress: 3, // (2+4)/2, ignora el día sin stressLevel
       bedtimeConsistencyMin: 30.8, // stddev de 23:00/23:30/00:15 (00:15 normalizado a "día siguiente")
     })
+  })
+})
+
+// ─── Orquestación con deps inyectadas (#480) ────────────────────────────────
+// Antes esta parte sólo era testeable con el singleton `pb`; ahora el cliente
+// PB y la zona horaria entran por `InsightDeps`, así que se prueba con un
+// PocketBase de mentira y sin initCore().
+
+type FakeRows = Record<string, unknown[]>
+type FilterCall = { expr: string; params: Record<string, unknown> }
+
+function fakePb(rows: FakeRows, calls: FilterCall[] = []): InsightDeps['pb'] {
+  return {
+    filter: (expr: string, params?: Record<string, unknown>) => {
+      calls.push({ expr, params: params ?? {} })
+      return expr
+    },
+    collection: (name: string) => ({
+      getFullList: async () => rows[name] ?? [],
+      getOne: async () => (rows[name]?.[0] ?? {}) as Record<string, unknown>,
+      getFirstListItem: async () => {
+        const first = rows[name]?.[0]
+        if (!first) throw new Error('404')
+        return first
+      },
+    }),
+  } as unknown as InsightDeps['pb']
+}
+
+describe('buildInsightContext (deps inyectadas)', () => {
+  const nowIso = new Date().toISOString()
+
+  it('agrupa por el día LOCAL de la zona inyectada, no por la del proceso', async () => {
+    // Kiritimati (UTC+14) y Pago Pago (UTC-11) están a 25 h: el mismo instante
+    // cae SIEMPRE en fechas de calendario distintas.
+    const results: Record<string, string> = {}
+    for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
+      const pb = fakePb({ sessions: [{ id: 's1', completed_at: nowIso, duration_seconds: 600 }] })
+      const ctx = await buildInsightContext(
+        { pb, tz, fetchActivity: async () => emptyInsightActivity(), warn: () => {} },
+        'u1',
+        { days: 7 },
+      )
+      expect(ctx.rows).toHaveLength(1)
+      expect(ctx.rows[0].workouts).toBe(1)
+      expect(ctx.rows[0].workoutMinutes).toBe(10)
+      expect(ctx.period.end).toBe(ctx.rows[0].date)
+      results[tz] = ctx.rows[0].date
+    }
+    expect(results['Pacific/Kiritimati']).not.toBe(results['Pacific/Pago_Pago'])
+  })
+
+  it('el filtro de sessions usa la medianoche local de la zona inyectada', async () => {
+    const calls: FilterCall[] = []
+    const pb = fakePb({}, calls)
+    const ctx = await buildInsightContext(
+      { pb, tz: 'America/New_York', fetchActivity: async () => emptyInsightActivity(), warn: () => {} },
+      'u1',
+      { days: 7 },
+    )
+    const sessionsCall = calls.find((c) => c.expr.startsWith('user = {:uid} && completed_at'))
+    expect(sessionsCall).toBeDefined()
+    const params = sessionsCall!.params as { start: string; end: string }
+    // Medianoche de `start` en Nueva York = 04:00 o 05:00 UTC (DST), nunca 00:00.
+    expect(params.start.startsWith(ctx.period.start)).toBe(true)
+    expect(params.start.endsWith('00:00:00')).toBe(false)
+  })
+
+  it('degrada a "sin datos" si fetchActivity lanza, y sigue con las demás fuentes', async () => {
+    const warned: string[] = []
+    const pb = fakePb({ sessions: [{ id: 's1', completed_at: nowIso }] })
+    const ctx = await buildInsightContext(
+      {
+        pb,
+        tz: 'UTC',
+        fetchActivity: async () => {
+          throw new Error('boom')
+        },
+        warn: (m) => warned.push(m),
+      },
+      'u1',
+      { days: 7 },
+    )
+    expect(warned).toContain('buildInsightContext: fetchActivity failed')
+    expect(ctx.summary.workouts.total).toBe(1)
+    expect(ctx.summary.cardio.sessions).toBe(0)
+  })
+
+  it('withPrevious añade previousSummary y lee el objetivo principal', async () => {
+    const pb = fakePb({ users: [{ primary_goal: 'recomposicion', height: 180 }] })
+    const ctx = await buildInsightContext(
+      { pb, tz: 'UTC', fetchActivity: async () => emptyInsightActivity(), warn: () => {} },
+      'u1',
+      { days: 7, withPrevious: true },
+    )
+    expect(ctx.userId).toBe('u1')
+    expect(ctx.previousSummary?.days).toBe(7)
+    expect(ctx.primaryGoal).toBe('recomposicion')
+    expect(ctx.period.type).toBe('weekly')
   })
 })
