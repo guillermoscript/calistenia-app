@@ -5,7 +5,7 @@
  */
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { api, create, createUser, createAs, update, uniq } from "./helpers/client.mjs"
+import { api, create, createUser, createAs, update, uniq, localDateString } from "./helpers/client.mjs"
 
 const BOT_UA = "facebookexternalhit/1.1"
 
@@ -134,8 +134,12 @@ async function makeExpressChallenge(creator, extra = {}) {
     title: "Challenge de Dominadas — 20 x 7d",
     metric: "exercise",
     exercise_slug: exercise.slug,
-    starts_at: "2026-08-01",
-    ends_at: "2026-08-08",
+    // Fechas relativas y en curso: desde #515 el cron `challenges_expiry` cierra
+    // los `active` con `ends_at` pasado, y una fecha literal ya vencida haría que
+    // este reto cambiara de estado a mitad de suite si la pasada horaria del cron
+    // cae dentro del run.
+    starts_at: localDateString(-1),
+    ends_at: localDateString(6),
     status: "active",
     type: "express",
     exercise_id: exercise.id,
@@ -173,8 +177,8 @@ test("challenge-preview de un reto normal → 404 (solo expone express)", async 
     creator: creator.id,
     title: "Reto privado normal",
     metric: "most_sessions",
-    starts_at: "2026-08-01",
-    ends_at: "2026-08-08",
+    starts_at: localDateString(-1),
+    ends_at: localDateString(6),
     status: "active",
   })
 
