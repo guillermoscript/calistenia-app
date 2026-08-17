@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -11,35 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
-import { pb } from '@calistenia/core/lib/pocketbase'
-import { localize } from '@calistenia/core/lib/i18n-db'
-import type { ProgramMeta } from '@calistenia/core/types'
-import i18n from 'i18next'
-
-interface DayRow {
-  dayId: string
-  name: string
-  focus: string
-  type: string
-  color: string
-}
-
-/** Mapea un registro de `programs` de PB a la forma mínima que pinta la pantalla. */
-function toProgramMeta(p: any): ProgramMeta {
-  const locale = i18n.language
-  return {
-    id:             p.id,
-    name:           localize(p.name, locale),
-    description:    localize(p.description, locale),
-    duration_weeks: p.duration_weeks,
-    created_by:     p.created_by || undefined,
-    is_official:    p.is_official || false,
-    is_featured:    p.is_featured || false,
-    difficulty:     p.difficulty || undefined,
-    discipline:     'calistenia', // se refina con los días cargados (ver useEffect)
-    days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
-  }
-}
+import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
 
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -53,80 +25,16 @@ export default function ProgramDetailScreen() {
   // catálogo y, si no está, lo traemos directo de PB → la pantalla nunca queda
   // colgada en "cargando".
   const catalogProgram = programs.find(p => p.id === id) ?? null
-  const [fetchedProgram, setFetchedProgram] = useState<ProgramMeta | null>(null)
-  const program = catalogProgram ?? fetchedProgram
   const isActive = activeProgram?.id === id
 
-  const [days, setDays] = useState<DayRow[] | null>(null)
-  const [notFound, setNotFound] = useState(false)
+  // El programa y su semana tipo (fase 1) los resuelve core (#473): si el
+  // catálogo ya trae el programa no se pide por red, solo sus días. `days` es
+  // `null` mientras carga y `[]` cuando el programa no define ninguno; ya vienen
+  // localizados.
+  const { program, days, notFound } = useProgramDetail(id ?? null, { knownProgram: catalogProgram })
+
   const [selecting, setSelecting] = useState(false)
   const [error, setError] = useState('')
-
-  // Trae el programa por id si el catálogo no lo tiene (programa inactivo,
-  // catálogo aún sin hidratar, deep-link, etc.).
-  useEffect(() => {
-    if (!id || catalogProgram) return
-    let cancelled = false
-    pb.collection('programs').getOne(id, { $autoCancel: false })
-      .then(rec => { if (!cancelled) setFetchedProgram(toProgramMeta(rec)) })
-      .catch(() => { if (!cancelled) setNotFound(true) })
-    return () => { cancelled = true }
-  }, [id, catalogProgram])
-
-  // Estructura semanal (fase 1) — se consulta directo a PB porque el catálogo
-  // de usePrograms solo carga días/ejercicios del programa activo.
-  // Los programas antiguos no tienen program_day_config → fallback a
-  // program_exercises (mismo orden que usePrograms.buildWeekDays).
-  useEffect(() => {
-    if (!id) return
-    let cancelled = false
-
-    const toRows = (items: any[]): DayRow[] => {
-      const locale = i18n.language
-      const seen = new Map<string, DayRow>()
-      items.forEach((r: any) => {
-        if (!seen.has(r.day_id)) {
-          seen.set(r.day_id, {
-            dayId: r.day_id,
-            name: localize(r.day_name, locale),
-            focus: localize(r.day_focus, locale),
-            type: r.day_type,
-            color: r.day_color || '#888899',
-          })
-        }
-      })
-      return [...seen.values()]
-    }
-
-    const load = async () => {
-      const filter = pb.filter('program = {:pid} && phase_number = 1', { pid: id })
-      let rows: DayRow[] = []
-      try {
-        const dc = await pb.collection('program_day_config').getList(1, 50, {
-          filter, sort: 'sort_order', $autoCancel: false,
-        })
-        rows = toRows(dc.items)
-      } catch { /* colección puede no existir */ }
-      if (rows.length === 0) {
-        try {
-          const ex = await pb.collection('program_exercises').getList(1, 500, {
-            filter, sort: 'sort_order', fields: 'day_id,day_name,day_focus,day_type,day_color', $autoCancel: false,
-          })
-          rows = toRows(ex.items)
-        } catch { /* sin datos */ }
-      }
-      if (cancelled) return
-      setDays(rows)
-      // Refina la disciplina del programa traído directo (el del catálogo ya la
-      // trae): si todos los días no-descanso son yoga → 'yoga'.
-      const nonRest = rows.filter(r => r.type !== 'rest')
-      if (nonRest.length > 0 && nonRest.every(r => r.type === 'yoga')) {
-        setFetchedProgram(prev => (prev && prev.discipline !== 'yoga' ? { ...prev, discipline: 'yoga' } : prev))
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [id])
 
   const handleSelect = async () => {
     if (!id || selecting) return

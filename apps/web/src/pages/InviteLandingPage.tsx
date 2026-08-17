@@ -7,153 +7,51 @@ import { Loader } from '../components/ui/loader'
 import { ShareButton } from '../components/ShareButton'
 import { shareContent, type ShareMethod } from '../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { useInviteLanding } from '@calistenia/core/hooks/useInviteLanding'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
 const BASE_URL = 'https://gym.guille.tech'
-
-interface InviterData {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-  level: number
-  currentStreak: number
-  totalSessions: number
-}
-
-interface ProgramPreview {
-  name: string
-  description: string
-  durationWeeks: number
-}
-
-interface ChallengePreview {
-  id: string
-  title: string
-  exerciseName: string
-  dailyTarget: number
-  durationDays: number
-  participantCount: number
-}
 
 export default function InviteLandingPage() {
   const { t } = useTranslation()
   const { code, challengeId } = useParams<{ code: string; challengeId?: string }>()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [inviter, setInviter] = useState<InviterData | null>(null)
-  const [program, setProgram] = useState<ProgramPreview | null>(null)
-  const [challenge, setChallenge] = useState<ChallengePreview | null>(null)
-  const [isOwnLink, setIsOwnLink] = useState(false)
+  const l = useLocalize()
   const [joining, setJoining] = useState(false)
 
   const isLoggedIn = pb.authStore.isValid
   const currentUserId = isLoggedIn ? ((pb.authStore as any).record?.id ?? (pb.authStore as any).model?.id) : null
 
+  // La carga la sirve core (#473). El hook no navega ni toca localStorage a
+  // propósito: devuelve un veredicto en `status` y esta pantalla decide.
+  const { inviter, program, challenge, status, loading, error } = useInviteLanding(
+    code ?? null,
+    challengeId ?? null,
+    { isLoggedIn, currentUserId },
+  )
+
+  // Guardar el código y registrar la vista no dependen de la carga: se hacen en
+  // cuanto se conoce el enlace, igual que antes.
   useEffect(() => {
     if (!code) return
-    // Save referral code to localStorage immediately
     localStorage.setItem(REFERRAL_CODE_KEY, code)
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteLandingViewed, {
       surface: 'invite_landing', source: 'referral_link', result: 'viewed', code, has_challenge: !!challengeId,
     })
+  }, [code, challengeId])
 
-    const load = async () => {
-      setLoading(true)
-      try {
-        // Look up inviter by referral_code via the public lookup endpoint —
-        // the users collection itself requires auth (GHSA-wwj3-9h95-wcpf).
-        const res = await fetch(`${pb.baseUrl}/api/public/referral-lookup/${encodeURIComponent(code)}`)
-        if (!res.ok) {
-          // Invalid code → redirect to registration
-          navigate('/auth', { replace: true })
-          return
-        }
-        const user = await res.json() as { id: string; display_name: string; avatarUrl: string | null }
-
-        // Check edge cases for logged-in users
-        if (isLoggedIn && currentUserId) {
-          if (user.id === currentUserId) {
-            setIsOwnLink(true)
-          } else if (!challengeId) {
-            // Logged-in user opens another's link without challenge → redirect to profile
-            navigate(`/u/${user.id}`, { replace: true })
-            return
-          }
-        }
-
-        const avatarUrl = user.avatarUrl
-
-        // Get user stats
-        let level = 1
-        let currentStreak = 0
-        let totalSessions = 0
-        try {
-          const stats = await pb.collection('public_user_stats').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: user.id }),
-            { $autoCancel: false }
-          )
-          level = (stats as any).level || 1
-          currentStreak = (stats as any).workout_streak_current || 0
-          totalSessions = (stats as any).total_sessions || 0
-        } catch { /* no stats */ }
-
-        setInviter({
-          id: user.id,
-          displayName: user.display_name || '',
-          avatarUrl,
-          level,
-          currentStreak,
-          totalSessions,
-        })
-
-        // Fetch program or challenge preview
-        if (challengeId) {
-          try {
-            // Endpoint público: challenges/challenge_participants exigen auth
-            // en sus rules y el invitado típico aún no tiene cuenta (#313)
-            const chRes = await fetch(`${pb.baseUrl}/api/public/challenge-preview/${encodeURIComponent(challengeId)}`)
-            if (chRes.ok) {
-              const ch = await chRes.json() as {
-                id: string; title: string; exercise_name: string
-                daily_target: number; duration_days: number; participant_count: number
-              }
-              setChallenge({
-                id: ch.id,
-                title: ch.title || '',
-                exerciseName: ch.exercise_name || '',
-                dailyTarget: ch.daily_target || 0,
-                durationDays: ch.duration_days || 0,
-                participantCount: ch.participant_count || 0,
-              })
-            }
-          } catch { /* challenge not found */ }
-        } else {
-          // Fetch inviter's current program
-          try {
-            const up = await pb.collection('user_programs').getFirstListItem(
-              pb.filter('user = {:uid} && is_current = true', { uid: user.id }),
-              { expand: 'program', $autoCancel: false }
-            )
-            const prog = up.expand?.program as any
-            if (prog) {
-              setProgram({
-                name: prog.name || '',
-                description: prog.description || '',
-                durationWeeks: prog.duration_weeks || 0,
-              })
-            }
-          } catch { /* no program */ }
-        }
-      } catch (e) {
-        console.error('InviteLandingPage: load error', e)
-        navigate('/auth', { replace: true })
-      } finally {
-        setLoading(false)
-      }
+  // Navegación derivada del veredicto del hook. `own-link` no navega: pinta la
+  // pantalla de "tu propio enlace".
+  useEffect(() => {
+    if (error || status === 'invalid-code') {
+      navigate('/auth', { replace: true })
+      return
     }
-
-    load()
-  }, [code, challengeId]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (status === 'other-profile' && inviter) {
+      navigate(`/u/${inviter.id}`, { replace: true })
+    }
+  }, [status, error, inviter, navigate])
 
   if (loading) {
     return (
@@ -177,7 +75,7 @@ export default function InviteLandingPage() {
     }, method)
 
   // Own link: show share prompt
-  if (isOwnLink) {
+  if (status === 'own-link') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="w-full max-w-sm text-center">
@@ -237,6 +135,10 @@ export default function InviteLandingPage() {
     if (challengeId) params.set('challenge', challengeId)
     navigate(`/auth?${params.toString()}`)
   }
+
+  // La descripción del programa viene cruda: se localiza antes de comprobarla,
+  // porque un `{"es":""}` sería truthy como objeto.
+  const programDescription = program ? l(program.description) : ''
 
   const handleLogin = () => {
     const params = new URLSearchParams()
@@ -313,12 +215,12 @@ export default function InviteLandingPage() {
             {!challenge && program && (
               <div className="bg-muted border border-border rounded-lg p-4 mb-6">
                 <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">PROGRAMA ACTUAL</div>
-                <div className="font-bebas text-lg text-foreground leading-tight">{program.name}</div>
+                <div className="font-bebas text-lg text-foreground leading-tight">{l(program.name)}</div>
                 {program.durationWeeks > 0 && (
                   <div className="text-xs text-muted-foreground mt-1">{program.durationWeeks} semanas</div>
                 )}
-                {program.description && (
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{program.description}</p>
+                {programDescription && (
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{programDescription}</p>
                 )}
               </div>
             )}

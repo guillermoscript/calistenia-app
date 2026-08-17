@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
@@ -9,156 +7,23 @@ import { cn } from '../lib/utils'
 import { ShareButton } from '../components/ShareButton'
 import { shareRoutine } from '../lib/share'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
-
-interface ProgramPhase {
-  id: string
-  phase_number: number
-  name: string
-  weeks: number
-  color: string
-  bg_color: string
-  sort_order: number
-}
-
-interface ProgramExercise {
-  id: string
-  phase_number: number
-  day_id: string
-  day_type: string
-  day_name: string
-  day_focus: string
-  day_color: string
-  workout_title: string
-  exercise_id: string
-  exercise_name: string
-  sets: number
-  reps: string
-  rest_seconds: number
-  muscles: string
-  note: string
-  youtube: string
-  priority: number
-  is_timer: boolean
-  timer_seconds: number
-  sort_order: number
-}
-
-interface DayGroup {
-  day_id: string
-  day_name: string
-  day_focus: string
-  day_color: string
-  exercises: ProgramExercise[]
-}
-
-interface PhaseGroup {
-  phase: ProgramPhase
-  days: DayGroup[]
-}
+import { useRoutineView } from '@calistenia/core/hooks/useRoutineView'
 
 export default function RoutineViewPage() {
   const { t } = useTranslation()
   const l = useLocalize()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [userName, setUserName] = useState('')
-  const [programName, setProgramName] = useState('')
-  const [programDescription, setProgramDescription] = useState('')
-  const [durationWeeks, setDurationWeeks] = useState(0)
-  const [phaseGroups, setPhaseGroups] = useState<PhaseGroup[]>([])
-  const [noProgram, setNoProgram] = useState(false)
+  // La rutina la sirve core (#473): dos olas de consultas en vez de cuatro en
+  // cascada, y el join fases × días en una función pura. Los textos llegan
+  // crudos, así que se localizan al pintar.
+  const { userName, program, phaseGroups, noProgram, loading } = useRoutineView(userId ?? null)
 
-  useEffect(() => {
-    if (!userId) return
-    const load = async () => {
-      setLoading(true)
-      try {
-        // Fetch user display name
-        const user = await pb.collection('users').getOne(userId)
-        setUserName(user.display_name || user.email?.split('@')[0] || '')
-
-        // Fetch active program
-        let userProgram: any
-        try {
-          userProgram = await pb.collection('user_programs').getFirstListItem(
-            pb.filter('user = {:uid} && is_current = true', { uid: userId }),
-            { expand: 'program', $autoCancel: false }
-          )
-        } catch {
-          setNoProgram(true)
-          setLoading(false)
-          return
-        }
-
-        const program = userProgram.expand?.program
-        if (!program) {
-          setNoProgram(true)
-          setLoading(false)
-          return
-        }
-
-        setProgramName(l(program.name))
-        setProgramDescription(l(program.description) || '')
-        setDurationWeeks(program.duration_weeks || 0)
-
-        // Fetch phases
-        const phasesRes = await pb.collection('program_phases').getList(1, 50, {
-          filter: pb.filter('program = {:pid}', { pid: program.id }),
-          sort: 'sort_order,phase_number',
-          $autoCancel: false,
-        })
-
-        // Fetch exercises
-        const exercisesRes = await pb.collection('program_exercises').getList(1, 500, {
-          filter: pb.filter('program = {:pid}', { pid: program.id }),
-          sort: 'phase_number,sort_order',
-          $autoCancel: false,
-        })
-
-        // Group exercises by phase and day
-        const groups: PhaseGroup[] = phasesRes.items.map((phase: any) => {
-          const phaseExercises = exercisesRes.items.filter(
-            (e: any) => e.phase_number === phase.phase_number
-          ).map((e: any) => ({
-            ...e,
-            exercise_name: l(e.exercise_name),
-            day_name: l(e.day_name),
-            day_focus: l(e.day_focus),
-            muscles: l(e.muscles),
-            note: l(e.note),
-          })) as unknown as ProgramExercise[]
-
-          // Group by day_id
-          const dayMap = new Map<string, DayGroup>()
-          for (const ex of phaseExercises) {
-            if (!dayMap.has(ex.day_id)) {
-              dayMap.set(ex.day_id, {
-                day_id: ex.day_id,
-                day_name: ex.day_name,
-                day_focus: ex.day_focus,
-                day_color: ex.day_color,
-                exercises: [],
-              })
-            }
-            dayMap.get(ex.day_id)!.exercises.push(ex)
-          }
-
-          return {
-            phase: { ...phase, name: l(phase.name) } as ProgramPhase,
-            days: Array.from(dayMap.values()),
-          }
-        })
-
-        setPhaseGroups(groups)
-      } catch (e) {
-        console.error('RoutineViewPage: load error', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [userId, l])
+  // Textos del programa ya localizados. Con `program` a null (error de carga) se
+  // quedan vacíos, igual que hacían los `useState` de antes.
+  const programName = program ? l(program.name) : ''
+  const programDescription = program ? l(program.description) : ''
+  const durationWeeks = program?.durationWeeks ?? 0
 
   if (loading) {
     return (
@@ -233,7 +98,7 @@ export default function RoutineViewPage() {
                 style={{ backgroundColor: phase.color || 'hsl(var(--lime))' }}
               />
               <div>
-                <div className="font-bebas text-xl leading-none">{phase.name}</div>
+                <div className="font-bebas text-xl leading-none">{l(phase.name)}</div>
                 {phase.weeks > 0 && (
                   <div className="text-[10px] text-muted-foreground tracking-widest mt-0.5">
                     {phase.weeks} semanas
@@ -244,7 +109,11 @@ export default function RoutineViewPage() {
 
             {/* Days */}
             <div className="space-y-3 ml-2">
-              {days.map((day) => (
+              {days.map((day) => {
+                // `day_focus` viene crudo: se localiza antes de comprobarlo,
+                // porque un `{"es":""}` sería truthy como objeto.
+                const dayFocus = l(day.day_focus)
+                return (
                 <Card key={day.day_id}>
                   <CardContent className="p-4">
                     {/* Day header */}
@@ -255,24 +124,28 @@ export default function RoutineViewPage() {
                           style={{ backgroundColor: day.day_color }}
                         />
                       )}
-                      <div className="text-sm font-medium">{day.day_name}</div>
-                      {day.day_focus && (
-                        <span className="text-xs text-muted-foreground">- {day.day_focus}</span>
+                      <div className="text-sm font-medium">{l(day.day_name)}</div>
+                      {dayFocus && (
+                        <span className="text-xs text-muted-foreground">- {dayFocus}</span>
                       )}
                     </div>
 
                     {/* Exercises */}
                     <div className="space-y-2">
-                      {day.exercises.map((ex) => (
+                      {day.exercises.map((ex) => {
+                        // `muscles` es un campo traducible: localizar ANTES de
+                        // partir por comas, o `.split` explota en runtime.
+                        const muscles = l(ex.muscles).split(',').map(m => m.trim()).filter(Boolean)
+                        return (
                         <div
                           key={ex.id}
                           className="flex items-start justify-between gap-2 py-1.5 border-b border-border/50 last:border-0"
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">{ex.exercise_name}</div>
-                            {ex.muscles && (
+                            <div className="text-sm font-medium truncate">{l(ex.exercise_name)}</div>
+                            {muscles.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {ex.muscles.split(',').map((m: string) => m.trim()).filter(Boolean).map((muscle: string) => (
+                                {muscles.map((muscle) => (
                                   <span
                                     key={muscle}
                                     className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
@@ -297,11 +170,13 @@ export default function RoutineViewPage() {
                             )}
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
             </div>
           </div>
         ))}
