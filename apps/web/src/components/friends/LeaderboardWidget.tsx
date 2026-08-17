@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
-
-const MEDALS = ['🥇', '🥈', '🥉']
+import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 
 interface LeaderboardWidgetProps {
   entries: LeaderboardEntry[]
@@ -31,7 +30,7 @@ export default function LeaderboardWidget({ entries, onNavigate }: LeaderboardWi
             )}
           >
             <span className="text-sm w-6 text-center shrink-0">
-              {MEDALS[i] || `${i + 1}`}
+              {RANK_MEDALS[i] || `${i + 1}`}
             </span>
             <span className={cn('text-sm flex-1 min-w-0 truncate', entry.isCurrentUser ? 'font-medium' : 'text-muted-foreground')}>
               {entry.displayName}

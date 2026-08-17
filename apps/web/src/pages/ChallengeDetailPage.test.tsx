@@ -52,6 +52,9 @@ vi.mock('@calistenia/core/lib/challenges', () => ({
   getMetricUnit: () => 'reps',
   getMetricLabel: () => 'metric-label',
   daysRemaining: () => 'days-left',
+  // Las medallas sí son las reales: son datos, no traducciones, y el mock que
+  // las omitiera dejaría `RANK_MEDALS` en undefined al pintar la clasificación.
+  RANK_MEDALS: ['🥇', '🥈', '🥉'],
 }))
 
 vi.mock('@calistenia/core/lib/dateUtils', () => ({
