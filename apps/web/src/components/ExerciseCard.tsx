@@ -12,6 +12,8 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { cn } from '../lib/utils'
 import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
+import { countSetsLoggedFor } from '@calistenia/core/lib/exerciseCatalog'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 import type { Exercise, ExerciseLog, SetData, Priority } from '@calistenia/core/types'
 import { exerciseInjuryFlags } from '@calistenia/core/lib/injuryMatch'
 import type { InjuryId } from './onboarding/StepHealth'
@@ -48,8 +50,18 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const [logNote, setLogNote] = useState<string>('')
   const [logWeight, setLogWeight] = useState<string>('')
   const [logRpe, setLogRpe] = useState<string>('')
-  const [setsLogged, setSetsLogged] = useState<number>(0)
   const [flash, setFlash] = useState<boolean>(false)
+
+  // Series registradas: la fuente de verdad son los `logs` que llegan por prop,
+  // no un contador local. Antes `setsLogged` era sólo estado local arrancando en
+  // 0, así que al remontar la tarjeta (volver a la pestaña, re-render del padre)
+  // una serie ya guardada volvía a mostrarse como 0/N y `isComplete` se apagaba.
+  //
+  // El contador optimista se mantiene como suelo para que el marcador no espere
+  // al guardado, y `Math.max` evita contar dos veces cuando `logs` lo alcanza.
+  const [optimisticSets, setOptimisticSets] = useState<number>(0)
+  const persistedSets = countSetsLoggedFor(logs, workoutKey, todayStr())
+  const setsLogged = Math.max(persistedSets, optimisticSets)
 
   const totalSets = exercise.sets === 'múltiples' ? '∞' : exercise.sets
   const isComplete = totalSets !== '∞' && setsLogged >= parseInt(String(totalSets))
@@ -88,7 +100,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
     setLogging(true)
     const reps = String(exercise.reps)
     onLogSet(exercise.id, workoutKey, { reps, note: '' })
-    setSetsLogged(s => s + 1)
+    setOptimisticSets(s => s + 1)
     onStartRest(exercise.rest || 90)
     triggerFlash()
     // Brief lock to prevent double-tap
@@ -100,7 +112,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
     const w = parseFloat(logWeight)
     const r = parseInt(logRpe)
     onLogSet(exercise.id, workoutKey, { reps: logReps, note: logNote, weight: isNaN(w) ? undefined : w, rpe: isNaN(r) ? undefined : r })
-    setSetsLogged(s => s + 1)
+    setOptimisticSets(s => s + 1)
     setLogReps('')
     setLogNote('')
     setLogWeight('')

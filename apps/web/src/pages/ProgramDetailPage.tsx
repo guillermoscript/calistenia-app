@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { localDay } from '@calistenia/core/lib/dateUtils'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '@calistenia/core/lib/pocketbase'
+import { fetchProgramDetailRows } from '@calistenia/core/lib/programDetailQuery'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import { calculateWorkoutDuration, formatDuration } from '@calistenia/core/lib/duration'
 import { inferDifficulty, DIFFICULTY_COLORS } from '@calistenia/core/lib/difficulty'
@@ -173,13 +174,13 @@ export default function ProgramDetailPage({
       }
       setProgram(meta)
 
-      // Fetch phases
-      const phasesRes = await pb.collection('program_phases').getList(1, 20, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
-        sort: 'sort_order',
-        $autoCancel: false,
-      })
-      const builtPhases: ProgramPhase[] = phasesRes.items.map(p => ({
+      // Fetch phases + exercises + day config. La consulta la comparte
+      // `fetchProgramDetail` de `usePrograms` (#474): era la misma, duplicada.
+      // De paso las fases dejan de ir en un viaje aparte antes de las otras dos.
+      const { phases: phaseItems, exercises: exerciseItems, dayConfigs: dayConfigItems } =
+        await fetchProgramDetailRows(programId)
+
+      const builtPhases: ProgramPhase[] = phaseItems.map(p => ({
         id: p.phase_number,
         name: localize(p.name, locale),
         weeks: p.weeks,
@@ -192,25 +193,11 @@ export default function ProgramDetailPage({
         setSelectedPhase(String(builtPhases[0].id))
       }
 
-      // Fetch exercises and day config
-      const [exercisesRes, dayConfigRes] = await Promise.all([
-        pb.collection('program_exercises').getList(1, 2000, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-          sort: 'phase_number,sort_order',
-          $autoCancel: false,
-        }),
-        pb.collection('program_day_config').getList(1, 200, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-          sort: 'phase_number,sort_order',
-          $autoCancel: false,
-        }).catch(() => ({ items: [] })),
-      ])
-
       // Build workouts grouped by phase+day
       const workoutMap: Record<string, ProgramWorkout> = {}
 
       // First, add cardio days from day config
-      dayConfigRes.items.forEach((dc: RecordModel) => {
+      dayConfigItems.forEach((dc: RecordModel) => {
         if (dc.day_type === 'cardio') {
           const key = `p${dc.phase_number}_${dc.day_id}`
           if (!workoutMap[key]) {
@@ -232,7 +219,7 @@ export default function ProgramDetailPage({
         }
       })
 
-      exercisesRes.items.forEach((r: RecordModel) => {
+      exerciseItems.forEach((r: RecordModel) => {
         const key = `p${r.phase_number}_${r.day_id}`
         if (!workoutMap[key]) {
           workoutMap[key] = {
