@@ -93,3 +93,128 @@ export function nextPhaseAfterSet(args: {
 
   return { kind: 'rest' }
 }
+
+// ─── Reducer ─────────────────────────────────────────────────────────────────
+
+export type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate' | 'section-transition'
+
+export type SectionTransitionType = 'warmup-to-main' | 'main-to-cooldown'
+
+/**
+ * Todo el estado de la máquina de la sesión en un solo sitio. Antes vivía
+ * repartido entre seis `useState` y varios `useRef` dentro de cada SessionView,
+ * y en web había un segundo escritor (`skipWarmup`/`skipCooldown` del contexto).
+ */
+export interface SessionState {
+  stepIdx: number
+  phase: SessionPhase
+  setsCount: number
+  /** Qué transición de sección enseñar mientras `phase === 'section-transition'`. */
+  transitionType: SectionTransitionType
+  /** Paso al que saltar cuando el usuario continúa desde la transición. */
+  pendingStepIdx: number | null
+}
+
+export type SessionAction =
+  /** Serie registrada: decide la fase siguiente con `nextPhaseAfterSet`. */
+  | { type: 'log-set' }
+  /** Terminó (o se saltó) el descanso. */
+  | { type: 'rest-done' }
+  /** El usuario continúa desde la pantalla de transición de sección. */
+  | { type: 'section-continue' }
+  /** Saltar el calentamiento: ir al primer paso que no sea de warmup. */
+  | { type: 'skip-warmup' }
+  /** Saltar el enfriamiento (entero o lo que quede): ir a la nota. */
+  | { type: 'skip-cooldown' }
+  /** Navegación prev/next entre ejercicios. */
+  | { type: 'goto-exercise'; stepIdx: number }
+  /** Nota guardada: la sesión pasa a la celebración. */
+  | { type: 'finish' }
+
+/** Estado inicial, opcionalmente restaurado desde un snapshot persistido. */
+export function initSessionState(
+  restored?: { stepIdx?: number; phase?: SessionPhase; setsCount?: number } | null,
+): SessionState {
+  return {
+    stepIdx: restored?.stepIdx ?? 0,
+    phase: restored?.phase ?? 'exercise',
+    setsCount: restored?.setsCount ?? 0,
+    transitionType: 'warmup-to-main',
+    pendingStepIdx: null,
+  }
+}
+
+/**
+ * Reducer puro de la sesión, ligado a la lista de pasos de este entreno.
+ * Los efectos (sonidos, hápticas, notificaciones, toasts, analítica y el
+ * empujón del progreso al contexto) se quedan en la capa de app: ninguno
+ * depende de qué rama tomó la decisión, así que el reducer no devuelve nada
+ * más que el estado nuevo.
+ */
+export function createSessionReducer(steps: Step[]) {
+  return function sessionReducer(state: SessionState, action: SessionAction): SessionState {
+    switch (action.type) {
+      case 'log-set': {
+        const currentStep = steps[state.stepIdx]
+        // Sin paso actual no hay serie que registrar (rango inválido tras
+        // restaurar un snapshot de otro entreno): no tocar nada.
+        if (!currentStep) return state
+
+        const setsCount = state.setsCount + 1
+        const decision = nextPhaseAfterSet({
+          currentStep,
+          nextStep: steps[state.stepIdx + 1] ?? null,
+          isLastStep: state.stepIdx === steps.length - 1,
+          stepIdx: state.stepIdx,
+        })
+
+        switch (decision.kind) {
+          case 'note':
+            return { ...state, setsCount, phase: 'note' }
+          case 'section-transition':
+            return {
+              ...state,
+              setsCount,
+              phase: 'section-transition',
+              transitionType: decision.transitionType,
+              pendingStepIdx: decision.nextStepIdx,
+            }
+          case 'advance':
+            return { ...state, setsCount, phase: 'exercise', stepIdx: state.stepIdx + 1 }
+          case 'rest':
+            return { ...state, setsCount, phase: 'rest' }
+        }
+        return { ...state, setsCount }
+      }
+
+      case 'rest-done':
+        return { ...state, phase: 'exercise', stepIdx: state.stepIdx + 1 }
+
+      case 'section-continue':
+        return {
+          ...state,
+          phase: 'exercise',
+          stepIdx: state.pendingStepIdx ?? state.stepIdx,
+          pendingStepIdx: null,
+        }
+
+      case 'skip-warmup': {
+        const firstMainIdx = steps.findIndex(s => (s.section || 'main') !== 'warmup')
+        // Entreno íntegramente de calentamiento: no hay a dónde saltar.
+        if (firstMainIdx < 0) return state
+        return { ...state, phase: 'exercise', stepIdx: firstMainIdx }
+      }
+
+      case 'skip-cooldown':
+        return { ...state, phase: 'note' }
+
+      case 'goto-exercise': {
+        if (action.stepIdx < 0 || action.stepIdx >= steps.length) return state
+        return { ...state, phase: 'exercise', stepIdx: action.stepIdx }
+      }
+
+      case 'finish':
+        return { ...state, phase: 'celebrate' }
+    }
+  }
+}

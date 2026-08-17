@@ -23,7 +23,7 @@ vi.mock('@calistenia/core/lib/activeSessionSync', () => ({
   clearRemoteActiveSession: vi.fn(),
 }))
 
-import { ActiveSessionProvider, useActiveSession, getCurrentSection } from './ActiveSessionContext'
+import { ActiveSessionProvider, useActiveSession, useActiveSessionProgress, getCurrentSection } from './ActiveSessionContext'
 
 const STORAGE_KEY = 'calistenia_strength_active'
 const FREE_QUEUE_KEY = 'calistenia_free_session_queue'
@@ -70,7 +70,7 @@ describe('ActiveSessionContext', () => {
   })
 
   it('estado inicial sin sesión activa', () => {
-    const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+    const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
     expect(result.current.isActive).toBe(false)
     expect(result.current.workout).toBeNull()
     expect(result.current.progress).toEqual(INITIAL_PROGRESS)
@@ -80,7 +80,7 @@ describe('ActiveSessionContext', () => {
   describe('startSession', () => {
     it('activa la sesión, setea workout/key/source, resetea progress y persiste', () => {
       const workout = makeWorkout([makeExercise({ section: 'main', sets: 2 })])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
 
       act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
 
@@ -97,7 +97,7 @@ describe('ActiveSessionContext', () => {
 
     it('trackea session_started con workout_key y source', () => {
       const workout = makeWorkout([makeExercise()])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
 
       act(() => { result.current.startSession(workout, 'free_123', 'free') })
 
@@ -107,7 +107,7 @@ describe('ActiveSessionContext', () => {
 
   it('setProgress hace merge parcial sin perder los demás campos', () => {
     const workout = makeWorkout([makeExercise()])
-    const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+    const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
     act(() => { result.current.startSession(workout, 'k', 'program') })
 
     act(() => { result.current.setProgress({ stepIdx: 2 }) })
@@ -119,7 +119,7 @@ describe('ActiveSessionContext', () => {
 
   it('endSession desactiva, limpia el storage de la sesión y la cola de sesión libre', () => {
     const workout = makeWorkout([makeExercise()])
-    const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+    const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
     act(() => { result.current.startSession(workout, 'k', 'program') })
     localStorage.setItem(FREE_QUEUE_KEY, JSON.stringify([{ some: 'queued-item' }]))
 
@@ -132,49 +132,51 @@ describe('ActiveSessionContext', () => {
     expect(localStorage.getItem(FREE_QUEUE_KEY)).toBeNull()
   })
 
+  it('getProgressSnapshot devuelve el progreso actual sin suscribirse a él', () => {
+    const workout = makeWorkout([makeExercise()])
+    const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+    act(() => { result.current.startSession(workout, 'k', 'program') })
+
+    expect(result.current.getProgressSnapshot()).toEqual(INITIAL_PROGRESS)
+
+    act(() => { result.current.setProgress({ stepIdx: 4, setsCount: 3 }) })
+
+    expect(result.current.getProgressSnapshot()).toEqual({ stepIdx: 4, phase: 'exercise', setsCount: 3 })
+  })
+
   describe('skipWarmup', () => {
-    it('salta al primer step no-warmup (sets="múltiples" expande a 3 steps)', () => {
+    // Desde el #475 el contexto SOLO registra la metadata de la sección
+    // saltada: quién mueve el paso y la fase es SessionView, el dueño del
+    // estado. A qué paso se salta lo cubre `createSessionReducer` en core.
+    it('marca warmupSkipped sin tocar el progreso', () => {
       const workout = makeWorkout([
-        makeExercise({ id: 'w1', section: 'warmup', sets: 'múltiples' }), // 3 steps → idx 0-2
-        makeExercise({ id: 'm1', section: 'main', sets: 2 }), // 2 steps → idx 3-4
+        makeExercise({ id: 'w1', section: 'warmup', sets: 'múltiples' }),
+        makeExercise({ id: 'm1', section: 'main', sets: 2 }),
       ])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.startSession(workout, 'k', 'program') })
 
       act(() => { result.current.skipWarmup() })
 
-      expect(result.current.progress.stepIdx).toBe(3)
-      expect(result.current.progress.phase).toBe('exercise')
       expect(result.current.getWarmupCooldownData().warmupSkipped).toBe(true)
+      expect(result.current.progress).toEqual(INITIAL_PROGRESS)
     })
 
-    it('usa fallback de 1 step cuando sets no es un número parseable', () => {
+    it('registra la duración del calentamiento a partir de sectionStartTime', () => {
+      vi.useFakeTimers()
+      const start = new Date('2026-01-01T00:00:00Z')
+      vi.setSystemTime(start)
       const workout = makeWorkout([
-        makeExercise({ id: 'w1', section: 'warmup', sets: 1 }), // 1 step → idx 0
-        makeExercise({ id: 'm1', section: 'main', sets: 'texto-no-numerico' }), // fallback 1 step → idx 1
+        makeExercise({ section: 'warmup' }),
+        makeExercise({ section: 'main' }),
       ])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.startSession(workout, 'k', 'program') })
 
+      vi.setSystemTime(new Date(start.getTime() + 90_000))
       act(() => { result.current.skipWarmup() })
 
-      expect(result.current.progress.stepIdx).toBe(1)
-    })
-
-    it('sets=0 explícito aporta 0 steps (no genera step fantasma)', () => {
-      // El fallback de 1 queda solo para sets no parseable; un 0 explícito
-      // significa que el ejercicio no participa en el flujo.
-      const workout = makeWorkout([
-        makeExercise({ id: 'w1', section: 'warmup', sets: 0 }),
-        makeExercise({ id: 'm1', section: 'main', sets: 1 }),
-      ])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
-      act(() => { result.current.startSession(workout, 'k', 'program') })
-
-      act(() => { result.current.skipWarmup() })
-
-      // El warmup con sets=0 no aporta steps: el main queda en stepIdx 0.
-      expect(result.current.progress.stepIdx).toBe(0)
+      expect(result.current.getWarmupCooldownData().warmupDurationSeconds).toBe(90)
     })
 
     it('resetea sectionStartTime al momento actual', () => {
@@ -185,7 +187,7 @@ describe('ActiveSessionContext', () => {
         makeExercise({ section: 'warmup' }),
         makeExercise({ section: 'main' }),
       ])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.startSession(workout, 'k', 'program') })
       const initialSectionStart = result.current.sectionStartTime
 
@@ -197,7 +199,7 @@ describe('ActiveSessionContext', () => {
     })
 
     it('no hace nada si no hay sesión activa (guard !workout)', () => {
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.skipWarmup() })
       expect(result.current.progress).toEqual(INITIAL_PROGRESS)
       expect(result.current.isActive).toBe(false)
@@ -205,30 +207,29 @@ describe('ActiveSessionContext', () => {
   })
 
   describe('skipCooldown / skipRemainingCooldown', () => {
-    it('skipCooldown mueve la fase a "note" y marca cooldownSkipped', () => {
+    it('skipCooldown marca cooldownSkipped sin tocar el progreso', () => {
       const workout = makeWorkout([makeExercise({ section: 'main' })])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.startSession(workout, 'k', 'program') })
 
       act(() => { result.current.skipCooldown() })
 
-      expect(result.current.progress.phase).toBe('note')
       expect(result.current.getWarmupCooldownData().cooldownSkipped).toBe(true)
+      expect(result.current.progress).toEqual(INITIAL_PROGRESS)
     })
 
     it('skipRemainingCooldown delega en skipCooldown (mismo efecto)', () => {
       const workout = makeWorkout([makeExercise({ section: 'main' })])
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.startSession(workout, 'k', 'program') })
 
       act(() => { result.current.skipRemainingCooldown() })
 
-      expect(result.current.progress.phase).toBe('note')
       expect(result.current.getWarmupCooldownData().cooldownSkipped).toBe(true)
     })
 
     it('no hace nada si no hay sesión activa (guard !workout)', () => {
-      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
       act(() => { result.current.skipCooldown() })
       expect(result.current.progress).toEqual(INITIAL_PROGRESS)
     })
@@ -272,7 +273,7 @@ describe('ActiveSessionContext', () => {
 
       vi.resetModules()
       const mod = await import('./ActiveSessionContext')
-      const { result } = renderHook(() => mod.useActiveSession(), { wrapper: mod.ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...mod.useActiveSession(), progress: mod.useActiveSessionProgress() }), { wrapper: mod.ActiveSessionProvider })
 
       expect(result.current.isActive).toBe(true)
       expect(result.current.workoutKey).toBe('p1_lun')
@@ -294,7 +295,7 @@ describe('ActiveSessionContext', () => {
 
       vi.resetModules()
       const mod = await import('./ActiveSessionContext')
-      const { result } = renderHook(() => mod.useActiveSession(), { wrapper: mod.ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...mod.useActiveSession(), progress: mod.useActiveSessionProgress() }), { wrapper: mod.ActiveSessionProvider })
 
       expect(result.current.isActive).toBe(false)
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
@@ -305,7 +306,7 @@ describe('ActiveSessionContext', () => {
 
       vi.resetModules()
       const mod = await import('./ActiveSessionContext')
-      const { result } = renderHook(() => mod.useActiveSession(), { wrapper: mod.ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...mod.useActiveSession(), progress: mod.useActiveSessionProgress() }), { wrapper: mod.ActiveSessionProvider })
 
       expect(result.current.isActive).toBe(false)
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
@@ -316,7 +317,7 @@ describe('ActiveSessionContext', () => {
 
       vi.resetModules()
       const mod = await import('./ActiveSessionContext')
-      const { result } = renderHook(() => mod.useActiveSession(), { wrapper: mod.ActiveSessionProvider })
+      const { result } = renderHook(() => ({ ...mod.useActiveSession(), progress: mod.useActiveSessionProgress() }), { wrapper: mod.ActiveSessionProvider })
 
       expect(result.current.isActive).toBe(false)
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
