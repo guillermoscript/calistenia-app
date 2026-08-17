@@ -186,7 +186,7 @@ export default function DashboardPage({
     duplicateProgram,
   } = useWorkoutActions()
   const { userId, user } = useAuthState()
-  const displayName = (user as any)?.display_name || (user as any)?.name || ''
+  const displayName = user?.display_name || user?.name || ''
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
@@ -605,7 +605,7 @@ export default function DashboardPage({
           streak={activeMilestone}
           userId={userId}
           userName={displayName}
-          referralCode={(user as any)?.referral_code}
+          referralCode={user?.referral_code}
           onDismiss={() => setDismissedMilestone(true)}
         />
       )}

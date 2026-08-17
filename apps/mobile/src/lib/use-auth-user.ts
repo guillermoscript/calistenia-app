@@ -5,12 +5,12 @@
  */
 import { useSyncExternalStore } from 'react'
 import { pb, getCurrentUser } from '@calistenia/core/lib/pocketbase'
-import type { RecordModel } from 'pocketbase'
+import type { AuthUser } from '@calistenia/core/types'
 
 function subscribe(callback: () => void): () => void {
   return pb.authStore.onChange(callback)
 }
 
-export function useAuthUser(): RecordModel | null {
+export function useAuthUser(): AuthUser | null {
   return useSyncExternalStore(subscribe, getCurrentUser, getCurrentUser)
 }

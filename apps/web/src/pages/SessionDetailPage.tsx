@@ -66,9 +66,9 @@ export default function SessionDetailPage() {
         exercises={exercises}
         date={date}
         share={{
-          userName: (user as any)?.display_name || user?.email?.split('@')[0],
+          userName: user?.display_name || user?.email?.split('@')[0],
           avatarUrl: user ? getUserAvatarUrl(user as any, '200x200') : null,
-          referralCode: (user as any)?.referral_code || null,
+          referralCode: user?.referral_code || null,
         }}
       />
     </div>

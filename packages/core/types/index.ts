@@ -1,3 +1,4 @@
+import type { RecordModel } from 'pocketbase'
 import type { TranslatableField } from '../lib/i18n-db'
 import type { PantrySnapshotItem, Recipe } from './pantry'
 
@@ -207,7 +208,31 @@ export interface User {
   avatar?: string
   created?: string
   updated?: string
+  /**
+   * Nombre público, editable en el perfil. Es el que se pinta en el muro, en
+   * las clasificaciones y en las tarjetas para compartir; el `name` de arriba
+   * es el que trae el registro de auth y casi nunca es el que se enseña.
+   */
+  display_name?: string
+  /** Código de invitación propio (#354). */
+  referral_code?: string
 }
+
+/**
+ * El usuario logueado, tal y como lo devuelve PocketBase.
+ *
+ * Es el `RecordModel` de PB (que trae `[key: string]: any`, así que cualquier
+ * campo de la colección `users` se puede leer sin que TypeScript proteste)
+ * intersecado con `User` para DECLARAR los campos que la app usa de verdad.
+ * Sin esta intersección `User` era tipo muerto —nadie tipaba el usuario con
+ * ella— y `display_name`/`referral_code` se leían con `(user as any)` por toda
+ * la app: casts que nunca hicieron nada porque el índice de `RecordModel` ya
+ * los permitía (#531).
+ *
+ * `Partial<User>`, y no `User`, porque `RecordModel` tiene que poder asignarse
+ * a este tipo tal cual: los campos obligatorios de `User` no los declara.
+ */
+export type AuthUser = RecordModel & Partial<User>
 
 // ─── Work Day ────────────────────────────────────────────────────────────────
 

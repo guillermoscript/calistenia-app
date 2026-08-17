@@ -18,8 +18,8 @@ export default function RaceResults() {
   const navigate = useNavigate()
   const { user } = useAuthState()
   const { race, participants, me } = useRaceContext()
-  const userName = (user as { display_name?: string; name?: string } | null)?.display_name
-    || (user as { name?: string } | null)?.name
+  const userName = user?.display_name
+    || user?.name
     || undefined
   const [savedId, setSavedId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)

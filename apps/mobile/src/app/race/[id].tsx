@@ -64,7 +64,7 @@ export default function RaceScreen() {
   const { t } = useTranslation()
   const user = useAuthUser()
   const displayName =
-    (user as any)?.display_name || (user as any)?.email?.split('@')[0] || t('race.athlete')
+    user?.display_name || user?.email?.split('@')[0] || t('race.athlete')
 
   if (!id) return null
 

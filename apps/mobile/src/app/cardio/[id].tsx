@@ -128,7 +128,7 @@ export default function CardioDetailScreen() {
   const isOwnSession = !!me && !!session?.user && me.id === session.user
   const shareUserName = authorName
   const shareReferralCode = isOwnSession
-    ? ((me as any)?.referral_code as string | undefined) ?? null
+    ? me?.referral_code ?? null
     : null
 
   const isCycling = session?.activity_type === 'cycling'

@@ -1,12 +1,11 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import { type RecordModel } from 'pocketbase'
 import { useAuth } from '@calistenia/core/hooks/useAuth'
-import type { UserRole, UserTier } from '@calistenia/core/types'
+import type { AuthUser, UserRole, UserTier } from '@calistenia/core/types'
 
 // ── Context interface ───────────────────────────────────────────────────────
 
 interface AuthState {
-  user: RecordModel | null
+  user: AuthUser | null
   userId: string | null
   authReady: boolean
   authError: string | null

@@ -21,8 +21,8 @@ export default function RaceLobby() {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(raceUrl)}&color=a3e635&bgcolor=09090b&margin=10`
 
   const handleJoin = async () => {
-    const displayName = (user as { display_name?: string; name?: string } | null)?.display_name
-      || (user as { name?: string } | null)?.name
+    const displayName = user?.display_name
+      || user?.name
       || t('race.athlete')
     try {
       await actions.join(displayName)
