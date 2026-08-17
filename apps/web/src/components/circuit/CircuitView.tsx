@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from '../ui/dialog'
 import { useCircuitSession } from '../../contexts/CircuitSessionContext'
+import { useWakeLock } from '../../hooks/useWakeLock'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
 import * as sounds from '../../lib/sounds'
@@ -185,35 +186,8 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
   const [saving, setSaving] = useState(false)
   const quote = useMemo(() => getLocalQuote(), [])
 
-  // ── Wake lock to prevent screen sleep during circuit ──────────────────────
-
-  useEffect(() => {
-    let wakeLock: WakeLockSentinel | null = null
-
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen')
-        }
-      } catch {
-        // Wake lock request failed (e.g., low battery, not supported)
-      }
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        requestWakeLock()
-      }
-    }
-
-    requestWakeLock()
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      wakeLock?.release()
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [])
+  // La pantalla no debe apagarse durante el circuito.
+  useWakeLock(true)
 
   // ── Elapsed timer ──────────────────────────────────────────────────────────
 

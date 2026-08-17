@@ -1,56 +1,39 @@
 /**
- * Port del RaceContext web a React Native.
- * Cambios: wake lock → expo-keep-awake, visibilitychange → (innecesario con
- * keep-awake), useAuthState → useAuthUser. El resto (realtime, countdown,
- * push cada 3s con backoff, auto-finish, watchdog) es idéntico a la web.
+ * Hub de una carrera en React Native. Port del de apps/web; los hooks de
+ * `hooks/race/` llevan el mismo nombre y la misma firma en las dos apps.
+ * Cambios: wake lock → expo-keep-awake, useAuthState → useAuthUser. El resto
+ * (realtime, countdown, push cada 3 s con backoff, auto-finish, watchdog) es
+ * idéntico a la web.
  */
 import {
-  createContext, useContext, useEffect, useRef, useState, useMemo, useCallback,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   type ReactNode,
 } from 'react'
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 import { useAuthUser } from '@/lib/use-auth-user'
 import {
-  loadRace,
   joinRace as apiJoinRace,
   markReady as apiMarkReady,
   startCountdown as apiStartCountdown,
   activateRace,
-  updateProgress,
-  finishParticipant,
-  finishRace as apiFinishRace,
   cancelRace as apiCancelRace,
   markDnf,
   leaveRace,
-  type ProgressUpdate,
 } from '@/lib/race/raceApi'
-import { subscribeRace } from '@/lib/race/raceRealtime'
 import { measureOffset, serverNow, msUntil } from '@/lib/race/raceClock'
-import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '@/lib/race/raceTracker'
-import { saveRaceSnapshot, loadRaceSnapshot, clearRaceSnapshot } from '@/lib/race/raceSnapshot'
-import { RaceAuthError, RaceNotFoundError } from '@/lib/race/errors'
-import { Sentry } from '@/lib/instrument'
+import type { RaceTracker, RaceTrackerStats } from '@/lib/race/raceTracker'
+import { clearRaceSnapshot } from '@/lib/race/raceSnapshot'
+import { useKeepAwakeWhile } from '@/hooks/useKeepAwakeWhile'
+import { useRaceConnection, type RacePhase } from '@/hooks/race/useRaceConnection'
+import { useRaceErrors, type RaceErrorKind, type RaceErrorState } from '@/hooks/race/useRaceErrors'
+import { useRaceFinish } from '@/hooks/race/useRaceFinish'
+import { useRaceTracker } from '@/hooks/race/useRaceTracker'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-export type RacePhase =
-  | 'loading'
-  | 'not_found'
-  | 'lobby'
-  | 'countdown'
-  | 'racing'
-  | 'finished'
-  | 'cancelled'
-
-export type RaceErrorKind = 'auth' | 'push' | 'gps' | 'realtime' | 'load'
-
-export interface RaceErrorState {
-  kind: RaceErrorKind
-  message: string
-}
+export type { RacePhase, RaceErrorKind, RaceErrorState }
 
 interface RaceContextValue {
   phase: RacePhase
@@ -74,21 +57,9 @@ interface RaceContextValue {
 
 const RaceContext = createContext<RaceContextValue | null>(null)
 
-const PUSH_INTERVAL_MS = 3000
-const PUSH_RETRY_BACKOFF_MS = [1000, 3000, 9000]
 const KEEP_AWAKE_TAG = 'race'
 
-function computePhase(race: Race | null): RacePhase {
-  if (!race) return 'loading'
-  switch (race.status) {
-    case 'waiting':   return 'lobby'
-    case 'countdown': return 'countdown'
-    case 'active':    return 'racing'
-    case 'finished':  return 'finished'
-    case 'cancelled': return 'cancelled'
-    default:          return 'loading'
-  }
-}
+// ── Provider ────────────────────────────────────────────────────────────────
 
 interface RaceProviderProps {
   raceId: string
@@ -99,49 +70,12 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const user = useAuthUser()
   const userId = user?.id ?? null
 
-  const [race, setRace] = useState<Race | null>(null)
-  const [participants, setParticipants] = useState<RaceParticipant[]>([])
-  const [phase, setPhase] = useState<RacePhase>('loading')
-  const [myStats, setMyStats] = useState<RaceTrackerStats | null>(null)
-  const [lastError, setLastError] = useState<RaceErrorState | null>(null)
+  const errors = useRaceErrors()
+  const { lastError, setError, clearError, clearErrorKind } = errors
 
-  const trackerRef = useRef<RaceTracker | null>(null)
-  const pushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const autoFinishedRef = useRef(false)
-  const retryCountRef = useRef(0)
-  const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const raceRef = useRef<Race | null>(null)
-  const latestStatsRef = useRef<RaceTrackerStats | null>(null)
+  const { race, participants, phase, raceRef } = useRaceConnection({ raceId, onError: setError })
 
-  useEffect(() => { raceRef.current = race }, [race])
-  useEffect(() => { latestStatsRef.current = myStats }, [myStats])
-
-  useEffect(() => {
-    if (phase === 'finished' || phase === 'cancelled') clearRaceSnapshot()
-  }, [phase])
-
-  // Auto-finish cuando todos terminaron o DNF (cualquier cliente, idempotente)
-  useEffect(() => {
-    if (phase !== 'racing') return
-    if (participants.length === 0) return
-    const allDone = participants.every(p => p.status === 'finished' || p.status === 'dnf')
-    if (!allDone) return
-    apiFinishRace(raceId).catch(() => { /* ya cerrada */ })
-  }, [phase, participants, raceId])
-
-  // Watchdog: cierra races pasadas de ends_at
-  useEffect(() => {
-    if (phase !== 'racing' || !race?.ends_at) return
-    const check = () => {
-      if (msUntil(race.ends_at) <= 0) {
-        apiFinishRace(raceId).catch(() => { /* ignore */ })
-      }
-    }
-    check()
-    const id = setInterval(check, 30000)
-    return () => clearInterval(id)
-  }, [phase, race?.ends_at, raceId])
-
+  // ── Valores derivados ─────────────────────────────────────────────────────
   const me = useMemo<RaceParticipant | null>(
     () => participants.find(p => p.user === userId) ?? null,
     [participants, userId],
@@ -149,10 +83,94 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const isCreator = !!(race && userId && race.creator === userId)
   const hasJoined = !!me
 
-  // Un solo `race_completed` por carrera, no uno por cliente: cada
-  // participante ejecuta finishRaceAction en su dispositivo, y el auto-finish y
-  // el watchdog de ends_at cierran la carrera sin que nadie pulse nada. Por eso
-  // el evento cuelga de la fase 'finished' y lo emite el cliente del creador.
+  // Primitivas estables para las dependencias de los efectos: `race` y `me` son
+  // objetos nuevos en cada push de participantes (cada 3 s), y usarlos como
+  // dependencia reiniciaría intervalos y timers todo el rato.
+  const meId = me?.id ?? null
+  const startsAt = race?.starts_at ?? null
+  const endsAt = race?.ends_at ?? null
+  const raceMode = race?.mode
+  const targetDurationSeconds = race?.target_duration_seconds ?? 0
+
+  const meRef = useRef<RaceParticipant | null>(null)
+  useEffect(() => { meRef.current = me }, [me])
+
+  // Compartidos entre el tracker (que los llena) y el cierre (que los lee).
+  const trackerRef = useRef<RaceTracker | null>(null)
+  const latestStatsRef = useRef<RaceTrackerStats | null>(null)
+
+  const getRace = useCallback(() => raceRef.current, [raceRef])
+  const getMe = useCallback(() => meRef.current, [])
+
+  // Único punto de fin de carrera: los cinco disparadores de abajo pasan por
+  // `finishSelf` o `endRace`, nunca por `finishParticipant`/`finishRace` a pelo.
+  const {
+    hasFinishedSelf, finishSelf, endRace, reset: resetFinish,
+  } = useRaceFinish({ raceId, getRace, getMe, trackerRef, latestStatsRef, onError: setError })
+
+  const { myStats } = useRaceTracker({
+    raceId,
+    active: phase === 'racing' && !!meId,
+    meId,
+    startsAt,
+    trackerRef,
+    latestStatsRef,
+    getRace,
+    hasFinishedSelf,
+    onTargetReached: useCallback(() => { void finishSelf('target_reached') }, [finishSelf]),
+    onStop: resetFinish,
+    onError: setError,
+    onGpsFix: useCallback(() => clearErrorKind('gps'), [clearErrorKind]),
+  })
+
+  useKeepAwakeWhile(phase === 'racing' && !!meId && !!startsAt, KEEP_AWAKE_TAG)
+
+  // ── Disparadores de fin ───────────────────────────────────────────────────
+
+  // Deadline duro en modo tiempo: reloj puro cada 500 ms, para que cierre
+  // aunque el GPS esté atascado o el usuario esté en interior.
+  useEffect(() => {
+    if (phase !== 'racing' || !meId || !startsAt) return
+    if (raceMode !== 'time' || targetDurationSeconds <= 0) return
+    const startAtMs = new Date(startsAt).getTime()
+    const targetMs = targetDurationSeconds * 1000
+
+    const check = () => {
+      if (serverNow() - startAtMs < targetMs) return
+      void finishSelf('time_deadline')
+    }
+    check()
+    const id = setInterval(check, 500)
+    return () => clearInterval(id)
+  }, [phase, meId, startsAt, raceMode, targetDurationSeconds, finishSelf])
+
+  // Todos han terminado o abandonado: cualquier cliente puede cerrar la carrera.
+  useEffect(() => {
+    if (phase !== 'racing' || participants.length === 0) return
+    if (!participants.every(p => p.status === 'finished' || p.status === 'dnf')) return
+    void endRace()
+  }, [phase, participants, endRace])
+
+  // Watchdog: cierra las carreras que pasaron de `ends_at`.
+  useEffect(() => {
+    if (phase !== 'racing' || !endsAt) return
+    const check = () => { if (msUntil(endsAt) <= 0) void endRace() }
+    check()
+    const id = setInterval(check, 30000)
+    return () => clearInterval(id)
+  }, [phase, endsAt, endRace])
+
+  // ── Ciclo de vida de la carrera ───────────────────────────────────────────
+
+  // El snapshot se descarta en cualquier fase terminal, no sólo para quien pulsó.
+  useEffect(() => {
+    if (phase === 'finished' || phase === 'cancelled') clearRaceSnapshot()
+  }, [phase])
+
+  // Un solo `race_completed` por carrera, no uno por cliente: cada participante
+  // ejecuta finishRaceAction en su dispositivo, y el auto-finish y el watchdog
+  // de ends_at cierran la carrera sin que nadie pulse nada. Por eso el evento
+  // cuelga de la fase 'finished' y lo emite el cliente del creador.
   const raceCompletedRef = useRef(false)
   useEffect(() => {
     if (phase !== 'finished' || !isCreator || raceCompletedRef.current) return
@@ -163,217 +181,21 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     })
   }, [phase, isCreator, raceId, participants.length])
 
-  // Deadline duro en modo tiempo (clock-only, 500ms)
-  useEffect(() => {
-    if (phase !== 'racing' || !me || !race) return
-    if (race.mode !== 'time' || race.target_duration_seconds <= 0) return
-    if (!race.starts_at) return
-    const startAtMs = new Date(race.starts_at).getTime()
-    const targetMs = race.target_duration_seconds * 1000
-
-    const check = () => {
-      if (autoFinishedRef.current) return
-      const elapsed = serverNow() - startAtMs
-      if (elapsed < targetMs) return
-      autoFinishedRef.current = true
-      const trk = trackerRef.current
-      const stats = latestStatsRef.current
-      const finalStats = stats ?? {
-        distance_km: me.distance_km ?? 0,
-        duration_seconds: race.target_duration_seconds,
-        avg_pace: me.avg_pace ?? 0,
-        last_lat: me.last_lat ?? 0,
-        last_lng: me.last_lng ?? 0,
-      }
-      finishParticipant(me.id, {
-        distance_km: finalStats.distance_km,
-        duration_seconds: race.target_duration_seconds,
-        avg_pace: finalStats.avg_pace,
-        last_lat: finalStats.last_lat,
-        last_lng: finalStats.last_lng,
-        gps_track: trk ? trk.getGpsTrack() : [],
-      }).catch(err => {
-        setLastError({ kind: 'push', message: (err as Error).message })
-      })
-      trk?.stop()
-    }
-    check()
-    const id = setInterval(check, 500)
-    return () => clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, me?.id, race?.starts_at, race?.mode, race?.target_duration_seconds, raceId])
-
   useEffect(() => {
     measureOffset().catch(() => {})
   }, [])
 
-  // Carga + realtime
+  // Fin de la cuenta atrás → activar la carrera. Dispara cualquier cliente:
+  // gana el primero vía la updateRule de PocketBase.
   useEffect(() => {
-    let cancelled = false
-    setPhase('loading')
-    loadRace(raceId)
-      .then(data => {
-        if (cancelled) return
-        setRace(data.race)
-        setParticipants(data.participants)
-        setPhase(computePhase(data.race))
-      })
-      .catch(err => {
-        if (cancelled) return
-        if (err instanceof RaceNotFoundError) {
-          setPhase('not_found')
-        } else {
-          setLastError({ kind: 'load', message: err?.message || 'Load error' })
-        }
-      })
+    if (phase !== 'countdown' || !startsAt) return
+    const id = setTimeout(() => {
+      activateRace(raceId).catch(() => { /* ya activa, ignorar */ })
+    }, Math.max(0, msUntil(startsAt)))
+    return () => clearTimeout(id)
+  }, [phase, startsAt, raceId])
 
-    const unsub = subscribeRace(raceId, {
-      onRace: updated => {
-        if (cancelled) return
-        setRace(updated)
-        setPhase(computePhase(updated))
-      },
-      onParticipants: next => {
-        if (cancelled) return
-        setParticipants(next)
-      },
-      onError: err => {
-        if (cancelled) return
-        setLastError({ kind: 'realtime', message: err.message })
-      },
-    })
-
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [raceId])
-
-  // Countdown → activar race (cualquier cliente; first-wins vía PB rule)
-  useEffect(() => {
-    if (phase !== 'countdown' || !race || !race.starts_at) return
-    const delay = Math.max(0, msUntil(race.starts_at))
-    countdownTimerRef.current = setTimeout(() => {
-      activateRace(raceId).catch(() => { /* ya activa */ })
-    }, delay)
-    return () => {
-      if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current)
-      countdownTimerRef.current = null
-    }
-  }, [phase, race, raceId])
-
-  // Ciclo de vida del tracker
-  useEffect(() => {
-    if (phase !== 'racing' || !me) return
-    if (!race || !race.starts_at) return
-
-    const snap = loadRaceSnapshot(raceId)
-    const rehydrate = snap && snap.participantId === me.id ? snap : null
-
-    const tracker = createRaceTracker({
-      startAtMs: new Date(race.starts_at).getTime(),
-      initialDistanceKm: rehydrate?.distanceKm,
-      initialGpsTrack: rehydrate?.gpsTrack,
-      onUpdate: (stats) => {
-        setMyStats(stats)
-        setLastError(prev => (prev?.kind === 'gps' ? null : prev))
-        const r = raceRef.current
-        if (!r || autoFinishedRef.current) return
-        let shouldFinish = false
-        if (r.mode === 'distance' && r.target_distance_km > 0) {
-          if (stats.distance_km >= r.target_distance_km) shouldFinish = true
-        } else if (r.mode === 'time' && r.target_duration_seconds > 0) {
-          if (stats.duration_seconds >= r.target_duration_seconds) shouldFinish = true
-        }
-        if (shouldFinish) {
-          autoFinishedRef.current = true
-          const trk = trackerRef.current
-          if (trk) {
-            finishParticipant(me.id, {
-              distance_km: stats.distance_km,
-              duration_seconds: stats.duration_seconds,
-              avg_pace: stats.avg_pace,
-              last_lat: stats.last_lat,
-              last_lng: stats.last_lng,
-              gps_track: trk.getGpsTrack(),
-            }).catch(err => {
-              setLastError({ kind: 'push', message: err?.message || 'Finish failed' })
-            })
-            trk.stop()
-          }
-        }
-      },
-      onError: (err) => {
-        setLastError({ kind: 'gps', message: err.message })
-      },
-    })
-    trackerRef.current = tracker
-    tracker.start()
-
-    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {})
-
-    pushTimerRef.current = setInterval(async () => {
-      const stats = latestStatsRef.current
-      if (!stats || autoFinishedRef.current) return
-      saveRaceSnapshot({
-        raceId,
-        participantId: me.id,
-        startAtMs: new Date(race.starts_at).getTime(),
-        distanceKm: stats.distance_km,
-        gpsTrack: tracker.getGpsTrack(),
-      })
-      const payload: ProgressUpdate = {
-        distance_km: stats.distance_km,
-        duration_seconds: stats.duration_seconds,
-        avg_pace: stats.avg_pace,
-        last_lat: stats.last_lat,
-        last_lng: stats.last_lng,
-      }
-      try {
-        await updateProgress(me.id, payload)
-        retryCountRef.current = 0
-      } catch (err) {
-        if (err instanceof RaceAuthError) {
-          setLastError({ kind: 'auth', message: 'race.sessionExpired' })
-          return
-        }
-        const count = retryCountRef.current + 1
-        retryCountRef.current = count
-        const backoff = PUSH_RETRY_BACKOFF_MS[Math.min(count - 1, PUSH_RETRY_BACKOFF_MS.length - 1)]
-        setTimeout(() => {
-          updateProgress(me.id, payload).catch((e) => { Sentry.captureException(e, { tags: { feature: 'race', op: 'push_progress_retry' } }) })
-        }, backoff)
-        if (count >= 3) {
-          setLastError({ kind: 'push', message: (err as Error)?.message || 'Push failed repeatedly' })
-        }
-      }
-    }, PUSH_INTERVAL_MS)
-
-    return () => {
-      tracker.stop()
-      tracker.dispose()
-      trackerRef.current = null
-      if (pushTimerRef.current) clearInterval(pushTimerRef.current)
-      pushTimerRef.current = null
-      autoFinishedRef.current = false
-      setMyStats(null)
-      deactivateKeepAwake(KEEP_AWAKE_TAG)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, me?.id, raceId, race?.starts_at, race?.mode, race?.target_distance_km, race?.target_duration_seconds])
-
-  // Cleanup al desmontar
-  useEffect(() => {
-    return () => {
-      trackerRef.current?.dispose()
-      trackerRef.current = null
-      if (pushTimerRef.current) clearInterval(pushTimerRef.current)
-      if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current)
-      deactivateKeepAwake(KEEP_AWAKE_TAG)
-    }
-  }, [])
-
-  // ── Actions ───────────────────────────────────────────────────────────────
+  // ── Acciones ──────────────────────────────────────────────────────────────
   const join = useCallback(async (displayName: string) => {
     try {
       await apiJoinRace(raceId, displayName)
@@ -383,19 +205,19 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         participant_count: participants.length + 1, result: 'joined',
       })
     } catch (err) {
-      setLastError({ kind: 'push', message: (err as Error).message })
+      setError('push', (err as Error).message)
       throw err
     }
-  }, [raceId, participants.length])
+  }, [raceId, participants.length, setError])
 
   const markReadyAction = useCallback(async () => {
-    if (!me) return
+    if (!meId) return
     try {
-      await apiMarkReady(me.id)
+      await apiMarkReady(meId)
     } catch (err) {
-      setLastError({ kind: 'push', message: (err as Error).message })
+      setError('push', (err as Error).message)
     }
-  }, [me])
+  }, [meId, setError])
 
   const startCountdownAction = useCallback(async () => {
     try {
@@ -403,18 +225,18 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
       op.track('race_started', {
         race_id: raceId,
         participants: participants.length,
-        mode: race?.mode,
+        mode: raceMode,
         platform: 'mobile',
       })
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceStarted, {
         surface: 'race', source: 'race_lobby', race_id: raceId,
-        participant_count: participants.length, result: 'started', mode: race?.mode,
+        participant_count: participants.length, result: 'started', mode: raceMode,
       })
     } catch (err) {
-      setLastError({ kind: 'push', message: (err as Error).message })
+      setError('push', (err as Error).message)
       throw err
     }
-  }, [raceId, participants.length, race?.mode])
+  }, [raceId, participants.length, raceMode, setError])
 
   const cancelRaceAction = useCallback(async () => {
     try {
@@ -422,72 +244,47 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
       clearRaceSnapshot()
       op.track('race_cancelled', { race_id: raceId, platform: 'mobile' })
     } catch (err) {
-      setLastError({ kind: 'push', message: (err as Error).message })
+      setError('push', (err as Error).message)
     }
-  }, [raceId])
+  }, [raceId, setError])
 
   const finishRaceAction = useCallback(async () => {
+    // Congelarse primero con las stats finales y la traza; después cerrar la
+    // carrera. Ambos pasos son idempotentes y viven en useRaceFinish.
+    await finishSelf('manual')
+    const err = await endRace()
+    if (err) {
+      setError('push', err.message)
+      return
+    }
+    clearRaceSnapshot()
     const stats = latestStatsRef.current
-    const trk = trackerRef.current
-    if (me && stats && trk && !autoFinishedRef.current) {
-      autoFinishedRef.current = true
-      try {
-        const r = raceRef.current
-        const reachedTarget = r
-          ? (r.mode === 'distance'
-              ? stats.distance_km >= r.target_distance_km
-              : stats.duration_seconds >= r.target_duration_seconds)
-          : true
-        if (reachedTarget) {
-          await finishParticipant(me.id, {
-            distance_km: stats.distance_km,
-            duration_seconds: stats.duration_seconds,
-            avg_pace: stats.avg_pace,
-            last_lat: stats.last_lat,
-            last_lng: stats.last_lng,
-            gps_track: trk.getGpsTrack(),
-          })
-        } else {
-          await markDnf(me.id)
-        }
-      } catch (err) {
-        setLastError({ kind: 'push', message: (err as Error).message })
-      }
-    }
-    try {
-      await apiFinishRace(raceId)
-      clearRaceSnapshot()
-      const s = latestStatsRef.current
-      op.track('race_finished', {
-        race_id: raceId,
-        my_distance_km: s?.distance_km ?? 0,
-        my_duration_seconds: Math.floor(s?.duration_seconds ?? 0),
-        platform: 'mobile',
-      })
-    } catch (err) {
-      setLastError({ kind: 'push', message: (err as Error).message })
-    }
-  }, [raceId, me])
+    op.track('race_finished', {
+      race_id: raceId,
+      my_distance_km: stats?.distance_km ?? 0,
+      my_duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
+      platform: 'mobile',
+    })
+  }, [raceId, finishSelf, endRace, setError])
 
   const leaveAction = useCallback(async () => {
-    if (!me) return
+    const current = meRef.current
+    if (!current) return
     try {
-      // DNF voluntario si ya corre; borrar fila si sigue en lobby
-      if (me.status === 'joined' || me.status === 'ready') {
-        await leaveRace(me.id)
+      // DNF voluntario si ya corre; borrar la fila si sigue en el lobby.
+      if (current.status === 'joined' || current.status === 'ready') {
+        await leaveRace(current.id)
       } else {
-        await markDnf(me.id)
+        await markDnf(current.id)
       }
     } catch (err) {
-      setLastError({ kind: 'push', message: (err as Error).message })
+      setError('push', (err as Error).message)
     }
-  }, [me])
-
-  const clearError = useCallback(() => setLastError(null), [])
+  }, [setError])
 
   // Memoizado: durante una carrera activa el provider re-renderiza hasta a 2 Hz
-  // (myStats cada 500ms, participants cada 3s). Sin memo, cada render recrea este
-  // objeto y re-renderiza a todos los consumidores de useRaceContext().
+  // (myStats cada 500 ms, participants cada 3 s). Sin memo, cada render recrea
+  // este objeto y re-renderiza a todos los consumidores de useRaceContext().
   const value = useMemo<RaceContextValue>(
     () => ({
       phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError,
@@ -500,7 +297,10 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         leave: leaveAction,
       },
     }),
-    [phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError, join, markReadyAction, startCountdownAction, cancelRaceAction, finishRaceAction, leaveAction],
+    [
+      phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError,
+      join, markReadyAction, startCountdownAction, cancelRaceAction, finishRaceAction, leaveAction,
+    ],
   )
 
   return <RaceContext.Provider value={value}>{children}</RaceContext.Provider>
