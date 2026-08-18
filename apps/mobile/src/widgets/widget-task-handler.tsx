@@ -12,6 +12,7 @@ import { NutritionWidget } from './NutritionWidget'
 import { NutritionRingWidget } from './NutritionRingWidget'
 import { MealStreakWidget } from './MealStreakWidget'
 import { WaterWidget } from './WaterWidget'
+import { NextSessionWidget } from './NextSessionWidget'
 import { WIDGET_SNAPSHOT_KEY, type WidgetSnapshot } from '../lib/widget-snapshot'
 import { CARDIO_WIDGET_SNAPSHOT_KEY, type CardioWidgetSnapshot } from '../lib/cardio-widget-snapshot'
 import { NUTRITION_WIDGET_SNAPSHOT_KEY, rolloverSnapshot, type NutritionWidgetSnapshot } from '../lib/nutrition-widget-snapshot'
@@ -68,6 +69,9 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
       } else if (props.widgetInfo.widgetName === 'StreakWidget') {
         const snapshot = await readSnapshot<WidgetSnapshot>(WIDGET_SNAPSHOT_KEY)
         props.renderWidget(<StreakWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
+      } else if (props.widgetInfo.widgetName === 'NextSessionWidget') {
+        const snapshot = await readSnapshot<WidgetSnapshot>(WIDGET_SNAPSHOT_KEY)
+        props.renderWidget(<NextSessionWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
       } else {
         const snapshot = await readSnapshot<WidgetSnapshot>(WIDGET_SNAPSHOT_KEY)
         props.renderWidget(<TodayWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
