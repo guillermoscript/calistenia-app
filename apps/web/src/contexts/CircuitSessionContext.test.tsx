@@ -5,11 +5,18 @@ import type { CircuitDefinition } from '@calistenia/core/types'
 
 // pb/op se mockean: CircuitSessionContext los usa para persistir sesiones
 // completadas (pb.collection('circuit_sessions').create) y trackear eventos.
-const { mockCreate, mockTrack, mockReportError, connectivity } = vi.hoisted(() => ({
+const { mockCreate, mockTrack, mockReportError, connectivity, lifecycleBus } = vi.hoisted(() => ({
   mockCreate: vi.fn(),
   mockTrack: vi.fn(),
   mockReportError: vi.fn(),
   connectivity: { online: true },
+  // #482: el lifecycle (primer plano / segundo plano) ahora viene del adapter
+  // de plataforma en vez de `document.visibilitychange`, así que los tests lo
+  // disparan a mano por aquí en vez de despachar un evento del DOM.
+  lifecycleBus: {
+    foreground: new Set<() => void>(),
+    background: new Set<() => void>(),
+  },
 }))
 
 vi.mock('@calistenia/core/lib/pocketbase', () => ({
@@ -42,6 +49,17 @@ vi.mock('@calistenia/core/platform', () => ({
     },
     reportError: mockReportError,
   }),
+  lifecycle: {
+    isForeground: () => true,
+    onForeground: (handler: () => void) => {
+      lifecycleBus.foreground.add(handler)
+      return () => lifecycleBus.foreground.delete(handler)
+    },
+    onBackground: (handler: () => void) => {
+      lifecycleBus.background.add(handler)
+      return () => lifecycleBus.background.delete(handler)
+    },
+  },
 }))
 
 import { CircuitSessionProvider, useCircuitSession } from './CircuitSessionContext'
@@ -738,5 +756,61 @@ describe('restauración desde localStorage', () => {
 
     expect(result.current.isActive).toBe(false)
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+})
+
+// #482: el lifecycle dejó de ser `document.visibilitychange` y pasó a venir del
+// adapter de plataforma. Estos casos cubren por primera vez algo que en el móvil
+// no se podía testear (allí vitest corre en node, sin renderizar React).
+describe('lifecycle de plataforma (#482)', () => {
+  it('persiste el circuito al pasar a segundo plano', () => {
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+    act(() => { result.current.advanceFromGetReady() })
+
+    // Borramos lo persistido para comprobar que es el paso a segundo plano
+    // —y no el efecto de cada cambio de estado— quien vuelve a escribir.
+    window.localStorage.removeItem(STORAGE_KEY)
+
+    act(() => { lifecycleBus.background.forEach(h => h()) })
+
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    expect(raw).not.toBeNull()
+    expect(JSON.parse(raw!).progress.phase).toBe('exercise')
+  })
+
+  it('deja de persistir tras desmontar (desuscribe el handler de segundo plano)', () => {
+    const { result, unmount } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+    unmount()
+
+    window.localStorage.removeItem(STORAGE_KEY)
+    act(() => { lifecycleBus.background.forEach(h => h()) })
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+
+  it('drena la cola al volver a primer plano', async () => {
+    // Sesión que quedó encolada por estar sin red: al volver a primer plano
+    // debe reintentarse. Antes esto solo ocurría en móvil (AppState); la web
+    // únicamente escuchaba el evento `online`.
+    connectivity.online = false
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+    await act(async () => { await result.current.completeCircuit() })
+    await waitFor(() => expect(queuedCircuits()).toHaveLength(1))
+
+    connectivity.online = true
+    mockCreate.mockClear()
+
+    await act(async () => {
+      lifecycleBus.foreground.forEach(h => h())
+    })
+
+    await waitFor(() => expect(queuedCircuits()).toHaveLength(0))
+    expect(mockCreate).toHaveBeenCalled()
   })
 })
