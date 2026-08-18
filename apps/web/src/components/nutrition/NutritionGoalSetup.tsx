@@ -341,16 +341,18 @@ export default function NutritionGoalSetup({
         )}
         {step < 5 ? (
           <Button
+            variant="limeSolid"
             onClick={handleNext}
             disabled={!canProceed()}
-            className="flex-1 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
+            className="flex-1 font-bebas text-lg tracking-wide"
           >
             {t('nutrition.setup.next')}
           </Button>
         ) : (
           <Button
+            variant="limeSolid"
             onClick={handleSave}
-            className="flex-1 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
+            className="flex-1 font-bebas text-lg tracking-wide"
           >
             {t('nutrition.setup.save')}
           </Button>

@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
@@ -278,9 +279,9 @@ export default function CardioDetailScreen() {
         {/* Splits */}
         {session.splits && session.splits.length > 0 && (
           <View className="gap-2">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               SPLITS
-            </Text>
+            </Kicker>
             <SplitsTable splits={session.splits} />
           </View>
         )}

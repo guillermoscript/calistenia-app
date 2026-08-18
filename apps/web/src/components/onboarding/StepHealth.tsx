@@ -9,6 +9,32 @@ import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId, type Health
 export { CONDITION_IDS, INJURY_IDS }
 export type { ConditionId, InjuryId, HealthValues }
 
+/**
+ * Pastilla de selección múltiple de este paso (condiciones y lesiones).
+ *
+ * Vivía dentro del render de `StepHealth`, así que React la veía como un tipo
+ * de componente nuevo en cada render y desmontaba y volvía a montar las dos
+ * listas de chips enteras cada vez que cambiaba cualquier valor (issue #488).
+ * Al nivel del módulo su identidad es estable y el remontaje desaparece.
+ */
+function Chip({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+        active
+          ? 'border-lime bg-lime/10 text-lime'
+          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
 interface Props {
   values: HealthValues
   onChange: (next: HealthValues) => void
@@ -33,22 +59,6 @@ export function StepHealth({ values, onChange, saving, onBack, onContinue, onSki
       : [...values.injuries, id]
     onChange({ ...values, injuries: next })
   }
-
-  const Chip = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        'px-3 py-1.5 rounded-full border text-xs transition-colors',
-        active
-          ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/10 text-[hsl(var(--lime))]'
-          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-      )}
-    >
-      {label}
-    </button>
-  )
 
   return (
     <div className="animate-[fadeUp_0.5s_ease]">
@@ -112,9 +122,10 @@ export function StepHealth({ values, onChange, saving, onBack, onContinue, onSki
           {t('onboarding.back')}
         </Button>
         <Button
+          variant="limeSolid"
           onClick={onContinue}
           disabled={saving}
-          className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+          className="flex-1 h-11 font-bebas text-lg tracking-wide"
         >
           {saving ? t('onboarding.saving') : t('onboarding.continueBtn')}
         </Button>

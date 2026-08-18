@@ -6,6 +6,7 @@ import { View, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
@@ -24,9 +25,9 @@ export default function ActiveCardioBar() {
     >
       <Text className="text-lg">{CARDIO_ACTIVITY[activityType]?.icon ?? '🏃'}</Text>
       <View className="flex-1">
-        <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
+        <Kicker size="xs" tone="lime">
           {state === 'paused' ? t('cardio.paused') : t('cardio.activeSession')}
-        </Text>
+        </Kicker>
         <Text className="font-bebas text-lg leading-tight text-foreground">
           {formatDuration(duration)} · {distance.toFixed(2)} km
         </Text>

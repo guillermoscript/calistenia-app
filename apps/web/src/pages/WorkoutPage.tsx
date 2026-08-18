@@ -196,7 +196,8 @@ export default function WorkoutPage() {
                   <Button
                     id="tour-start-session"
                     onClick={handleStartSession}
-                    className="w-full md:w-auto font-bebas text-xl tracking-wide bg-lime text-lime-foreground hover:bg-lime/90"
+                    variant="limeSolid"
+                    className="w-full md:w-auto font-bebas text-xl tracking-wide"
                   >
                     {t('workout.startBtn')}
                   </Button>

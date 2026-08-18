@@ -6,14 +6,16 @@
  * choque con `program/[id].tsx`.
  */
 import { useCallback, useState } from 'react'
-import { View, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { View, FlatList, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { X, CalendarCheck } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import {
@@ -51,9 +53,9 @@ export default function CommunityProgramsScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-row items-start justify-between px-4 pb-4 pt-2">
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('communityProgram.kicker')}
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">
             {t('communityProgram.title')}
           </Text>
@@ -72,7 +74,7 @@ export default function CommunityProgramsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#a3e635" />
+          <Loader />
         </View>
       ) : (
         <FlatList
@@ -129,9 +131,9 @@ function ProgramCard({
         </View>
         {isMember ? (
           <View className="rounded border border-lime/30 bg-lime/10 px-2 py-1">
-            <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
+            <Kicker size="xs" tone="lime">
               {t('communityProgram.joined')}
-            </Text>
+            </Kicker>
           </View>
         ) : null}
       </View>

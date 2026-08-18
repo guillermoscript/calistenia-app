@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
+import { EmptyState } from '../components/ui/empty-state'
 import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import {
   BEGINNER_CHALLENGE_PRESETS,
@@ -86,7 +87,8 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
           id="tour-challenges-create"
           onClick={() => navigate('/challenges/new')}
           size="sm"
-          className="bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] tracking-widest h-9"
+          variant="limeSolid"
+          className="text-[10px] tracking-widest h-9"
         >
           {t('challenges.create')}
         </Button>
@@ -155,20 +157,17 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
 
         {/* Empty state */}
         {!loading && items.length === 0 && (
-          <div className="text-center py-16 motion-safe:animate-scale-in">
-            <div className="text-3xl mb-3 motion-safe:animate-gentle-float">🎯</div>
-            <div className="text-sm text-muted-foreground mb-1">
-              {filter === 'active' ? t('challenges.emptyActive') : t('challenges.emptyPast')}
-            </div>
-            <div className="text-xs text-muted-foreground mb-4">
-              {t('challenges.emptyHint')}
-            </div>
-            {filter === 'active' && (
-              <Button onClick={() => navigate('/challenges/new')} className="bg-lime text-lime-foreground hover:bg-lime/90">
+          <EmptyState
+            icon="🎯"
+            iconClassName="motion-safe:animate-gentle-float"
+            title={filter === 'active' ? t('challenges.emptyActive') : t('challenges.emptyPast')}
+            hint={t('challenges.emptyHint')}
+            action={filter === 'active' && (
+              <Button onClick={() => navigate('/challenges/new')} variant="limeSolid">
                 {t('challenges.createChallenge')}
               </Button>
             )}
-          </div>
+          />
         )}
 
         {/* Challenge cards */}
@@ -239,9 +238,10 @@ function BeginnerPresetCard({
         size="sm"
         disabled={!preset.enabled || joining}
         onClick={() => isJoined ? onOpen(joinedChallenge!.id) : onJoin()}
+        variant={preset.enabled ? 'limeSolid' : 'default'}
         className={cn(
           'h-9 text-[10px] tracking-widest',
-          preset.enabled ? 'bg-lime text-lime-foreground hover:bg-lime/90' : 'bg-muted text-muted-foreground',
+          !preset.enabled && 'bg-muted text-muted-foreground',
         )}
       >
         {joining ? t('challenge.preset.joining') : isJoined ? t('challenge.preset.open') : preset.enabled ? t('challenge.preset.join') : t('challenge.preset.unavailable')}

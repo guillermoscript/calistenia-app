@@ -17,6 +17,19 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        // CTA de acento lima. Usa los tokens `--lime`/`--lime-foreground`, no
+        // una escala de Tailwind ni `hsl(var(--lime))` a pelo: el token es el
+        // único que se adapta al modo claro, donde `--lime` es un oliva oscuro
+        // y su foreground es blanco. Espejo de `limeSolid` en móvil.
+        limeSolid: "bg-lime text-lime-foreground hover:bg-lime/90",
+        // Acento lima secundario: filete + tinte, sin relleno. El lima marca
+        // "activo/interactuable", así que esta es la forma por defecto de un
+        // botón lima que no es el CTA. Espejo de `lime` en móvil.
+        lime: "border border-lime/40 bg-lime/10 text-lime hover:bg-lime/20",
+        // Acción destructiva secundaria (bloquear, abandonar): espejo de `lime`
+        // en rojo. Para el botón destructivo principal existe `destructive`.
+        danger:
+          "border border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500/20",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

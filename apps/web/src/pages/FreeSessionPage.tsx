@@ -653,11 +653,10 @@ export default function FreeSessionPage() {
               onClick={startSession}
               disabled={selected.length === 0}
               size="sm"
+              variant={selected.length > 0 ? 'limeSolid' : 'default'}
               className={cn(
                 'font-bebas text-base tracking-wide px-5 transition-all',
-                selected.length > 0
-                  ? 'bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] hover:bg-[hsl(var(--lime))]/90'
-                  : 'bg-muted text-muted-foreground',
+                selected.length === 0 && 'bg-muted text-muted-foreground',
               )}
             >
               {t('freeSession.start')}
@@ -794,7 +793,8 @@ function SessionQueue({
       <div className="p-3 border-t border-border">
         <Button
           onClick={onStart}
-          className="w-full font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] hover:bg-[hsl(var(--lime))]/90"
+          variant="limeSolid"
+          className="w-full font-bebas text-lg tracking-wide"
         >
           {t('freeSession.startSession')}
         </Button>

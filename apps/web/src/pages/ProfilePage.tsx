@@ -571,14 +571,11 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 {LEVELS.map(l => (
                   <Button
                     key={l.value}
-                    variant={level === l.value ? 'default' : 'outline'}
+                    variant={level === l.value ? 'limeSolid' : 'outline'}
                     size="sm"
                     aria-pressed={level === l.value}
                     onClick={() => set('level', l.value)}
-                    className={level === l.value
-                      ? 'h-8 px-4 text-[11px] bg-lime text-zinc-900 hover:bg-lime/90'
-                      : 'h-8 px-4 text-[11px]'
-                    }
+                    className="h-8 px-4 text-[11px]"
                   >
                     {l.label}
                   </Button>
@@ -799,7 +796,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="h-11 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-lg tracking-wide"
+          variant="limeSolid"
+          className="h-11 font-bebas text-lg tracking-wide"
         >
           {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
         </Button>

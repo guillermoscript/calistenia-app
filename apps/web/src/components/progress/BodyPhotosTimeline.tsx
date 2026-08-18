@@ -86,13 +86,10 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                   {CATEGORIES.map(c => (
                     <Button
                       key={c.value}
-                      variant={category === c.value ? 'default' : 'outline'}
+                      variant={category === c.value ? 'limeSolid' : 'outline'}
                       size="sm"
                       onClick={() => setCategory(c.value)}
-                      className={category === c.value
-                        ? 'h-7 px-3 text-[10px] bg-lime text-zinc-900 hover:bg-lime/90'
-                        : 'h-7 px-3 text-[10px]'
-                      }
+                      className="h-7 px-3 text-[10px]"
                     >
                       {t(c.labelKey)}
                     </Button>
@@ -121,7 +118,8 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
             <Button
               onClick={handleUpload}
               disabled={uploading}
-              className="h-9 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-sm tracking-wide self-start"
+              variant="limeSolid"
+              className="h-9 font-bebas text-sm tracking-wide self-start"
             >
               {uploading ? t('progress.bodyPhotos.uploading') : t('progress.bodyPhotos.upload')}
             </Button>

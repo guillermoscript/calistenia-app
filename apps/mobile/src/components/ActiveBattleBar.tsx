@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import { findMyActiveBattle } from '@calistenia/core/lib/battleApi'
@@ -52,9 +53,9 @@ export default function ActiveBattleBar() {
       className="absolute inset-x-3 flex-row items-center gap-3 rounded-xl border border-lime/40 bg-card px-4 py-3 shadow-lg active:opacity-90"
     >
       <View className="flex-1">
-        <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
+        <Kicker size="xs" tone="lime">
           {t('battle.kicker')}
-        </Text>
+        </Kicker>
         <Text className="font-bebas text-lg leading-tight text-foreground" numberOfLines={1}>
           {status === 'live' ? t('battle.barLive') : t('battle.barLobby')}
         </Text>

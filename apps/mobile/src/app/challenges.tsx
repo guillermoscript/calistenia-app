@@ -1,13 +1,15 @@
 /** Retos — port móvil de ChallengesPage (useChallenges de core). */
 import { useEffect, useRef, useState } from 'react'
-import { View, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { View, FlatList, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { X, Target } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
@@ -117,9 +119,9 @@ export default function ChallengesScreen() {
       {/* Header */}
       <View className="flex-row items-start justify-between px-4 pt-2 pb-4">
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('challenges.section')}
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">{t('challenges.title')}</Text>
         </View>
         <Pressable
@@ -179,7 +181,7 @@ export default function ChallengesScreen() {
         ListEmptyComponent={
           loading ? (
             <View className="items-center justify-center gap-2 py-10">
-              <ActivityIndicator color="#a3e635" />
+              <Loader />
               <Text className="font-mono text-xs text-muted-foreground">{t('common.loading')}</Text>
             </View>
           ) : (
@@ -296,9 +298,9 @@ function BeginnerPresetCatalog({
   return (
     // Sin px-4: el padding horizontal ya lo pone el contentContainer de la lista.
     <View className="pb-4 gap-2">
-      <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+      <Kicker>
         {t('challenge.preset.kicker')}
-      </Text>
+      </Kicker>
       <Text className="font-bebas text-2xl leading-none text-foreground">
         {t('challenge.preset.catalogTitle')}
       </Text>

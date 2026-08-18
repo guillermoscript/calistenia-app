@@ -215,10 +215,10 @@ export default function PRShareCard({ prEvent, exerciseName, userName, avatarUrl
 
   return (
     <Button
-      variant="outline"
+      variant="lime"
       size="sm"
       onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleShare() }}
-      className="flex-shrink-0 text-[10px] font-mono tracking-wider border-lime/25 text-lime hover:bg-lime/10"
+      className="flex-shrink-0 text-[10px] font-mono tracking-wider"
     >
       {t('pr.share')}
     </Button>

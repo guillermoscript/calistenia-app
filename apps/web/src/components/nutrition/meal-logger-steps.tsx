@@ -62,7 +62,8 @@ export function CaptureStep({ model }: StepProps) {
                 <div className="flex gap-2">
                   <Button
                     type="submit"
-                    className="flex-1 h-11 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-sm tracking-widest shadow-lg shadow-lime-400/10"
+                    variant="limeSolid"
+                    className="flex-1 h-11 font-bebas text-sm tracking-widest shadow-lg shadow-lime-400/10"
                   >
                     ✨ {t('nutrition.logger.analyzeWithAI')}
                   </Button>
@@ -280,9 +281,10 @@ export function ReviewStep({ model }: StepProps) {
 
       {/* Save button */}
       <Button
+        variant="limeSolid"
         onClick={handleSave}
         disabled={foods.length === 0}
-        className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest shadow-lg shadow-lime-400/10"
+        className="w-full h-12 font-bebas text-lg tracking-widest shadow-lg shadow-lime-400/10"
       >
         {t('nutrition.logger.saveMeal')}
       </Button>
@@ -345,8 +347,9 @@ export function SuccessStep({ model }: StepProps) {
 
       <div className="flex gap-2">
         <Button
+          variant="limeSolid"
           onClick={() => onSaveSuccess?.()}
-          className="flex-1 h-11 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-wide"
+          className="flex-1 h-11 font-bebas text-lg tracking-wide"
         >
           {t('nutrition.logger.done')}
         </Button>

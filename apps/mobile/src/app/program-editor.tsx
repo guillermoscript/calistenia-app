@@ -12,6 +12,7 @@ import Animated, { FadeInRight } from 'react-native-reanimated'
 import { X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
@@ -120,9 +121,9 @@ export default function ProgramEditorScreen() {
       {/* Header spec-sheet */}
       <View className="flex-row items-start justify-between px-4 pb-3 pt-2">
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('programEditor.editorTitle')}
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">
             {programId ? t('common.edit') : t('programEditor.newProgram')}
           </Text>

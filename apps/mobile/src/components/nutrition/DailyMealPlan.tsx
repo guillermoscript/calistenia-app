@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import { View, Pressable, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { Sentry } from '@/lib/instrument'
 import { useDailyMealPlan, type DailyPlannedMeal } from '@calistenia/core/hooks/useDailyMealPlan'
@@ -196,7 +197,7 @@ export default function DailyMealPlan({ remaining, loggedMealTypes, onSaveMeal }
                     )}
                   >
                     {isSaving ? (
-                      <ActivityIndicator size="small" color="#a3e635" />
+                      <Loader size="sm" />
                     ) : (
                       <Text
                         className={cn(

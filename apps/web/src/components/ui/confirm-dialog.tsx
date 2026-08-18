@@ -65,12 +65,16 @@ export function ConfirmDialog({
           <Button
             onClick={handleConfirm}
             disabled={loading}
+            // La rama destructiva se queda con los tokens `--destructive` en vez
+            // de pasar a `variant="danger"`: en modo oscuro ese token (0 62.8% 50%)
+            // es más apagado que el `red-500` literal de la variante, y esta es
+            // la app dark-first. En claro sí coinciden.
             className={
               variant === 'destructive'
-                ? 'border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide'
-                : 'bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide'
+                ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide'
+                : 'font-bebas text-lg tracking-wide'
             }
-            variant="outline"
+            variant={variant === 'destructive' ? 'outline' : 'limeSolid'}
           >
             {loading ? t('common.processing') : resolvedConfirmLabel}
           </Button>

@@ -42,13 +42,10 @@ export default function PhotoComparator({ photos }: PhotoComparatorProps) {
             {categories.map(c => (
               <Button
                 key={c}
-                variant="outline"
+                variant={category === c ? 'lime' : 'outline'}
                 size="sm"
                 onClick={() => { setCategory(c); setLeftIdx(0); setRightIdx(filtered.length - 1) }}
-                className={cn(
-                  'h-7 px-3 text-[10px] tracking-wide capitalize',
-                  category === c && 'border-lime/50 text-lime bg-lime/10'
-                )}
+                className="h-7 px-3 text-[10px] tracking-wide capitalize"
               >
                 {c === 'front' ? t('progress.photoComparator.front') : c === 'side' ? t('progress.photoComparator.side') : c === 'back' ? t('progress.photoComparator.back') : c}
               </Button>

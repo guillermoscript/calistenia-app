@@ -87,7 +87,8 @@ export default function FeaturedChallengeCard({ onNavigate, userId }: FeaturedCh
           <Button
             onClick={(e) => { e.stopPropagation(); handleOpen() }}
             size="sm"
-            className="relative h-9 px-4 bg-lime text-lime-foreground hover:bg-lime/90 text-[11px] font-bold tracking-widest"
+            variant="limeSolid"
+            className="relative h-9 px-4 text-[11px] font-bold tracking-widest"
           >
             {t('featuredChallenge.continue')}
           </Button>
@@ -96,7 +97,8 @@ export default function FeaturedChallengeCard({ onNavigate, userId }: FeaturedCh
         <Button
           onClick={(e) => { e.stopPropagation(); handleOpen() }}
           size="sm"
-          className="relative h-9 px-4 bg-lime text-lime-foreground hover:bg-lime/90 text-[11px] font-bold tracking-widest"
+          variant="limeSolid"
+          className="relative h-9 px-4 text-[11px] font-bold tracking-widest"
         >
           {t('featuredChallenge.results')}
         </Button>
@@ -105,7 +107,8 @@ export default function FeaturedChallengeCard({ onNavigate, userId }: FeaturedCh
           onClick={(e) => { e.stopPropagation(); handleJoin() }}
           disabled={joining}
           size="sm"
-          className="relative h-9 px-4 bg-lime text-lime-foreground hover:bg-lime/90 text-[11px] font-bold tracking-widest"
+          variant="limeSolid"
+          className="relative h-9 px-4 text-[11px] font-bold tracking-widest"
         >
           {t('featuredChallenge.join')}
         </Button>

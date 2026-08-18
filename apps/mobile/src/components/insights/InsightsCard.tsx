@@ -1,6 +1,6 @@
 /** Cross-metric weekly insight card — collapsible "Tu semana" on Home (épica #128 Fase 2, issue #133). */
 import React, { useCallback, useEffect, useState } from 'react'
-import { View, Pressable, ActivityIndicator } from 'react-native'
+import { View, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
 import Animated, {
@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { op } from '@calistenia/core/lib/analytics'
 import {
@@ -104,7 +105,7 @@ function GenerateButton({ isGenerating, onGenerate }: { isGenerating: boolean; o
   const { t } = useTranslation()
   return (
     <Button variant="lime" size="sm" onPress={onGenerate} disabled={isGenerating} className="self-start">
-      {isGenerating && <ActivityIndicator size="small" color="#a3e635" />}
+      {isGenerating && <Loader size="sm" />}
       <Text>
         {isGenerating ? t('insights.card.generating', 'Generando…') : t('insights.card.generate', 'Generar resumen')}
       </Text>

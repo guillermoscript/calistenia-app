@@ -60,7 +60,8 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
     <div ref={ref} className={cn('relative inline-block', className)}>
       <Button
         onClick={() => setOpen(o => !o)}
-        className="bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 font-semibold text-sm h-10 px-5"
+        variant="limeSolid"
+        className="font-semibold text-sm h-10 px-5"
       >
         <InviteIcon className="size-4 mr-1.5" />
         {t('share.invite')}

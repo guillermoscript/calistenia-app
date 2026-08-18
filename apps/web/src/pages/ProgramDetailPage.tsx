@@ -509,8 +509,9 @@ export default function ProgramDetailPage({
         <div className="flex items-center gap-3 flex-wrap motion-safe:animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
           {isSharedView && !userId ? (
             <Button
+              variant="limeSolid"
               onClick={onLogin}
-              className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
+              className="active:scale-[0.98] font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
             >
               {t('programDetail.signUpToUse')}
             </Button>
@@ -518,16 +519,17 @@ export default function ProgramDetailPage({
             <>
               {onSelectProgram && !isActive && (
                 <Button
+                  variant="limeSolid"
                   onClick={handleSelectProgram}
                   disabled={actionLoading === 'select'}
-                  className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
+                  className="active:scale-[0.98] font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
                 >
                   <CheckIcon className="size-4 mr-2" />
                   {actionLoading === 'select' ? t('programDetail.activating') : isSharedView ? t('programDetail.addToMine') : t('programDetail.useProgram')}
                 </Button>
               )}
               {isActive && (
-                <Button asChild className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform motion-safe:animate-workday-pulse">
+                <Button asChild variant="limeSolid" className="active:scale-[0.98] font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform motion-safe:animate-workday-pulse">
                   <Link to="/workout">
                     {t('programDetail.goToWorkout')}
                   </Link>
@@ -571,9 +573,9 @@ export default function ProgramDetailPage({
               )}
               {onDeleteProgram && isOwn && !isActive && (
                 <Button
-                  variant="outline"
+                  variant="danger"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-red-500/20 text-red-400 hover:border-red-500/40 hover:bg-red-500/5"
+                  className="font-mono text-[11px] tracking-widest h-11 px-5"
                 >
                   {t('common.delete')}
                 </Button>

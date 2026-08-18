@@ -84,10 +84,10 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
             {t(subtitleKey)}
           </div>
           <Button
-            variant="outline"
+            variant="lime"
             size="sm"
             onClick={handleShare}
-            className="mt-3 text-[10px] font-mono tracking-wider border-lime/25 text-lime hover:bg-lime/10 h-8"
+            className="mt-3 text-[10px] font-mono tracking-wider h-8"
           >
             {t('streak.milestone.share')}
           </Button>

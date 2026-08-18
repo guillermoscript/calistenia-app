@@ -2,11 +2,11 @@
  * BattleResultShareButton — pinta la tarjeta de resultado fuera de pantalla, la captura
  * y la comparte (#357).
  *
- * Mismo patrón que el resto de botones de compartir: `ShareCardCapture` mantiene la
+ * Mismo patrón que el resto de botones de compartir: `useShareCardCapture` mantiene la
  * tarjeta montada fuera de la pantalla para que la vista exista de verdad al capturarla,
- * y un `requestAnimationFrame` antes del disparo evita el PNG en blanco.
+ * y un `requestAnimationFrame` antes del disparo evita el PNG en blanco (#488).
  */
-import { useCallback, useRef, useState } from 'react'
+import { useCallback } from 'react'
 import { useWindowDimensions } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Share2 } from 'lucide-react-native'
@@ -14,9 +14,10 @@ import { Share2 } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { shareBattleResult, shareBattleResultCard } from '@/lib/share'
-import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
+import ShareCardCapture from '@/components/share/ShareCardCapture'
 import BattleResultShareCard from '@/components/battle/BattleResultShareCard'
 import type { BattleResultRow } from '@calistenia/core/lib/battle'
+import { useShareCardCapture } from '@/hooks/useShareCardCapture'
 
 export interface BattleResultShareButtonProps {
   battleId: string
@@ -44,18 +45,10 @@ export default function BattleResultShareButton({
   referralCode,
 }: BattleResultShareButtonProps) {
   const { t } = useTranslation()
-  const captureRef = useRef<ShareCardCaptureHandle>(null)
-  const [sharing, setSharing] = useState(false)
   const { width: screenW, height: screenH } = useWindowDimensions()
 
-  const handleShare = useCallback(async () => {
-    if (sharing) return
-    setSharing(true)
-    try {
-      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
-      const uri = await captureRef.current?.capture()
-      if (!uri) return
-
+  const onCapture = useCallback(
+    async (uri: string) => {
       const { message } = shareBattleResult({
         userName,
         circuitName,
@@ -69,12 +62,11 @@ export default function BattleResultShareButton({
         battleId,
         participantCount: rows.length,
       })
-    } catch {
-      // Hoja cancelada o captura fallida: el contrato dice que eso no emite nada.
-    } finally {
-      setSharing(false)
-    }
-  }, [sharing, userName, circuitName, me, contenders, referralCode, battleId, rows.length, t])
+    },
+    [userName, circuitName, me, contenders, referralCode, battleId, rows.length, t],
+  )
+
+  const { captureRef, sharing, share } = useShareCardCapture({ onCapture })
 
   return (
     <>
@@ -98,7 +90,7 @@ export default function BattleResultShareButton({
         size="lg"
         className="w-full flex-row items-center justify-center gap-2"
         disabled={sharing}
-        onPress={() => void handleShare()}
+        onPress={() => void share()}
       >
         <Share2 size={16} color="#a1a1aa" />
         <Text className="font-bebas text-lg tracking-[2px] text-foreground">

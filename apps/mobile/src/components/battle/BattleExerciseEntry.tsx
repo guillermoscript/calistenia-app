@@ -14,6 +14,7 @@ import { View, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { RepStepper } from '@/components/training/RepStepper'
 import { TimerPanel } from '@/components/training/TimerPanel'
@@ -59,9 +60,9 @@ export default function BattleExerciseEntry({
   return (
     <View>
       <View className="items-center gap-4 py-6">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('battle.currentExercise')}
-        </Text>
+        </Kicker>
         <Text className="text-center font-bebas text-5xl leading-none text-foreground">{name}</Text>
         <Text className="font-mono text-xs text-muted-foreground">
           {t('battle.target')} {targetValue}

@@ -26,9 +26,10 @@ export function StepPhases({ phases, addPhase, removePhase, updatePhase }: StepP
         <div className="font-bebas text-2xl tracking-wide">FASES DEL PROGRAMA</div>
         {phases.length < 8 && (
           <Button
+            variant="limeSolid"
             onClick={addPhase}
             size="sm"
-            className="h-8 text-[10px] tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90"
+            className="h-8 text-[10px] tracking-wide"
           >
             + AGREGAR FASE
           </Button>

@@ -187,8 +187,8 @@ export default function RaceLive() {
         {isCreator && (
           <Button
             onClick={actions.finishRace}
-            variant="outline"
-            className="w-full h-11 font-bebas text-lg tracking-widest border-red-500/30 text-red-400 hover:bg-red-500/10"
+            variant="danger"
+            className="w-full h-11 font-bebas text-lg tracking-widest"
           >
             {t('race.finish')}
           </Button>

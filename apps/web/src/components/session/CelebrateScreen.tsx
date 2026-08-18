@@ -142,7 +142,8 @@ export default function CelebrateScreen({
       <div style={{ animation: 'fadeUp 0.5s 0.7s ease-out both' }} className="flex flex-col items-center gap-3">
         <Button
           onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
-          className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 bg-lime text-lime-foreground hover:bg-lime/90"
+          variant="limeSolid"
+          className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
         >
           IR AL DASHBOARD
         </Button>

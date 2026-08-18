@@ -227,9 +227,10 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
 
       {/* Submit */}
       <Button
+        variant="limeSolid"
         onClick={handleSubmit}
         disabled={isLoading}
-        className="w-full font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] hover:bg-[hsl(var(--lime))]/90"
+        className="w-full font-bebas text-lg tracking-wide"
       >
         {isLoading ? 'Generando...' : 'Generar sesión'}
       </Button>

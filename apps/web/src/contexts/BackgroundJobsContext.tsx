@@ -5,7 +5,7 @@
  * Wrap the app in <BackgroundJobsProvider> and use useBackgroundJobs() anywhere.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, use, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { fetchJobStatus, type AIJob } from '@calistenia/core/lib/ai-jobs-api'
@@ -212,7 +212,7 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
 }
 
 export function useBackgroundJobs(): BackgroundJobsContextValue {
-  const ctx = useContext(BackgroundJobsContext)
+  const ctx = use(BackgroundJobsContext)
   if (!ctx) throw new Error('useBackgroundJobs must be used within BackgroundJobsProvider')
   return ctx
 }

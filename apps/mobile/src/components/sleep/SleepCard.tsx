@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Moon } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useSleep } from '@calistenia/core/hooks/useSleep'
@@ -57,7 +58,7 @@ export default function SleepCard({ userId }: { userId: string | null }) {
           <Moon size={20} color="#818cf8" />
         </View>
         <View className="flex-1">
-          <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">{t('sleep.title')}</Text>
+          <Kicker size="xs">{t('sleep.title')}</Kicker>
           {lastEntry ? (
             <>
               <Text className="mt-0.5 font-sans-medium text-foreground">

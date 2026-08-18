@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Play, Check, Moon, MapPin, Users, Bell, Trophy, Flag } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -154,9 +155,9 @@ export default function TodayScreen() {
         {/* ── Welcome header — mismo patrón que DashboardPage web ── */}
         <View className="flex-row items-start justify-between pt-2">
           <View className="flex-1">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {todayFormatted}
-            </Text>
+            </Kicker>
             <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
             <Text className="mt-1 text-sm text-muted-foreground">
               {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
@@ -423,7 +424,7 @@ function OtherDays({ phase, todayId, weekDays }: { phase: number; todayId: DayId
 
   return (
     <View className="gap-2">
-      <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('workout.chooseWorkout')}</Text>
+      <Kicker>{t('workout.chooseWorkout')}</Kicker>
       {trainable.map(day => {
         const w = getWorkout(phase, day.id)
         if (!w || w.exercises.length === 0) return null

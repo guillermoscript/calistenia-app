@@ -4,6 +4,7 @@ import { View, Pressable, Share, Alert, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Share2, Crown } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { useRaceContext } from '@/contexts/RaceContext'
 import { haptics } from '@/lib/haptics'
@@ -86,9 +87,9 @@ export default function RaceLobby({ displayName }: { displayName: string }) {
 
       {/* Participantes */}
       <View className="gap-2">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('race.participants')} ({participants.length})
-        </Text>
+        </Kicker>
         {participants.map((p) => (
           <View key={p.id} className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
             <View className="size-9 items-center justify-center rounded-full bg-muted">

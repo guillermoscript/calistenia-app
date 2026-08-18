@@ -225,9 +225,10 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
           </Button>
         ) : (
           <Button
+            variant="limeSolid"
             size="sm"
             onClick={(e) => { e.stopPropagation(); onSelect() }}
-            className="h-8 px-4 text-[11px] font-bebas tracking-widest bg-lime-400 hover:bg-lime-300 text-zinc-900"
+            className="h-8 px-4 text-[11px] font-bebas tracking-widest"
           >
             {t('programs.useProgram')}
           </Button>
@@ -347,9 +348,10 @@ export default function ProgramsPage() {
           </p>
         </div>
         <Button
+          variant="limeSolid"
           id="tour-create-program"
           onClick={onCreateProgram}
-          className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10 w-full sm:w-auto shrink-0"
+          className="font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10 w-full sm:w-auto shrink-0"
         >
           <PlusIcon className="size-4 mr-2" />
           {t('programs.createProgram')}

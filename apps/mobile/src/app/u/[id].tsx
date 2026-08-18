@@ -10,6 +10,7 @@ import { X, MoreVertical, UserX, Flag, ChevronRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { OptionSheet } from '@/components/ui/option-sheet'
 import { cn } from '@/lib/utils'
@@ -107,7 +108,7 @@ export default function UserProfileScreen() {
   const Header = (
     <View className="flex-row items-start justify-between px-4 pt-2 pb-3">
       <View>
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">SOCIAL</Text>
+        <Kicker>SOCIAL</Kicker>
         <Text className="font-bebas text-4xl leading-none text-foreground">Perfil</Text>
       </View>
       <View className="mt-1 flex-row items-center gap-2">

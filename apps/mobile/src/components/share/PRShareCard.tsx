@@ -7,7 +7,7 @@
  * ShareCardCapture.  captureRef at @1x gives 360×640px PNG; caller can pass
  * { width:1080, height:1920 } to captureRef for 3× hi-res if needed.
  */
-import React, { forwardRef } from 'react'
+import React from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 
 // Colors matching web CARD_COLORS
@@ -50,12 +50,11 @@ function formatDate(dateStr?: string): string {
   }
 }
 
-const PRShareCard = forwardRef<View, PRShareCardProps>(
-  ({ exerciseName, oldValue, newValue, date, userName, avatarUrl, referralCode }, ref) => {
-    const initials = (userName ?? '?')[0].toUpperCase()
+function PRShareCard({ exerciseName, oldValue, newValue, date, userName, avatarUrl, referralCode }: PRShareCardProps) {
+  const initials = (userName ?? '?')[0].toUpperCase()
 
-    return (
-      <View ref={ref} style={styles.card} collapsable={false}>
+  return (
+    <View style={styles.card} collapsable={false}>
         {/* Top accent line */}
         <View style={styles.topLine} />
 
@@ -132,8 +131,7 @@ const PRShareCard = forwardRef<View, PRShareCardProps>(
         </View>
       </View>
     )
-  },
-)
+}
 
 PRShareCard.displayName = 'PRShareCard'
 

@@ -542,7 +542,8 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           <Button
             onClick={handleSave}
             disabled={saving || days.length === 0}
-            className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest"
+            variant="limeSolid"
+            className="w-full h-12 font-bebas text-lg tracking-widest"
           >
             {saving ? `${t('common.loading')}` : t('common.save').toUpperCase()}
           </Button>
@@ -612,7 +613,8 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                       <Button
                         onClick={handleEditSave}
                         disabled={saving || days.length === 0}
-                        className="flex-1 h-10 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-base tracking-widest"
+                        variant="limeSolid"
+                        className="flex-1 h-10 font-bebas text-base tracking-widest"
                       >
                         {saving ? `${t('common.loading')}` : t('common.save').toUpperCase()}
                       </Button>

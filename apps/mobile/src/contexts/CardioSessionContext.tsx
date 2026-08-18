@@ -9,7 +9,7 @@
  * La lógica de filtrado (accuracy, jitter, gaps, Kalman) es la de core.
  */
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  createContext, useCallback, use, useEffect, useMemo, useRef, useState,
   type ReactNode, type MutableRefObject,
 } from 'react'
 import i18n from 'i18next'
@@ -486,7 +486,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 }
 
 export function useCardioSessionContext() {
-  const ctx = useContext(CardioSessionContext)
+  const ctx = use(CardioSessionContext)
   if (!ctx) throw new Error('useCardioSessionContext must be used within CardioSessionProvider')
   return ctx
 }

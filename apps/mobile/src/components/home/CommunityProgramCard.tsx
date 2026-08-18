@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { useCommunityPrograms } from '@calistenia/core/hooks/useCommunityPrograms'
 
 interface CommunityProgramCardProps {
@@ -32,9 +33,9 @@ export default function CommunityProgramCard({ userId }: CommunityProgramCardPro
       onPress={() => router.push(`/community-programs/${program.id}`)}
       className="rounded-xl border border-border bg-card p-4 active:opacity-70"
     >
-      <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+      <Kicker>
         {t('communityProgram.kicker')}
-      </Text>
+      </Kicker>
       <Text className="mt-1 text-sm font-sans-medium text-foreground">{t(program.title_key)}</Text>
       <Text numberOfLines={2} className="mt-1 text-xs leading-relaxed text-muted-foreground">
         {t(program.description_key)}

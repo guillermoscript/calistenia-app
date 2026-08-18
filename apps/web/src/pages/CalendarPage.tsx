@@ -337,7 +337,8 @@ export default function CalendarPage() {
                 <Button
                   onClick={onGoToWorkout}
                   size="sm"
-                  className="bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
+                  variant="limeSolid"
+                  className="text-[10px] font-bold tracking-widest"
                 >
                   {t('calendar.train')}
                 </Button>

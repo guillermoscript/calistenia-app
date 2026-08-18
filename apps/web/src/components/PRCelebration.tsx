@@ -97,10 +97,10 @@ export default function PRCelebration({ prEvent, onDismiss }: PRCelebrationProps
             />
           ) : (
             <Button
-              variant="outline"
+              variant="lime"
               size="sm"
               onClick={handleShareClick}
-              className="flex-shrink-0 text-[10px] font-mono tracking-wider border-lime/25 text-lime hover:bg-lime/10"
+              className="flex-shrink-0 text-[10px] font-mono tracking-wider"
             >
               {t('pr.share')}
             </Button>

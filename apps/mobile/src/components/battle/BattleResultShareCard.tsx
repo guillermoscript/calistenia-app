@@ -11,7 +11,7 @@
  * tarjetas: se captura a píxeles con `react-native-view-shot` y tiene que salir igual en
  * un móvil en modo claro que en uno en oscuro.
  */
-import React, { forwardRef } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 
 import type { BattleResultRow } from '@calistenia/core/lib/battle'
@@ -53,26 +53,23 @@ function scoreLine(row: BattleResultRow, showReps: boolean, showSeconds: boolean
   return parts.join('  ')
 }
 
-const BattleResultShareCard = forwardRef<View, BattleResultShareCardProps>(function BattleResultShareCard(
-  {
-    circuitName,
-    rows,
-    meParticipantId,
-    showReps,
-    showSeconds,
-    deletedUserLabel,
-    headline,
-    kicker,
-    width = 360,
-    height = 640,
-  },
-  ref,
-) {
+function BattleResultShareCard({
+  circuitName,
+  rows,
+  meParticipantId,
+  showReps,
+  showSeconds,
+  deletedUserLabel,
+  headline,
+  kicker,
+  width = 360,
+  height = 640,
+}: BattleResultShareCardProps) {
   const shown = rows.slice(0, MAX_ROWS)
   const hidden = rows.length - shown.length
 
   return (
-    <View ref={ref} style={[styles.card, { width, height }]} collapsable={false}>
+    <View style={[styles.card, { width, height }]} collapsable={false}>
       <View style={styles.topLine} />
 
       <View style={styles.header}>
@@ -104,7 +101,7 @@ const BattleResultShareCard = forwardRef<View, BattleResultShareCardProps>(funct
       </View>
     </View>
   )
-})
+}
 
 export default BattleResultShareCard
 

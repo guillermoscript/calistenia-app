@@ -146,7 +146,7 @@ export default function UserProfilePage() {
             ) : (
               <>
                 <Button
-                  variant={isFollowing(userId) ? 'default' : 'outline'}
+                  variant={isFollowing(userId) ? 'limeSolid' : 'outline'}
                   size="sm"
                   disabled={followLoading}
                   onClick={async () => {
@@ -158,21 +158,21 @@ export default function UserProfilePage() {
                   className={cn(
                     'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
                     isFollowing(userId)
-                      ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
-                      : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+                      ? 'hover:bg-red-500 hover:text-white'
+                      : 'hover:border-lime hover:text-lime'
                   )}
                 >
                   {followLoading ? '...' : isFollowing(userId) ? t('friends.followingBtn') : t('friends.followBtn')}
                 </Button>
                 <Button
-                  variant={comparing ? 'default' : 'outline'}
+                  variant={comparing ? 'limeSolid' : 'outline'}
                   size="sm"
                   onClick={() => setComparing(c => !c)}
                   className={cn(
                     'text-[10px] tracking-widest h-9',
                     comparing
-                      ? 'bg-[hsl(var(--lime))] text-background'
-                      : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+                      ? ''
+                      : 'hover:border-lime hover:text-lime'
                   )}
                 >
                   {comparing ? t('friends.compare.hide') : t('friends.compare.show')}
@@ -289,7 +289,7 @@ export default function UserProfilePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(`/u/${userId}/routine`)}
-                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+                className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
               >
                 VER RUTINA
               </Button>
@@ -357,7 +357,7 @@ export default function UserProfilePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/referrals')}
-                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+                className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
               >
                 VER MIS REFERIDOS
               </Button>
@@ -365,7 +365,7 @@ export default function UserProfilePage() {
                 variant="outline"
                 size="sm"
                 onClick={handleInvite}
-                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+                className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
               >
                 INVITAR AMIGO
               </Button>

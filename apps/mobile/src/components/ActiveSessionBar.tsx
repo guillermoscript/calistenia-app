@@ -7,6 +7,7 @@ import { View, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 
@@ -29,9 +30,9 @@ export default function ActiveSessionBar() {
       className={`absolute inset-x-3 ${cardioVisible ? 'bottom-[152px]' : 'bottom-[88px]'} flex-row items-center gap-3 rounded-xl border border-lime/40 bg-card px-4 py-3 shadow-lg active:opacity-90`}
     >
       <View className="flex-1">
-        <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
+        <Kicker size="xs" tone="lime">
           {t('session.activeSession')}
-        </Text>
+        </Kicker>
         <Text className="font-bebas text-lg leading-tight text-foreground" numberOfLines={1}>
           {/* plural manual: Hermes puede no traer Intl.PluralRules (ver SelectionBar) */}
           {title} · {exerciseCount} {exerciseCount === 1 ? t('session.exerciseCount') : t('session.exerciseCount_other')}

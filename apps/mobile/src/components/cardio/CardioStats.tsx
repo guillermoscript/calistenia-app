@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { View, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
@@ -194,9 +195,9 @@ function LastSessionCard({
           <Text className="text-lg">{activity.icon}</Text>
         </View>
         <View className="flex-1">
-          <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+          <Kicker size="xs">
             {t('cardio.lastSession')}
-          </Text>
+          </Kicker>
           <Text className={cn('font-bebas text-base leading-none', activity.color)}>
             {t(`cardio.${session.activity_type}`)}
           </Text>

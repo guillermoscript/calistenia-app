@@ -2,6 +2,7 @@
 import { View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { useRacePRs } from '@calistenia/core/hooks/useRacePRs'
 import { formatDuration, formatPace } from '@calistenia/core/lib/geo'
@@ -21,9 +22,9 @@ export default function RacePRsPanel({ userId }: { userId: string | null }) {
   return (
     <View className="rounded-xl border border-border bg-card p-3">
       <View className="mb-2.5 flex-row items-center justify-between">
-        <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+        <Kicker size="xs">
           {t('race.prsTitle')}
-        </Text>
+        </Kicker>
         <Text className="font-mono text-[9px] text-amber-400">
           👑 {prs.wins} {t('race.prsWins')} · {prs.finishes} {t('race.prsFinished')}
         </Text>

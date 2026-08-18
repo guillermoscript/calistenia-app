@@ -191,13 +191,10 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
           {CATEGORIES.map(cat => (
             <Button
               key={cat.id}
-              variant={category === cat.id ? 'default' : 'outline'}
+              variant={category === cat.id ? 'limeSolid' : 'outline'}
               size="sm"
               onClick={() => setCategory(cat.id)}
-              className={cn(
-                'h-7 px-2.5 text-[10px] tracking-wide',
-                category === cat.id && 'bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90'
-              )}
+              className="h-7 px-2.5 text-[10px] tracking-wide"
             >
               {cat.label}
             </Button>
@@ -243,8 +240,9 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                 </div>
                 <Button
                   size="sm"
+                  variant="limeSolid"
                   onClick={() => handleAdd(ex)}
-                  className="h-7 px-3 text-[10px] tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90 shrink-0"
+                  className="h-7 px-3 text-[10px] tracking-wide shrink-0"
                 >
                   AGREGAR
                 </Button>

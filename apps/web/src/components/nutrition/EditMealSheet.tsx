@@ -354,9 +354,10 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
         {/* Save button */}
         <div className="pt-2 pb-2 border-t border-border">
           <Button
+            variant="limeSolid"
             onClick={handleSave}
             disabled={saving || foods.length === 0}
-            className="w-full h-12 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-widest"
+            className="w-full h-12 font-bebas text-lg tracking-widest"
           >
             {saving ? t('nutrition.edit.saving') : t('nutrition.edit.saveChanges')}
           </Button>

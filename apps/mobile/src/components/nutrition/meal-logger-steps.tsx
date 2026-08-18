@@ -2,12 +2,13 @@
  * Step components for the MealLogger state machine. Each renders one `step` and reads
  * everything it needs from the injected `model` (see useMealLogger).
  */
-import { View, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native'
+import { View, ScrollView, TextInput, Pressable } from 'react-native'
 import { Image as ExpoImage } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { X, Camera, Image as ImageIcon, PenLine, RefreshCw, Plus, Check } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 
 import { MAX_PHOTOS, MEAL_OPTIONS } from './meal-logger-shared'
@@ -189,14 +190,14 @@ export function AnalyzingStep({ model }: StepProps) {
           <ExpoImage source={{ uri: model.imageAssets[0].uri }} style={{ width: '100%', height: 200, opacity: 0.6 }} contentFit="cover" cachePolicy="memory-disk" />
           <View className="absolute inset-0 items-center justify-center">
             <View className="bg-background/80 rounded-xl px-6 py-4 items-center gap-2">
-              <ActivityIndicator size="small" color="#a3e635" />
+              <Loader size="sm" />
               <Text className="font-sans text-sm text-foreground">{t('nutrition.logger.analyzing')}</Text>
             </View>
           </View>
         </View>
       ) : (
         <>
-          <ActivityIndicator size="large" color="#a3e635" />
+          <Loader size="lg" />
           <Text className="font-sans text-sm text-muted-foreground">{t('nutrition.logger.analyzing')}</Text>
           {[0, 1, 2].map((i) => (
             <View key={i} className="w-full h-10 rounded-lg bg-muted/40" style={{ opacity: 1 - i * 0.2 }} />
@@ -353,7 +354,7 @@ export function SavingStep() {
   const { t } = useTranslation()
   return (
     <View className="py-16 items-center gap-4">
-      <ActivityIndicator size="large" color="#a3e635" />
+      <Loader size="lg" />
       <Text className="font-sans text-sm text-muted-foreground">{t('nutrition.logger.saving')}</Text>
     </View>
   )

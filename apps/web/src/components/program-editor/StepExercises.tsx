@@ -104,13 +104,10 @@ export function StepExercises({
           return (
             <Button
               key={dayId}
-              variant={isActive ? 'default' : 'outline'}
+              variant={isActive ? 'limeSolid' : 'outline'}
               size="sm"
               onClick={() => onSelectDayId(dayId)}
-              className={cn(
-                'h-8 px-2.5 text-[10px] tracking-wide',
-                isActive && 'bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90'
-              )}
+              className="h-8 px-2.5 text-[10px] tracking-wide"
             >
               {dayId.toUpperCase()}
               {exerciseCount > 0 && (
@@ -327,11 +324,8 @@ export function StepExercises({
             <Button
               onClick={() => onOpenCatalog(section.key)}
               size="sm"
-              variant={section.key === 'main' ? 'default' : 'outline'}
-              className={cn(
-                'h-7 text-[10px] tracking-wide',
-                section.key === 'main' && 'bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90'
-              )}
+              variant={section.key === 'main' ? 'limeSolid' : 'outline'}
+              className="h-7 text-[10px] tracking-wide"
             >
               + {section.key === 'warmup' ? t('warmupCooldown.editor.addWarmup')
                  : section.key === 'cooldown' ? t('warmupCooldown.editor.addCooldown')

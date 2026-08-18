@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { X, MapPin, Check } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
@@ -319,7 +320,7 @@ export default function CardioScreen() {
 
             {/* Historial */}
             <View className="gap-3">
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('cardio.history')}</Text>
+              <Kicker>{t('cardio.history')}</Kicker>
               <CardioHistory
                 sessions={history}
                 loading={historyLoading}
@@ -331,7 +332,7 @@ export default function CardioScreen() {
             {/* Estadísticas */}
             {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
               <View className="gap-3">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('cardio.statistics')}</Text>
+                <Kicker>{t('cardio.statistics')}</Kicker>
                 <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} weeklyTrend={weeklyTrend} lastSession={lastSession} />
               </View>
             )}
@@ -507,15 +508,15 @@ export default function CardioScreen() {
 
             {displaySession?.splits && displaySession.splits.length > 0 && (
               <View className="gap-3">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('cardio.splits')}</Text>
+                <Kicker>{t('cardio.splits')}</Kicker>
                 <SplitsTable splits={displaySession.splits} />
               </View>
             )}
 
             <View className="gap-1.5">
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              <Kicker>
                 {t('cardio.notesOptional')}
-              </Text>
+              </Kicker>
               <TextInput
                 value={note}
                 onChangeText={setNote}

@@ -46,7 +46,8 @@ export default function SectionTransition({ type, onContinue, onSkip }: SectionT
       <div className="flex flex-col gap-3 w-full max-w-[280px]">
         <Button
           onClick={onContinue}
-          className="w-full bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-xl tracking-[2px] py-3.5"
+          variant="limeSolid"
+          className="w-full font-bebas text-xl tracking-[2px] py-3.5"
         >
           {isWarmupDone
             ? t('warmupCooldown.transitions.start')

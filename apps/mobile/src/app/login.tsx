@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { GoogleIcon } from '@/components/ui/google-icon'
 import { loginWithGoogle, isAuthCancelled } from '@/lib/auth'
 
@@ -104,7 +105,7 @@ export default function LoginScreen() {
                 contentFit="contain"
               />
               <Text className="font-bebas text-5xl leading-none tracking-[6px] text-foreground">CALISTENIA</Text>
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('auth.tagline')}</Text>
+              <Kicker>{t('auth.tagline')}</Kicker>
             </View>
 
             <Card>
@@ -165,7 +166,7 @@ export default function LoginScreen() {
 
                 <View className="flex-row items-center gap-3">
                   <View className="bg-border h-px flex-1" />
-                  <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('common.or')}</Text>
+                  <Kicker>{t('common.or')}</Kicker>
                   <View className="bg-border h-px flex-1" />
                 </View>
 

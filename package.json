@@ -24,7 +24,8 @@
     "test:catalog": "node scripts/test-validate-exercise-catalog.mjs",
     "build:catalog": "node scripts/build-exercise-catalog.mjs",
     "build:id-map": "node scripts/build-id-map.mjs",
-    "build:media": "node scripts/sync-exercise-media.mjs"
+    "build:media": "node scripts/sync-exercise-media.mjs",
+    "lint": "expo lint"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",

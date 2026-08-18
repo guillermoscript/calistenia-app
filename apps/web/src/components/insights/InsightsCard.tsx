@@ -102,7 +102,8 @@ function GenerateButton({
       size="sm"
       onClick={onClick}
       disabled={isGenerating}
-      className="bg-lime hover:bg-lime/90 text-lime-foreground text-[10px] font-bebas tracking-widest h-9 px-4"
+      variant="limeSolid"
+      className="text-[10px] font-bebas tracking-widest h-9 px-4"
     >
       {isGenerating && (
         <span className="size-3 border-2 border-lime-foreground/30 border-t-lime-foreground rounded-full animate-spin" />
@@ -313,7 +314,8 @@ export default function InsightsCard({ userId }: InsightsCardProps) {
                       <Button
                         size="sm"
                         onClick={() => onActionTap(insight.payload.suggestedAction!)}
-                        className="mt-2.5 bg-lime hover:bg-lime/90 text-lime-foreground text-[10px] tracking-widest h-8"
+                        variant="limeSolid"
+                        className="mt-2.5 text-[10px] tracking-widest h-8"
                       >
                         {insight.payload.suggestedAction.label}
                       </Button>

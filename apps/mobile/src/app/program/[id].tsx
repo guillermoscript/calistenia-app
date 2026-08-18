@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, BadgeCheck, CalendarDays } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -89,9 +90,9 @@ export default function ProgramDetailScreen() {
 
             {/* Semana tipo */}
             <View className="gap-2">
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              <Kicker>
                 {t('workout.trainingDay')}
-              </Text>
+              </Kicker>
               {days === null ? (
                 <ActivityIndicator />
               ) : days.length === 0 ? (

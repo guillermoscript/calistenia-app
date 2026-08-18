@@ -88,7 +88,8 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
           <Button
             onClick={handleSave}
             disabled={saving || !weightInput}
-            className="h-9 px-4 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-sm tracking-wide"
+            variant="limeSolid"
+            className="h-9 px-4 font-bebas text-sm tracking-wide"
           >
             {saving ? '...' : t('progress.weight.save')}
           </Button>

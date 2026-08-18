@@ -216,7 +216,7 @@ export default function AdminPage() {
               placeholder={t('admin.searchPlaceholder')}
               className="flex-1 h-11 px-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-[hsl(var(--lime))]/30 text-sm"
             />
-            <Button onClick={searchUsers} disabled={loading} className="h-11 px-6 font-mono text-xs tracking-widest bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background">
+            <Button variant="limeSolid" onClick={searchUsers} disabled={loading} className="h-11 px-6 font-mono text-xs tracking-widest">
               {loading ? t('admin.searching') : t('admin.searchBtn')}
             </Button>
           </div>

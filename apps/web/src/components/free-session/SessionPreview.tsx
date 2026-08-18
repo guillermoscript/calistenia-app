@@ -298,9 +298,10 @@ export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }
       {resolvedExercises.length > 0 && (
         <div className="p-3 border-t border-border">
           <Button
+            variant="limeSolid"
             onClick={handleStart}
             disabled={starting}
-            className="w-full font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] hover:bg-[hsl(var(--lime))]/90"
+            className="w-full font-bebas text-lg tracking-wide"
           >
             Empezar sesión
           </Button>

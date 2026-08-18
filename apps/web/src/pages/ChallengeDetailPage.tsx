@@ -250,7 +250,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
                     size="sm"
                     onClick={() => handleInvite(user.id)}
                     disabled={inviting === user.id}
-                    className="text-[10px] tracking-widest h-7 bg-lime text-lime-foreground hover:bg-lime/90"
+                    variant="limeSolid"
+                    className="text-[10px] tracking-widest h-7"
                   >
                     {inviting === user.id ? '...' : 'INVITAR'}
                   </Button>

@@ -267,6 +267,9 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
         ) : phase !== 'countdown' && (
           <Button
             size="sm"
+            // Ghost a propósito, no `variant="lime"`: su hermano de pausa es un
+            // ghost con `text-destructive` y sin filete, y darle borde y tinte
+            // solo a este descuadraría la pareja.
             variant="ghost"
             onClick={handleStart}
             className="font-mono text-[11px] tracking-[2px] text-lime hover:text-lime hover:bg-lime/10 h-10 min-w-[44px] px-5"

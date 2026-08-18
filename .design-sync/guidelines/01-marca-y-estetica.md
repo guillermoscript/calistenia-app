@@ -29,8 +29,12 @@ Reglas de superficie y color:
 
 - **El lima es el único acento y el color de interacción.** Marca completado y
   activo. Estados de pulsación con `bg-lime/10`, bordes activos con
-  `border-lime/40`. **Los botones primarios NO son lima** — son casi-negro
-  sobre claro y casi-blanco sobre oscuro (`variant="default"`).
+  `border-lime/40`. **El botón por defecto no es lima** — es casi-negro sobre
+  claro y casi-blanco sobre oscuro (`variant="default"`), y es lo que lleva
+  casi toda la interfaz. El lima se reserva para **una** acción por pantalla:
+  la que el usuario ha venido a hacer (`variant="limeSolid"`), con
+  `variant="lime"` como su versión de filete. Dos CTA lima en la misma vista
+  significa que ninguno lo es.
 - Superficies casi negras en modo oscuro: `bg-background` (3.9% de luminancia),
   `bg-card` (7%).
 - **Filetes de 1px** (`border-border`) estructuran la interfaz — matrices y

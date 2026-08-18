@@ -189,9 +189,10 @@ export function StepProgram({
           {t('onboarding.back')}
         </Button>
         <Button
+          variant="limeSolid"
           onClick={onContinue}
           disabled={!selectedProgramId || selecting}
-          className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background disabled:opacity-40"
+          className="flex-1 h-11 font-bebas text-lg tracking-wide disabled:opacity-40"
         >
           {selecting ? t('onboarding.saving') : t('onboarding.continueBtn')}
         </Button>

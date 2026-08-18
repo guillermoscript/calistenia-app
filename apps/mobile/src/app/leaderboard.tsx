@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { X, Trophy } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -67,9 +68,9 @@ export default function LeaderboardScreen() {
       {/* Header */}
       <View className="flex-row items-start justify-between px-4 pt-2 pb-4">
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             Social
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">Clasificación</Text>
         </View>
         <Pressable

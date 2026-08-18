@@ -9,7 +9,7 @@
  * render it at the full device screen size for a full-bleed story image. All
  * type/spacing scales off S = width / 360.
  */
-import React, { forwardRef } from 'react'
+import React from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
 import { formatTimingClock } from '@calistenia/core/lib/exerciseTiming'
@@ -89,34 +89,30 @@ function StatBox({ icon, value, label, color, s }: StatBoxProps) {
   )
 }
 
-const WorkoutShareCard = forwardRef<View, WorkoutShareCardProps>(
-  (
-    {
-      workoutTitle,
-      totalSets,
-      durationMin,
-      date,
-      exercises,
-      timings,
-      quote,
-      userName,
-      avatarUrl,
-      referralCode: _referralCode,
-      width = BASE_W,
-      height = 640,
-    },
-    ref,
-  ) => {
-    const s = makeStyles(width, height)
-    const initials = (userName ?? '?')[0].toUpperCase()
-    const exList = (exercises ?? []).slice(0, 8)
-    const extraCount = (exercises?.length ?? 0) - 8
-    const secById = new Map(
-      (timings ?? []).filter((t) => t.seconds > 0).map((t) => [t.exerciseId, t.seconds]),
-    )
+function WorkoutShareCard({
+  workoutTitle,
+  totalSets,
+  durationMin,
+  date,
+  exercises,
+  timings,
+  quote,
+  userName,
+  avatarUrl,
+  referralCode: _referralCode,
+  width = BASE_W,
+  height = 640,
+}: WorkoutShareCardProps) {
+  const s = makeStyles(width, height)
+  const initials = (userName ?? '?')[0].toUpperCase()
+  const exList = (exercises ?? []).slice(0, 8)
+  const extraCount = (exercises?.length ?? 0) - 8
+  const secById = new Map(
+    (timings ?? []).filter((t) => t.seconds > 0).map((t) => [t.exerciseId, t.seconds]),
+  )
 
-    return (
-      <View ref={ref} style={s.card} collapsable={false}>
+  return (
+    <View style={s.card} collapsable={false}>
         {/* Top accent line */}
         <View style={s.topLine} />
         {/* Lime glow top */}
@@ -238,8 +234,7 @@ const WorkoutShareCard = forwardRef<View, WorkoutShareCardProps>(
         </View>
       </View>
     )
-  },
-)
+}
 
 WorkoutShareCard.displayName = 'WorkoutShareCard'
 

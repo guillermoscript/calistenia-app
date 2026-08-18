@@ -22,6 +22,7 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { useBattleContext } from '@/contexts/BattleContext'
 import BattleStandingsList from '@/components/battle/BattleStandingsList'
@@ -35,9 +36,9 @@ import {
 function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
     <View className={className}>
-      <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+      <Kicker size="xs">
         {label}
-      </Text>
+      </Kicker>
       <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
     </View>
   )

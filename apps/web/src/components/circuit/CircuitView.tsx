@@ -286,7 +286,8 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
           <Button
             onClick={handleComplete}
             disabled={saving}
-            className="min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 bg-lime text-lime-foreground hover:bg-lime/90"
+            variant="limeSolid"
+            className="min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
           >
             {saving ? '...' : t('circuit.finish')}
           </Button>
@@ -414,7 +415,8 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
                 sounds.vibrate([50])
                 advanceExercise()
               }}
-              className="w-full max-w-[320px] h-14 font-bebas text-2xl tracking-[2px] bg-lime text-lime-foreground hover:bg-lime/90"
+              variant="limeSolid"
+              className="w-full max-w-[320px] h-14 font-bebas text-2xl tracking-[2px]"
             >
               {t('circuit.done')} ✓
             </Button>
@@ -523,7 +525,8 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
           </div>
           <Button
             onClick={(e: React.MouseEvent) => { e.stopPropagation(); resume() }}
-            className="min-w-[160px] font-bebas text-xl tracking-[2px] px-8 py-3 bg-lime text-lime-foreground hover:bg-lime/90"
+            variant="limeSolid"
+            className="min-w-[160px] font-bebas text-xl tracking-[2px] px-8 py-3"
           >
             {t('circuit.resume')}
           </Button>

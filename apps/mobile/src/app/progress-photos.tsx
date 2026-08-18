@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { ChevronLeft, ChevronRight, Plus, Camera, Images, Trash2, X, Columns2 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Chip } from '@/components/ui/chip'
@@ -249,9 +250,9 @@ export default function ProgressPhotosScreen() {
             </Pressable>
             <View className="flex-row items-end justify-between">
               <View className="flex-1">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                <Kicker>
                   {t('progress.bodyPhotos.kicker') || 'Registro visual'}
-                </Text>
+                </Kicker>
                 <Text className="font-bebas text-4xl text-foreground">
                   {t('progress.bodyPhotos.title')}
                 </Text>

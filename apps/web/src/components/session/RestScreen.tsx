@@ -165,9 +165,9 @@ export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextSt
       </div>
 
       <Button
-        variant="outline"
+        variant="lime"
         onClick={onSkip}
-        className="border-lime/25 bg-lime/7 text-lime hover:bg-lime/15 font-mono text-[11px] tracking-[2px] px-8"
+        className="font-mono text-[11px] tracking-[2px] px-8"
       >
         {t('session.skipRest')}
       </Button>

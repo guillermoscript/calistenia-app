@@ -9,7 +9,7 @@
  * render it at the device screen size for a full-bleed story image. All
  * type/spacing scales off S = width / 360.
  */
-import React, { forwardRef } from 'react'
+import React from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 
 const C = {
@@ -53,13 +53,12 @@ function streakTagline(streak: number): string {
   return 'La constancia es tu superpoder.'
 }
 
-const StreakShareCard = forwardRef<View, StreakShareCardProps>(
-  ({ streak, userName, avatarUrl, date, width = BASE_W, height = 640 }, ref) => {
-    const s = makeStyles(width, height)
-    const initials = (userName ?? '?')[0].toUpperCase()
+function StreakShareCard({ streak, userName, avatarUrl, date, width = BASE_W, height = 640 }: StreakShareCardProps) {
+  const s = makeStyles(width, height)
+  const initials = (userName ?? '?')[0].toUpperCase()
 
-    return (
-      <View ref={ref} style={s.card} collapsable={false}>
+  return (
+    <View style={s.card} collapsable={false}>
         <View style={s.topLine} />
         <View style={s.topGlow} />
 
@@ -118,8 +117,7 @@ const StreakShareCard = forwardRef<View, StreakShareCardProps>(
         </View>
       </View>
     )
-  },
-)
+}
 
 StreakShareCard.displayName = 'StreakShareCard'
 

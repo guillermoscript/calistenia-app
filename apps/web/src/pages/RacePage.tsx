@@ -33,7 +33,8 @@ export default function RacePage() {
         <p className="text-muted-foreground text-sm">{t('race.waitingForStart')}</p>
         <Button
           onClick={() => navigate('/auth')}
-          className="bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-widest px-8"
+          variant="limeSolid"
+          className="font-bebas text-lg tracking-widest px-8"
         >
           Login
         </Button>

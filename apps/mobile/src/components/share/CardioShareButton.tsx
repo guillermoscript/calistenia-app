@@ -6,18 +6,16 @@
  * Usage:
  *   <CardioShareButton session={session} userName={name} referralCode={code} />
  */
-import React, { useRef, useCallback } from 'react'
-import { Image } from 'expo-image'
+import React, { useCallback } from 'react'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, shareCardioSession } from '@/lib/share'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { CardioSession } from '@calistenia/core/types'
+import { useShareCardCapture } from '@/hooks/useShareCardCapture'
 
-import ShareCardCapture, {
-  type ShareCardCaptureHandle,
-} from '@/components/share/ShareCardCapture'
+import ShareCardCapture from '@/components/share/ShareCardCapture'
 import CardioShareCard, { cardioTileUrls } from '@/components/share/CardioShareCard'
 
 const CARD_W = 360
@@ -37,25 +35,9 @@ export default function CardioShareButton({
   referralCode,
   label,
 }: CardioShareButtonProps) {
-  const captureRef = useRef<ShareCardCaptureHandle>(null)
-
-  const handleShare = useCallback(async () => {
-    try {
-      // 1. Prefetch all tiles so they're in expo-image cache before capture.
-      const urls = cardioTileUrls(session, CARD_W, CARD_H)
-      if (urls.length > 0) {
-        const PREFETCH_TIMEOUT = 2500
-        await Promise.race([
-          Promise.all(urls.map((url) => Image.prefetch(url))),
-          new Promise<void>((resolve) => setTimeout(resolve, PREFETCH_TIMEOUT)),
-        ])
-      }
-
-      // 2. Capture to PNG.
-      const uri = await captureRef.current?.capture()
-      if (!uri) return
-
-      // 3. Build share message.
+  const onCapture = useCallback(
+    async (uri: string) => {
+      // Build share message.
       const at = session.activity_type
       const activityLabel = at.charAt(0).toUpperCase() + at.slice(1)
       const { message, url } = shareCardioSession({
@@ -67,15 +49,24 @@ export default function CardioShareButton({
         referralCode: referralCode ?? null,
       })
 
-      // 4. Share image + track the classified native outcome once.
+      // Share image + track the classified native outcome once.
       await shareCardImage(uri, { message: `${message}\n${url}` }, {
         ...MOBILE_SHARE_CARD_CONTEXTS.cardio,
         activity: session.activity_type,
       })
-    } catch (e) {
-      console.warn('[CardioShareButton] share error', e)
-    }
-  }, [session, userName, referralCode])
+    },
+    [session, userName, referralCode],
+  )
+
+  const onError = useCallback((e: unknown) => {
+    console.warn('[CardioShareButton] share error', e)
+  }, [])
+
+  const { captureRef, share } = useShareCardCapture({
+    onCapture,
+    prefetchUrls: cardioTileUrls(session, CARD_W, CARD_H),
+    onError,
+  })
 
   return (
     <>
@@ -96,7 +87,7 @@ export default function CardioShareButton({
         variant="outline"
         size="sm"
         className="border-sky-500/30 bg-sky-500/5 dark:border-sky-500/30 dark:bg-sky-500/5 active:bg-sky-500/10 dark:active:bg-sky-500/10"
-        onPress={() => void handleShare()}
+        onPress={() => void share()}
       >
         <Text className="font-mono text-[10px] tracking-widest text-sky-400 uppercase">
           {label ?? 'COMPARTIR'}

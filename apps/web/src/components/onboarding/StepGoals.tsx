@@ -215,9 +215,10 @@ export function StepGoals({
           {t('onboarding.back')}
         </Button>
         <Button
+          variant="limeSolid"
           onClick={onContinue}
           disabled={saving}
-          className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+          className="flex-1 h-11 font-bebas text-lg tracking-wide"
         >
           {saving ? t('onboarding.saving') : t('onboarding.continueBtn')}
         </Button>

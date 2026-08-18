@@ -35,7 +35,8 @@ export default function NoteScreen({ workoutTitle, totalSetsLogged, durationMin,
         <div className="flex gap-2.5 mt-3">
           <Button
             onClick={() => onSave(note.trim())}
-            className="bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide px-6"
+            variant="limeSolid"
+            className="font-bebas text-lg tracking-wide px-6"
           >
             GUARDAR
           </Button>

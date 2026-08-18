@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { Map as MapLibreMap, Camera, GeoJSONSource, Layer } from '@maplibre/maplibre-react-native'
 import { useColorScheme } from 'nativewind'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { useRaceContext } from '@/contexts/RaceContext'
 import { msUntil } from '@/lib/race/raceClock'
@@ -175,7 +176,7 @@ export default function RaceLive() {
 
       {/* Leaderboard */}
       <View className="gap-1.5">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('race.liveBoard')}</Text>
+        <Kicker>{t('race.liveBoard')}</Kicker>
         {sorted.map((p, i) => {
           const isMe = p.user === me?.user
           const dist = isMe && myStats && p.status !== 'finished' ? myStats.distance_km : p.distance_km
