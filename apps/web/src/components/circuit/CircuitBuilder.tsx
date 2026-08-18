@@ -9,6 +9,7 @@ import { localize } from '@calistenia/core/lib/i18n-db'
 import type { CircuitDefinition, CircuitExercise } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
+import { moveItem } from '@calistenia/core/lib/reorder'
 
 // ── Catalog item (lightweight shape for the picker) ───────────────────────────
 
@@ -334,12 +335,7 @@ export default function CircuitBuilder({ id, initialPreset, onStart }: CircuitBu
   }, [])
 
   const moveExercise = useCallback((from: number, to: number) => {
-    setExercises((prev) => {
-      const next = [...prev]
-      const [item] = next.splice(from, 1)
-      next.splice(to, 0, item)
-      return next
-    })
+    setExercises((prev) => moveItem(prev, from, to))
   }, [])
 
   // ── Summary text ─────────────────────────────────────────────────────────
