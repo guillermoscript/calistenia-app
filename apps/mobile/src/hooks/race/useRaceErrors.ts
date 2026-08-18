@@ -1,5 +1,9 @@
-// Copia literal de apps/web/src/hooks/race/useRaceErrors.ts. Candidato a
-// `packages/core`, pero mover los hooks es el #482.
+// Copia literal de apps/web/src/hooks/race/useRaceErrors.ts.
+//
+// El #482 movió a core la COMPOSICIÓN de la carrera (`useRaceState`), pero no
+// estos cuatro hooks: sus vecinos de `hooks/race/` tocan GPS y snapshot local,
+// que todavía no tienen facade en `platform.ts`. `useRaceState` los recibe
+// inyectados, así que este sigue viviendo aquí a propósito.
 import { useCallback, useState } from 'react'
 
 export type RaceErrorKind = 'auth' | 'push' | 'gps' | 'realtime' | 'load'
