@@ -19,6 +19,10 @@ export interface NutritionWidgetSnapshot {
    *  (`mealStreak` no baja hasta que se confirme un día malo, pero el color
    *  se apaga si hoy aún no está confirmado como bueno). */
   mealStreakToday: boolean
+  /** ml de agua registrados hoy (`water_entries`, ver `useWater`). */
+  waterMl: number
+  /** Meta diaria de agua en ml (`settings.water_goal`, default 2500). */
+  waterGoalMl: number
   lang: 'es' | 'en'
   /** IANA tz usada por el escritor para calcular `date`. El widget recalcula
    *  "hoy" en esta misma tz para evitar mismatch entre proceso app y headless. */
@@ -29,7 +33,8 @@ export const NUTRITION_WIDGET_SNAPSHOT_KEY = 'nutrition_widget_snapshot'
 
 /**
  * Rollover de día: si el snapshot es de un día pasado (`s.date < today`), las
- * metas siguen vigentes pero el consumo se reinicia a 0. Devuelve un snapshot
+ * metas siguen vigentes pero el consumo (calorías/macros y agua) se reinicia
+ * a 0. Devuelve un snapshot
  * fresco para hoy sin necesidad de abrir la app. El poll de `updatePeriodMillis`
  * recalcula "today" en la tz del escritor y, tras medianoche, renderiza el día
  * nuevo vacío en vez de quedarse pegado en "ABRE LA APP".
@@ -48,5 +53,5 @@ export function rolloverSnapshot(
 ): NutritionWidgetSnapshot | null {
   if (!s) return null
   if (s.date >= today) return s
-  return { ...s, date: today, calories: 0, protein: 0, carbs: 0, fat: 0, mealStreakToday: false }
+  return { ...s, date: today, calories: 0, protein: 0, carbs: 0, fat: 0, waterMl: 0, mealStreakToday: false }
 }

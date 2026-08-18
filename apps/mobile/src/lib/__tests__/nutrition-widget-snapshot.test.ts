@@ -13,6 +13,8 @@ const base: NutritionWidgetSnapshot = {
   fatGoal: 70,
   mealStreak: 5,
   mealStreakToday: true,
+  waterMl: 1200,
+  waterGoalMl: 2500,
   lang: 'es',
   tz: 'America/New_York',
 }
@@ -33,6 +35,7 @@ describe('rolloverSnapshot', () => {
     expect(r.protein).toBe(0)
     expect(r.carbs).toBe(0)
     expect(r.fat).toBe(0)
+    expect(r.waterMl).toBe(0)
     // metas + lang + tz intactas
     expect(r.calorieGoal).toBe(2200)
     expect(r.proteinGoal).toBe(160)
@@ -56,5 +59,9 @@ describe('rolloverSnapshot', () => {
     const r = rolloverSnapshot(base, '2026-06-12')!
     expect(r.mealStreak).toBe(5)
     expect(r.mealStreakToday).toBe(true)
+  })
+
+  it('mismo día: waterMl intacto (no se reinicia)', () => {
+    expect(rolloverSnapshot(base, '2026-06-12')!.waterMl).toBe(1200)
   })
 })

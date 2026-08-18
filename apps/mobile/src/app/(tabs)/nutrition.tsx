@@ -230,7 +230,7 @@ export default function NutritionTab() {
   const dailyTotals = useMemo(() => getDailyTotals(selectedDate), [getDailyTotals, selectedDate])
   const weeklyHistory = useMemo(() => getWeeklyHistory(), [getWeeklyHistory])
 
-  // ─── Sync widget snapshot whenever today's totals, goals or racha change ─────
+  // ─── Sync widget snapshot whenever today's totals, goals, racha or agua change ─
   // dailyInsight en deps: la racha de comidas la calcula upsertDailyInsight (más
   // abajo) de forma async, así que el primer sync del día puede llegar con
   // mealStreak desactualizado hasta que ese efecto resuelva y este se re-dispare.
@@ -240,9 +240,12 @@ export default function NutritionTab() {
         mealStreak: dailyInsight?.streaks?.currentGood ?? 0,
         mealStreakToday: dailyInsight?.periodStart === todayStr()
           && (dailyInsight.overallScore === 'A' || dailyInsight.overallScore === 'B'),
+      }, {
+        waterMl: waterTotal,
+        waterGoalMl: waterGoal,
       })
     }
-  }, [dailyTotals, goals, selectedDate, dailyInsight])
+  }, [dailyTotals, goals, selectedDate, dailyInsight, waterTotal, waterGoal])
 
   const dailyQualityScore = useMemo<QualityScore | undefined>(
     () => computeDailyQualityScore(entries),
