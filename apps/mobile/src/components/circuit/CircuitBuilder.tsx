@@ -21,6 +21,7 @@ import { haptics } from '@/lib/haptics'
 import { CATALOG } from '@/lib/catalog'
 import { useExerciseSearch } from '@/lib/use-exercise-search'
 import type { CircuitDefinition, CircuitExercise } from '@calistenia/core/types'
+import { moveItem } from '@calistenia/core/lib/reorder'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -275,12 +276,7 @@ export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilde
   }, [])
 
   const moveExercise = useCallback((from: number, to: number) => {
-    setExercises((prev) => {
-      const next = [...prev]
-      const [item] = next.splice(from, 1)
-      next.splice(to, 0, item)
-      return next
-    })
+    setExercises((prev) => moveItem(prev, from, to))
   }, [])
 
   // ── Texto resumen ──────────────────────────────────────────────────────────
