@@ -10,6 +10,15 @@ export interface NutritionWidgetSnapshot {
   proteinGoal: number
   carbsGoal: number
   fatGoal: number
+  /** Racha ACTIVA (termina hoy o ayer) de días con score de calidad A/B.
+   *  Misma racha que los badges `streak_3/7/30` de `badge-definitions.ts`:
+   *  `nutrition_coach_insights.streaks.currentGood`, no se reimplementa aquí. */
+  mealStreak: number
+  /** true si el insight de HOY ya cuenta como A/B. Mismo rol que `streakToday`
+   *  en el snapshot de entrenamiento: distingue racha "viva" de "en riesgo"
+   *  (`mealStreak` no baja hasta que se confirme un día malo, pero el color
+   *  se apaga si hoy aún no está confirmado como bueno). */
+  mealStreakToday: boolean
   lang: 'es' | 'en'
   /** IANA tz usada por el escritor para calcular `date`. El widget recalcula
    *  "hoy" en esta misma tz para evitar mismatch entre proceso app y headless. */
@@ -27,6 +36,11 @@ export const NUTRITION_WIDGET_SNAPSHOT_KEY = 'nutrition_widget_snapshot'
  *
  * Fechas futuras (`s.date > today`, p.ej. desfase de reloj/tz) se dejan intactas
  * para no borrar datos legítimos. Puro: testeable sin react-native.
+ *
+ * `mealStreak` NO se reinicia aquí: es una racha, no un consumo diario, y solo
+ * cambia cuando la app calcula el score del nuevo día. `mealStreakToday` sí se
+ * apaga en el rollover — el "hoy" bueno de ayer ya no aplica al nuevo día hasta
+ * que se confirme.
  */
 export function rolloverSnapshot(
   s: NutritionWidgetSnapshot | null,
@@ -34,5 +48,5 @@ export function rolloverSnapshot(
 ): NutritionWidgetSnapshot | null {
   if (!s) return null
   if (s.date >= today) return s
-  return { ...s, date: today, calories: 0, protein: 0, carbs: 0, fat: 0 }
+  return { ...s, date: today, calories: 0, protein: 0, carbs: 0, fat: 0, mealStreakToday: false }
 }

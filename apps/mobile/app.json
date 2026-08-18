@@ -215,6 +215,16 @@
               "targetCellWidth": 2,
               "targetCellHeight": 2,
               "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "MealStreakWidget",
+              "label": "Racha de comidas",
+              "description": "Días seguidos con score de comida A/B",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
             }
           ]
         }
