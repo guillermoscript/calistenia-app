@@ -3,8 +3,11 @@ import type { Exercise } from '../types'
 import {
   buildSteps,
   computeExerciseBoundaries,
+  createSessionReducer,
   findCurrentExerciseIndex,
+  initSessionState,
   nextPhaseAfterSet,
+  type SessionState,
   type Step,
 } from './session-machine'
 
@@ -185,5 +188,121 @@ describe('nextPhaseAfterSet', () => {
     const currentStep = step({ exercise: ex({ id: 'a', supersetGroup: 'g1' }) })
     const nextS = step({ exercise: ex({ id: 'b' }) })
     expect(nextPhaseAfterSet({ currentStep, nextStep: nextS, isLastStep: false, stepIdx: 0 })).toEqual({ kind: 'rest' })
+  })
+})
+
+describe('createSessionReducer', () => {
+  // Calentamiento (1 serie) → principal a+b en superserie (1 serie cada uno)
+  // → principal c (2 series) → enfriamiento (1 serie). 6 pasos en total.
+  const exercises = [
+    ex({ id: 'w', sets: 1, section: 'warmup' }),
+    ex({ id: 'a', sets: 1, supersetGroup: 'g1' }),
+    ex({ id: 'b', sets: 1, supersetGroup: 'g1' }),
+    ex({ id: 'c', sets: 2 }),
+    ex({ id: 'z', sets: 1, section: 'cooldown' }),
+  ]
+  const steps = buildSteps(exercises)
+  const reducer = createSessionReducer(steps)
+  const at = (stepIdx: number, over: Partial<SessionState> = {}): SessionState =>
+    ({ ...initSessionState(), stepIdx, ...over })
+
+  it('initSessionState defaults to step 0 / exercise / 0 sets', () => {
+    expect(initSessionState()).toEqual({
+      stepIdx: 0, phase: 'exercise', setsCount: 0,
+      transitionType: 'warmup-to-main', pendingStepIdx: null,
+    })
+  })
+
+  it('initSessionState restores a persisted snapshot', () => {
+    expect(initSessionState({ stepIdx: 3, phase: 'rest', setsCount: 4 })).toMatchObject({
+      stepIdx: 3, phase: 'rest', setsCount: 4,
+    })
+  })
+
+  it('log-set always increments setsCount', () => {
+    expect(reducer(at(1), { type: 'log-set' }).setsCount).toBe(1)
+  })
+
+  it('log-set at the last step → note', () => {
+    expect(reducer(at(5), { type: 'log-set' })).toMatchObject({ phase: 'note', stepIdx: 5, setsCount: 1 })
+  })
+
+  it('log-set crossing warmup→main → section-transition pointing at the next step', () => {
+    expect(reducer(at(0), { type: 'log-set' })).toMatchObject({
+      phase: 'section-transition',
+      transitionType: 'warmup-to-main',
+      pendingStepIdx: 1,
+      stepIdx: 0,
+    })
+  })
+
+  it('log-set crossing main→cooldown → section-transition main-to-cooldown', () => {
+    expect(reducer(at(4), { type: 'log-set' })).toMatchObject({
+      phase: 'section-transition',
+      transitionType: 'main-to-cooldown',
+      pendingStepIdx: 5,
+    })
+  })
+
+  it('log-set inside a superset advances without resting', () => {
+    expect(reducer(at(1), { type: 'log-set' })).toMatchObject({ phase: 'exercise', stepIdx: 2 })
+  })
+
+  it('log-set leaving a superset falls back to rest', () => {
+    expect(reducer(at(2), { type: 'log-set' })).toMatchObject({ phase: 'rest', stepIdx: 2 })
+  })
+
+  it('log-set between sets of the same exercise → rest, without advancing', () => {
+    expect(reducer(at(3), { type: 'log-set' })).toMatchObject({ phase: 'rest', stepIdx: 3 })
+  })
+
+  it('log-set out of range is a no-op (snapshot restored from another workout)', () => {
+    const state = at(99)
+    expect(reducer(state, { type: 'log-set' })).toBe(state)
+  })
+
+  it('rest-done advances one step and goes back to exercise', () => {
+    expect(reducer(at(3, { phase: 'rest' }), { type: 'rest-done' }))
+      .toMatchObject({ phase: 'exercise', stepIdx: 4 })
+  })
+
+  it('section-continue jumps to pendingStepIdx and clears it', () => {
+    const state = at(0, { phase: 'section-transition', pendingStepIdx: 1 })
+    expect(reducer(state, { type: 'section-continue' }))
+      .toMatchObject({ phase: 'exercise', stepIdx: 1, pendingStepIdx: null })
+  })
+
+  it('section-continue without a pending index stays on the current step', () => {
+    expect(reducer(at(2, { phase: 'section-transition' }), { type: 'section-continue' }))
+      .toMatchObject({ phase: 'exercise', stepIdx: 2 })
+  })
+
+  it('skip-warmup jumps to the first non-warmup step', () => {
+    expect(reducer(at(0), { type: 'skip-warmup' })).toMatchObject({ phase: 'exercise', stepIdx: 1 })
+  })
+
+  it('skip-warmup is a no-op when every step is warmup', () => {
+    const onlyWarmup = createSessionReducer(buildSteps([ex({ id: 'w', sets: 2, section: 'warmup' })]))
+    const state = at(0)
+    expect(onlyWarmup(state, { type: 'skip-warmup' })).toBe(state)
+  })
+
+  it('skip-cooldown goes straight to the note screen', () => {
+    expect(reducer(at(5), { type: 'skip-cooldown' })).toMatchObject({ phase: 'note', stepIdx: 5 })
+  })
+
+  it('goto-exercise moves and forces the exercise phase', () => {
+    expect(reducer(at(5, { phase: 'rest' }), { type: 'goto-exercise', stepIdx: 1 }))
+      .toMatchObject({ phase: 'exercise', stepIdx: 1 })
+  })
+
+  it('goto-exercise out of range is a no-op', () => {
+    const state = at(2)
+    expect(reducer(state, { type: 'goto-exercise', stepIdx: -1 })).toBe(state)
+    expect(reducer(state, { type: 'goto-exercise', stepIdx: steps.length })).toBe(state)
+  })
+
+  it('finish moves to celebrate', () => {
+    expect(reducer(at(5, { phase: 'note' }), { type: 'finish' })).toMatchObject({ phase: 'celebrate' })
   })
 })

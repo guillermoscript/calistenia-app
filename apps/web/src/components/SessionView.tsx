@@ -1,744 +1,38 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
+// Orquestador de la sesión de fuerza. Las pantallas viven en
+// `components/session/`; la máquina de estados es el reducer puro de
+// `@calistenia/core/lib/session-machine`, así que aquí solo quedan la
+// composición, los efectos de plataforma (sonido, notificaciones, toasts) y
+// el empujón del progreso al contexto (#475).
+//
+// Dirección del flujo (invariante, ver apps/mobile/CLAUDE.md): SessionView es
+// el dueño del estado de la sesión y lo empuja al contexto; el contexto solo
+// se lee para RESTAURAR al montar, nunca de vuelta durante la sesión.
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Image } from 'lucide-react'
-import YoutubeModal from './YoutubeModal'
-import MediaViewer from './MediaViewer'
-import Timer from './Timer'
-import SectionTransition from './session/SectionTransition'
-import Confetti from './ui/Confetti'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Textarea } from './ui/textarea'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from './ui/dialog'
-import { cn } from '../lib/utils'
-import PRCelebration from './PRCelebration'
-import PostWorkoutActions from './PostWorkoutActions'
-import { getCurrentSection } from '../contexts/ActiveSessionContext'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
+import type { ExerciseLog, ExerciseTiming, Workout } from '@calistenia/core/types'
+import { ExerciseTimingTracker } from '@calistenia/core/lib/exerciseTiming'
+import {
+  buildSteps,
+  computeExerciseBoundaries,
+  createSessionReducer,
+  findCurrentExerciseIndex,
+  initSessionState,
+} from '@calistenia/core/lib/session-machine'
+import { useActiveSession } from '../contexts/ActiveSessionContext'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
-import { restCues } from '../lib/training-cues'
-import { useResyncOnVisible } from '../hooks/useResyncOnVisible'
-import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
-import { formatCountdown, type CountdownCue } from '@calistenia/core/lib/countdown'
-import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
-import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
-import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
-import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
-import { buildSteps, type Step } from '@calistenia/core/lib/session-machine'
-
-/** Format a structured tempo object into a compact human-readable string.
- *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
- *  Returns null if tempo is absent or all fields are undefined.
- */
-function formatTempo(tempo: ExerciseTempo | undefined): string | null {
-  if (!tempo) return null
-  const parts: string[] = []
-  if (tempo.eccentric != null)   parts.push(`baja ${tempo.eccentric}s`)
-  if (tempo.pauseBottom != null) parts.push(`pausa ${tempo.pauseBottom}s abajo`)
-  if (tempo.concentric != null)  parts.push(tempo.concentric === 1 ? 'sube explosivo' : `sube ${tempo.concentric}s`)
-  if (tempo.pauseTop != null)    parts.push(`pausa ${tempo.pauseTop}s arriba`)
-  return parts.length > 0 ? parts.join(' · ') : null
-}
-
-// ─── Rest screen ──────────────────────────────────────────────────────────────
-
-interface RestScreenProps {
-  seconds: number
-  exerciseId?: string
-  nextStep: Step | null
-  onSkip: () => void
-  savedRest?: number
-  onAdjust?: (exerciseId: string, seconds: number) => void
-}
-
-function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, savedRest, onAdjust }: RestScreenProps) {
-  const { t } = useTranslation()
-  const initialSeconds = savedRest || defaultSeconds
-  const touchStartX = useRef<number | null>(null)
-  const hasNotifiedStart = useRef<boolean>(false)
-  const onSkipRef = useRef(onSkip)
-  const nextStepRef = useRef(nextStep)
-  onSkipRef.current = onSkip
-  nextStepRef.current = nextStep
-
-  // Las notificaciones no caben en `restCues` porque dependen del siguiente ejercicio,
-  // así que se componen encima: el sonido lo pone la plataforma, el texto esta pantalla.
-  const handleCue = useCallback((cue: CountdownCue) => {
-    restCues(cue)
-    if (cue === 'warning') notif.notifyRestEnding(10)
-    if (cue === 'complete') {
-      const ns = nextStepRef.current
-      if (ns) notif.notifyRestDone(ns.exercise.name, ns.setNumber, ns.totalSets)
-    }
-  }, [])
-
-  const handleComplete = useCallback(() => { onSkipRef.current() }, [])
-
-  const { secondsLeft: remaining, progress, resync, adjust } =
-    usePausableCountdown({
-      seconds: initialSeconds,
-      onCue: handleCue,
-      onComplete: handleComplete,
-    })
-
-  useResyncOnVisible(resync)
-
-  // Play rest-start sound + notification on mount
-  useEffect(() => {
-    if (!hasNotifiedStart.current) {
-      hasNotifiedStart.current = true
-      restCues('start')
-      notif.notifyRestStart(initialSeconds, nextStep?.exercise.name)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleTouchStart = (e: React.TouchEvent): void => { touchStartX.current = e.touches[0].clientX }
-  const handleTouchEnd   = (e: React.TouchEvent): void => {
-    if (touchStartX.current !== null && e.changedTouches[0].clientX - touchStartX.current > 60) onSkip()
-    touchStartX.current = null
-  }
-
-  const adjustTime = (delta: number) => {
-    const newTotal = adjust(delta)
-    if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
-  }
-
-  const pct  = progress
-  const ringR = 62
-  const ringSize = 148
-  const ringHalf = ringSize / 2
-  const ringStroke = 7
-  const circumference = 2 * Math.PI * ringR
-  const strokeOffset  = circumference * (1 - pct)
-  const isUrgent = remaining > 0 && remaining < 10
-
-  const ringColor = isUrgent ? 'hsl(var(--destructive))' : 'hsl(var(--lime))'
-  const glowColor = isUrgent ? 'hsl(0 84% 60% / 0.18)' : 'hsl(var(--lime) / 0.1)'
-
-  return (
-    <div
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      className="flex-1 flex flex-col items-center justify-center gap-7 px-6 select-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
-    >
-      <style>{`
-        @keyframes restTickPulse {
-          0%   { transform: scale(1); }
-          15%  { transform: scale(1.03); }
-          100% { transform: scale(1); }
-        }
-        @keyframes restUrgentPulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-        }
-      `}</style>
-
-      <div className="text-[11px] tracking-[4px] text-muted-foreground uppercase font-mono">{t('session.resting')}</div>
-
-      <div
-        className="relative rounded-full transition-shadow duration-500"
-        style={{
-          width: ringSize, height: ringSize,
-          boxShadow: `0 0 36px ${glowColor}`,
-          animation: isUrgent ? 'restUrgentPulse 1s ease-in-out infinite' : undefined,
-        }}
-      >
-        <svg width={ringSize} height={ringSize} className="-rotate-90">
-          <circle cx={ringHalf} cy={ringHalf} r={ringR} fill="none"
-            stroke="hsl(var(--border))" strokeWidth={ringStroke} opacity="0.3" />
-          <circle
-            cx={ringHalf} cy={ringHalf} r={ringR} fill="none"
-            stroke={ringColor}
-            strokeWidth={ringStroke}
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeOffset}
-            strokeLinecap="round"
-            style={{
-              transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s',
-              willChange: 'stroke-dashoffset',
-            }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            key={remaining}
-            className={cn(
-              'font-bebas tracking-[2px] leading-none tabular-nums text-[46px]',
-              isUrgent ? 'text-destructive' : 'text-foreground'
-            )}
-            style={{ animation: 'restTickPulse 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}
-          >
-            {formatCountdown(remaining)}
-          </span>
-        </div>
-      </div>
-
-      {nextStep && (
-        <div className="w-full max-w-[340px] bg-card border border-border rounded-xl px-4 py-3.5">
-          <div className="text-[9px] text-muted-foreground tracking-[3px] mb-2 uppercase font-mono">Siguiente</div>
-          <div className={cn('h-0.5 rounded mb-2.5', PRIORITY_COLORS[nextStep.exercise.priority]?.stripe || 'bg-muted')} />
-          <div className="font-semibold text-[15px] mb-1">{nextStep.exercise.name}</div>
-          <div className="font-mono text-[12px] text-lime">
-            {nextStep.exercise.reps}
-            <span className="text-muted-foreground ml-2.5 text-[11px]">· Serie {nextStep.setNumber}/{nextStep.totalSets}</span>
-          </div>
-          <div className="text-[12px] text-muted-foreground mt-1">{nextStep.exercise.muscles}</div>
-        </div>
-      )}
-
-      {/* Adjust rest time */}
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={() => adjustTime(-15)}
-          className="font-mono text-[11px] text-muted-foreground hover:text-foreground h-11 px-4">-15s</Button>
-        <Button variant="outline" onClick={() => adjustTime(15)}
-          className="font-mono text-[11px] text-muted-foreground hover:text-foreground h-11 px-4">+15s</Button>
-        <Button variant="outline" onClick={() => adjustTime(30)}
-          className="font-mono text-[11px] text-muted-foreground hover:text-foreground h-11 px-4">+30s</Button>
-      </div>
-
-      <Button
-        variant="outline"
-        onClick={onSkip}
-        className="border-lime/25 bg-lime/7 text-lime hover:bg-lime/15 font-mono text-[11px] tracking-[2px] px-8"
-      >
-        {t('session.skipRest')}
-      </Button>
-
-      <div className="text-[11px] text-muted-foreground/50 font-mono sm:hidden">{t('session.swipeToSkip')}</div>
-    </div>
-  )
-}
-
-// ─── Exercise screen ──────────────────────────────────────────────────────────
-
-interface ExerciseScreenProps {
-  step: Step
-  onLogged: (data: { reps: string; note: string; weight?: number; rpe?: number }) => void
-  logs?: ExerciseLog[]
-}
-
-const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
-  const { t } = useTranslation()
-  const [editOpen,   setEditOpen]   = useState<boolean>(false)
-  const [customReps, setCustomReps] = useState<string>('')
-  const [customNote, setCustomNote] = useState<string>('')
-  const [customWeight, setCustomWeight] = useState<string>('')
-  const [customRpe, setCustomRpe]   = useState<string>('')
-  const [showYoutube, setShowYoutube] = useState<boolean>(false)
-  const [showMedia, setShowMedia]   = useState<boolean>(false)
-  const [flash, setFlash]           = useState<boolean>(false)
-  const [flyUp, setFlyUp]           = useState<number>(0)
-
-  const { exercise, setNumber, totalSets } = step
-  const recentLogs = logs.slice(0, 2)
-
-  // Progressive overload hint
-  const lastLog = logs[0]
-  const lastBestReps = lastLog?.sets?.reduce((max: number, s: SetData) => {
-    const n = parseInt(s.reps); return (!isNaN(n) && n > max) ? n : max
-  }, 0) || 0
-  const lastBestWeight = lastLog?.sets?.reduce((max: number, s: SetData) => (s.weight || 0) > max ? (s.weight || 0) : max, 0) || 0
-
-  // Parse "8-12" → "8", leave "12/lado", "máx" etc. as-is
-  const defaultReps = /^\d+-\d+$/.test(exercise.reps)
-    ? exercise.reps.split('-')[0]
-    : exercise.reps
-
-  const doLog = (reps: string | number, note: string = '', weight?: number, rpe?: number): void => {
-    setFlash(true)
-    setFlyUp(n => n + 1)
-    setTimeout(() => setFlash(false), 350)
-    onLogged({ reps: String(reps), note, weight, rpe })
-  }
-
-  const handleQuick = (): void => doLog(defaultReps)
-  const handleForm  = (): void => {
-    if (!customReps) return
-    const w = customWeight ? parseFloat(customWeight) : undefined
-    const r = customRpe ? parseInt(customRpe) : undefined
-    doLog(customReps, customNote, w, r)
-    setCustomReps(''); setCustomNote(''); setCustomWeight(''); setCustomRpe(''); setEditOpen(false)
-  }
-
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <style>{`
-        @keyframes sessionFlash {
-          0%   { background: hsl(var(--lime) / 0.1); }
-          100% { background: transparent; }
-        }
-        .ex-session-flash { animation: sessionFlash 0.35s ease-out; }
-        @keyframes exerciseEnter {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .exercise-enter { animation: exerciseEnter 0.3s cubic-bezier(0.25, 1, 0.5, 1) both; }
-        @keyframes dotPulse {
-          0%   { transform: scaleY(1); }
-          50%  { transform: scaleY(1.8); }
-          100% { transform: scaleY(1); }
-        }
-        @keyframes formSlideIn {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .form-slide-in { animation: formSlideIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
-        @keyframes setFlyUp {
-          0%   { transform: translateY(0); opacity: 1; }
-          100% { transform: translateY(-48px); opacity: 0; }
-        }
-        @keyframes dotGlow {
-          0%   { box-shadow: 0 0 0 0 hsl(var(--lime) / 0.6); }
-          50%  { box-shadow: 0 0 8px 3px hsl(var(--lime) / 0.3); }
-          100% { box-shadow: 0 0 0 0 hsl(var(--lime) / 0); }
-        }
-        @keyframes dotBreathe {
-          0%, 100% { opacity: 0.35; }
-          50% { opacity: 0.6; }
-        }
-      `}</style>
-
-      <div className={`flex-1 flex flex-col px-5 sm:px-8 pt-6 pb-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] overflow-auto max-w-2xl mx-auto w-full motion-safe:exercise-enter ${flash ? 'ex-session-flash' : ''}`}>
-
-        {/* Exercise name + set counter */}
-        <div className="mb-2">
-          <div className="font-bebas leading-none tracking-[2px] mb-1.5"
-            style={{ fontSize: 'clamp(42px, 10vw, 64px)' }}>
-            {exercise.name}
-          </div>
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="font-mono text-[13px] text-lime tracking-wide">{exercise.reps}</span>
-            <span className="font-mono text-[11px] text-muted-foreground">· {t('common.rest')} {exercise.rest}s</span>
-            <span className="font-mono text-[10px] tracking-wide text-muted-foreground">
-              {exercise.muscles}
-            </span>
-          </div>
-        </div>
-
-        {/* Superset badge */}
-        {exercise.supersetGroup && (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-3 rounded-md bg-pink-500/10 border border-pink-500/30">
-            <span className="text-[10px] font-mono tracking-wide text-pink-500">SUPERSET</span>
-          </div>
-        )}
-
-        {/* Set tracker dots */}
-        <div className="flex gap-2 items-center mb-5">
-          {Array.from({ length: totalSets }).map((_, i) => (
-            <div key={i} className={cn(
-              'w-7 h-1.5 rounded transition-all duration-300',
-              i < setNumber - 1 ? 'bg-lime' : i === setNumber - 1 ? 'bg-lime/40' : 'bg-border'
-            )}
-            style={
-              i === setNumber - 2 && setNumber > 1
-                ? { animation: 'dotPulse 0.4s cubic-bezier(0.25, 1, 0.5, 1), dotGlow 0.8s cubic-bezier(0.22, 1, 0.36, 1)' }
-                : i === setNumber - 1
-                  ? { animation: 'dotBreathe 2s ease-in-out infinite' }
-                  : undefined
-            }
-            />
-          ))}
-          <span className="font-mono text-[10px] text-muted-foreground ml-1">SERIE {setNumber}/{totalSets}</span>
-        </div>
-
-        {/* Progressive overload hint */}
-        {lastLog && lastBestReps > 0 && setNumber === 1 && (
-          <div className="text-[12px] text-amber-400/80 bg-amber-400/5 rounded-md px-3.5 py-2.5 mb-4 border-l-[3px] border-amber-400/30">
-            Ultima vez: <strong>{lastBestReps}</strong> reps
-            {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
-            {' — '}
-            {lastBestWeight > 0
-              ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep`
-              : `intenta ${lastBestReps + 1} reps`
-            }
-          </div>
-        )}
-
-        {/* Exercise note */}
-        {exercise.note && (
-          <div className="text-[13px] text-muted-foreground bg-muted/30 rounded-md px-3.5 py-2.5 mb-3 border-l-[3px] border-lime/20 italic leading-relaxed">
-            {exercise.note}
-          </div>
-        )}
-
-        {/* Structured tempo cues (plan-013) */}
-        {formatTempo(exercise.tempo) && (
-          <div className="text-[12px] text-cyan-400/80 bg-cyan-400/5 rounded-md px-3 py-2 mb-5 border-l-[3px] border-cyan-400/20 font-mono tracking-wide">
-            Tempo: {formatTempo(exercise.tempo)}
-          </div>
-        )}
-
-        {/* Recent history */}
-        {recentLogs.length > 0 && (
-          <div className="mb-5">
-            <div className="text-[9px] text-muted-foreground/50 tracking-[2px] mb-1.5 uppercase font-mono">Últimas sesiones</div>
-            {recentLogs.map((log, i) => (
-              <div key={i} className="text-[12px] text-muted-foreground/50 mb-0.5">
-                <span className="font-mono text-muted-foreground/30 mr-2">{log.date}</span>
-                {log.sets?.map((s: SetData, j: number) => (
-                  <span key={j} className="mr-1.5">
-                    {j + 1}: <span className="text-muted-foreground/60">{s.reps}</span>
-                    {s.weight && <span className="text-amber-400/60 ml-0.5">+{s.weight}kg</span>}
-                    {s.rpe && <span className="text-pink-500/60 ml-0.5">RPE {s.rpe}</span>}
-                    {s.note && <span className="text-muted-foreground/40 ml-0.5">({s.note})</span>}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Timer for timed exercises */}
-        {exercise.isTimer && (
-          <div className="mb-5 py-6 flex justify-center">
-            <Timer initialSeconds={exercise.timerSeconds} label={exercise.name} />
-          </div>
-        )}
-
-        <div className="flex-1" />
-
-        {/* ── ACTION AREA ── */}
-        <div className="flex flex-col gap-2.5">
-          <div className="relative">
-            <button
-              onClick={handleQuick}
-              aria-label={`Registrar serie completada con ${defaultReps}`}
-              className="w-full py-[18px] px-4 rounded-lg cursor-pointer bg-lime/14 text-lime font-mono text-sm font-bold tracking-[1.5px] flex items-center justify-center gap-2.5 transition-[background-color,transform] duration-100 hover:bg-lime/22 active:scale-[0.97] active:bg-lime/24 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-            >
-              <span className="text-xl leading-none">+</span>
-              SERIE COMPLETADA — {defaultReps}
-            </button>
-            {flyUp > 0 && (
-              <span
-                key={flyUp}
-                aria-hidden="true"
-                className="absolute right-4 top-1/2 font-bebas text-2xl text-lime pointer-events-none"
-                style={{ animation: 'setFlyUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' }}
-              >
-                +1
-              </span>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setEditOpen(v => !v)}
-              aria-label={editOpen ? t('session.closeSetEditor') : t('session.editCustomSet')}
-              aria-expanded={editOpen}
-              className={cn(
-                'flex-1 min-h-[44px] px-2.5 rounded-md cursor-pointer font-mono text-[10px] tracking-wide transition-all duration-150 border focus-visible:ring-2 focus-visible:ring-lime/40',
-                editOpen
-                  ? 'border-lime/30 bg-lime/6 text-lime'
-                  : 'border-border text-muted-foreground hover:border-lime/30 hover:text-lime'
-              )}
-            >
-              {t('session.editBtn')}
-            </button>
-
-            {exercise.demoImages && exercise.demoImages.length > 0 && (
-              <button
-                onClick={() => setShowMedia(true)}
-                aria-label="Ver fotos del ejercicio"
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md cursor-pointer border border-lime/20 bg-lime/5 text-lime text-sm leading-none hover:bg-lime/10 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-lime/40"
-              >
-                <Image size={15} />
-              </button>
-            )}
-
-            <button
-              onClick={() => setShowYoutube(true)}
-              aria-label="Ver tutorial en YouTube"
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md cursor-pointer border border-red-500/20 bg-red-500/5 text-red-500 text-sm leading-none hover:bg-red-500/10 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-red-500/40"
-            >
-              ▶
-            </button>
-          </div>
-
-          {editOpen && (
-            <div className="px-3.5 py-3 bg-lime/4 rounded-lg border border-lime/12 form-slide-in">
-              <div className="text-[9px] text-lime tracking-[2px] mb-2.5 uppercase font-mono">Registrar serie personalizada</div>
-              <div className="flex gap-2">
-                <Input
-                  value={customReps}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomReps(e.target.value)}
-                  placeholder={`Reps (ej: ${exercise.reps})`}
-                  maxLength={20}
-                  aria-label="Repeticiones"
-                  className="flex-1 min-w-0 h-9 text-xs"
-                />
-                <Input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="999"
-                  value={customWeight}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomWeight(e.target.value)}
-                  placeholder={t('session.weightPlaceholder')}
-                  aria-label="Lastre en kilogramos"
-                  className="w-[88px] h-9 text-xs"
-                />
-                <Input
-                  type="number"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={customRpe}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomRpe(e.target.value)}
-                  placeholder="RPE"
-                  title={t('session.rpeTitle')}
-                  aria-label="RPE del 1 al 10"
-                  className="w-[56px] h-9 text-xs"
-                />
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={customNote}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomNote(e.target.value)}
-                  placeholder={t('session.optionalNote')}
-                  maxLength={200}
-                  aria-label="Nota opcional"
-                  className="flex-1 min-w-0 h-9 text-xs"
-                />
-                <Button
-                  onClick={handleForm}
-                  disabled={!customReps}
-                  size="sm"
-                  className={cn(
-                    'h-9 px-5 text-[11px] font-bold tracking-wide',
-                    customReps
-                      ? 'bg-lime text-lime-foreground hover:bg-lime/90'
-                      : 'bg-lime/20 text-muted-foreground cursor-not-allowed'
-                  )}
-                >
-                  GUARDAR
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {showYoutube && <YoutubeModal query={exercise.youtube?.trim() || exercise.name} onClose={() => setShowYoutube(false)} />}
-      {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
-    </div>
-  )
-})
-
-// ─── Note screen ──────────────────────────────────────────────────────────────
-
-interface NoteScreenProps {
-  workoutTitle: string
-  totalSetsLogged: number
-  durationMin: number
-  onSave: (note: string) => void
-}
-
-function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: NoteScreenProps) {
-  const [note, setNote] = useState<string>('')
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 py-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] gap-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-3 motion-safe:duration-300">
-      <div className="font-bebas text-4xl sm:text-5xl tracking-[2px] text-emerald-500 text-center leading-none">
-        ¡Último set listo!
-      </div>
-      <div className="text-[11px] text-muted-foreground tracking-[2px] font-mono">
-        {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
-      </div>
-
-      <div className="w-full max-w-[420px] bg-card border border-border rounded-xl px-6 py-5">
-        <div className="text-[10px] text-lime tracking-[2px] mb-2.5 uppercase font-mono">Nota de sesión</div>
-        <div className="text-[13px] text-muted-foreground mb-3">¿Cómo fue? ¿Algo que destacar?</div>
-        <Textarea
-          value={note}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNote(e.target.value)}
-          placeholder="Ej: Dominadas mucho mejor hoy, llegué a 8 seguidas. Lumbar bien."
-          rows={3}
-          autoFocus
-          className="text-[13px] resize-y leading-relaxed"
-        />
-        <div className="flex gap-2.5 mt-3">
-          <Button
-            onClick={() => onSave(note.trim())}
-            className="bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide px-6"
-          >
-            GUARDAR
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onSave('')}
-            className="font-mono text-[11px] tracking-wide px-4"
-          >
-            SALTAR
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Celebrate screen ─────────────────────────────────────────────────────────
-
-interface CelebrateScreenProps {
-  workoutTitle: string
-  workoutKey: string
-  totalSetsLogged: number
-  durationMin: number
-  exercises: Exercise[]
-  onDone: () => void
-  userName?: string
-  avatarUrl?: string | null
-  userId?: string
-  referralCode?: string | null
-  timings: ExerciseTiming[]
-  onRepeat?: () => void
-  onNavigateAway: (path: string) => void
-}
-
-function CelebrateScreen({ workoutTitle, workoutKey, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, timings, onRepeat, onNavigateAway }: CelebrateScreenProps) {
-  const [quote, setQuote] = useState<Quote>(getLocalQuote)
-  const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings), [timings])
-
-  useEffect(() => {
-    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
-      surface: 'post_workout',
-      source: 'workout_completion',
-      workout_id: workoutKey,
-      result: 'viewed',
-    })
-  }, [workoutKey])
-
-  useEffect(() => {
-    const ctrl = new AbortController()
-    fetch('https://zenquotes.io/api/random', { signal: ctrl.signal })
-      .then(r => r.json())
-      .then(([item]: [{ q?: string; a?: string }]) => { if (item?.q) setQuote(item as Quote) })
-      .catch(() => {})
-    return () => ctrl.abort()
-  }, [])
-
-  return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    <div
-      onClick={onDone}
-      className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 py-10 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] gap-7 cursor-pointer text-center relative w-full"
-    >
-      <Confetti />
-
-      <div className="size-[88px] rounded-full bg-muted border border-border flex items-center justify-center text-[40px] leading-none text-lime"
-        style={{ animation: 'popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
-        ✓
-      </div>
-
-      <style>{`
-        @keyframes popIn {
-          from { transform: scale(0); opacity: 0; }
-          to   { transform: scale(1); opacity: 1; }
-        }
-        @keyframes fadeUp {
-          from { transform: translateY(16px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-      `}</style>
-
-      <div style={{ animation: 'fadeUp 0.5s 0.15s ease-out both' }}>
-        <div className="font-bebas tracking-[3px] text-foreground leading-none mb-2"
-          style={{ fontSize: 'clamp(40px, 10vw, 64px)' }}>
-          SESIÓN COMPLETADA
-        </div>
-        <div className="font-mono text-[11px] text-muted-foreground tracking-[2px]">
-          {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
-        </div>
-      </div>
-
-      <div className="max-w-[380px]" style={{ animation: 'fadeUp 0.5s 0.35s ease-out both' }}>
-        <div className="h-px mb-6 bg-gradient-to-r from-transparent via-border to-transparent" />
-        {quote && (
-          <>
-            <div className="text-base italic text-foreground/70 leading-relaxed mb-2.5">"{quote.q}"</div>
-            <div className="font-mono text-[11px] text-muted-foreground tracking-wide">— {quote.a}</div>
-          </>
-        )}
-        <div className="h-px mt-6 bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      {timingBreakdown.rows.length > 0 && (
-        <div className="w-full max-w-[380px]" style={{ animation: 'fadeUp 0.5s 0.45s ease-out both' }}>
-          <div className="text-[9px] font-mono tracking-[3px] text-muted-foreground uppercase mb-3">TIEMPO POR EJERCICIO</div>
-          <div className="flex flex-col gap-1.5">
-            {timingBreakdown.rows.map(row => (
-              <div key={row.exerciseId} className="flex items-center gap-2">
-                <div className="flex-1 min-w-0 relative">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-sm"
-                    style={{
-                      width: `${row.pct}%`,
-                      background: row.isMax ? 'hsl(var(--lime) / 0.18)' : 'hsl(var(--muted))',
-                    }}
-                  />
-                  <div className="relative px-2 py-1 text-[11px] truncate text-muted-foreground">
-                    {row.exerciseName}
-                  </div>
-                </div>
-                <div className={cn(
-                  'font-mono text-[11px] tabular-nums flex-shrink-0',
-                  row.isMax ? 'text-lime' : 'text-muted-foreground'
-                )}>
-                  {formatTimingClock(row.seconds)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <PostWorkoutActions
-        workoutKey={workoutKey}
-        workoutTitle={workoutTitle}
-        totalSets={totalSetsLogged}
-        durationMin={durationMin}
-        exercises={exercises}
-        quote={quote}
-        userName={userName}
-        avatarUrl={avatarUrl}
-        userId={userId}
-        referralCode={referralCode}
-        onRepeat={onRepeat}
-        onNavigateAway={onNavigateAway}
-      />
-
-      <div style={{ animation: 'fadeUp 0.5s 0.7s ease-out both' }} className="flex flex-col items-center gap-3">
-        <Button
-          onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
-          className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 bg-lime text-lime-foreground hover:bg-lime/90"
-        >
-          IR AL DASHBOARD
-        </Button>
-        <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Main SessionView ─────────────────────────────────────────────────────────
-
-type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate' | 'section-transition'
-
-interface SessionProgress {
-  stepIdx: number
-  phase: SessionPhase
-  setsCount: number
-  timing?: ExerciseTimingState
-}
+import PRCelebration from './PRCelebration'
+import SectionTransition from './session/SectionTransition'
+import CelebrateScreen from './session/CelebrateScreen'
+import DiscardSessionDialog from './session/DiscardSessionDialog'
+import ExerciseNavArrows from './session/ExerciseNavArrows'
+import ExerciseScreen from './session/ExerciseScreen'
+import NoteScreen from './session/NoteScreen'
+import RestScreen from './session/RestScreen'
+import SessionTopBar from './session/SessionTopBar'
 
 interface SessionViewProps {
   workout: Workout
@@ -752,27 +46,6 @@ interface SessionViewProps {
   onNavigateAway: (path: string) => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
-  getRestForExercise?: (exerciseId: string, defaultRest: number) => number
-  setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
-  /** Persisted progress from context (survives navigation) */
-  initialProgress?: SessionProgress
-  /** Callback to persist progress changes to context */
-  onProgressChange?: (update: Partial<SessionProgress>) => void
-  /** Original session start timestamp (for accurate duration after restore) */
-  startedAt?: number
-  /** User profile for share card */
-  userName?: string
-  avatarUrl?: string | null
-  /** Para el panel post-entreno (invitar, retos) */
-  userId?: string
-  referralCode?: string | null
-  /** Warmup/cooldown section skip handlers */
-  onSkipWarmup?: () => void
-  onSkipCooldown?: () => void
-  onSkipRemainingCooldown?: () => void
-  /** Section start time for tracking section durations */
-  sectionStartTime?: number | null
-  onSectionStartTimeChange?: (time: number | null) => void
 }
 
 export default function SessionView({
@@ -785,110 +58,106 @@ export default function SessionView({
   onNavigateAway,
   onExitSession,
   getExerciseLogs,
-  getRestForExercise,
-  setRestForExercise,
-  initialProgress,
-  onProgressChange,
-  startedAt,
-  userName,
-  avatarUrl,
-  userId,
-  referralCode,
-  onSkipWarmup,
-  onSkipCooldown,
-  onSkipRemainingCooldown,
-  sectionStartTime: externalSectionStartTime,
-  onSectionStartTimeChange,
 }: SessionViewProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
+  const {
+    startedAt,
+    getProgressSnapshot,
+    setProgress,
+    getRestForExercise,
+    setRestForExercise,
+    setSectionStartTime,
+    skipWarmup,
+    skipCooldown,
+    skipRemainingCooldown,
+  } = useActiveSession()
 
-  const [stepIdx,   setStepIdx]   = useState<number>(initialProgress?.stepIdx ?? 0)
-  const [phase,     setPhase]     = useState<SessionPhase>(initialProgress?.phase ?? 'exercise')
-  const [setsCount, setSetsCount] = useState<number>(initialProgress?.setsCount ?? 0)
-  const [showExit,  setShowExit]  = useState<boolean>(false)
-  const [prEvent,   setPREvent]   = useState<PREvent | null>(null)
-  // Track which section transition to show
-  const [transitionType, setTransitionType] = useState<'warmup-to-main' | 'main-to-cooldown'>('warmup-to-main')
-  // Index to advance to after transition
-  const pendingStepIdx = useRef<number | null>(null)
+  // Init perezosa: `useRef(expr).current` evaluaba `expr` en CADA render y
+  // tiraba el resultado. Con `useState(() => …)` se calcula una sola vez, y
+  // la semántica de "congelado al montar" se mantiene porque la página
+  // remonta este componente por `key` al repetir o al adoptar del server.
+  const [{ steps, exerciseBoundaries, reducer }] = useState(() => {
+    const built = buildSteps(workout.exercises)
+    return {
+      steps: built,
+      exerciseBoundaries: computeExerciseBoundaries(built),
+      reducer: createSessionReducer(built),
+    }
+  })
+  const [timingTracker] = useState(() => new ExerciseTimingTracker(getProgressSnapshot().timing ?? null))
+  const [state, dispatch] = useReducer(reducer, undefined, () => initSessionState(getProgressSnapshot()))
 
-  // ── Timing tracker ────────────────────────────────────────────────────────
-  const timingTracker = useRef(new ExerciseTimingTracker(initialProgress?.timing ?? null))
+  const { stepIdx, phase, setsCount, transitionType } = state
+
+  const [showExit, setShowExit] = useState<boolean>(false)
+  const [prEvent, setPREvent] = useState<PREvent | null>(null)
   const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
-  // Ref mirror of finalTimings so the one-shot guard and the note-save handler
-  // never read a stale state value (avoids a double-finalize / empty-timings race).
+  // Espejo en ref de finalTimings para que el guard one-shot y el guardado de
+  // la nota nunca lean un valor obsoleto (evita doble finalize / timings vacíos).
   const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
 
-  // An exercise becomes "active" only while it's on screen ('exercise' phase).
-  // Guarding on === 'exercise' (not just !== note/celebrate) keeps rest-screen
-  // prev/next navigation from re-attributing rest time to the wrong exercise.
+  const [sessionStartTime] = useState<number>(() => startedAt || Date.now())
+
+  // Gestos de swipe
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+
+  const currentStep = steps[stepIdx]
+  const nextStep = steps[stepIdx + 1] || null
+
+  // `getExerciseLogs` devuelve un `slice()` nuevo en cada llamada, así que sin
+  // memoizar la prop `logs` es una referencia nueva por render y el `memo` de
+  // ExerciseScreen nunca acierta.
+  const currentLogs = useMemo(
+    () => (currentStep ? getExerciseLogs(currentStep.exercise.id) : []),
+    [getExerciseLogs, currentStep],
+  )
+
+  const currentExerciseIndex = findCurrentExerciseIndex(exerciseBoundaries, stepIdx, steps.length)
+  const hasPrevExercise = currentExerciseIndex > 0
+  const hasNextExercise = currentExerciseIndex < exerciseBoundaries.length - 1
+
+  // Un ejercicio está "activo" solo mientras se ve en pantalla (fase 'exercise').
+  // El guard en === 'exercise' (y no solo !== note/celebrate) evita que navegar
+  // prev/next durante el descanso reasigne ese tiempo al ejercicio equivocado.
   useEffect(() => {
     if (phase !== 'exercise') return
     const ex = steps[stepIdx]?.exercise
     if (!ex) return
-    timingTracker.current.enterExercise({ id: ex.id, name: ex.name })
+    timingTracker.enterExercise({ id: ex.id, name: ex.name })
   }, [stepIdx, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Finalize exactly once when phase first becomes 'note'.
+  // Finalizar exactamente una vez al llegar por primera vez a la nota.
   useEffect(() => {
     if (phase === 'note' && finalTimingsRef.current === null) {
-      const result = timingTracker.current.finalize()
+      const result = timingTracker.finalize()
       finalTimingsRef.current = result
       setFinalTimings(result)
     }
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync progress to context so it survives navigation away and back
+  // Empujar el progreso al contexto para que sobreviva a navegar fuera y volver
   useEffect(() => {
-    onProgressChange?.({ stepIdx, phase, setsCount, timing: timingTracker.current.getState() })
+    setProgress({ stepIdx, phase, setsCount, timing: timingTracker.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
-  const sessionStartTime = useRef<number>(startedAt || Date.now())
 
-  // Swipe gesture refs
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
-  const swiping = useRef(false)
-
-  const currentStep = steps[stepIdx]
-  const nextStep    = steps[stepIdx + 1] || null
-  const isLastStep  = stepIdx === steps.length - 1
-
-  // Build exercise-level index for swipe navigation
-  // Maps exercise boundary → first step index of each unique exercise
-  const exerciseBoundaries = useRef<number[]>(
-    steps.reduce<number[]>((acc, s, i) => {
-      if (i === 0 || s.exercise.id !== steps[i - 1].exercise.id) acc.push(i)
-      return acc
-    }, [])
-  ).current
-
-  const currentExerciseIndex = exerciseBoundaries.findIndex((bIdx, i) => {
-    const nextBoundary = exerciseBoundaries[i + 1] ?? steps.length
-    return stepIdx >= bIdx && stepIdx < nextBoundary
-  })
-  const hasPrevExercise = currentExerciseIndex > 0
-  const hasNextExercise = currentExerciseIndex < exerciseBoundaries.length - 1
+  // Permiso de notificaciones al arrancar la sesión
+  useEffect(() => { notif.requestPermission() }, [])
 
   const goToPrevExercise = useCallback(() => {
     if (currentExerciseIndex <= 0) return
-    const prevIdx = exerciseBoundaries[currentExerciseIndex - 1]
-    setStepIdx(prevIdx)
-    setPhase('exercise')
+    dispatch({ type: 'goto-exercise', stepIdx: exerciseBoundaries[currentExerciseIndex - 1] })
   }, [currentExerciseIndex, exerciseBoundaries])
 
   const goToNextExercise = useCallback(() => {
     if (currentExerciseIndex >= exerciseBoundaries.length - 1) return
-    const nextIdx = exerciseBoundaries[currentExerciseIndex + 1]
-    setStepIdx(nextIdx)
-    setPhase('exercise')
+    dispatch({ type: 'goto-exercise', stepIdx: exerciseBoundaries[currentExerciseIndex + 1] })
   }, [currentExerciseIndex, exerciseBoundaries])
 
   const handleSwipeStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
-    swiping.current = false
   }, [])
 
   const handleSwipeEnd = useCallback((e: React.TouchEvent) => {
@@ -897,188 +166,91 @@ export default function SessionView({
     const dy = e.changedTouches[0].clientY - touchStartY.current
     touchStartX.current = null
     touchStartY.current = null
-    // Only trigger if horizontal swipe is dominant and > 70px
+    // Solo si el swipe horizontal domina y supera los 70px
     if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) goToNextExercise()    // swipe left → next
-      else goToPrevExercise()            // swipe right → prev
+      if (dx < 0) goToNextExercise()    // swipe izquierda → siguiente
+      else goToPrevExercise()           // swipe derecha → anterior
     }
   }, [goToNextExercise, goToPrevExercise])
 
-  // Request notification permission when session starts
-  useEffect(() => { notif.requestPermission() }, [])
-
   const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
+    if (!currentStep) return
     const pr = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
     if (pr) setPREvent(pr)
-    const newCount = setsCount + 1
-    setSetsCount(newCount)
+
     sounds.playSetComplete()
     sounds.vibrate([80])
-
     const remaining = steps.length - (stepIdx + 1)
     notif.notifySetComplete(currentStep.exercise.name, currentStep.setNumber, currentStep.totalSets, remaining)
 
-    if (isLastStep) {
-      setPhase('note')
-    } else {
-      // Detect section transition (warmup→main or main→cooldown)
-      const currentSection = currentStep.section
-      const nextSection = nextStep?.section || 'main'
-      if (currentSection !== nextSection) {
-        const tt = currentSection === 'warmup' ? 'warmup-to-main' : 'main-to-cooldown'
-        setTransitionType(tt as 'warmup-to-main' | 'main-to-cooldown')
-        pendingStepIdx.current = stepIdx + 1
-        setPhase('section-transition')
-        return
-      }
-
-      // Check superset: if current and next exercise share a supersetGroup, skip rest
-      const currentGroup = currentStep.exercise.supersetGroup
-      const nextExGroup = nextStep?.exercise.supersetGroup
-      if (currentGroup && nextExGroup && currentGroup === nextExGroup) {
-        // Superset — go directly to next exercise
-        setStepIdx(i => i + 1)
-        setPhase('exercise')
-      } else {
-        setPhase('rest')
-      }
-    }
-  }, [currentStep, isLastStep, nextStep, onLogSet, workoutKey, setsCount, stepIdx, steps.length])
+    dispatch({ type: 'log-set' })
+  }, [currentStep, onLogSet, workoutKey, stepIdx, steps.length])
 
   const handleRestDone = useCallback(() => {
-    setStepIdx(i => i + 1)
-    setPhase('exercise')
+    dispatch({ type: 'rest-done' })
     setPREvent(null)
   }, [])
 
   const handleSectionContinue = useCallback(() => {
-    if (pendingStepIdx.current !== null) {
-      setStepIdx(pendingStepIdx.current)
-      pendingStepIdx.current = null
-    }
-    onSectionStartTimeChange?.(Date.now())
-    setPhase('exercise')
-  }, [onSectionStartTimeChange])
+    setSectionStartTime(Date.now())
+    dispatch({ type: 'section-continue' })
+  }, [setSectionStartTime])
 
   const handleSkipWarmup = useCallback(() => {
-    const firstMainIdx = steps.findIndex(s => (s.section || 'main') !== 'warmup')
-    if (firstMainIdx >= 0) {
-      setStepIdx(firstMainIdx)
-      setPhase('exercise')
-    }
-    onSkipWarmup?.()
+    skipWarmup()
+    dispatch({ type: 'skip-warmup' })
     toast.info(t('warmupCooldown.nudge.warmupSkipped'), { duration: 3000 })
-  }, [onSkipWarmup, t, steps])
+  }, [skipWarmup, t])
 
   const handleSectionSkipCooldown = useCallback(() => {
-    setPhase('note')
-    onSkipCooldown?.()
+    skipCooldown()
+    dispatch({ type: 'skip-cooldown' })
     toast.info(t('warmupCooldown.nudge.cooldownSkipped'), { duration: 3000 })
-  }, [onSkipCooldown, t])
+  }, [skipCooldown, t])
 
   const handleSkipRemainingCooldown = useCallback(() => {
-    setPhase('note')
-    onSkipRemainingCooldown?.()
+    skipRemainingCooldown()
+    dispatch({ type: 'skip-cooldown' })
     toast.info(t('warmupCooldown.nudge.cooldownSkipped'), { duration: 3000 })
-  }, [onSkipRemainingCooldown, t])
+  }, [skipRemainingCooldown, t])
 
-  // Determine current section for skip button visibility
+  const handleNoteSaved = useCallback((note: string) => {
+    const durationSeconds = Math.round((Date.now() - sessionStartTime) / 1000)
+    // Finalize defensivo por si se llegó a la nota antes de que el efecto
+    // commiteara; el tracker es idempotente.
+    const timings = finalTimingsRef.current ?? timingTracker.finalize()
+    onMarkDone(workoutKey, note, { durationSeconds, exerciseTimings: timings })
+    sounds.playSessionComplete()
+    sounds.vibrate([100, 50, 100, 50, 200])
+    notif.notifySessionComplete(workout.title, setsCount)
+    dispatch({ type: 'finish' })
+  }, [onMarkDone, workoutKey, workout.title, setsCount, timingTracker, sessionStartTime])
+
+  // Visibilidad de los botones de saltar sección
   const stepSection = currentStep?.section || 'main'
   const hasWarmup = workout.exercises.some(e => e.section === 'warmup')
   const hasCooldown = workout.exercises.some(e => e.section === 'cooldown')
   const isInWarmup = stepSection === 'warmup' && phase === 'exercise'
   const isInCooldown = stepSection === 'cooldown' && (phase === 'exercise' || phase === 'rest')
 
-  const handleNoteSaved = useCallback((note: string) => {
-    const durationSeconds = Math.round((Date.now() - sessionStartTime.current) / 1000)
-    // Finalize defensively in case the note screen was reached without the
-    // finalize effect having committed yet; the tracker is idempotent.
-    const timings = finalTimingsRef.current ?? timingTracker.current.finalize()
-    onMarkDone(workoutKey, note, { durationSeconds, exerciseTimings: timings })
-    sounds.playSessionComplete()
-    sounds.vibrate([100, 50, 100, 50, 200])
-    notif.notifySessionComplete(workout.title, setsCount)
-    setPhase('celebrate')
-  }, [onMarkDone, workoutKey, workout.title, setsCount])
-
-  const handleInterruptConfirm = useCallback(() => {
-    onExitSession()
-  }, [onExitSession])
+  const durationMin = Math.round((Date.now() - sessionStartTime) / 60000)
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background overflow-hidden">
-      {/* ── TOP BAR ── */}
       {phase !== 'celebrate' && (
-        <div className="flex-shrink-0">
-          <div className="flex items-center justify-between px-4 h-[calc(52px+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)]">
-            {/* Back — just navigate away, session stays alive in context */}
-            <button
-              onClick={() => navigate(-1)}
-              className="bg-transparent border-none cursor-pointer text-muted-foreground min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-foreground transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-lime/40"
-              aria-label="Volver"
-            >
-              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-            </button>
-
-            <div className="text-center min-w-0 flex-1 px-2">
-              {phase === 'exercise' && currentStep && (
-                <div className="font-mono text-[10px] text-muted-foreground/60 tracking-[2px] truncate">
-                  {currentStep.exercise.name.toUpperCase()}
-                </div>
-              )}
-              {phase === 'rest' && (
-                <div className="font-mono text-[10px] text-muted-foreground tracking-[3px]">DESCANSO</div>
-              )}
-              {phase === 'section-transition' && (
-                <div className="font-mono text-[10px] text-lime tracking-[3px]">
-                  {t(`warmupCooldown.sections.${transitionType === 'warmup-to-main' ? 'warmup' : 'main'}`).toUpperCase()}
-                </div>
-              )}
-              {phase === 'note' && (
-                <div className="font-mono text-[10px] text-lime tracking-[3px]">COMPLETADO</div>
-              )}
-              <div className="font-mono text-[9px] text-muted-foreground/40 tracking-wide tabular-nums">
-                {phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}/{exerciseBoundaries.length} · {phase === 'note' ? steps.length : stepIdx + 1}/{steps.length} series
-              </div>
-            </div>
-
-            {/* Discard button */}
-            <button
-              onClick={() => setShowExit(true)}
-              className="bg-transparent border-none cursor-pointer text-muted-foreground min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-red-400 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-red-500/40"
-              aria-label="Descartar sesion"
-            >
-              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
-          </div>
-          {/* Session progress bar */}
-          <div className="h-[3px] bg-muted">
-            <div className="h-full bg-lime rounded-r-full transition-[width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
-              style={{ width: `${((phase === 'note' ? steps.length : stepIdx + 1) / steps.length) * 100}%` }} />
-          </div>
-
-          {/* Section skip buttons */}
-          {isInWarmup && hasWarmup && onSkipWarmup && (
-            <div className="flex justify-center py-1.5 border-b border-border">
-              <button
-                onClick={handleSkipWarmup}
-                className="font-mono text-[10px] tracking-wide text-muted-foreground hover:text-foreground transition-colors px-3 py-1"
-              >
-                {t('warmupCooldown.skip.warmup')}
-              </button>
-            </div>
-          )}
-          {isInCooldown && hasCooldown && onSkipRemainingCooldown && (
-            <div className="flex justify-center py-1.5 border-b border-border">
-              <button
-                onClick={handleSkipRemainingCooldown}
-                className="font-mono text-[10px] tracking-wide text-muted-foreground hover:text-foreground transition-colors px-3 py-1"
-              >
-                {t('warmupCooldown.skip.remaining')}
-              </button>
-            </div>
-          )}
-        </div>
+        <SessionTopBar
+          phase={phase}
+          transitionType={transitionType}
+          exerciseName={currentStep?.exercise.name}
+          exerciseIndex={phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}
+          exerciseTotal={exerciseBoundaries.length}
+          stepIndex={phase === 'note' ? steps.length : stepIdx + 1}
+          stepTotal={steps.length}
+          onBack={() => navigate(-1)}
+          onDiscard={() => setShowExit(true)}
+          onSkipWarmup={isInWarmup && hasWarmup ? handleSkipWarmup : undefined}
+          onSkipCooldown={isInCooldown && hasCooldown ? handleSkipRemainingCooldown : undefined}
+        />
       )}
 
       {phase === 'exercise' && currentStep && (
@@ -1087,73 +259,30 @@ export default function SessionView({
           onTouchStart={handleSwipeStart}
           onTouchEnd={handleSwipeEnd}
         >
-          {/* Navigation arrows — always visible */}
-          {(hasPrevExercise || hasNextExercise) && (
-            <div className="flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-1 sm:px-2">
-              {hasPrevExercise ? (
-                <button
-                  onClick={goToPrevExercise}
-                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
-                  aria-label="Ejercicio anterior"
-                >
-                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
-                </button>
-              ) : <div />}
-              {hasNextExercise ? (
-                <button
-                  onClick={goToNextExercise}
-                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
-                  aria-label="Siguiente ejercicio"
-                >
-                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
-                </button>
-              ) : <div />}
-            </div>
-          )}
+          <ExerciseNavArrows
+            hasPrev={hasPrevExercise}
+            hasNext={hasNextExercise}
+            onPrev={goToPrevExercise}
+            onNext={goToNextExercise}
+          />
           <ExerciseScreen
             key={stepIdx}
             step={currentStep}
             onLogged={handleLogged}
-            logs={getExerciseLogs(currentStep.exercise.id)}
+            logs={currentLogs}
           />
         </div>
       )}
 
       {phase === 'rest' && (
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* PR celebration banner */}
-          {prEvent && (
-            <PRCelebration
-              prEvent={prEvent}
-              userName={userName}
-              avatarUrl={avatarUrl}
-              referralCode={referralCode}
-              onDismiss={() => setPREvent(null)}
-            />
-          )}
-          {/* Navigation arrows during rest */}
-          {(hasPrevExercise || hasNextExercise) && (
-            <div className="flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-1 sm:px-2">
-              {hasPrevExercise ? (
-                <button
-                  onClick={goToPrevExercise}
-                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
-                  aria-label="Ejercicio anterior"
-                >
-                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
-                </button>
-              ) : <div />}
-              {hasNextExercise ? (
-                <button
-                  onClick={goToNextExercise}
-                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
-                  aria-label="Siguiente ejercicio"
-                >
-                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
-                </button>
-              ) : <div />}
-            </div>
-          )}
+          {prEvent && <PRCelebration prEvent={prEvent} onDismiss={() => setPREvent(null)} />}
+          <ExerciseNavArrows
+            hasPrev={hasPrevExercise}
+            hasNext={hasNextExercise}
+            onPrev={goToPrevExercise}
+            onNext={goToNextExercise}
+          />
           <RestScreen
             key={`rest-${stepIdx}`}
             seconds={currentStep?.exercise.rest || 90}
@@ -1178,7 +307,7 @@ export default function SessionView({
         <NoteScreen
           workoutTitle={workout.title}
           totalSetsLogged={setsCount}
-          durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
+          durationMin={durationMin}
           onSave={handleNoteSaved}
         />
       )}
@@ -1188,48 +317,21 @@ export default function SessionView({
           workoutTitle={workout.title}
           workoutKey={workoutKey}
           totalSetsLogged={setsCount}
-          durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
+          durationMin={durationMin}
           exercises={workout.exercises}
-          onDone={onGoToDashboard}
-          userName={userName}
-          avatarUrl={avatarUrl}
-          userId={userId}
-          referralCode={referralCode}
           timings={finalTimings ?? []}
+          onDone={onGoToDashboard}
           onRepeat={onRepeat}
           onNavigateAway={onNavigateAway}
         />
       )}
 
-      {/* Discard Dialog */}
-      <Dialog open={showExit} onOpenChange={setShowExit}>
-        <DialogContent className="max-w-[320px] max-sm:max-w-[90vw]">
-          <DialogHeader>
-            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">{t('session.discardTitle')}</DialogTitle>
-            <DialogDescription>
-              {setsCount > 0
-                ? t('session.discardWithSets', { count: setsCount })
-                : t('session.discardEmpty')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col gap-2.5 sm:flex-col">
-            <Button
-              variant="outline"
-              onClick={handleInterruptConfirm}
-              className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide"
-            >
-              {t('session.discardButton')}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowExit(false)}
-              className="font-mono text-[11px] tracking-wide"
-            >
-              CONTINUAR ENTRENANDO
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DiscardSessionDialog
+        open={showExit}
+        onOpenChange={setShowExit}
+        setsCount={setsCount}
+        onConfirm={onExitSession}
+      />
     </div>
   )
 }

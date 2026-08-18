@@ -19,6 +19,7 @@ import type { Exercise } from '@calistenia/core/types'
 import WorkoutShareCard from './WorkoutShareCard'
 import { shareReferralInvite } from '../lib/share'
 import { cn } from '../lib/utils'
+import { useSessionIdentity } from '../hooks/useSessionIdentity'
 
 interface Quote { q: string; a: string }
 
@@ -29,10 +30,6 @@ export interface PostWorkoutActionsProps {
   durationMin: number
   exercises: Exercise[]
   quote?: Quote | null
-  userName?: string
-  avatarUrl?: string | null
-  userId?: string
-  referralCode?: string | null
   /** Reinicia la misma rutina; si no se pasa, la acción no aparece. */
   onRepeat?: () => void
   /** Cierra la sesión activa y navega. El panel nunca navega por su cuenta. */
@@ -46,14 +43,13 @@ export default function PostWorkoutActions({
   durationMin,
   exercises,
   quote,
-  userName,
-  avatarUrl,
-  userId,
-  referralCode,
   onRepeat,
   onNavigateAway,
 }: PostWorkoutActionsProps) {
   const { t } = useTranslation()
+  // La identidad se lee aquí en lugar de bajarla dos niveles desde la página:
+  // el AuthProvider ya está montado por encima (#475).
+  const { userName, avatarUrl, userId, referralCode } = useSessionIdentity()
   // Solo para esta finalización: no se persiste, así que la próxima sesión
   // completada vuelve a mostrar el panel.
   const [dismissed, setDismissed] = useState(false)

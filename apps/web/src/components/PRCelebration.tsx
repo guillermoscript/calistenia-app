@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import PRShareCard from './PRShareCard'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
+import { useSessionIdentity } from '../hooks/useSessionIdentity'
 
 const PR_KEY_NAMES: Record<string, string> = {
   pr_pullups: 'Pull-ups',
@@ -14,14 +15,14 @@ const PR_KEY_NAMES: Record<string, string> = {
 
 interface PRCelebrationProps {
   prEvent: PREvent
-  userName?: string
-  avatarUrl?: string | null
-  referralCode?: string | null
   onDismiss: () => void
 }
 
-export default function PRCelebration({ prEvent, userName, avatarUrl, referralCode, onDismiss }: PRCelebrationProps) {
+export default function PRCelebration({ prEvent, onDismiss }: PRCelebrationProps) {
   const { t } = useTranslation()
+  // La identidad se lee aquí en lugar de bajarla como props desde la página:
+  // el AuthProvider ya está montado por encima (#475).
+  const { userName, avatarUrl, referralCode } = useSessionIdentity()
   const [showShareCard, setShowShareCard] = useState(false)
 
   // Auto-dismiss after 8 seconds
