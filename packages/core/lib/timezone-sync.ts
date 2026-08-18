@@ -17,7 +17,7 @@ import { pb } from './pocketbase'
 import { getTimezone, setTimezone } from './dateUtils'
 
 /** Zona IANA del dispositivo, saneada (Android puede devolver "Etc/Unknown"). */
-export function detectDeviceTimezone(): string {
+function detectDeviceTimezone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
   } catch {

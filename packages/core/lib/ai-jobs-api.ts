@@ -50,20 +50,6 @@ export async function submitAnalyzeMealJob(
   return data.job_id
 }
 
-export async function submitLookupFoodJob(foodName: string): Promise<string> {
-  const res = await fetch(`${AI_API_URL}/api/jobs/lookup-food`, {
-    method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ food_name: foodName }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || `Error ${res.status}`)
-  }
-  const data = await res.json()
-  return data.job_id
-}
-
 export async function submitMealPlanJob(macros: {
   remaining_calories: number
   remaining_protein: number

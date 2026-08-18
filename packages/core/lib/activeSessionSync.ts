@@ -22,7 +22,7 @@ export interface RemoteActiveSession<TWorkout = unknown, TProgress = unknown> {
 
 const COLLECTION = 'active_sessions'
 const THROTTLE_MS = 15_000
-export const MAX_REMOTE_SESSION_AGE_MS = 24 * 60 * 60 * 1000
+const MAX_REMOTE_SESSION_AGE_MS = 24 * 60 * 60 * 1000
 
 let recordId: string | null = null
 let pending: RemoteActiveSession | null = null

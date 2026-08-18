@@ -21,7 +21,7 @@ export interface MacroCalculationDetails {
 }
 
 // ─── Multiplicadores de actividad (Mifflin-St Jeor) ─────────────────────────
-export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
+const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
   light: 1.375,
   moderate: 1.55,

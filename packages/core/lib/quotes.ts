@@ -5,7 +5,7 @@ export interface Quote {
   a: string
 }
 
-export function getLocalQuotes(): Quote[] {
+function getLocalQuotes(): Quote[] {
   return Array.from({ length: 20 }, (_, i) => ({
     q: i18n.t(`motivation.quote${i}`),
     a: i18n.t(`motivation.author${i}`),
