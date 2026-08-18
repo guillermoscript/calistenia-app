@@ -4,7 +4,7 @@ import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { FREE_SESSION_QUEUE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import catalogData from '@calistenia/core/data/exercise-catalog.json'
+import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
@@ -129,8 +129,9 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
     })
   }
 
-  // Add exercises from master catalog JSON
-  const catalogCategories = (catalogData as any).categories || {}
+  // Add exercises from master catalog JSON. Carga perezosa (#486): quien llama
+  // ya ha esperado a `loadCatalogIndex()`.
+  const catalogCategories = (getCatalogIndexSync()?.raw.categories ?? {}) as any
   for (const catData of Object.values(catalogCategories) as any[]) {
     for (const ex of catData.exercises || []) {
       if (seen.has(ex.id)) continue
@@ -260,6 +261,8 @@ export default function FreeSessionPage() {
         }
       } catch { /* PB not available */ }
       if (!cancelled) {
+        // El catálogo empaquetado se carga bajo demanda (#486).
+        await loadCatalogIndex()
         const fallback = extractExercisesFromWorkouts()
         if (fallback.length === 0) {
           setLoadError(true)
@@ -354,6 +357,8 @@ export default function FreeSessionPage() {
           }
         }
       } catch { /* fall through */ }
+      // El catálogo empaquetado se carga bajo demanda (#486).
+      await loadCatalogIndex()
       const fallback = extractExercisesFromWorkouts()
       if (fallback.length === 0) setLoadError(true)
       setCatalog(fallback)

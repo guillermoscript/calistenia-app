@@ -6,6 +6,6 @@
  */
 export {
   useExerciseCatalog,
-  STATIC_CATALOG,
+  getStaticCatalog,
   type ExerciseCatalog,
 } from '@calistenia/core/hooks/useExerciseCatalog'

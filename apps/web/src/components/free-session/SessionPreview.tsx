@@ -4,7 +4,8 @@ import { useActiveSession } from '../../contexts/ActiveSessionContext'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import type { Exercise, Workout } from '@calistenia/core/types'
-import catalogData from '@calistenia/core/data/exercise-catalog.json'
+import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
+import type { RawCatalog } from '@calistenia/core/lib/catalogIndex'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
 import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
@@ -25,7 +26,7 @@ interface SessionPreviewProps {
 }
 
 /** Build a lookup map of all known exercises from local catalogs */
-function buildCatalogMap(): Map<string, Exercise> {
+function buildCatalogMap(catalogData: RawCatalog | null): Map<string, Exercise> {
   const map = new Map<string, Exercise>()
 
   // From workouts
@@ -44,8 +45,8 @@ function buildCatalogMap(): Map<string, Exercise> {
     }
   }
 
-  // From catalog JSON
-  const categories = (catalogData as any).categories || {}
+  // From catalog JSON — perezoso desde el #486, vacío hasta que llega
+  const categories = (catalogData as any)?.categories || {}
   for (const catData of Object.values(categories) as any[]) {
     for (const ex of catData.exercises || []) {
       if (!map.has(ex.id)) {
@@ -96,7 +97,8 @@ export function parseExercisesFromMarkdown(text: string): AIExercise[] {
 }
 
 export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }: SessionPreviewProps) {
-  const catalogMap = useMemo(() => buildCatalogMap(), [])
+  const { index: catalogIndex } = useCatalogIndex()
+  const catalogMap = useMemo(() => buildCatalogMap(catalogIndex?.raw ?? null), [catalogIndex])
   const { startSession } = useActiveSession()
   const navigate = useNavigate()
   const [starting, setStarting] = useState(false)

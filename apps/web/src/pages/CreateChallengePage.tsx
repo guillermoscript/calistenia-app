@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useChallenges } from '@calistenia/core/hooks/useChallenges'
@@ -7,6 +7,7 @@ import { cn } from '../lib/utils'
 import { todayStr, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getMetricUnit } from '@calistenia/core/lib/challenges'
 import { getCatalogEntry, getAllCatalogEntries } from '@calistenia/core/lib/variants'
+import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -74,19 +75,25 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   const today = todayStr()
   const locale = i18n.language
 
-  // ?exercise=<slug> (desde el detalle de ejercicio) preselecciona la métrica
-  const prefilledExercise = getCatalogEntry(searchParams.get('exercise') ?? '')
+  // ?exercise=<slug> (desde el detalle de ejercicio) preselecciona la métrica.
+  //
+  // El estado inicial mira el parámetro, NO el catálogo. Desde el #486 el
+  // catálogo se carga bajo demanda, así que en el primer render `getCatalogEntry()`
+  // todavía devuelve `undefined`; como los `useState` sólo evalúan su inicial una
+  // vez, hacer depender de él la métrica o el desplegable perdía el preselect
+  // para siempre y el enlace compartido caía en el formulario por defecto.
+  // El `slug` de la URL ya es el id canónico del catálogo (lo pone
+  // `ExerciseDetailPage` con `exercise.id`), así que basta.
+  const prefilledSlug = searchParams.get('exercise') ?? ''
 
-  const [title, setTitle] = useState(
-    prefilledExercise ? t('challenge.exerciseTitlePrefill', { name: localize(prefilledExercise.name, locale) }) : ''
-  )
+  const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [metric, setMetric] = useState<ChallengeMetric>(prefilledExercise ? 'exercise' : 'most_sessions')
+  const [metric, setMetric] = useState<ChallengeMetric>(prefilledSlug ? 'exercise' : 'most_sessions')
   // `?exercise=<slug>` preselecciona `exercise`, que vive en el desplegable: si
   // no lo abrimos, el paso arrancaría con la métrica activa fuera de la vista.
-  const [showAllMetrics, setShowAllMetrics] = useState(() => isSecondaryMetric(prefilledExercise ? 'exercise' : 'most_sessions'))
+  const [showAllMetrics, setShowAllMetrics] = useState(() => isSecondaryMetric(prefilledSlug ? 'exercise' : 'most_sessions'))
   const [customMetric, setCustomMetric] = useState('')
-  const [exerciseSlug, setExerciseSlug] = useState<string | null>(prefilledExercise?.id ?? null)
+  const [exerciseSlug, setExerciseSlug] = useState<string | null>(prefilledSlug || null)
   const [exerciseQuery, setExerciseQuery] = useState('')
   const [goal, setGoal] = useState('')
   const [durationPreset, setDurationPreset] = useState(7)
@@ -94,6 +101,16 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   const [endsAt, setEndsAt] = useState(addDays(today, 7))
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set())
   const [creating, setCreating] = useState(false)
+
+  // Lo único que espera al catálogo es el nombre del título. `prev || ...` deja
+  // intacto lo que el usuario haya escrito mientras el índice viajaba.
+  const prefilledExercise = prefilledSlug ? getCatalogEntry(prefilledSlug) : undefined
+  useEffect(() => {
+    if (!prefilledExercise) return
+    setTitle(prev => prev || t('challenge.exerciseTitlePrefill', {
+      name: localize(prefilledExercise.name, locale),
+    }))
+  }, [prefilledExercise, t, locale])
 
   const handleDurationPreset = (days: number) => {
     setDurationPreset(days)
@@ -140,13 +157,17 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   const hiddenMetricCount = ALL_METRICS.length - visibleMetrics.length
   const selectedExercise = exerciseSlug ? getCatalogEntry(exerciseSlug) : undefined
 
+  // El catálogo empaquetado se carga bajo demanda (#486); `catalogReady` entra
+  // en las deps para que el buscador se recalcule en cuanto llega.
+  const { ready: catalogReady } = useCatalogIndex()
+
   const exerciseResults = useMemo(() => {
     const q = stripAccents(exerciseQuery.trim())
     if (q.length < 2) return []
     return getAllCatalogEntries()
       .filter(ex => stripAccents(ex.name.es ?? '').includes(q) || stripAccents(ex.name.en ?? '').includes(q))
       .slice(0, 15)
-  }, [exerciseQuery])
+  }, [exerciseQuery, catalogReady])
 
   const selectExercise = (slug: string) => {
     setExerciseSlug(slug)

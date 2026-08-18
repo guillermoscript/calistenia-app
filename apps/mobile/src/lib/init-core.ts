@@ -13,11 +13,20 @@ import * as Application from 'expo-application'
 import EventSource from 'react-native-sse'
 import { OpenPanel } from '@openpanel/react-native'
 import { initCore } from '@calistenia/core/platform'
+import { primeCatalogIndex, type RawCatalog } from '@calistenia/core/lib/catalogIndex'
+import exerciseCatalog from '@calistenia/core/data/exercise-catalog.json'
 import { Sentry } from './instrument'
 import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { isForeground, onForeground, onBackground } from './lifecycle'
 import { registerPushTokenAsync } from './push-registration'
+
+// El catálogo de ejercicios va en el bundle de RN de todas formas, así que se
+// indexa aquí, en el arranque (#486). Las APIs síncronas de core que dependen de
+// él —`resolveExerciseId()` sobre todo, que da la identidad con la que se
+// registran las series— responden desde la primera llamada, sin la ventana de
+// carga perezosa que sí tiene la web.
+primeCatalogIndex(exerciseCatalog as unknown as RawCatalog)
 
 // PocketBase realtime (lo usa el flujo OAuth2 del SDK) necesita EventSource,
 // que no existe en React Native.

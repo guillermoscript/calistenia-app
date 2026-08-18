@@ -6,7 +6,7 @@
  * Se renderiza dentro del ScrollView de la pantalla padre — NO envolver en
  * SafeAreaView ni en otro scroll.
  */
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { View, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Minus, Plus, Play } from 'lucide-react-native'
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { COLORS } from '@/lib/theme'
 import { haptics } from '@/lib/haptics'
 import { CATALOG } from '@/lib/catalog'
+import { useExerciseSearch } from '@/lib/use-exercise-search'
 import type { CircuitDefinition, CircuitExercise } from '@calistenia/core/types'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -210,8 +211,9 @@ function ExerciseCard({
 // ── CircuitBuilder ─────────────────────────────────────────────────────────────
 
 export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilderProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const l = useLocalize()
+  const locale = i18n.language
 
   // Estado desde el preset inicial
   const [mode, setMode] = useState<'circuit' | 'timed'>(initialPreset?.mode ?? 'circuit')
@@ -225,14 +227,14 @@ export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilde
   // ── Búsqueda de ejercicios ───────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('')
 
-  const filteredCatalog = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return []
-    const q = searchQuery.toLowerCase()
-    return CATALOG.filter(
-      (ex) =>
-        l(ex.name).toLowerCase().includes(q) || l(ex.muscles).toLowerCase().includes(q),
-    ).slice(0, 6)
-  }, [searchQuery, l])
+  // Tercera copia del mismo filtrado, ahora en el hook compartido (#486).
+  const filteredCatalog = useExerciseSearch({
+    query: searchQuery,
+    locale,
+    minLength: 2,
+    limit: 6,
+    matchMuscles: true,
+  })
 
   // ── Mutaciones de la lista de ejercicios ──────────────────────────────────
 

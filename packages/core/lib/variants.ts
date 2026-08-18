@@ -3,10 +3,16 @@
  *
  * Every catalog entry may carry a `family` id (baked at build time by
  * scripts/build-exercise-catalog.mjs from name patterns, e.g. all push-up
- * variations share family "push_up"). This module indexes the bundled
- * catalog by family and answers "which variants of X exist?".
+ * variations share family "push_up"). This module answers "which variants of X
+ * exist?" a partir del índice compartido.
+ *
+ * Los mapas `por id` y `por familia` ya no se construyen aquí: los construye
+ * `catalogIndex.ts` en un único recorrido del catálogo (#486). Este módulo ya no
+ * importa el JSON, y con eso `challenges.ts` —que sólo usa `getCatalogEntry()`
+ * para `getMetricUnit()`— dejó de arrastrarlo al grafo estático de la web desde
+ * el leaderboard.
  */
-import catalogData from '../data/exercise-catalog.json'
+import { getOrLoadCatalogIndex, type CatalogIndex } from './catalogIndex'
 
 export interface VariantEntry {
   id: string
@@ -31,27 +37,15 @@ export interface VariantsByLevel {
   harder: VariantEntry[]
 }
 
-function flatten(): VariantEntry[] {
-  const cat = catalogData as unknown as {
-    categories: Record<string, { exercises: VariantEntry[] }>
-  }
-  const out: VariantEntry[] = []
-  for (const c of Object.values(cat.categories)) out.push(...c.exercises)
-  return out
-}
-
-const _byId = new Map<string, VariantEntry>()
-const _byFamily = new Map<string, VariantEntry[]>()
-for (const ex of flatten()) {
-  _byId.set(ex.id, ex)
-  if (ex.family) {
-    const list = _byFamily.get(ex.family) ?? []
-    list.push(ex)
-    _byFamily.set(ex.family, list)
-  }
-}
-
 const DIFF_ORDER: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 }
+
+/** El índice, o `null` si el catálogo todavía no ha cargado (dispara la carga). */
+function index(): CatalogIndex | null {
+  return getOrLoadCatalogIndex()
+}
+
+const familyOf = (idx: CatalogIndex, family: string): VariantEntry[] =>
+  (idx.byFamily.get(family) ?? []) as unknown as VariantEntry[]
 
 /**
  * Variants of an exercise (same family, itself excluded), best-first:
@@ -59,14 +53,16 @@ const DIFF_ORDER: Record<string, number> = { beginner: 0, intermediate: 1, advan
  * before harder. Empty when the exercise has no family (or is unknown).
  */
 export function getVariants(exerciseId: string, limit = 12): VariantEntry[] {
-  const ex = _byId.get(exerciseId)
+  const idx = index()
+  if (!idx) return []
+  const ex = getCatalogEntry(exerciseId)
   if (!ex?.family) return []
   const ownEquip = new Set(ex.equipment ?? [])
   const rank = (v: VariantEntry): number =>
     (v.source === 'exercisedb' ? 100 : 0) +
     ((v.equipment ?? []).some(e => ownEquip.has(e)) ? 0 : 10) +
     (DIFF_ORDER[v.difficulty ?? 'intermediate'] ?? 1)
-  return (_byFamily.get(ex.family) ?? [])
+  return familyOf(idx, ex.family)
     .filter(v => v.id !== exerciseId)
     .sort((a, b) => rank(a) - rank(b) || (a.name.es ?? '').localeCompare(b.name.es ?? ''))
     .slice(0, limit)
@@ -79,12 +75,14 @@ export function getVariants(exerciseId: string, limit = 12): VariantEntry[] {
  * see getRelatedExercises for non-variation alternatives.
  */
 export function getVariantsByLevel(exerciseId: string, limitPerLevel = 6): VariantsByLevel {
-  const ex = _byId.get(exerciseId)
   const empty: VariantsByLevel = { easier: [], similar: [], harder: [] }
+  const idx = index()
+  if (!idx) return empty
+  const ex = getCatalogEntry(exerciseId)
   if (!ex?.family) return empty
   const ownDiff = DIFF_ORDER[ex.difficulty ?? 'intermediate'] ?? 1
 
-  const family = (_byFamily.get(ex.family) ?? []).filter(v => v.id !== exerciseId)
+  const family = familyOf(idx, ex.family).filter(v => v.id !== exerciseId)
   if (family.length === 0) return empty
 
   const ownEquip = new Set(ex.equipment ?? [])
@@ -110,7 +108,7 @@ export function getVariantsByLevel(exerciseId: string, limitPerLevel = 6): Varia
  * difficulty breaks ties.
  */
 export function getRelatedExercises(exerciseId: string, limit = 6): VariantEntry[] {
-  const ex = _byId.get(exerciseId)
+  const ex = getCatalogEntry(exerciseId)
   if (!ex) return []
   const ownGroups = new Set(ex.muscle_groups ?? [])
   if (ownGroups.size === 0) return []
@@ -136,15 +134,15 @@ export function getRelatedExercises(exerciseId: string, limit = 6): VariantEntry
 
 /** Family id of an exercise (null when it has none). */
 export function getFamily(exerciseId: string): string | null {
-  return _byId.get(exerciseId)?.family ?? null
+  return getCatalogEntry(exerciseId)?.family ?? null
 }
 
 /** Catalog entry by id (undefined when unknown). */
 export function getCatalogEntry(exerciseId: string): VariantEntry | undefined {
-  return _byId.get(exerciseId)
+  return index()?.byId.get(exerciseId) as VariantEntry | undefined
 }
 
 /** Full flattened catalog (shared index — do not mutate). */
 export function getAllCatalogEntries(): VariantEntry[] {
-  return Array.from(_byId.values())
+  return (index()?.all ?? []) as unknown as VariantEntry[]
 }
