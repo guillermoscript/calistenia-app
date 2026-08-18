@@ -34,7 +34,9 @@
     --ring: 0 0% 12%;
 
     --lime: 74 90% 38%;
-    --lime-foreground: 0 0% 100%;
+    /* Casi-negro (no blanco): blanco sobre --lime en claro da 2,33:1 y suspende
+       WCAG AA. Con 0 0% 7% (mismo valor que en oscuro) da ~7,6:1. Ver #548. */
+    --lime-foreground: 0 0% 7%;
 
     --radius: 0.5rem;
   }
