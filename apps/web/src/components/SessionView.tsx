@@ -97,7 +97,7 @@ export default function SessionView({
   // la nota nunca lean un valor obsoleto (evita doble finalize / timings vacíos).
   const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
 
-  const sessionStartTime = useRef<number>(startedAt || Date.now())
+  const [sessionStartTime] = useState<number>(() => startedAt || Date.now())
 
   // Gestos de swipe
   const touchStartX = useRef<number | null>(null)
@@ -215,7 +215,7 @@ export default function SessionView({
   }, [skipRemainingCooldown, t])
 
   const handleNoteSaved = useCallback((note: string) => {
-    const durationSeconds = Math.round((Date.now() - sessionStartTime.current) / 1000)
+    const durationSeconds = Math.round((Date.now() - sessionStartTime) / 1000)
     // Finalize defensivo por si se llegó a la nota antes de que el efecto
     // commiteara; el tracker es idempotente.
     const timings = finalTimingsRef.current ?? timingTracker.finalize()
@@ -224,7 +224,7 @@ export default function SessionView({
     sounds.vibrate([100, 50, 100, 50, 200])
     notif.notifySessionComplete(workout.title, setsCount)
     dispatch({ type: 'finish' })
-  }, [onMarkDone, workoutKey, workout.title, setsCount, timingTracker])
+  }, [onMarkDone, workoutKey, workout.title, setsCount, timingTracker, sessionStartTime])
 
   // Visibilidad de los botones de saltar sección
   const stepSection = currentStep?.section || 'main'
@@ -233,7 +233,7 @@ export default function SessionView({
   const isInWarmup = stepSection === 'warmup' && phase === 'exercise'
   const isInCooldown = stepSection === 'cooldown' && (phase === 'exercise' || phase === 'rest')
 
-  const durationMin = Math.round((Date.now() - sessionStartTime.current) / 60000)
+  const durationMin = Math.round((Date.now() - sessionStartTime) / 60000)
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background overflow-hidden">
