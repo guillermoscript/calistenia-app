@@ -3,6 +3,7 @@ import { updateProgress, type ProgressUpdate } from '../../lib/race/raceApi'
 import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '../../lib/race/raceTracker'
 import { loadRaceSnapshot, saveRaceSnapshot } from '../../lib/race/raceSnapshot'
 import { RaceAuthError } from '../../lib/race/errors'
+import * as Sentry from '@sentry/react'
 import type { Race } from '@calistenia/core/types/race'
 import type { RaceErrorKind } from './useRaceErrors'
 
@@ -112,7 +113,9 @@ export function useRaceTracker({
         retryCountRef.current = count
         const backoff = PUSH_RETRY_BACKOFF_MS[Math.min(count - 1, PUSH_RETRY_BACKOFF_MS.length - 1)]
         setTimeout(() => {
-          updateProgress(meId, payload).catch(() => {})
+          updateProgress(meId, payload).catch((e) => {
+            Sentry.captureException(e, { tags: { feature: 'race', op: 'push_progress_retry' } })
+          })
         }, backoff)
         if (count >= 3) {
           cbRef.current.onError('push', (err as Error)?.message || 'Push failed repeatedly')
