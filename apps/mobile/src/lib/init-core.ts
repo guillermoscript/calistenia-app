@@ -16,6 +16,7 @@ import { initCore } from '@calistenia/core/platform'
 import { Sentry } from './instrument'
 import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
+import { isForeground, onForeground, onBackground } from './lifecycle'
 import { registerPushTokenAsync } from './push-registration'
 
 // PocketBase realtime (lo usa el flujo OAuth2 del SDK) necesita EventSource,
@@ -168,6 +169,7 @@ initCore({
     else Sentry.captureException(e)
   },
   connectivity: { isOnline, onOnline, onChange: onConnectivityChange },
+  lifecycle: { isForeground, onForeground, onBackground },
   pbAuthStore,
 })
 
