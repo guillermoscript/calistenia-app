@@ -5,9 +5,41 @@ import type { Exercise, Workout } from '@calistenia/core/types'
 // op (core) hace tracking de analytics — se mockea entero; aquí solo se
 // verifica que el context llame a track() con los eventos/props correctos.
 // vi.hoisted porque vi.mock se hoistea sobre las declaraciones del archivo.
-const { mockTrack } = vi.hoisted(() => ({ mockTrack: vi.fn() }))
+const { mockTrack, lifecycleBus } = vi.hoisted(() => ({
+  mockTrack: vi.fn(),
+  // #482: el estado bajó a `useActiveSessionState` de core, que resuelve el
+  // primer plano / segundo plano por el adapter de plataforma en vez de
+  // `document.visibilitychange`. Los tests lo disparan por aquí.
+  lifecycleBus: {
+    foreground: new Set<() => void>(),
+    background: new Set<() => void>(),
+  },
+}))
 vi.mock('@calistenia/core/lib/analytics', () => ({
   op: { track: mockTrack },
+}))
+
+// #482: el storage del entreno pasó de `localStorage` global al facade de core,
+// que exige initCore(). Se inyecta aquí respaldado por el localStorage de jsdom,
+// para que los tests sigan asertando sobre `window.localStorage`.
+vi.mock('@calistenia/core/platform', () => ({
+  storage: {
+    getItem: (k: string) => window.localStorage.getItem(k),
+    setItem: (k: string, v: string) => window.localStorage.setItem(k, v),
+    removeItem: (k: string) => window.localStorage.removeItem(k),
+  },
+  lifecycle: {
+    isForeground: () => true,
+    onForeground: (handler: () => void) => {
+      lifecycleBus.foreground.add(handler)
+      return () => lifecycleBus.foreground.delete(handler)
+    },
+    onBackground: (handler: () => void) => {
+      lifecycleBus.background.add(handler)
+      return () => lifecycleBus.background.delete(handler)
+    },
+  },
+  getPlatform: () => ({ reportError: vi.fn() }),
 }))
 
 // El singleton pb exige initCore() al evaluarse y el sync con el server no

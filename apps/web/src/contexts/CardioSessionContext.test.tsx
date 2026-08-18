@@ -21,6 +21,36 @@ vi.mock('@calistenia/core/lib/pocketbase', () => ({
   },
 }))
 
+// #482: el primer plano / segundo plano dejó de leerse de `document` y pasa por
+// el adapter de plataforma, que exige initCore(). Se inyecta aquí; los tests que
+// quieran simular el paso a segundo plano disparan `lifecycleBus.background`.
+const { lifecycleBus } = vi.hoisted(() => ({
+  lifecycleBus: {
+    foreground: new Set<() => void>(),
+    background: new Set<() => void>(),
+  },
+}))
+
+vi.mock('@calistenia/core/platform', () => ({
+  storage: {
+    getItem: (k: string) => window.localStorage.getItem(k),
+    setItem: (k: string, v: string) => window.localStorage.setItem(k, v),
+    removeItem: (k: string) => window.localStorage.removeItem(k),
+  },
+  lifecycle: {
+    isForeground: () => document.visibilityState === 'visible',
+    onForeground: (handler: () => void) => {
+      lifecycleBus.foreground.add(handler)
+      return () => lifecycleBus.foreground.delete(handler)
+    },
+    onBackground: (handler: () => void) => {
+      lifecycleBus.background.add(handler)
+      return () => lifecycleBus.background.delete(handler)
+    },
+  },
+  getPlatform: () => ({ reportError: vi.fn() }),
+}))
+
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { CardioSessionProvider, useCardioSessionContext } from './CardioSessionContext'
 
