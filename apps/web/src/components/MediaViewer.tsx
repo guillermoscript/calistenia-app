@@ -11,6 +11,7 @@ import type { Exercise } from '@calistenia/core/types'
 import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
 import type { CatalogMediaRecord } from '@calistenia/core/lib/exerciseMedia'
 import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
+import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
 
 interface MediaViewerProps {
   exercise: Exercise
@@ -22,6 +23,9 @@ interface MediaViewerProps {
 export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaViewerProps) {
   const { t } = useTranslation()
   const [imgIdx, setImgIdx] = useState<number>(0)
+  // El catálogo empaquetado se carga bajo demanda (#486): esto lo pide y
+  // vuelve a pintar cuando llega, en lugar de quedarse sin media estática.
+  useCatalogIndex()
 
   // Supply the bundled catalog's structured media (by exercise id) when the caller
   // didn't pass an explicit catalogRecord — so library/session/free-session all resolve it.

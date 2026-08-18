@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { View, FlatList, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -11,9 +11,10 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
+import { useExerciseSearch } from '@/lib/use-exercise-search'
 import { localize } from '@calistenia/core/lib/i18n-db'
-import { EQUIPMENT_CATALOG, getEquipmentLabelKey, getExerciseEquipment } from '@calistenia/core/lib/equipment'
-import { MUSCLE_GROUPS, getMuscleGroupLabelKey, getMuscleGroups } from '@calistenia/core/lib/muscles'
+import { EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
+import { MUSCLE_GROUPS, getMuscleGroupLabelKey } from '@calistenia/core/lib/muscles'
 import type { DifficultyLevel } from '@calistenia/core/types'
 
 const DIFFICULTIES: DifficultyLevel[] = ['beginner', 'intermediate', 'advanced']
@@ -31,30 +32,19 @@ export default function LibraryScreen() {
 
   const activeCount = (difficulty ? 1 : 0) + (equipment ? 1 : 0) + (muscle ? 1 : 0)
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return CATALOG.filter(ex => {
-      if (category !== 'todos' && ex.category !== category) return false
-      if (difficulty && ex.difficulty !== difficulty) return false
-      if (muscle && !getMuscleGroups(ex).includes(muscle)) return false
-      if (equipment) {
-        const ids = getExerciseEquipment({
-          name: localize(ex.name, locale),
-          note: localize(ex.note, locale),
-          equipment: ex.equipment,
-        })
-        // 'ninguno' = solo peso corporal: sin ningún otro equipo
-        if (equipment === 'ninguno') {
-          if (!ids.every(id => id === 'ninguno')) return false
-        } else if (!ids.includes(equipment)) return false
-      }
-      if (!q) return true
-      return (
-        localize(ex.name, locale).toLowerCase().includes(q) ||
-        localize(ex.muscles, locale).toLowerCase().includes(q)
-      )
-    })
-  }, [query, category, difficulty, equipment, muscle, locale])
+  // Antes esto filtraba las 1.578 entradas del catálogo en cada tecla, llamando
+  // a `localize()` dos veces por entrada. El hook compartido precalcula el texto
+  // buscable una vez por idioma y debounced la query (#486).
+  const filtered = useExerciseSearch({
+    query,
+    locale,
+    category: category === 'todos' ? undefined : category,
+    difficulty,
+    equipment,
+    muscleGroup: muscle,
+    matchMuscles: true,
+    debounceMs: 200,
+  })
 
   const openExercise = useCallback(
     (id: string) => router.push({ pathname: '/exercise/[id]', params: { id } }),

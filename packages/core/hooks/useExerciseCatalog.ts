@@ -16,36 +16,43 @@ import { useQuery } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { WORKOUTS } from '../data/workouts'
-import catalogData from '../data/exercise-catalog.json'
+import { getCatalogIndexSync, loadCatalogIndex } from '../lib/catalogIndex'
 import { catalogExerciseIdentity } from '../lib/exerciseCatalog'
+import { useCatalogIndex } from './useCatalogIndex'
 import type { TranslatableField } from '../lib/i18n-db'
 
 export type ExerciseCatalog = Record<string, { name: TranslatableField; muscles: TranslatableField }>
 
-interface CatalogFileShape {
-  categories: Record<
-    string,
-    { exercises: { id: string; name: TranslatableField; muscles: TranslatableField }[] }
-  >
-}
+let _staticCatalog: ExerciseCatalog | null = null
+let _staticCatalogHadIndex = false
 
 /**
- * Catálogo que viaja en el bundle. Se construye una sola vez al evaluar el
- * módulo y es el suelo del que nunca se baja: si PB no está disponible, esto es
- * lo que se pinta.
+ * Catálogo que viaja en el bundle: el suelo del que nunca se baja, porque si PB
+ * no está disponible es lo que se pinta.
  *
- * Precedencia: el primero en entrar gana. El JSON del catálogo va antes que
+ * Precedencia: el primero en entrar gana. El catálogo de ejercicios va antes que
  * `WORKOUTS` porque sus nombres son los canónicos.
+ *
+ * Desde el #486 ya no se construye al evaluar el módulo: el catálogo se carga
+ * perezosamente, así que esto se memoiza y se reconstruye una única vez más,
+ * cuando el índice llega. Sin índice devuelve solo `WORKOUTS`, que es justo lo
+ * que ya se pintaba antes para los ejercicios de programa.
  */
-function buildStaticCatalog(): ExerciseCatalog {
+export function getStaticCatalog(): ExerciseCatalog {
+  const index = getCatalogIndexSync()
+  const hasIndex = index !== null
+  if (_staticCatalog && _staticCatalogHadIndex === hasIndex) return _staticCatalog
+
   const catalog: ExerciseCatalog = {}
 
-  const data = catalogData as unknown as CatalogFileShape
-  Object.values(data.categories).forEach(category => {
-    category.exercises.forEach(ex => {
-      if (!catalog[ex.id]) catalog[ex.id] = { name: ex.name, muscles: ex.muscles }
-    })
-  })
+  for (const ex of index?.all ?? []) {
+    if (!catalog[ex.id]) {
+      catalog[ex.id] = {
+        name: ex.name,
+        muscles: (ex.muscles ?? '') as TranslatableField,
+      }
+    }
+  }
 
   Object.values(WORKOUTS).forEach(workout => {
     workout.exercises.forEach(ex => {
@@ -53,25 +60,36 @@ function buildStaticCatalog(): ExerciseCatalog {
     })
   })
 
+  _staticCatalog = catalog
+  _staticCatalogHadIndex = hasIndex
   return catalog
 }
-
-export const STATIC_CATALOG: ExerciseCatalog = buildStaticCatalog()
 
 /**
  * Catálogo estático más los ejercicios de `exercises_catalog` en PB, que son los
  * que necesitan las sesiones libres (sus ejercicios no están en ningún programa).
  *
  * Nunca falla hacia arriba: si PB no responde, devuelve el estático.
+ *
+ * `useCatalogIndex()` es lo que hace que esto siga siendo correcto con el
+ * catálogo perezoso (#486): re-renderiza cuando el índice llega, y hasta
+ * entonces `catalogExerciseIdentity()` no se llama, porque la query espera al
+ * índice antes de tocar PB.
  */
 export function useExerciseCatalog(): ExerciseCatalog {
+  const { ready } = useCatalogIndex()
   const query = useQuery({
     queryKey: qk.exerciseCatalog,
     // El catálogo cambia muy poco y lo consultan varias pantallas: media hora de
     // frescura evita repetir la lista completa al navegar entre detalles.
     staleTime: 30 * 60_000,
     queryFn: async (): Promise<ExerciseCatalog> => {
-      if (!(await isPocketBaseAvailable())) return STATIC_CATALOG
+      // Antes de nada el índice: `catalogExerciseIdentity()` de más abajo lo
+      // necesita para resolver el slug de PB al id canónico, y sin él caería a
+      // «devuelve la entrada intacta» y las entradas de PB quedarían
+      // inalcanzables para quien busque por el id de las series (#474).
+      await loadCatalogIndex()
+      if (!(await isPocketBaseAvailable())) return getStaticCatalog()
 
       const items = await pb.collection('exercises_catalog').getFullList({
         // `slug` hace falta para la identidad canónica (#474): sin él, la
@@ -80,7 +98,7 @@ export function useExerciseCatalog(): ExerciseCatalog {
         $autoCancel: false,
       })
 
-      const merged: ExerciseCatalog = { ...STATIC_CATALOG }
+      const merged: ExerciseCatalog = { ...getStaticCatalog() }
       items.forEach(item => {
         // Se indexa por la identidad canónica (slug primero), no por el `id`
         // aleatorio de PocketBase: las claves de lo estático son ids canónicos,
@@ -100,5 +118,9 @@ export function useExerciseCatalog(): ExerciseCatalog {
     },
   })
 
-  return query.data ?? STATIC_CATALOG
+  // `ready` entra en la expresión para que el fallback se recalcule cuando el
+  // índice llega; sin eso, una primera pintada sin catálogo se quedaría
+  // congelada con los nombres de `WORKOUTS` hasta el siguiente render.
+  void ready
+  return query.data ?? getStaticCatalog()
 }

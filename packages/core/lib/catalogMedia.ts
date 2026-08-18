@@ -6,35 +6,18 @@
  * so any surface (library, session, free session, mobile) can resolve a canonical
  * exercise's structured media from just its id — without each call site importing
  * the catalog. Works on web and React Native (the JSON is bundled either way).
+ *
+ * El índice `media por clave` ya no se construye aquí: lo construye
+ * `catalogIndex.ts` en el mismo recorrido que el resto (#486).
  */
 
-import catalog from '../data/exercise-catalog.json'
+import { getOrLoadCatalogIndex } from './catalogIndex'
 import type { CatalogStaticMedia } from './exerciseMedia'
-
-interface CatalogEntry {
-  id: string
-  seed_slug?: string
-  slug?: string
-  media?: CatalogStaticMedia
-}
-
-const mediaByKey: Map<string, CatalogStaticMedia> = (() => {
-  const m = new Map<string, CatalogStaticMedia>()
-  const categories = (catalog as { categories?: Record<string, { exercises?: CatalogEntry[] }> }).categories ?? {}
-  for (const cat of Object.values(categories)) {
-    for (const ex of cat.exercises ?? []) {
-      if (ex.media && (ex.media.sequence || ex.media.muscles || ex.media.thumbnail || ex.media.video)) {
-        // Index by every identifier a caller might hold: catalog id, seed slug, or display slug.
-        for (const key of [ex.id, ex.seed_slug, ex.slug]) {
-          if (key) m.set(key, ex.media)
-        }
-      }
-    }
-  }
-  return m
-})()
 
 /** Return the bundled structured media for a canonical exercise id or slug, if any. */
 export function getCatalogStaticMedia(idOrSlug?: string): CatalogStaticMedia | undefined {
-  return idOrSlug ? mediaByKey.get(idOrSlug) : undefined
+  if (!idOrSlug) return undefined
+  // Sin catálogo cargado no hay media que dar; `exerciseMedia` ya sabe caer a
+  // las capas de PocketBase y de YouTube.
+  return getOrLoadCatalogIndex()?.mediaByKey.get(idOrSlug)
 }

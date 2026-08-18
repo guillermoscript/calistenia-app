@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { WORKOUTS, PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import catalogData from '@calistenia/core/data/exercise-catalog.json'
+import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import dayjs from 'dayjs'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { cn } from '../lib/utils'
@@ -58,7 +58,8 @@ function extractCatalog(): CatalogItem[] {
     if (!seen.has(ex.id)) seen.set(ex.id, { id: ex.id, name: ex.name, muscles: ex.muscles })
   }
 
-  const catalogCategories = (catalogData as any).categories || {}
+  // Carga perezosa (#486): quien llama ya ha esperado a `loadCatalogIndex()`.
+  const catalogCategories = (getCatalogIndexSync()?.raw.categories ?? {}) as any
   for (const catData of Object.values(catalogCategories) as any[]) {
     for (const ex of (catData as any).exercises || []) {
       if (!seen.has(ex.id)) seen.set(ex.id, { id: ex.id, name: ex.name ?? '', muscles: ex.muscles ?? '' })
@@ -112,6 +113,10 @@ export default function LogWorkoutPage() {
     const load = async () => {
       // The bundled JSON is the authoritative base (full catalog, offline);
       // PB only ADDS records not present in it (user-created / promoted).
+      // Se carga bajo demanda (#486), y hay que esperarlo antes de nada:
+      // `resolveExerciseId()` depende de él para dar la identidad canónica con
+      // la que se registran las series.
+      await loadCatalogIndex()
       const base = extractCatalog()
       const seen = new Set(base.map(item => item.id))
       try {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import catalogData from '@calistenia/core/data/exercise-catalog.json'
+import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { MUSCLE_GROUPS, getMuscleGroupLabelKey, getMuscleGroups } from '@calistenia/core/lib/muscles'
@@ -135,8 +135,10 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
     })
   }
 
-  // Add exercises from master catalog JSON (wger-sourced + any new)
-  const catalogCategories = (catalogData as any).categories || {}
+  // Add exercises from master catalog JSON (wger-sourced + any new).
+  // El catálogo se carga perezosamente (#486); quien llama aquí ya ha esperado
+  // a `loadCatalogIndex()`.
+  const catalogCategories = (getCatalogIndexSync()?.raw.categories ?? {}) as any
   for (const catData of Object.values(catalogCategories) as any[]) {
     for (const ex of catData.exercises || []) {
       if (seen.has(ex.id)) {
@@ -316,6 +318,7 @@ export default function ExerciseLibraryPage() {
       }
 
       if (!cancelled) {
+        await loadCatalogIndex()
         setExercises(extractExercisesFromWorkouts(i18n.language))
         setLoading(false)
       }

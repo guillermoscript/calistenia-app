@@ -7,6 +7,7 @@ import { cn } from '../lib/utils'
 import { todayStr, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getMetricUnit } from '@calistenia/core/lib/challenges'
 import { getCatalogEntry, getAllCatalogEntries } from '@calistenia/core/lib/variants'
+import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -140,13 +141,17 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   const hiddenMetricCount = ALL_METRICS.length - visibleMetrics.length
   const selectedExercise = exerciseSlug ? getCatalogEntry(exerciseSlug) : undefined
 
+  // El catálogo empaquetado se carga bajo demanda (#486); `catalogReady` entra
+  // en las deps para que el buscador se recalcule en cuanto llega.
+  const { ready: catalogReady } = useCatalogIndex()
+
   const exerciseResults = useMemo(() => {
     const q = stripAccents(exerciseQuery.trim())
     if (q.length < 2) return []
     return getAllCatalogEntries()
       .filter(ex => stripAccents(ex.name.es ?? '').includes(q) || stripAccents(ex.name.en ?? '').includes(q))
       .slice(0, 15)
-  }, [exerciseQuery])
+  }, [exerciseQuery, catalogReady])
 
   const selectExercise = (slug: string) => {
     setExerciseSlug(slug)

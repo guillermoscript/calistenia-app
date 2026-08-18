@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '@calistenia/core/lib/pocketbase'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import catalogData from '@calistenia/core/data/exercise-catalog.json'
+import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { useProgressions } from '@calistenia/core/hooks/useProgressions'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '@calistenia/core/lib/equipment'
@@ -60,8 +60,9 @@ const PRIORITY_COLORS: Record<Priority, { text: string; bg: string; border: stri
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
-  // Check catalog JSON first (has i18n translations)
-  const cats = (catalogData as any).categories || {}
+  // Check catalog JSON first (has i18n translations). Carga perezosa (#486):
+  // quien llama ya ha esperado a `loadCatalogIndex()`.
+  const cats = (getCatalogIndexSync()?.raw.categories ?? {}) as any
   for (const catData of Object.values(cats) as any[]) {
     const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
     if (found) {
@@ -232,6 +233,9 @@ export default function ExerciseDetailPage() {
 
       // Fallback to workouts data
       if (!cancelled) {
+        // El catálogo empaquetado se carga bajo demanda (#486); también lo
+        // necesitan `getCatalogStaticMedia()` y las variantes de más abajo.
+        await loadCatalogIndex()
         const found = findExerciseInWorkouts(id)
         setExercise(found)
         setLoading(false)
