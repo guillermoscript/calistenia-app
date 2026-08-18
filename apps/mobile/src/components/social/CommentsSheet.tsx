@@ -11,7 +11,7 @@
  *    dentro del Modal mantienen el input SIEMPRE sobre el teclado y la lista
  *    scrollable encima — el flujo de comentarios real de Instagram.
  */
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react'
+import { memo, useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react'
 import {
   View,
   Pressable,
@@ -191,6 +191,28 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
       }
     }, [comments, commentReactions])
 
+    const handleReply = useCallback((id: string, name: string) => setReplyTo({ id, name }), [])
+    const handleDelete = useCallback(
+      (commentId: string) =>
+        sessionId ? onDeleteComment(commentId, sessionId) : Promise.resolve(false),
+      [sessionId, onDeleteComment],
+    )
+
+    const renderComment = useCallback(
+      ({ item: comment }: { item: Comment }) => (
+        <CommentThread
+          comment={comment}
+          currentUserId={currentUserId}
+          onReply={handleReply}
+          onDelete={handleDelete}
+          onReport={setReportTarget}
+          commentReactions={commentReactions}
+          highlightCommentId={highlightCommentId}
+        />
+      ),
+      [currentUserId, handleReply, handleDelete, commentReactions, highlightCommentId],
+    )
+
     const handleSend = useCallback(async () => {
       if (!sessionId) return
       const trimmed = text.trim()
@@ -360,47 +382,8 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                         </Text>
                       </View>
                     }
-                    renderItem={({ item: comment }) => (
-                      <View>
-                        <CommentBubble
-                          comment={comment}
-                          currentUserId={currentUserId}
-                          onReply={() => setReplyTo({ id: comment.id, name: comment.authorName })}
-                          onDelete={() =>
-                            sessionId
-                              ? onDeleteComment(comment.id, sessionId)
-                              : Promise.resolve(false)
-                          }
-                          onReport={() => setReportTarget(comment)}
-                          commentReactions={commentReactions}
-                          highlight={comment.id === highlightCommentId}
-                        />
-                        {/* Respuestas anidadas (1 nivel) */}
-                        {comment.replies.length > 0 && (
-                          <View className="ml-10 mt-2.5 pl-3 border-l-2 border-lime/10 gap-3">
-                            {comment.replies.map((reply) => (
-                              <CommentBubble
-                                key={reply.id}
-                                comment={reply}
-                                currentUserId={currentUserId}
-                                onReply={() =>
-                                  setReplyTo({ id: comment.id, name: reply.authorName })
-                                }
-                                onDelete={() =>
-                                  sessionId
-                                    ? onDeleteComment(reply.id, sessionId)
-                                    : Promise.resolve(false)
-                                }
-                                onReport={() => setReportTarget(reply)}
-                                commentReactions={commentReactions}
-                                isReply
-                                highlight={reply.id === highlightCommentId}
-                              />
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    )}
+                    renderItem={renderComment}
+                    extraData={renderComment}
                   />
                 )}
 
@@ -706,3 +689,58 @@ function CommentBubble({
     </View>
   )
 }
+
+/**
+ * Comentario de nivel superior + sus respuestas (1 nivel). Memoizado: antes esto
+ * era JSX inline en `renderItem`, así que escribir en el compositor re-renderizaba
+ * todos los comentarios abiertos.
+ */
+const CommentThread = memo(function CommentThread({
+  comment,
+  currentUserId,
+  onReply,
+  onDelete,
+  onReport,
+  commentReactions,
+  highlightCommentId,
+}: {
+  comment: Comment
+  currentUserId: string | null
+  onReply: (id: string, name: string) => void
+  onDelete: (commentId: string) => Promise<boolean>
+  onReport: (c: Comment) => void
+  commentReactions?: CommentReactionsHook
+  highlightCommentId: string | null
+}) {
+  return (
+    <View>
+      <CommentBubble
+        comment={comment}
+        currentUserId={currentUserId}
+        onReply={() => onReply(comment.id, comment.authorName)}
+        onDelete={() => onDelete(comment.id)}
+        onReport={() => onReport(comment)}
+        commentReactions={commentReactions}
+        highlight={comment.id === highlightCommentId}
+      />
+      {/* Respuestas anidadas (1 nivel) */}
+      {comment.replies.length > 0 && (
+        <View className="ml-10 mt-2.5 pl-3 border-l-2 border-lime/10 gap-3">
+          {comment.replies.map((reply) => (
+            <CommentBubble
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onReply={() => onReply(comment.id, reply.authorName)}
+              onDelete={() => onDelete(reply.id)}
+              onReport={() => onReport(reply)}
+              commentReactions={commentReactions}
+              isReply
+              highlight={reply.id === highlightCommentId}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  )
+})

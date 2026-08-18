@@ -1,5 +1,5 @@
 /** Tarjeta de actividad del feed social — muestra avatar, nombre, workout y reacciones. */
-import { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import { View, Pressable, StyleSheet } from 'react-native'
 import Animated, {
   useAnimatedStyle,
@@ -35,7 +35,7 @@ interface FeedCardProps {
   highlight?: boolean
 }
 
-export function FeedCard({
+export const FeedCard = memo(function FeedCard({
   item,
   isOwnPost,
   reactions,
@@ -225,7 +225,7 @@ export function FeedCard({
       </View>
     </View>
   )
-}
+})
 
 // ---------------------------------------------------------------------------
 // Subcomponente interno: métricas de cardio (distancia · duración · ritmo)

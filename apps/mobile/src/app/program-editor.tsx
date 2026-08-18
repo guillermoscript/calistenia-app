@@ -54,10 +54,10 @@ export default function ProgramEditorScreen() {
     else resetEditor()
   }, [programId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // La fase seleccionada puede desaparecer al eliminar fases
-  useEffect(() => {
-    if (selectedPhaseTab >= state.phases.length) setSelectedPhaseTab(Math.max(0, state.phases.length - 1))
-  }, [state.phases.length, selectedPhaseTab])
+  // La fase seleccionada puede desaparecer al eliminar fases. Se clampa EN RENDER,
+  // no en un effect: con el effect se pintaba un frame con la pestaña fuera de
+  // rango y solo después se corregía.
+  const selectedPhase = Math.min(selectedPhaseTab, Math.max(0, state.phases.length - 1))
 
   const step = state.step
 
@@ -112,7 +112,7 @@ export default function ProgramEditorScreen() {
   }
 
   const handleAddFromCatalog = (ex: EditorExercise) => {
-    addExercise(`${selectedPhaseTab}_${selectedDayId}`, { ...ex, section: catalogSection })
+    addExercise(`${selectedPhase}_${selectedDayId}`, { ...ex, section: catalogSection })
   }
 
   return (
@@ -181,7 +181,7 @@ export default function ProgramEditorScreen() {
               <StepDays
                 phases={state.phases}
                 days={state.days}
-                selectedPhaseTab={selectedPhaseTab}
+                selectedPhaseTab={selectedPhase}
                 onSelectPhaseTab={setSelectedPhaseTab}
                 updateDay={updateDay}
               />
@@ -190,7 +190,7 @@ export default function ProgramEditorScreen() {
               <StepExercises
                 phases={state.phases}
                 days={state.days}
-                selectedPhaseTab={selectedPhaseTab}
+                selectedPhaseTab={selectedPhase}
                 onSelectPhaseTab={setSelectedPhaseTab}
                 selectedDayId={selectedDayId}
                 onSelectDayId={setSelectedDayId}

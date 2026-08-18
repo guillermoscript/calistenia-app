@@ -13,6 +13,34 @@ import type { DailyHealthSummary, HealthDataType, HealthSyncResult } from '@cali
 import * as hc from './bridge'
 import { Sentry } from '@/lib/instrument'
 
+// ─── Formas de las filas de PB que se leen aquí ──────────────────────────────
+// `getFullList()` devuelve `RecordModel`, cuyos campos son un índice laxo; estas
+// interfaces declaran solo lo que pide cada `fields:` de la query.
+
+interface DatedRow { id: string; date: string; source?: string }
+interface SessionRow {
+  id: string
+  started_at?: string
+  finished_at?: string
+  completed_at?: string
+  duration_seconds?: number
+  hr_avg?: number
+}
+interface DailyCacheRow {
+  id: string
+  date: string
+  steps?: number
+  active_calories?: number
+  total_calories?: number
+  resting_hr?: number
+  hrv_ms?: number
+  vo2max?: number
+  sleep_minutes?: number
+  sleep_quality?: number
+  weight_kg?: number
+  body_fat_pct?: number
+}
+
 const DAY_MS = 86_400_000
 
 /** Local YYYY-MM-DD for an ISO datetime (device timezone). */
@@ -111,7 +139,7 @@ async function mergeSleepEntries(userId: string, sleep: hc.SleepSample[]): Promi
     fields: 'id,date,source',
   })
   const byDate = new Map<string, { id: string; source?: string }>(
-    existing.map((r: any) => [dateKey(r.date), r]),
+    (existing as unknown as DatedRow[]).map((r) => [dateKey(r.date), r]),
   )
   let written = 0
   for (const day of dates) {
@@ -154,7 +182,7 @@ async function mergeWeightEntries(
     fields: 'id,date,source',
   })
   const byDate = new Map<string, { id: string; source?: string }>(
-    existing.map((r: any) => [dateKey(r.date), r]),
+    (existing as unknown as DatedRow[]).map((r) => [dateKey(r.date), r]),
   )
   let written = 0
   for (const day of dates) {
@@ -257,9 +285,10 @@ async function mergeSessionMetrics(
       filter: pb.filter('user = {:uid} && started_at >= {:s}', { uid: userId, s: rangeStartISO }),
       fields: 'id,started_at,finished_at,hr_avg',
     })
-    const windows: SessionWindow[] = rows
-      .filter((r: any) => r.started_at && r.finished_at)
-      .map((r: any) => ({
+    const windows: SessionWindow[] = (rows as unknown as SessionRow[])
+      .filter((r): r is SessionRow & { started_at: string; finished_at: string } =>
+        !!r.started_at && !!r.finished_at)
+      .map((r) => ({
         id: r.id,
         start: new Date(r.started_at).getTime(),
         end: new Date(r.finished_at).getTime(),
@@ -273,9 +302,10 @@ async function mergeSessionMetrics(
     filter: pb.filter('user = {:uid} && completed_at >= {:s}', { uid: userId, s: rangeStartISO }),
     fields: 'id,completed_at,duration_seconds,hr_avg',
   })
-  const strengthWindows: SessionWindow[] = strength
-    .filter((r: any) => r.completed_at && r.duration_seconds > 0)
-    .map((r: any) => {
+  const strengthWindows: SessionWindow[] = (strength as unknown as SessionRow[])
+    .filter((r): r is SessionRow & { completed_at: string; duration_seconds: number } =>
+      !!r.completed_at && (r.duration_seconds ?? 0) > 0)
+    .map((r) => {
       const end = new Date(r.completed_at).getTime()
       return { id: r.id, start: end - r.duration_seconds * 1000, end, hasHr: !!r.hr_avg }
     })
@@ -352,7 +382,9 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
       const existing = await pb.collection('daily_health_cache').getFullList({
         filter: pb.filter('user = {:uid} && date >= {:d}', { uid: opts.userId, d: startDay }),
       })
-      const byDate = new Map<string, { id: string }>(existing.map((r: any) => [r.date, r]))
+      const byDate = new Map<string, { id: string }>(
+        (existing as unknown as DailyCacheRow[]).map((r) => [r.date, r]),
+      )
 
       for (const date of dates) {
         const row = dropUndefined({
@@ -396,17 +428,17 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     }
 
     return { ok: true, syncedAt, imported }
-  } catch (e: any) {
-    return { ok: false, syncedAt, imported, error: e?.message ?? String(e) }
+  } catch (e) {
+    return { ok: false, syncedAt, imported, error: e instanceof Error ? e.message : String(e) }
   }
 }
 
 /** Read one cached day for display (null if not synced yet). */
 export async function readDailyCache(userId: string, date: string): Promise<DailyHealthSummary | null> {
   try {
-    const r: any = await pb
+    const r = (await pb
       .collection('daily_health_cache')
-      .getFirstListItem(pb.filter('user = {:uid} && date = {:d}', { uid: userId, d: date }))
+      .getFirstListItem(pb.filter('user = {:uid} && date = {:d}', { uid: userId, d: date }))) as unknown as DailyCacheRow
     return {
       id: r.id,
       date: r.date,

@@ -5,7 +5,7 @@
  *
  * Ruta: /saved-recipes
  */
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { Alert, FlatList, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -29,10 +29,12 @@ const RecipeRow = memo(function RecipeRow({
 }: {
   item: SavedRecipe
   pantryItems: PantryItem[]
-  onPress: () => void
-  onDelete: () => void
+  onPress: (r: SavedRecipe) => void
+  onDelete: (r: SavedRecipe) => void
 }) {
   const { t } = useTranslation()
+  const handlePress = useCallback(() => onPress(item), [onPress, item])
+  const handleDelete = useCallback(() => onDelete(item), [onDelete, item])
   const servings = Math.max(1, item.recipe?.servings ?? 1)
   const ingredients = useMemo(() => item.recipe?.ingredients ?? [], [item.recipe?.ingredients])
   const cost = useMemo(
@@ -49,7 +51,7 @@ const RecipeRow = memo(function RecipeRow({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       className="flex-row items-center gap-3 border-b border-border py-3 active:opacity-70"
       accessibilityRole="button"
     >
@@ -72,7 +74,7 @@ const RecipeRow = memo(function RecipeRow({
         </View>
       )}
       <Pressable
-        onPress={onDelete}
+        onPress={handleDelete}
         hitSlop={6}
         className="-my-2 p-2"
         accessibilityRole="button"
@@ -93,20 +95,33 @@ export default function SavedRecipesScreen() {
   const { data: pantryItems = [] } = usePantryItems(uid)
   const del = useDeleteSavedRecipe(uid)
 
-  const openRecipe = (r: SavedRecipe) => {
-    router.push({
-      pathname: '/recipe-detail',
-      params: { label: r.label, recipe: JSON.stringify(r.recipe) },
-    })
-  }
+  const openRecipe = useCallback(
+    (r: SavedRecipe) => {
+      router.push({
+        pathname: '/recipe-detail',
+        params: { label: r.label, recipe: JSON.stringify(r.recipe) },
+      })
+    },
+    [router],
+  )
 
   // Borrar aquí SÍ es destructivo: la receta no vive en ningún otro lado.
-  const confirmDelete = (r: SavedRecipe) => {
-    Alert.alert(t('savedRecipes.deleteTitle'), t('savedRecipes.deleteMsg', { label: r.label }), [
-      { text: t('common.cancel', 'Cancelar'), style: 'cancel' },
-      { text: t('savedRecipes.delete'), style: 'destructive', onPress: () => del.mutate(r.id) },
-    ])
-  }
+  const confirmDelete = useCallback(
+    (r: SavedRecipe) => {
+      Alert.alert(t('savedRecipes.deleteTitle'), t('savedRecipes.deleteMsg', { label: r.label }), [
+        { text: t('common.cancel', 'Cancelar'), style: 'cancel' },
+        { text: t('savedRecipes.delete'), style: 'destructive', onPress: () => del.mutate(r.id) },
+      ])
+    },
+    [t, del],
+  )
+
+  const renderItem = useCallback(
+    ({ item }: { item: SavedRecipe }) => (
+      <RecipeRow item={item} pantryItems={pantryItems} onPress={openRecipe} onDelete={confirmDelete} />
+    ),
+    [pantryItems, openRecipe, confirmDelete],
+  )
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -144,14 +159,7 @@ export default function SavedRecipesScreen() {
           keyExtractor={(r) => r.id}
           className="px-4"
           contentContainerStyle={{ paddingBottom: 40 }}
-          renderItem={({ item }) => (
-            <RecipeRow
-              item={item}
-              pantryItems={pantryItems}
-              onPress={() => openRecipe(item)}
-              onDelete={() => confirmDelete(item)}
-            />
-          )}
+          renderItem={renderItem}
         />
       )}
     </SafeAreaView>

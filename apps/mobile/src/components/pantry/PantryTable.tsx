@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { Alert, Pressable, SectionList, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Check, X } from 'lucide-react-native'
@@ -94,16 +94,46 @@ export function PantryTable({ items, onPressItem, onExample, onDeleteItem, selec
   const { t } = useTranslation()
   const today = todayStr()
   const expiredText = t('pantry.expired')
-  const confirmDelete = onDeleteItem
-    ? (item: PantryItem) => {
-        Alert.alert(t('pantry.deleteTitle'), item.name, [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('common.delete'), style: 'destructive', onPress: () => onDeleteItem(item) },
-        ])
-      }
-    : undefined
-  const sections = groupPantryByCategory(items)
-  const examples = [t('pantry.example1'), t('pantry.example2')]
+  // Estas tres se reconstruían en cada render y anulaban el `memo` de <Row/>:
+  // basta con que una prop cambie de identidad para que la fila re-renderice.
+  const confirmDelete = useMemo(
+    () =>
+      onDeleteItem
+        ? (item: PantryItem) => {
+            Alert.alert(t('pantry.deleteTitle'), item.name, [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('common.delete'), style: 'destructive', onPress: () => onDeleteItem(item) },
+            ])
+          }
+        : undefined,
+    [onDeleteItem, t],
+  )
+  const sections = useMemo(() => groupPantryByCategory(items), [items])
+  const examples = useMemo(() => [t('pantry.example1'), t('pantry.example2')], [t])
+  const selecting = selectedIds.size > 0
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: { category: string } }) => (
+      <SectionHeader label={t(`pantry.categories.${section.category}`)} />
+    ),
+    [t],
+  )
+
+  const renderItem = useCallback(
+    ({ item }: { item: PantryItem }) => (
+      <Row
+        item={item}
+        today={today}
+        expiredText={expiredText}
+        selecting={selecting}
+        selected={selectedIds.has(item.id)}
+        onPress={onPressItem}
+        onToggleSelect={onToggleSelect}
+        onDelete={confirmDelete}
+      />
+    ),
+    [today, expiredText, selecting, selectedIds, onPressItem, onToggleSelect, confirmDelete],
+  )
   return (
     <SectionList
       sections={sections}
@@ -111,21 +141,8 @@ export function PantryTable({ items, onPressItem, onExample, onDeleteItem, selec
       contentContainerClassName="px-4 pb-4"
       keyboardShouldPersistTaps="handled"
       stickySectionHeadersEnabled={false}
-      renderSectionHeader={({ section }) => (
-        <SectionHeader label={t(`pantry.categories.${section.category}`)} />
-      )}
-      renderItem={({ item }) => (
-        <Row
-          item={item}
-          today={today}
-          expiredText={expiredText}
-          selecting={selectedIds.size > 0}
-          selected={selectedIds.has(item.id)}
-          onPress={onPressItem}
-          onToggleSelect={onToggleSelect}
-          onDelete={confirmDelete}
-        />
-      )}
+      renderSectionHeader={renderSectionHeader}
+      renderItem={renderItem}
       extraData={selectedIds}
       ListEmptyComponent={
         <View className="items-center px-6 py-14">
