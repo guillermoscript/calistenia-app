@@ -98,7 +98,8 @@ export default function InviteLandingPage() {
               onShare={handleShare}
               label="COMPARTIR"
               size="default"
-              className="w-full bg-lime text-lime-foreground hover:bg-lime/90 border-0"
+              variant="limeSolid"
+              className="w-full border-0"
             />
           </div>
 

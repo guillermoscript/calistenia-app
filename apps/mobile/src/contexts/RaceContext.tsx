@@ -5,7 +5,7 @@
 // portables — se inyectan en el hook de core sin tocarlos, ver el doc-comment
 // de `useRaceState`), el tag de analytics del móvil y el keep-awake de
 // pantalla, que tampoco tiene facade en `platform.ts`.
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import {
   useRaceState,
   useRaceCountdownState,
@@ -57,7 +57,7 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
 }
 
 export function useRaceContext(): RaceState {
-  const ctx = useContext(RaceContext)
+  const ctx = use(RaceContext)
   if (!ctx) throw new Error('useRaceContext must be used within RaceProvider')
   return ctx
 }

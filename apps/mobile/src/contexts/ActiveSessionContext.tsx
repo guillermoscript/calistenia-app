@@ -10,7 +10,7 @@
 // No se engancha el registro de abandono (`trackAbandon`): su disparo en web es
 // `beforeunload` y en nativo no hay equivalente — pasar a segundo plano no es
 // abandonar el entreno.
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import {
   useActiveSessionState,
   type ActiveSessionContextValue,
@@ -54,7 +54,7 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
 }
 
 export function useActiveSession() {
-  const ctx = useContext(ActiveSessionContext)
+  const ctx = use(ActiveSessionContext)
   if (!ctx) throw new Error('useActiveSession must be used within ActiveSessionProvider')
   return ctx
 }
@@ -65,7 +65,7 @@ export function useActiveSession() {
  * montar está `getProgressSnapshot()` de `useActiveSession()`.
  */
 export function useActiveSessionProgress() {
-  const ctx = useContext(ActiveSessionProgressContext)
+  const ctx = use(ActiveSessionProgressContext)
   if (!ctx) throw new Error('useActiveSessionProgress must be used within ActiveSessionProvider')
   return ctx
 }

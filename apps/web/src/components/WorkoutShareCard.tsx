@@ -21,8 +21,8 @@ interface WorkoutShareCardProps {
   referralCode?: string | null
   /** Etiqueta del disparador; por defecto "COMPARTIR". */
   label?: string
-  /** 'outline' (por defecto) o 'default' para usarlo como CTA primario. */
-  variant?: 'outline' | 'default'
+  /** 'outline' (por defecto), 'default' o 'limeSolid' para usarlo como CTA primario. */
+  variant?: 'outline' | 'default' | 'limeSolid'
   className?: string
   /** Se invoca al pulsar, antes de generar la imagen (analítica del que lo aloja). */
   onPress?: () => void

@@ -6,7 +6,7 @@
 //
 // `SessionView` sigue siendo dueño de su estado local y empujándolo aquí; esta
 // refactor no invierte ese flujo.
-import { createContext, useContext, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, use, useCallback, useEffect, type ReactNode } from 'react'
 import { FREE_SESSION_QUEUE_KEY as FREE_QUEUE_KEY } from '@calistenia/core/lib/storage-keys'
 import {
   useActiveSessionState,
@@ -63,7 +63,7 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
 }
 
 export function useActiveSession() {
-  const ctx = useContext(ActiveSessionContext)
+  const ctx = use(ActiveSessionContext)
   if (!ctx) throw new Error('useActiveSession must be used within ActiveSessionProvider')
   return ctx
 }
@@ -74,7 +74,7 @@ export function useActiveSession() {
  * montar está `getProgressSnapshot()` de `useActiveSession()`.
  */
 export function useActiveSessionProgress() {
-  const ctx = useContext(ActiveSessionProgressContext)
+  const ctx = use(ActiveSessionProgressContext)
   if (!ctx) throw new Error('useActiveSessionProgress must be used within ActiveSessionProvider')
   return ctx
 }

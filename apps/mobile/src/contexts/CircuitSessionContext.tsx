@@ -5,7 +5,7 @@
 //
 // La UI (CircuitSessionView) sigue siendo dueña de su estado local y empujando
 // aquí; esta refactor no invierte ese flujo.
-import { createContext, useContext, useCallback, type ReactNode } from 'react'
+import { createContext, use, useCallback, type ReactNode } from 'react'
 import {
   useCircuitSessionState,
   type CircuitSessionState,
@@ -43,7 +43,7 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
 }
 
 export function useCircuitSession() {
-  const ctx = useContext(CircuitSessionContext)
+  const ctx = use(CircuitSessionContext)
   if (!ctx) throw new Error('useCircuitSession must be used within CircuitSessionProvider')
   return ctx
 }

@@ -143,8 +143,8 @@ export default function PostWorkoutActions({
                 avatarUrl={avatarUrl}
                 referralCode={referralCode}
                 label={t('postWorkout.share')}
-                variant="default"
-                className="w-full h-12 bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-xl tracking-[2px]"
+                variant="limeSolid"
+                className="w-full h-12 font-bebas text-xl tracking-[2px]"
                 onPress={() => track('share')}
               />
             )

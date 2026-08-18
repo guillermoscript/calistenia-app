@@ -9,7 +9,7 @@ interface ShareButtonProps {
   onInvite?: () => void
   className?: string
   size?: 'sm' | 'default'
-  variant?: 'outline' | 'ghost'
+  variant?: 'outline' | 'ghost' | 'limeSolid'
   label?: string
 }
 

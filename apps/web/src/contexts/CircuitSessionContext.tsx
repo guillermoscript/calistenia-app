@@ -1,7 +1,7 @@
 // Provider fino: el estado, la persistencia y la cola offline viven en
 // `useCircuitSessionState` de core, compartido con el móvil (#482). Aquí solo
 // queda el contexto de React y el hook de consumo.
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import {
   useCircuitSessionState,
   type CircuitSessionState,
@@ -27,7 +27,7 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
 }
 
 export function useCircuitSession() {
-  const ctx = useContext(CircuitSessionContext)
+  const ctx = use(CircuitSessionContext)
   if (!ctx) throw new Error('useCircuitSession must be used within CircuitSessionProvider')
   return ctx
 }
