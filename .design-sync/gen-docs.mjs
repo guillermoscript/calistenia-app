@@ -73,54 +73,6 @@ const FAMILIES = [
     example: `<Label htmlFor="peso">Peso corporal (kg)</Label>
 <Input id="peso" type="number" inputMode="decimal" />`,
   },
-  {
-    root: 'Switch', group: 'Forms',
-    blurb: 'Alterna un ajuste que se aplica al instante (sin botón de guardar). Para ajustes que requieren confirmación usa un control con acción explícita.',
-    example: `<div className="flex items-center justify-between">
-  <Label htmlFor="recordatorios">Recordatorios diarios</Label>
-  <Switch id="recordatorios" defaultChecked />
-</div>`,
-  },
-  {
-    root: 'Select', group: 'Forms',
-    blurb: 'Selección de una opción entre pocas. `SelectValue` necesita `placeholder` para el estado vacío. Para listas largas o con búsqueda usa `Command`.',
-    example: `<Select defaultValue="intermedio">
-  <SelectTrigger className="w-48">
-    <SelectValue placeholder="Elige nivel" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="principiante">Principiante</SelectItem>
-    <SelectItem value="intermedio">Intermedio</SelectItem>
-    <SelectItem value="avanzado">Avanzado</SelectItem>
-  </SelectContent>
-</Select>`,
-    members: {
-      SelectTrigger: 'El control visible que abre la lista. Contiene `SelectValue`.',
-      SelectValue: 'Muestra la opción elegida, o `placeholder` si no hay ninguna.',
-      SelectContent: 'El panel flotante con las opciones.',
-      SelectItem: 'Una opción. `value` es obligatorio.',
-      SelectGroup: 'Agrupa opciones relacionadas; se etiqueta con `SelectLabel`.',
-      SelectLabel: 'Título de un `SelectGroup`. No es seleccionable.',
-      SelectSeparator: 'Línea divisoria entre grupos de opciones.',
-    },
-  },
-  {
-    root: 'InputGroup', group: 'Forms',
-    blurb: 'Campo con elementos pegados: prefijos, sufijos de unidad o un botón de acción. Evita el `Input` suelto con un icono posicionado a mano.',
-    example: `<InputGroup>
-  <InputGroupInput placeholder="Buscar ejercicio…" />
-  <InputGroupAddon>
-    <InputGroupButton><Search /></InputGroupButton>
-  </InputGroupAddon>
-</InputGroup>`,
-    members: {
-      InputGroupInput: 'El campo de texto dentro del grupo. Sustituye a `Input`.',
-      InputGroupTextarea: 'Variante multilínea dentro del grupo.',
-      InputGroupAddon: 'Contenedor pegado al campo, para iconos, unidades o botones.',
-      InputGroupButton: 'Botón dentro de un `InputGroupAddon`.',
-      InputGroupText: 'Texto estático dentro de un `InputGroupAddon` («kg», «min/km»).',
-    },
-  },
 
   /* ── Superficies ──────────────────────────────────────────────────────── */
   {
@@ -179,39 +131,6 @@ const FAMILIES = [
   </div>
 </ScrollArea>`,
     members: { ScrollBar: 'La barra de scroll. `ScrollArea` ya la incluye; solo se usa suelta para una horizontal explícita.' },
-  },
-  {
-    root: 'Accordion', group: 'Surfaces',
-    blurb: 'Secciones plegables. `type="single" collapsible` para una abierta a la vez; `type="multiple"` para varias. Cada `AccordionItem` necesita un `value` único.',
-    example: `<Accordion type="single" collapsible>
-  <AccordionItem value="calentamiento">
-    <AccordionTrigger>Calentamiento</AccordionTrigger>
-    <AccordionContent>Movilidad de hombro, 5 min de salto de comba.</AccordionContent>
-  </AccordionItem>
-  <AccordionItem value="principal">
-    <AccordionTrigger>Bloque principal</AccordionTrigger>
-    <AccordionContent>Dominadas, fondos, remo invertido.</AccordionContent>
-  </AccordionItem>
-</Accordion>`,
-    members: {
-      AccordionItem: 'Una sección. `value` único obligatorio.',
-      AccordionTrigger: 'La cabecera pulsable que abre y cierra la sección.',
-      AccordionContent: 'El contenido que se despliega.',
-    },
-  },
-  {
-    root: 'Collapsible', group: 'Surfaces',
-    blurb: 'Un único bloque plegable, sin la semántica de grupo del `Accordion`. Para «ver más» o detalles secundarios.',
-    example: `<Collapsible>
-  <CollapsibleTrigger className="text-sm text-muted-foreground">Ver desglose</CollapsibleTrigger>
-  <CollapsibleContent className="pt-2 text-sm">
-    Proteína 140 g · Carbohidratos 320 g · Grasa 70 g
-  </CollapsibleContent>
-</Collapsible>`,
-    members: {
-      CollapsibleTrigger: 'El control que abre y cierra el bloque.',
-      CollapsibleContent: 'El contenido plegado.',
-    },
   },
 
   /* ── Overlays ─────────────────────────────────────────────────────────── */
@@ -288,23 +207,6 @@ const FAMILIES = [
     },
   },
   {
-    root: 'Popover', group: 'Overlays',
-    blurb: 'Panel flotante anclado a un disparador, para contenido interactivo corto (un selector de fecha, un ajuste rápido). Si solo es texto explicativo usa `Tooltip`.',
-    example: `<Popover>
-  <PopoverTrigger asChild><Button variant="ghost" size="icon-sm"><Settings /></Button></PopoverTrigger>
-  <PopoverContent className="w-64">
-    <div className="grid gap-3">
-      <Label htmlFor="descanso">Descanso entre series</Label>
-      <Input id="descanso" type="number" inputMode="numeric" defaultValue={90} />
-    </div>
-  </PopoverContent>
-</Popover>`,
-    members: {
-      PopoverTrigger: 'Ancla y abre el panel. Usa `asChild`.',
-      PopoverContent: 'El panel flotante. Dale ancho con `className`.',
-    },
-  },
-  {
     root: 'Tooltip', group: 'Overlays',
     blurb: 'Etiqueta breve al pasar el cursor o enfocar. **Requiere `TooltipProvider` en un ancestro** — sin él no aparece. Solo texto: nunca metas controles dentro. No es accesible por toque en móvil, así que no pongas ahí información imprescindible.',
     example: `<TooltipProvider>
@@ -319,78 +221,6 @@ const FAMILIES = [
       TooltipProvider: 'Obligatorio en un ancestro (normalmente en la raíz de la app). Sin él los tooltips no se muestran.',
       TooltipTrigger: 'El elemento que dispara el tooltip. Usa `asChild`.',
       TooltipContent: 'La burbuja de texto.',
-    },
-  },
-  {
-    root: 'HoverCard', group: 'Overlays',
-    blurb: 'Tarjeta de vista previa al pasar el cursor, con más contenido que un `Tooltip` (perfil de un amigo, resumen de un ejercicio). Solo escritorio: no se activa por toque.',
-    example: `<HoverCard>
-  <HoverCardTrigger className="font-medium underline-offset-4 hover:underline">@guille</HoverCardTrigger>
-  <HoverCardContent className="w-64">
-    <div className="flex gap-3">
-      <Avatar><AvatarFallback>GM</AvatarFallback></Avatar>
-      <div className="text-sm">
-        <p className="font-medium">Guillermo</p>
-        <p className="text-muted-foreground">Racha de 12 días</p>
-      </div>
-    </div>
-  </HoverCardContent>
-</HoverCard>`,
-    members: {
-      HoverCardTrigger: 'El elemento que abre la tarjeta al pasar el cursor.',
-      HoverCardContent: 'El panel de vista previa. Dale ancho con `className`.',
-    },
-  },
-  {
-    root: 'DropdownMenu', group: 'Overlays',
-    blurb: 'Menú de acciones anclado a un botón. Para acciones, no para elegir un valor de formulario — eso es `Select`.',
-    example: `<DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button variant="ghost" size="icon-sm"><MoreVertical /></Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent align="end">
-    <DropdownMenuLabel>Sesión</DropdownMenuLabel>
-    <DropdownMenuItem>Duplicar</DropdownMenuItem>
-    <DropdownMenuItem>Compartir</DropdownMenuItem>
-    <DropdownMenuSeparator />
-    <DropdownMenuItem className="text-destructive">Eliminar</DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>`,
-    members: {
-      DropdownMenuTrigger: 'Abre el menú. Usa `asChild`.',
-      DropdownMenuContent: 'El panel del menú. `align="end"` lo alinea al borde del disparador.',
-      DropdownMenuItem: 'Una acción. Para destructivas añade `className="text-destructive"`.',
-      DropdownMenuLabel: 'Título de una sección del menú. No es pulsable.',
-      DropdownMenuGroup: 'Agrupa acciones relacionadas.',
-      DropdownMenuSeparator: 'Línea divisoria entre grupos de acciones.',
-    },
-  },
-  {
-    root: 'Command', group: 'Overlays',
-    blurb: 'Lista filtrable por escritura — paleta de comandos o buscador de ejercicios sobre un catálogo grande. `CommandDialog` es la versión en modal. Es la opción correcta cuando `Select` se queda corto por número de opciones.',
-    example: `<Command>
-  <CommandInput placeholder="Buscar ejercicio…" />
-  <CommandList>
-    <CommandEmpty>Sin resultados.</CommandEmpty>
-    <CommandGroup heading="Tirón">
-      <CommandItem>Dominadas</CommandItem>
-      <CommandItem>Remo invertido</CommandItem>
-    </CommandGroup>
-    <CommandSeparator />
-    <CommandGroup heading="Empuje">
-      <CommandItem>Fondos en paralelas</CommandItem>
-    </CommandGroup>
-  </CommandList>
-</Command>`,
-    members: {
-      CommandDialog: 'Envuelve `Command` en un modal. Para el atajo global de búsqueda.',
-      CommandInput: 'El campo de búsqueda que filtra la lista.',
-      CommandList: 'Contenedor con scroll de los resultados.',
-      CommandEmpty: 'Lo que se muestra cuando no hay coincidencias. Inclúyelo siempre.',
-      CommandGroup: 'Agrupa resultados bajo un `heading`.',
-      CommandItem: 'Un resultado seleccionable.',
-      CommandSeparator: 'Línea divisoria entre grupos.',
-      CommandShortcut: 'Atajo de teclado alineado a la derecha de un `CommandItem`.',
     },
   },
 
@@ -410,27 +240,6 @@ const FAMILIES = [
       TabsList: 'La fila de pestañas. Contiene los `TabsTrigger`.',
       TabsTrigger: 'Una pestaña. Su `value` debe coincidir con el del `TabsContent`.',
       TabsContent: 'El panel de una pestaña. Se muestra cuando su `value` está activo.',
-    },
-  },
-  {
-    root: 'Carousel', group: 'Navigation',
-    blurb: 'Carrusel horizontal deslizable (embla). Para galerías de fotos de progreso o series de tarjetas en móvil. `CarouselPrevious`/`CarouselNext` son opcionales: en móvil el gesto basta.',
-    example: `<Carousel>
-  <CarouselContent>
-    {fotos.map((f) => (
-      <CarouselItem key={f.id} className="basis-2/3">
-        <img src={f.url} alt={f.fecha} className="rounded-lg object-cover" />
-      </CarouselItem>
-    ))}
-  </CarouselContent>
-  <CarouselPrevious />
-  <CarouselNext />
-</Carousel>`,
-    members: {
-      CarouselContent: 'La pista deslizable que contiene los `CarouselItem`.',
-      CarouselItem: 'Una diapositiva. Controla cuántas se ven con `basis-*`.',
-      CarouselPrevious: 'Botón de anterior. Opcional en móvil.',
-      CarouselNext: 'Botón de siguiente. Opcional en móvil.',
     },
   },
 
@@ -537,18 +346,6 @@ const FAMILIES = [
     example: `<div className="min-h-64 grid place-items-center">
   <Loader />
 </div>`,
-  },
-  {
-    root: 'Avatar', group: 'Feedback',
-    blurb: 'Foto de perfil de usuario. **Incluye siempre `AvatarFallback`**: si la imagen no carga (o el usuario no tiene foto) sin fallback queda un hueco vacío. El fallback son las iniciales.',
-    example: `<Avatar>
-  <AvatarImage src={usuario.avatar} alt={usuario.nombre} />
-  <AvatarFallback>GM</AvatarFallback>
-</Avatar>`,
-    members: {
-      AvatarImage: 'La imagen. Necesita `alt`.',
-      AvatarFallback: 'Lo que se muestra si la imagen falta o falla. Iniciales, siempre presente.',
-    },
   },
 ]
 

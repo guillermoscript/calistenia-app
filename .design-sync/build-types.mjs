@@ -30,8 +30,11 @@ try {
 
 const uiDir = join(OUT, 'components/ui')
 const emitted = existsSync(uiDir) ? readdirSync(uiDir).filter((f) => f.endsWith('.d.ts')) : []
+// Se espera una declaración por primitivo, contando el propio srcDir: antes era
+// un 31 a pelo y el #485 (que se llevó 11 stubs sin usar) lo dejó mintiendo.
+const expected = readdirSync(join(REPO, 'apps/web/src/components/ui')).filter((f) => f.endsWith('.tsx')).length
 console.log(
-  emitted.length >= 31
+  emitted.length >= expected
     ? `✓ declaraciones: ${emitted.length} archivos en apps/web/ds-types/components/ui`
-    : `✗ solo ${emitted.length} declaraciones emitidas (se esperaban 31) — el contrato de props quedará vacío`,
+    : `✗ solo ${emitted.length} de ${expected} declaraciones emitidas — el contrato de props quedará vacío`,
 )
