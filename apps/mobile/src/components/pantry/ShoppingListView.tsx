@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Alert, FlatList, Pressable, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -90,28 +90,43 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
     doGenerate()
   }
 
-  const onToggle = (index: number, it: ShoppingListItem) => {
-    if (!list) return
-    toggle.mutate({ listId: list.id, index, checked: !it.checked })
-  }
+  const onToggle = useCallback(
+    (index: number, it: ShoppingListItem) => {
+      if (!list) return
+      toggle.mutate({ listId: list.id, index, checked: !it.checked })
+    },
+    [list, toggle],
+  )
 
-  const onPriceCommit = (index: number) => {
-    if (!list) return
-    // min: 0 — blur sin escribir ≠ precio $0, y un precio negativo tampoco vale
-    const price = parseLocaleNumber(priceDrafts[index] ?? '', { min: 0 })
-    toggle.mutate({ listId: list.id, index, checked: true, actualPrice: price })
-  }
+  // El borrador llega desde la fila: así este callback no cierra sobre
+  // `priceDrafts` y mantiene su identidad entre pulsaciones de tecla.
+  const onPriceCommit = useCallback(
+    (index: number, raw: string) => {
+      if (!list) return
+      // min: 0 — blur sin escribir ≠ precio $0, y un precio negativo tampoco vale
+      const price = parseLocaleNumber(raw, { min: 0 })
+      toggle.mutate({ listId: list.id, index, checked: true, actualPrice: price })
+    },
+    [list, toggle],
+  )
+
+  const onPriceChange = useCallback((index: number, value: string) => {
+    setPriceDrafts(d => ({ ...d, [index]: value }))
+  }, [])
 
   const onAdd = () => {
     if (!draftName.trim()) return
     addItem.mutate({ name: draftName }, { onSuccess: () => setDraftName('') })
   }
 
-  const onRemove = (index: number) => {
-    if (!list) return
-    setPriceDrafts({}) // los drafts van por índice; al borrar se corren
-    removeItem.mutate({ listId: list.id, index })
-  }
+  const onRemove = useCallback(
+    (index: number) => {
+      if (!list) return
+      setPriceDrafts({}) // los drafts van por índice; al borrar se corren
+      removeItem.mutate({ listId: list.id, index })
+    },
+    [list, removeItem],
+  )
 
   // estable (funcional): el modo selección se activa con long-press en una fila
   const toggleSelect = useCallback((index: number) => {
@@ -122,6 +137,26 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
       return next
     })
   }, [])
+
+  const renderRow = useCallback(
+    ({ item, index }: { item: ShoppingListItem; index: number }) => (
+      <ShoppingRow
+        item={item}
+        index={index}
+        // solo SU borrador, no el Record entero: teclear un precio deja de
+        // re-renderizar todas las filas de la lista
+        draft={priceDrafts[index]}
+        selecting={selecting}
+        selected={selected.has(index)}
+        onToggle={onToggle}
+        onToggleSelect={toggleSelect}
+        onPriceChange={onPriceChange}
+        onPriceCommit={onPriceCommit}
+        onRemove={onRemove}
+      />
+    ),
+    [priceDrafts, selecting, selected, onToggle, toggleSelect, onPriceChange, onPriceCommit, onRemove],
+  )
 
   const onBulkRemove = () => {
     if (!list) return
@@ -244,72 +279,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           data={list?.items ?? []}
           keyExtractor={(_, i) => String(i)}
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item: it, index }) => (
-            <Pressable
-              onPress={() => (selecting ? toggleSelect(index) : onToggle(index, it))}
-              onLongPress={() => toggleSelect(index)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: it.checked, selected: selected.has(index) }}
-              className={`border-b border-border py-3 active:opacity-70 ${selected.has(index) ? 'bg-lime/10' : ''}`}
-            >
-              <View className="flex-row items-center gap-3">
-                {/* checkbox visual — el toggle es la FILA entera (target grande) */}
-                <View
-                  className={`h-6 w-6 items-center justify-center rounded border-2 ${it.checked ? 'border-lime bg-lime' : 'border-muted-foreground/50'}`}
-                >
-                  {it.checked && <Check size={15} color="black" strokeWidth={3} />}
-                </View>
-                <Text
-                  className={`flex-1 font-sans-medium ${it.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}
-                  numberOfLines={1}
-                >
-                  {it.name}
-                </Text>
-                {/* silencio = plan (default); solo se etiqueta lo excepcional */}
-                {it.reasons.filter((r) => r !== 'plan').map((r) => (
-                  <Text key={r} className={`rounded border px-1 py-0.5 font-mono text-[9px] uppercase ${REASON_CLS[r]}`}>
-                    {t(`shopping.reason.${r}`)}
-                  </Text>
-                ))}
-                <Text className="font-mono text-xs text-muted-foreground">{formatQty(it.qty, it.unit)}</Text>
-                {it.checked ? (
-                  <TextInput
-                    keyboardType="numeric"
-                    placeholder={it.est_price != null ? formatMoney(it.est_price) : t('shopping.pricePlaceholder')}
-                    placeholderTextColor="hsl(0 0% 40%)"
-                    value={priceDrafts[index] ?? (it.actual_price != null ? String(it.actual_price) : '')}
-                    onChangeText={(s) => setPriceDrafts((d) => ({ ...d, [index]: s }))}
-                    onEndEditing={() => onPriceCommit(index)}
-                    className="h-8 w-16 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
-                  />
-                ) : (
-                  it.est_price != null && (
-                    // muted, no lime: precio estimado es dato, no interacción
-                    <Text className="font-mono text-xs text-muted-foreground">~${formatMoney(it.est_price)}</Text>
-                  )
-                )}
-                {selecting ? null : (
-                  <Pressable
-                    onPress={() => onRemove(index)}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('common.delete')}
-                    className="-my-2 -mr-1 p-2 ml-1"
-                  >
-                    <X size={16} color="hsl(0 0% 40%)" />
-                  </Pressable>
-                )}
-              </View>
-              {it.incompatible_have && (
-                <Text className="mt-1 pl-8 font-mono text-[10px] text-amber-500">
-                  {t('shopping.incompatibleNote', {
-                    have: formatQty(it.incompatible_have.qty, it.incompatible_have.unit),
-                    need: formatQty(it.qty, it.unit),
-                  })}
-                </Text>
-              )}
-            </Pressable>
-          )}
+          renderItem={renderRow}
+          extraData={renderRow}
         />
 
         {/* ── Alta manual (o barra de selección si hay filas marcadas) ── */}
@@ -366,3 +337,105 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
     </View>
   )
 }
+
+const ShoppingRow = memo(function ShoppingRow({
+  item: it,
+  index,
+  draft,
+  selecting,
+  selected,
+  onToggle,
+  onToggleSelect,
+  onPriceChange,
+  onPriceCommit,
+  onRemove,
+}: {
+  item: ShoppingListItem
+  index: number
+  draft: string | undefined
+  selecting: boolean
+  selected: boolean
+  onToggle: (index: number, it: ShoppingListItem) => void
+  onToggleSelect: (index: number) => void
+  onPriceChange: (index: number, value: string) => void
+  onPriceCommit: (index: number, raw: string) => void
+  onRemove: (index: number) => void
+}) {
+  const { t } = useTranslation()
+  const value = draft ?? (it.actual_price != null ? String(it.actual_price) : '')
+  const handlePress = useCallback(
+    () => (selecting ? onToggleSelect(index) : onToggle(index, it)),
+    [selecting, onToggleSelect, onToggle, index, it],
+  )
+  const handleLongPress = useCallback(() => onToggleSelect(index), [onToggleSelect, index])
+  const handleChangeText = useCallback((s: string) => onPriceChange(index, s), [onPriceChange, index])
+  const handleEndEditing = useCallback(() => onPriceCommit(index, value), [onPriceCommit, index, value])
+  const handleRemove = useCallback(() => onRemove(index), [onRemove, index])
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      onLongPress={handleLongPress}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: it.checked, selected }}
+      className={`border-b border-border py-3 active:opacity-70 ${selected ? 'bg-lime/10' : ''}`}
+    >
+      <View className="flex-row items-center gap-3">
+        {/* checkbox visual — el toggle es la FILA entera (target grande) */}
+        <View
+          className={`h-6 w-6 items-center justify-center rounded border-2 ${it.checked ? 'border-lime bg-lime' : 'border-muted-foreground/50'}`}
+        >
+          {it.checked && <Check size={15} color="black" strokeWidth={3} />}
+        </View>
+        <Text
+          className={`flex-1 font-sans-medium ${it.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}
+          numberOfLines={1}
+        >
+          {it.name}
+        </Text>
+        {/* silencio = plan (default); solo se etiqueta lo excepcional */}
+        {it.reasons.filter((r) => r !== 'plan').map((r) => (
+          <Text key={r} className={`rounded border px-1 py-0.5 font-mono text-[9px] uppercase ${REASON_CLS[r]}`}>
+            {t(`shopping.reason.${r}`)}
+          </Text>
+        ))}
+        <Text className="font-mono text-xs text-muted-foreground">{formatQty(it.qty, it.unit)}</Text>
+        {it.checked ? (
+          <TextInput
+            keyboardType="numeric"
+            placeholder={it.est_price != null ? formatMoney(it.est_price) : t('shopping.pricePlaceholder')}
+            placeholderTextColor="hsl(0 0% 40%)"
+            value={value}
+            onChangeText={handleChangeText}
+            onEndEditing={handleEndEditing}
+            className="h-8 w-16 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
+          />
+        ) : (
+          it.est_price != null && (
+            // muted, no lime: precio estimado es dato, no interacción
+            <Text className="font-mono text-xs text-muted-foreground">~${formatMoney(it.est_price)}</Text>
+          )
+        )}
+        {selecting ? null : (
+          <Pressable
+            onPress={handleRemove}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.delete')}
+            className="-my-2 -mr-1 p-2 ml-1"
+          >
+            <X size={16} color="hsl(0 0% 40%)" />
+          </Pressable>
+        )}
+      </View>
+      {it.incompatible_have && (
+        <Text className="mt-1 pl-8 font-mono text-[10px] text-amber-500">
+          {t('shopping.incompatibleNote', {
+            have: formatQty(it.incompatible_have.qty, it.incompatible_have.unit),
+            need: formatQty(it.qty, it.unit),
+          })}
+        </Text>
+      )}
+    </Pressable>
+  )
+})

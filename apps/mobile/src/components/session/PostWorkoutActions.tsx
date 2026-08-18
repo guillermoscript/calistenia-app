@@ -247,7 +247,7 @@ export function PostWorkoutActions({
                   onPress={handleProgress}
                 />
               )
-            default:
+            case 'repeat':
               return (
                 <ActionRow
                   key="repeat"
@@ -257,6 +257,11 @@ export function PostWorkoutActions({
                   onPress={handleRepeat}
                 />
               )
+            // Explícito, no `default`: con `default` un id nuevo se pintaba en
+            // silencio como "repetir" (y con su misma key). Ahora añadir un
+            // sexto PostWorkoutActionId es un error de compilación aquí.
+            default:
+              return null
           }
         })}
       </View>

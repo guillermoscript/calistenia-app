@@ -4,7 +4,7 @@
  * Lee el circuito activo + estado de useCircuitSession; la fuente de la verdad
  * (avances de fase, persistencia, guardado en PB) vive en el contexto.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -31,6 +31,41 @@ function formatElapsed(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/**
+ * Reloj de la cabecera. Se queda el `setInterval` y su propio estado para que el
+ * tick de 1 s re-renderice ESTE componente y no la pantalla entera (475 L, con
+ * el anillo de cuenta atrás dentro).
+ */
+const ElapsedClock = memo(function ElapsedClock({
+  startedAt,
+  paused,
+}: {
+  startedAt: number | null
+  paused: boolean
+}) {
+  const [elapsed, setElapsed] = useState(() =>
+    startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0,
+  )
+
+  useEffect(() => {
+    if (!startedAt) return
+    setElapsed(Math.floor((Date.now() - startedAt) / 1000))
+    if (paused) return
+
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000))
+    }, 1000)
+
+    return () => clearInterval(id)
+  }, [startedAt, paused])
+
+  return (
+    <Text className="font-bebas text-lg leading-none tabular-nums text-foreground">
+      {formatElapsed(elapsed)}
+    </Text>
+  )
+})
+
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function CircuitScreen() {
@@ -53,7 +88,6 @@ export default function CircuitScreen() {
     abandonCircuit,
   } = useCircuitSession()
 
-  const [elapsed, setElapsed] = useState(0)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const quote = useMemo(() => getLocalQuote(), [])
@@ -65,40 +99,35 @@ export default function CircuitScreen() {
   }, [circuit, router])
 
   // ── Elapsed timer ─────────────────────────────────────────────────────────
+  // El reloj vivo lo lleva <ElapsedClock/>; aquí solo se guarda el total que
+  // enseña la pantalla de celebración, congelado al entrar en esa fase.
+  const [finalElapsed, setFinalElapsed] = useState(0)
+  // En una ref para no meterlo en las deps del effect de abajo: al arrancar el
+  // circuito `startedAt` pasa de null a número con la fase ya en 'getReady', y
+  // como dep volvería a disparar el sonido.
+  const startedAtRef = useRef(startedAt)
+  startedAtRef.current = startedAt
+
+  // ── Sonidos por fase ──────────────────────────────────────────────────────
+  // Un único effect: los tres anteriores compartían dep (`progress.phase`), así
+  // que se ejecutaban los tres en cada cambio de fase para que dos no hicieran nada.
 
   useEffect(() => {
-    if (!startedAt) return
-    setElapsed(Math.floor((Date.now() - startedAt) / 1000))
-
-    if (isPaused || progress.phase === 'celebrate') return
-
-    const id = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startedAt) / 1000))
-    }, 1000)
-
-    return () => clearInterval(id)
-  }, [startedAt, isPaused, progress.phase])
-
-  // ── Sonidos por fase (uno por useEffect, como en web) ─────────────────────
-
-  useEffect(() => {
-    if (progress.phase === 'celebrate') {
-      sounds.playSessionComplete()
-      haptics.success()
-    }
-  }, [progress.phase])
-
-  useEffect(() => {
-    if (progress.phase === 'getReady') {
-      sounds.playGetReady()
-      haptics.heavy()
-    }
-  }, [progress.phase])
-
-  useEffect(() => {
-    if (progress.phase === 'roundRest') {
-      sounds.playGetReady()
-      haptics.medium()
+    const started = startedAtRef.current
+    switch (progress.phase) {
+      case 'celebrate':
+        setFinalElapsed(started ? Math.floor((Date.now() - started) / 1000) : 0)
+        sounds.playSessionComplete()
+        haptics.success()
+        break
+      case 'getReady':
+        sounds.playGetReady()
+        haptics.heavy()
+        break
+      case 'roundRest':
+        sounds.playGetReady()
+        haptics.medium()
+        break
     }
   }, [progress.phase])
 
@@ -162,8 +191,8 @@ export default function CircuitScreen() {
   // ── Celebrate phase ───────────────────────────────────────────────────────
 
   if (progress.phase === 'celebrate') {
-    const elapsedMin = Math.floor(elapsed / 60)
-    const elapsedSec = elapsed % 60
+    const elapsedMin = Math.floor(finalElapsed / 60)
+    const elapsedSec = finalElapsed % 60
 
     return (
       <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
@@ -270,9 +299,7 @@ export default function CircuitScreen() {
             <Text className="font-mono text-[10px] tracking-[1px] text-muted-foreground">
               {t('circuit.elapsed').toUpperCase()}
             </Text>
-            <Text className="font-bebas text-lg leading-none tabular-nums text-foreground">
-              {formatElapsed(elapsed)}
-            </Text>
+            <ElapsedClock startedAt={startedAt} paused={isPaused} />
           </View>
 
           {/* Pause */}

@@ -143,68 +143,91 @@ async function read<T>(recordType: (typeof READ_RECORD_TYPES)[number], range: Ti
   }
 }
 
+// ─── Formas crudas de Health Connect ─────────────────────────────────────────
+// `readRecords` está sobrecargado por literal de tipo y sus tipos no se dejan
+// resolver a través del wrapper genérico `read<T>`, así que declaramos aquí la
+// parte de cada registro que consumimos. Es lo que antes se tapaba con `any`.
+
+interface RawMetadata { id?: string }
+interface RawInstant { time: string; metadata?: RawMetadata }
+interface RawInterval { startTime: string; endTime: string; metadata?: RawMetadata }
+interface RawEnergy { inKilocalories?: number }
+interface RawMass { inKilograms?: number }
+
+interface RawSteps extends RawInterval { count?: number }
+interface RawSleepStage { stage: number; startTime: string; endTime: string }
+interface RawSleepSession extends RawInterval { stages?: RawSleepStage[] }
+interface RawHeartRateSample { time: string; beatsPerMinute: number }
+interface RawHeartRate extends RawInterval { samples?: RawHeartRateSample[] }
+interface RawRestingHeartRate extends RawInstant { beatsPerMinute: number }
+interface RawHrv extends RawInstant { heartRateVariabilityMillis: number }
+interface RawVo2Max extends RawInstant { vo2MillilitersPerMinuteKilogram: number }
+interface RawCalories extends RawInterval { energy?: RawEnergy }
+interface RawWeight extends RawInstant { weight?: RawMass }
+interface RawBodyFat extends RawInstant { percentage?: number }
+
 export interface StepsSample { startTime: string; endTime: string; count: number }
 export async function readSteps(range: TimeRange): Promise<StepsSample[]> {
-  const recs = await read<any>('Steps', range)
+  const recs = await read<RawSteps>('Steps', range)
   return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, count: r.count ?? 0 }))
 }
 
 export interface SleepSample { startTime: string; endTime: string; awakeMinutes: number; id?: string }
 export async function readSleep(range: TimeRange): Promise<SleepSample[]> {
-  const recs = await read<any>('SleepSession', range)
+  const recs = await read<RawSleepSession>('SleepSession', range)
   return recs.map((r) => {
     // stage === 1 is AWAKE in the Health Connect enum
     const awakeMinutes = (r.stages ?? [])
-      .filter((s: any) => s.stage === 1)
-      .reduce((sum: number, s: any) => sum + minutesBetween(s.startTime, s.endTime), 0)
+      .filter((s) => s.stage === 1)
+      .reduce((sum: number, s) => sum + minutesBetween(s.startTime, s.endTime), 0)
     return { startTime: r.startTime, endTime: r.endTime, awakeMinutes, id: r.metadata?.id }
   })
 }
 
 export interface HrSample { time: string; bpm: number }
 export async function readHeartRate(range: TimeRange): Promise<HrSample[]> {
-  const recs = await read<any>('HeartRate', range)
+  const recs = await read<RawHeartRate>('HeartRate', range)
   return recs.flatMap((r) =>
-    (r.samples ?? []).map((s: any) => ({ time: s.time, bpm: s.beatsPerMinute })),
+    (r.samples ?? []).map((s) => ({ time: s.time, bpm: s.beatsPerMinute })),
   )
 }
 
 export async function readRestingHeartRate(range: TimeRange): Promise<HrSample[]> {
-  const recs = await read<any>('RestingHeartRate', range)
+  const recs = await read<RawRestingHeartRate>('RestingHeartRate', range)
   return recs.map((r) => ({ time: r.time, bpm: r.beatsPerMinute }))
 }
 
 export interface ValueSample { time: string; value: number }
 export async function readHrv(range: TimeRange): Promise<ValueSample[]> {
-  const recs = await read<any>('HeartRateVariabilityRmssd', range)
+  const recs = await read<RawHrv>('HeartRateVariabilityRmssd', range)
   return recs.map((r) => ({ time: r.time, value: r.heartRateVariabilityMillis }))
 }
 
 export async function readVo2Max(range: TimeRange): Promise<ValueSample[]> {
-  const recs = await read<any>('Vo2Max', range)
+  const recs = await read<RawVo2Max>('Vo2Max', range)
   return recs.map((r) => ({ time: r.time, value: r.vo2MillilitersPerMinuteKilogram }))
 }
 
 export interface EnergySample { startTime: string; endTime: string; kcal: number }
 export async function readActiveCalories(range: TimeRange): Promise<EnergySample[]> {
-  const recs = await read<any>('ActiveCaloriesBurned', range)
+  const recs = await read<RawCalories>('ActiveCaloriesBurned', range)
   return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
 }
 
 export async function readTotalCalories(range: TimeRange): Promise<EnergySample[]> {
-  const recs = await read<any>('TotalCaloriesBurned', range)
+  const recs = await read<RawCalories>('TotalCaloriesBurned', range)
   return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
 }
 
 export interface WeightSample { time: string; kg: number; id?: string }
 export async function readWeight(range: TimeRange): Promise<WeightSample[]> {
-  const recs = await read<any>('Weight', range)
+  const recs = await read<RawWeight>('Weight', range)
   return recs.map((r) => ({ time: r.time, kg: r.weight?.inKilograms ?? 0, id: r.metadata?.id }))
 }
 
 export interface BodyFatSample { time: string; pct: number; id?: string }
 export async function readBodyFat(range: TimeRange): Promise<BodyFatSample[]> {
-  const recs = await read<any>('BodyFat', range)
+  const recs = await read<RawBodyFat>('BodyFat', range)
   return recs.map((r) => ({ time: r.time, pct: r.percentage ?? 0, id: r.metadata?.id }))
 }
 

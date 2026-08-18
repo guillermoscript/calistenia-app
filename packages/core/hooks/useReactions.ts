@@ -17,6 +17,8 @@ type ReactionsMap = Record<string, EmojiReactions>
  * actualiza el caché, onError restaura el snapshot.
  * Forma pública estable: { loadForSessions, toggleReaction, getReactions, REACTION_EMOJIS }.
  */
+const NO_REACTIONS: EmojiReactions = Object.freeze({})
+
 export function useReactions(userId: string | null) {
   const qc = useQueryClient()
 
@@ -163,7 +165,9 @@ export function useReactions(userId: string | null) {
   )
 
   const getReactions = useCallback(
-    (sessionId: string): EmojiReactions => reactions[sessionId] || {},
+    // NO_REACTIONS y no `{}`: un objeto nuevo por llamada rompía el memo de las
+    // tarjetas del feed justo en el caso común (publicación sin reacciones).
+    (sessionId: string): EmojiReactions => reactions[sessionId] || NO_REACTIONS,
     [reactions],
   )
 

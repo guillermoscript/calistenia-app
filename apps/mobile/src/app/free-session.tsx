@@ -1,5 +1,5 @@
 /** Sesión libre — picker de ejercicios del catálogo + warmup/cooldown prompt. */
-import { useState, useMemo } from 'react'
+import { memo, useCallback, useState, useMemo } from 'react'
 import {
   View,
   FlatList,
@@ -323,6 +323,19 @@ function PickView({
   const showTemplates =
     templates.length > 0 && search.trim() === '' && activeCategory === 'todos'
 
+  const renderPickerRow = useCallback(
+    ({ item }: { item: CatalogExercise }) => (
+      <PickerRow
+        ex={item}
+        locale={locale}
+        selected={selectedIds.has(item.id)}
+        position={selectedPositions.get(item.id) ?? null}
+        onToggle={onToggle}
+      />
+    ),
+    [locale, selectedIds, selectedPositions, onToggle],
+  )
+
   return (
     <View className="flex-1">
       {/* Search */}
@@ -382,38 +395,8 @@ function PickView({
             />
           ) : null
         }
-        renderItem={({ item }) => {
-          const isSelected = selectedIds.has(item.id)
-          const position = selectedPositions.get(item.id) ?? null
-          return (
-            <Pressable
-              onPress={() => onToggle(item)}
-              className={cn(
-                'flex-row items-center gap-3 rounded-xl border px-3 py-2.5 active:opacity-70',
-                isSelected ? 'border-lime/30 bg-lime/5' : 'border-border bg-card',
-              )}
-            >
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground" numberOfLines={1}>
-                  {localize(item.name, locale)}
-                </Text>
-                <Text className="font-mono text-xs text-muted-foreground" numberOfLines={1}>
-                  {localize(item.muscles, locale)}
-                </Text>
-              </View>
-              <View className={cn(
-                'h-7 w-7 items-center justify-center rounded-full border',
-                isSelected ? 'border-lime bg-lime' : 'border-border bg-muted/40',
-              )}>
-                {isSelected ? (
-                  <Text className="font-mono text-[11px] text-black">{position}</Text>
-                ) : (
-                  <Plus size={14} color={COLORS.mutedIcon} />
-                )}
-              </View>
-            </Pressable>
-          )
-        }}
+        renderItem={renderPickerRow}
+        extraData={renderPickerRow}
         ListEmptyComponent={
           <View className="items-center py-12">
             <Text className="text-muted-foreground font-mono text-sm">{t('common.noResults')}</Text>
@@ -456,6 +439,22 @@ function ReviewView({
   onStart: () => void
 }) {
   const { t } = useTranslation()
+  const count = selected.length
+  const renderReviewRow = useCallback(
+    ({ item, index }: { item: CatalogExercise; index: number }) => (
+      <ReviewRow
+        ex={item}
+        index={index}
+        count={count}
+        locale={locale}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onRemove={onRemove}
+      />
+    ),
+    [count, locale, onMoveUp, onMoveDown, onRemove],
+  )
+
   return (
     <View className="flex-1">
       <FlatList
@@ -468,29 +467,8 @@ function ReviewView({
             <Text className="mt-1 text-xs text-muted-foreground">{t('freeSession.reviewEmptyBody')}</Text>
           </View>
         }
-        renderItem={({ item, index }) => (
-          <View className="flex-row items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5">
-            {/* Order number */}
-            <Text className="font-mono text-[11px] text-muted-foreground w-5 text-center">{index + 1}</Text>
-            {/* Name + muscles */}
-            <View className="flex-1">
-              <Text className="font-sans-medium text-foreground" numberOfLines={1}>
-                {localize(item.name, locale)}
-              </Text>
-              <Text className="font-mono text-xs text-muted-foreground" numberOfLines={1}>
-                {localize(item.muscles, locale)}
-              </Text>
-            </View>
-            {/* Controls */}
-            <ReorderControls
-              index={index}
-              count={selected.length}
-              onMoveUp={() => onMoveUp(index)}
-              onMoveDown={() => onMoveDown(index)}
-              onRemove={() => onRemove(index)}
-            />
-          </View>
-        )}
+        renderItem={renderReviewRow}
+        extraData={renderReviewRow}
       />
 
       {/* Start button */}
@@ -506,3 +484,92 @@ function ReviewView({
     </View>
   )
 }
+
+const PickerRow = memo(function PickerRow({
+  ex,
+  locale,
+  selected,
+  position,
+  onToggle,
+}: {
+  ex: CatalogExercise
+  locale: string
+  selected: boolean
+  position: number | null
+  onToggle: (ex: CatalogExercise) => void
+}) {
+  const handlePress = useCallback(() => onToggle(ex), [onToggle, ex])
+  return (
+    <Pressable
+      onPress={handlePress}
+      className={cn(
+        'flex-row items-center gap-3 rounded-xl border px-3 py-2.5 active:opacity-70',
+        selected ? 'border-lime/30 bg-lime/5' : 'border-border bg-card',
+      )}
+    >
+      <View className="flex-1">
+        <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+          {localize(ex.name, locale)}
+        </Text>
+        <Text className="font-mono text-xs text-muted-foreground" numberOfLines={1}>
+          {localize(ex.muscles, locale)}
+        </Text>
+      </View>
+      <View className={cn(
+        'h-7 w-7 items-center justify-center rounded-full border',
+        selected ? 'border-lime bg-lime' : 'border-border bg-muted/40',
+      )}>
+        {selected ? (
+          <Text className="font-mono text-[11px] text-black">{position}</Text>
+        ) : (
+          <Plus size={14} color={COLORS.mutedIcon} />
+        )}
+      </View>
+    </Pressable>
+  )
+})
+
+const ReviewRow = memo(function ReviewRow({
+  ex,
+  index,
+  count,
+  locale,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
+  ex: CatalogExercise
+  index: number
+  count: number
+  locale: string
+  onMoveUp: (i: number) => void
+  onMoveDown: (i: number) => void
+  onRemove: (i: number) => void
+}) {
+  const handleMoveUp = useCallback(() => onMoveUp(index), [onMoveUp, index])
+  const handleMoveDown = useCallback(() => onMoveDown(index), [onMoveDown, index])
+  const handleRemove = useCallback(() => onRemove(index), [onRemove, index])
+  return (
+    <View className="flex-row items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5">
+      {/* Order number */}
+      <Text className="font-mono text-[11px] text-muted-foreground w-5 text-center">{index + 1}</Text>
+      {/* Name + muscles */}
+      <View className="flex-1">
+        <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+          {localize(ex.name, locale)}
+        </Text>
+        <Text className="font-mono text-xs text-muted-foreground" numberOfLines={1}>
+          {localize(ex.muscles, locale)}
+        </Text>
+      </View>
+      {/* Controls */}
+      <ReorderControls
+        index={index}
+        count={count}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        onRemove={handleRemove}
+      />
+    </View>
+  )
+})

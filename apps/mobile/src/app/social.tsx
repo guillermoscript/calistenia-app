@@ -2,7 +2,7 @@
  * Feed social — actividad de usuarios seguidos.
  * Ruta apilada: /social
  */
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { memo, useEffect, useRef, useCallback, useState } from 'react'
 import { View, FlatList, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
@@ -20,6 +20,7 @@ import { useCommentReactions } from '@calistenia/core/hooks/useCommentReactions'
 import { FeedCard } from '@/components/social/FeedCard'
 import { CommentsSheet, type CommentsSheetMethods } from '@/components/social/CommentsSheet'
 import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
+import type { EmojiReactions } from '@calistenia/core/hooks/useReactions'
 
 export default function SocialScreen() {
   const { t } = useTranslation()
@@ -147,6 +148,21 @@ export default function SocialScreen() {
     [addComment, activeSessionOwner],
   )
 
+  const renderItem = useCallback(
+    ({ item }: { item: FeedItem }) => (
+      <FeedRow
+        item={item}
+        isOwnPost={item.userId === userId}
+        reactions={getReactions(item.id)}
+        commentCount={getCommentCount(item.id)}
+        onReact={toggleReaction}
+        onComment={handleOpenComments}
+        highlight={item.id === highlightId}
+      />
+    ),
+    [userId, getReactions, getCommentCount, toggleReaction, handleOpenComments, highlightId],
+  )
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <FlatList
@@ -218,17 +234,7 @@ export default function SocialScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item }) => (
-          <FeedCard
-            item={item}
-            isOwnPost={item.userId === userId}
-            reactions={getReactions(item.id)}
-            onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
-            commentCount={getCommentCount(item.id)}
-            onComment={() => handleOpenComments(item)}
-            highlight={item.id === highlightId}
-          />
-        )}
+        renderItem={renderItem}
       />
 
       {/* Hoja de comentarios — un único modal controlado por ref */}
@@ -272,3 +278,43 @@ function FeedCardSkeleton() {
     </View>
   )
 }
+
+/**
+ * Ata los callbacks del feed a su item. Sin esta capa, `onReact`/`onComment`
+ * eran flechas inline: identidad nueva por render, y el `memo` de FeedCard no
+ * servía de nada.
+ */
+const FeedRow = memo(function FeedRow({
+  item,
+  isOwnPost,
+  reactions,
+  commentCount,
+  onReact,
+  onComment,
+  highlight,
+}: {
+  item: FeedItem
+  isOwnPost: boolean
+  reactions: EmojiReactions
+  commentCount: number
+  onReact: (sessionId: string, emoji: string, sessionOwnerId?: string) => void
+  onComment: (item: FeedItem) => void
+  highlight: boolean
+}) {
+  const handleReact = useCallback(
+    (emoji: string) => onReact(item.id, emoji, item.userId),
+    [onReact, item.id, item.userId],
+  )
+  const handleComment = useCallback(() => onComment(item), [onComment, item])
+  return (
+    <FeedCard
+      item={item}
+      isOwnPost={isOwnPost}
+      reactions={reactions}
+      onReact={handleReact}
+      commentCount={commentCount}
+      onComment={handleComment}
+      highlight={highlight}
+    />
+  )
+})
