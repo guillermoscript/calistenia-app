@@ -17,23 +17,7 @@ const METRIC_LABEL_KEYS: Record<ChallengeMetric, string> = {
   total_distance: 'challenge.metricTotalDistance',
 }
 
-export function getMetricLabels(): Record<ChallengeMetric, string> {
-  const labels = {} as Record<ChallengeMetric, string>
-  for (const [k, v] of Object.entries(METRIC_LABEL_KEYS)) {
-    labels[k as ChallengeMetric] = i18n.t(v)
-  }
-  return labels
-}
-
-/** @deprecated Use getMetricLabels() for reactive labels */
-export const METRIC_LABELS = new Proxy({} as Record<ChallengeMetric, string>, {
-  get(_target, prop: string) {
-    const key = METRIC_LABEL_KEYS[prop as ChallengeMetric]
-    return key ? i18n.t(key) : prop
-  },
-})
-
-export const METRIC_UNITS: Record<ChallengeMetric, string> = {
+const METRIC_UNITS: Record<ChallengeMetric, string> = {
   most_sessions: '',
   most_pullups: 'reps',
   most_pushups: 'reps',

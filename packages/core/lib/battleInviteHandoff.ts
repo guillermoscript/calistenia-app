@@ -29,13 +29,3 @@ export function consumeBattleInviteToken(): string | null {
   if (token) storage.removeItem(BATTLE_INVITE_KEY)
   return token
 }
-
-/** Peek without consuming, so a screen can decide whether to offer the join at all. */
-export function hasPendingBattleInvite(): boolean {
-  return !!storage.getItem(BATTLE_INVITE_KEY)
-}
-
-/** Signing into an existing account must not hand someone else's invite to this user. */
-export function discardBattleInviteToken(): void {
-  storage.removeItem(BATTLE_INVITE_KEY)
-}

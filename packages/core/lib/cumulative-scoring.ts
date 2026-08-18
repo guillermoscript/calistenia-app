@@ -17,7 +17,7 @@ import type { ChallengeMetric } from '../types'
 
 export type CumulativeMetric = 'total_workouts' | 'total_exercise' | 'total_distance'
 
-export const CUMULATIVE_METRICS: readonly CumulativeMetric[] = ['total_workouts', 'total_exercise', 'total_distance']
+const CUMULATIVE_METRICS: readonly CumulativeMetric[] = ['total_workouts', 'total_exercise', 'total_distance']
 
 export function isCumulativeMetric(metric: ChallengeMetric | string): metric is CumulativeMetric {
   return (CUMULATIVE_METRICS as readonly string[]).includes(metric)

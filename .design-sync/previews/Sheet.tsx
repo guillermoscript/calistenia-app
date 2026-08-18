@@ -1,5 +1,6 @@
 import {
-  Badge, Button, Label, Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, Switch,
+  Badge, Button, ButtonGroup, ButtonGroupItem, Label,
+  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
 } from '@calistenia/web'
 
 // Se renderiza abierto a propósito: el estado cerrado no muestra nada.
@@ -19,8 +20,11 @@ export const FiltrosMovil = () => (
           <Badge variant="secondary">Pierna</Badge>
         </div>
         <div className="flex items-center justify-between">
-          <Label htmlFor="sh-eq">Solo sin equipamiento</Label>
-          <Switch id="sh-eq" defaultChecked />
+          <Label>Solo sin equipamiento</Label>
+          <ButtonGroup>
+            <ButtonGroupItem>Sí</ButtonGroupItem>
+            <ButtonGroupItem>No</ButtonGroupItem>
+          </ButtonGroup>
         </div>
       </div>
       <SheetFooter>

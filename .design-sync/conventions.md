@@ -6,12 +6,11 @@ sobre Radix, Tailwind v4, React 19). Están en `window.Calistenia`.
 ## Envoltorios y contexto
 
 **No hay provider global.** La mayoría de los componentes renderizan sueltos.
-Tres excepciones, y sin su envoltorio no se ven:
+Dos excepciones, y sin su envoltorio no se ven:
 
 - `Tooltip` → necesita `TooltipProvider` en un ancestro.
 - `Sidebar` → necesita `SidebarProvider` envolviendo la página, y el contenido
   principal va en `SidebarInset` como hermano de `Sidebar`.
-- `Carousel` → los `CarouselItem` van dentro de `CarouselContent`.
 
 **Modo oscuro**: pon `class="dark"` en un ancestro (normalmente `<html>`). Los
 tokens voltean solos; no escribas variantes `dark:` para ellos. El sistema es
