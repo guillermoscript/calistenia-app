@@ -156,7 +156,9 @@ interface ProviderProps {
 
 export function CircuitSessionProvider({ userId, children }: ProviderProps) {
   // Restore síncrono — el storage de core ya está hidratado en el boot.
-  const restored = useRef(loadFromStorage()).current
+  // Init perezosa: con `useRef(loadFromStorage()).current` el `JSON.parse` del
+  // circuito persistido corría en CADA render del provider (#475).
+  const [restored] = useState(loadFromStorage)
 
   const [isActive, setIsActive] = useState(!!restored)
   const [circuit, setCircuit] = useState<CircuitDefinition | null>(restored?.circuit ?? null)

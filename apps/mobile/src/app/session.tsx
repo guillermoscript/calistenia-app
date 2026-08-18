@@ -27,10 +27,7 @@ export default function SessionScreen() {
 
   const {
     isActive, workout, workoutKey, source, startSession, endSession,
-    getRestForExercise, setRestForExercise,
-    progress, setProgress, startedAt,
-    setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown,
-    resumeEpoch,
+    getWarmupCooldownData, resumeEpoch,
   } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const router = useRouter()
@@ -118,15 +115,7 @@ export default function SessionScreen() {
       onExitSession={handleExitSession}
       onBack={goHome}
       getExerciseLogs={getExerciseLogs}
-      getRestForExercise={getRestForExercise}
-      setRestForExercise={setRestForExercise}
-      initialProgress={progress}
-      onProgressChange={setProgress}
-      startedAt={startedAt}
       totalSessions={getTotalSessions()}
-      onSkipWarmup={skipWarmup}
-      onSkipCooldown={skipCooldown}
-      onSectionStartTimeChange={setSectionStartTime}
     />
   )
 }

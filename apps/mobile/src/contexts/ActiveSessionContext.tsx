@@ -52,7 +52,12 @@ interface ActiveSessionContextValue {
   workoutKey: string
   source: SessionSource
   exerciseCount: number
-  progress: SessionProgress
+  /**
+   * Lee el progreso persistido SIN suscribirse a él. `SessionView` lo usa una
+   * sola vez, al montar, para restaurar su reducer; suscribirse volvería a
+   * re-renderizar la Home y las barras en cada serie (#475).
+   */
+  getProgressSnapshot: () => SessionProgress
   setProgress: (update: Partial<SessionProgress>) => void
   startSession: (workout: Workout, workoutKey: string, source: SessionSource) => void
   endSession: () => void
@@ -75,7 +80,13 @@ export function getCurrentSection(exercises: Exercise[], stepIdx: number): 'warm
   return exercises[stepIdx].section || 'main'
 }
 
+// Dos contextos a propósito: el *store* (identidad de la sesión y acciones) es
+// estable durante todo el entreno, mientras que el progreso cambia en cada
+// serie. Antes iban juntos en un único `useMemo`, así que registrar una serie
+// re-renderizaba `ActiveSessionBar`, `ActiveBattleBar` y la Home, ninguno de
+// los cuales lee el progreso (#475).
 const ActiveSessionContext = createContext<ActiveSessionContextValue | null>(null)
+const ActiveSessionProgressContext = createContext<SessionProgress | null>(null)
 
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
 
@@ -123,7 +134,9 @@ const INITIAL_PROGRESS: SessionProgress = { stepIdx: 0, phase: 'exercise', setsC
 
 export function ActiveSessionProvider({ children, getRestForExercise, setRestForExercise }: ProviderProps) {
   // Restore síncrono — el storage de core ya está hidratado en el boot.
-  const restored = useRef(loadFromStorage()).current
+  // Init perezosa: con `useRef(loadFromStorage()).current` el `JSON.parse` del
+  // entreno persistido corría en CADA render del provider, o sea en cada serie.
+  const [restored] = useState(loadFromStorage)
 
   const [isActive, setIsActive] = useState(!!restored)
   const [workout, setWorkout] = useState<Workout | null>(restored?.workout ?? null)
@@ -142,6 +155,13 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   const warmupDurationRef = useRef(0)
   const cooldownSkippedRef = useRef(false)
   const cooldownDurationRef = useRef(0)
+
+  // Espejo del progreso actualizado EN RENDER (no en un efecto): `SessionView`
+  // lo lee durante su primer render, antes de que corra ningún efecto.
+  const progressRef = useRef(progress)
+  progressRef.current = progress
+
+  const getProgressSnapshot = useCallback(() => progressRef.current, [])
 
   const setProgress = useCallback((update: Partial<SessionProgress>) => {
     setProgressState(prev => ({ ...prev, ...update }))
@@ -275,7 +295,7 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     workoutKey: workoutKeyRef.current,
     source,
     exerciseCount: workout?.exercises.length ?? 0,
-    progress,
+    getProgressSnapshot,
     setProgress,
     startSession,
     endSession,
@@ -288,11 +308,13 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     resumeEpoch,
     getRestForExercise,
     setRestForExercise,
-  }), [isActive, workout, source, progress, setProgress, startSession, endSession, sectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, resumeEpoch, getRestForExercise, setRestForExercise])
+  }), [isActive, workout, source, getProgressSnapshot, setProgress, startSession, endSession, sectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, resumeEpoch, getRestForExercise, setRestForExercise])
 
   return (
     <ActiveSessionContext.Provider value={value}>
-      {children}
+      <ActiveSessionProgressContext.Provider value={progress}>
+        {children}
+      </ActiveSessionProgressContext.Provider>
     </ActiveSessionContext.Provider>
   )
 }
@@ -300,5 +322,16 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
 export function useActiveSession() {
   const ctx = useContext(ActiveSessionContext)
   if (!ctx) throw new Error('useActiveSession must be used within ActiveSessionProvider')
+  return ctx
+}
+
+/**
+ * Progreso vivo de la sesión. Suscribirse aquí re-renderiza en CADA serie, así
+ * que úsalo solo si de verdad necesitas el valor actual; para restaurar al
+ * montar está `getProgressSnapshot()` de `useActiveSession()`.
+ */
+export function useActiveSessionProgress() {
+  const ctx = useContext(ActiveSessionProgressContext)
+  if (!ctx) throw new Error('useActiveSessionProgress must be used within ActiveSessionProvider')
   return ctx
 }
