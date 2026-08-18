@@ -29,7 +29,8 @@ voltean solos bajo `.dark`** — no escribas variantes `dark:` para ellos; solo
 hacen falta para valores crudos (`bg-zinc-900`).
 
 El lima es más oscuro en modo claro (38%) que en oscuro (57%) para mantener el
-contraste en ambos. `lime-foreground` es blanco en claro y casi-negro en oscuro.
+contraste en ambos. `lime-foreground` es casi-negro en los dos temas (blanco
+sobre el lima de modo claro sólo da 2,33:1 y suspende WCAG AA; ver #548).
 
 También existen tokens de gráficas en hex, para librerías que no aceptan HSL
 suelto: `--chart-axis`, `--chart-grid`, `--chart-tooltip-bg`,

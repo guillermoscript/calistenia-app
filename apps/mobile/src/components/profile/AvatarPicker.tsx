@@ -10,7 +10,6 @@ import { useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
-import { useColorScheme } from 'nativewind'
 import { Camera, Images, Trash2 } from 'lucide-react-native'
 import type { RecordModel } from 'pocketbase'
 
@@ -24,12 +23,11 @@ const FILL = { width: '100%', height: '100%' } as const
 
 export function AvatarPicker({ user, initial }: { user: RecordModel | null; initial: string }) {
   const { t } = useTranslation()
-  const { colorScheme } = useColorScheme()
   const { avatarUrl, busy, pick, remove } = useAvatarUpload(user)
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  // El contraste sobre lime se invierte con el tema (--lime-foreground).
-  const onLime = colorScheme === 'dark' ? 'hsl(0 0% 7%)' : 'hsl(0 0% 100%)'
+  // Casi-negro en ambos temas (--lime-foreground es 0 0% 7% en claro y oscuro; #548).
+  const onLime = 'hsl(0 0% 7%)'
 
   const confirmRemove = () => {
     Alert.alert(t('profile.avatarRemoveConfirm'), undefined, [
