@@ -77,7 +77,11 @@ export function getStaticCatalog(): ExerciseCatalog {
  * índice antes de tocar PB.
  */
 export function useExerciseCatalog(): ExerciseCatalog {
-  const { ready } = useCatalogIndex()
+  // El hook guarda estado propio: cuando el índice llega, re-renderiza y
+  // `getStaticCatalog()` se reconstruye ya con el catálogo. Sin él, una primera
+  // pintada sin catálogo se quedaría con los nombres de `WORKOUTS` hasta que
+  // algo ajeno provocase otro render.
+  useCatalogIndex()
   const query = useQuery({
     queryKey: qk.exerciseCatalog,
     // El catálogo cambia muy poco y lo consultan varias pantallas: media hora de
@@ -118,9 +122,5 @@ export function useExerciseCatalog(): ExerciseCatalog {
     },
   })
 
-  // `ready` entra en la expresión para que el fallback se recalcule cuando el
-  // índice llega; sin eso, una primera pintada sin catálogo se quedaría
-  // congelada con los nombres de `WORKOUTS` hasta el siguiente render.
-  void ready
   return query.data ?? getStaticCatalog()
 }
