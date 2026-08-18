@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useQueryClient } from '@tanstack/react-query'
 import i18n from '../lib/i18n'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { lifecycle } from '@calistenia/core/platform'
 import { qk } from '@calistenia/core/lib/query-keys'
 import {
   calculateElevationGain,
@@ -108,7 +109,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     getStartTime,
     getPausedDuration,
     canRestartGps: useCallback(
-      () => stateRef.current === 'tracking' && document.visibilityState === 'visible',
+      () => stateRef.current === 'tracking' && lifecycle.isForeground(),
       [],
     ),
     onGpsStalled: useCallback(() => restartGpsRef.current(), []),
@@ -159,14 +160,10 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   // Al ocultar la pestaña, un último fix antes de que el navegador congele el
   // JS. Best-effort: en iOS Safari puede no resolver nunca. (El snapshot en sí
   // lo guarda useCardioPersistence, que escucha el mismo evento.)
-  useEffect(() => {
-    const handler = () => {
-      if (document.visibilityState !== 'hidden' || stateRef.current !== 'tracking') return
-      captureOnce((fix) => { if (applyFix(fix)) persist() })
-    }
-    document.addEventListener('visibilitychange', handler)
-    return () => document.removeEventListener('visibilitychange', handler)
-  }, [captureOnce, applyFix, persist])
+  useEffect(() => lifecycle.onBackground(() => {
+    if (stateRef.current !== 'tracking') return
+    captureOnce((fix) => { if (applyFix(fix)) persist() })
+  }), [captureOnce, applyFix, persist])
 
   // ── Acciones de sesión ──────────────────────────────────────────────────
 

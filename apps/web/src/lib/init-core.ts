@@ -60,6 +60,23 @@ initCore({
     clear: () => op.clear(),
   },
   reportError: (e) => Sentry.captureException(e),
+  lifecycle: {
+    isForeground: () => document.visibilityState === 'visible',
+    onForeground: (handler) => {
+      const onVisibility = () => {
+        if (document.visibilityState === 'visible') handler()
+      }
+      document.addEventListener('visibilitychange', onVisibility)
+      return () => document.removeEventListener('visibilitychange', onVisibility)
+    },
+    onBackground: (handler) => {
+      const onVisibility = () => {
+        if (document.visibilityState === 'hidden') handler()
+      }
+      document.addEventListener('visibilitychange', onVisibility)
+      return () => document.removeEventListener('visibilitychange', onVisibility)
+    },
+  },
   connectivity: {
     isOnline: () => navigator.onLine,
     onOnline: (handler) => {

@@ -5,15 +5,15 @@
  *  - navigator.geolocation.watchPosition → cardio-tracker (expo-location + FGS)
  *  - localStorage → syncStorage (caché síncrona sobre AsyncStorage)
  *  - wake lock → expo-keep-awake
- *  - visibilitychange → AppState
+ *  - lifecycle (foreground/background) → `platform.lifecycle` de core (#482)
  * La lógica de filtrado (accuracy, jitter, gaps, Kalman) es la de core.
  */
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   type ReactNode, type MutableRefObject,
 } from 'react'
-import { AppState } from 'react-native'
 import i18n from 'i18next'
+import { lifecycle } from '@calistenia/core/platform'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { qk } from '@calistenia/core/lib/query-keys'
@@ -129,7 +129,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     getPausedDuration,
     // Sólo con la app activa: Android prohíbe arrancar un FGS desde background.
     canRestartGps: useCallback(
-      () => stateRef.current === 'tracking' && AppState.currentState === 'active',
+      () => stateRef.current === 'tracking' && lifecycle.isForeground(),
       [],
     ),
     onGpsStalled: useCallback(() => restartGpsRef.current(), []),

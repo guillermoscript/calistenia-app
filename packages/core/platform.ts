@@ -67,11 +67,32 @@ export interface CoreConnectivity {
   onChange?(handler: (online: boolean) => void): () => void
 }
 
+/**
+ * Primer plano / segundo plano. La web lo saca de `document.visibilitychange`;
+ * RN de `AppState`. Antes cada context resolvía esto por su cuenta, y el código
+ * compartido que usaba `document` era un no-op SILENCIOSO en nativo (#254).
+ */
+export interface CoreLifecycle {
+  /** ¿Está la app en primer plano ahora mismo? */
+  isForeground(): boolean
+  /** Suscribe a "la app volvió a primer plano". Retorna el unsubscribe. */
+  onForeground(handler: () => void): () => void
+  /** Suscribe a "la app se fue a segundo plano". Retorna el unsubscribe. */
+  onBackground(handler: () => void): () => void
+}
+
 export interface CorePlatform {
   storage: CoreStorage
   env: CoreEnv
   analytics: CoreAnalytics
   connectivity: CoreConnectivity
+  /**
+   * OPCIONAL a propósito, igual que `env.client`: los tests de core llaman a
+   * initCore() con una plataforma mínima. Si falta, el facade `lifecycle` de
+   * abajo degrada a "siempre en primer plano y nunca notifica" — nada se queda
+   * colgado esperando un evento que no va a llegar.
+   */
+  lifecycle?: CoreLifecycle
   /** Solo RN: authStore persistente para el SDK de PocketBase. Web usa el default (localStorage). */
   pbAuthStore?: AsyncAuthStore
   /** Reporte de errores a monitoreo (web: Sentry browser; RN: @sentry/react-native). */
@@ -106,4 +127,19 @@ export const storage: CoreStorage = {
   getItem: (key) => getPlatform().storage.getItem(key),
   setItem: (key, value) => getPlatform().storage.setItem(key, value),
   removeItem: (key) => getPlatform().storage.removeItem(key),
+}
+
+/** Unsubscribe que no hace nada — para cuando la plataforma no declara lifecycle. */
+const noopUnsubscribe = () => {}
+
+/**
+ * Objeto estable con el lifecycle de la plataforma. Delega en la implementación
+ * inyectada y, si no la hay, degrada a "siempre en primer plano": `isForeground()`
+ * responde `true` y las suscripciones no disparan nunca. Nunca lanza, para que un
+ * hook compartido pueda depender de él sin obligar a todos los tests a inyectarlo.
+ */
+export const lifecycle: CoreLifecycle = {
+  isForeground: () => getPlatform().lifecycle?.isForeground() ?? true,
+  onForeground: (handler) => getPlatform().lifecycle?.onForeground(handler) ?? noopUnsubscribe,
+  onBackground: (handler) => getPlatform().lifecycle?.onBackground(handler) ?? noopUnsubscribe,
 }
