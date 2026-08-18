@@ -112,7 +112,7 @@ export default function SessionView({
   const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
 
   const sessionUser = useAuthUser()
-  const sessionStartTime = useRef<number>(startedAt || Date.now())
+  const [sessionStartTime] = useState<number>(() => startedAt || Date.now())
 
   const currentStep = steps[stepIdx]
   const nextStep = steps[stepIdx + 1] || null
@@ -269,13 +269,13 @@ export default function SessionView({
   const isInCooldown = stepSection === 'cooldown' && (phase === 'exercise' || phase === 'rest')
 
   const handleNoteSaved = useCallback((note: string) => {
-    const durationSeconds = Math.round((Date.now() - sessionStartTime.current) / 1000)
+    const durationSeconds = Math.round((Date.now() - sessionStartTime) / 1000)
     // Finalize defensivo si la pantalla de nota se alcanzó antes de que el
     // efecto de finalize commitease; el tracker es idempotente.
     const timings = finalTimingsRef.current ?? timingTracker.finalize()
     onMarkDone(workoutKey, note, { durationSeconds, exerciseTimings: timings })
     dispatch({ type: 'finish' })
-  }, [onMarkDone, workoutKey, timingTracker])
+  }, [onMarkDone, workoutKey, timingTracker, sessionStartTime])
 
   const confirmDiscard = useCallback(() => {
     Alert.alert(
@@ -288,7 +288,7 @@ export default function SessionView({
     )
   }, [t, setsCount, onExitSession])
 
-  const durationMin = Math.round((Date.now() - sessionStartTime.current) / 60000)
+  const durationMin = Math.round((Date.now() - sessionStartTime) / 60000)
 
   // Botón de la notificación: misma semántica que el botón rápido de la UI
   const handleLiveAdvance = useCallback(() => {
