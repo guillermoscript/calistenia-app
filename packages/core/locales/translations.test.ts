@@ -88,10 +88,14 @@ describe('paridad entre locales', () => {
     const ref = readParsed(reference)
     const target = readParsed(locale)
 
+    // Se compara sobre campos fijos (`ref`/`target`) y sólo al final se
+    // reetiquetan con el nombre del idioma: con claves computadas TS colapsa
+    // el tipo del valor a `string | string[]` y `.join` deja de existir.
     const mismatches = Object.keys(ref)
       .filter((k) => k in target)
-      .map((k) => ({ key: k, [reference]: placeholders(ref[k]), [locale]: placeholders(target[k]) }))
-      .filter((m) => m[reference].join(',') !== m[locale].join(','))
+      .map((k) => ({ key: k, ref: placeholders(ref[k]), target: placeholders(target[k]) }))
+      .filter((m) => m.ref.join(',') !== m.target.join(','))
+      .map((m) => ({ key: m.key, [reference]: m.ref, [locale]: m.target }))
 
     // Un `{{count}}` que falta en un idioma no rompe el build: sale la frase
     // sin el número y ya está. Se ve en producción o no se ve.

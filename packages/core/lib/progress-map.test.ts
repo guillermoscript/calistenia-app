@@ -80,6 +80,11 @@ describe('buildProgressMap', () => {
 })
 
 describe('pendingNotYetOnServer', () => {
+  // Las filas reales (cola local y PocketBase) traen más campos que el
+  // `client_id` que mira la función; se declaran aquí para que el literal del
+  // test tenga la misma forma laxa que en producción.
+  type Row = { client_id?: string; id?: string; reps?: string }
+
   // La ventana ciega: el create se encoló tras un `status: 0` pero sí llegó.
   // Hasta que la cola drene y descubra el `validation_not_unique`, superponerlo
   // sobre la fila real duplicaría la serie en pantalla.
@@ -89,12 +94,14 @@ describe('pendingNotYetOnServer', () => {
   })
 
   it('conserva los pendientes sin client_id (filas anteriores a la migración)', () => {
-    expect(pendingNotYetOnServer([{ reps: '8' }], [{ client_id: 'a' }])).toEqual([{ reps: '8' }])
+    const pending: Row[] = [{ reps: '8' }]
+    expect(pendingNotYetOnServer(pending, [{ client_id: 'a' }])).toEqual([{ reps: '8' }])
   })
 
   it('ignora las filas del servidor sin client_id al comparar', () => {
     const pending = [{ client_id: 'a' }]
-    expect(pendingNotYetOnServer(pending, [{ id: 'srv1' }, { client_id: '' }])).toEqual(pending)
+    const serverRows: Row[] = [{ id: 'srv1' }, { client_id: '' }]
+    expect(pendingNotYetOnServer(pending, serverRows)).toEqual(pending)
   })
 })
 

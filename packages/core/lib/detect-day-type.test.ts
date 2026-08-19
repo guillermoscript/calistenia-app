@@ -6,8 +6,8 @@ import { detectDayType } from './detect-day-type'
 function ex(muscles: string): Exercise {
   return {
     id: 'x', name: 'Ejercicio', sets: 3, reps: '10', rest: 60,
-    muscles, note: '', youtube: '', priority: 'normal',
-  } as Exercise
+    muscles, note: '', youtube: '', priority: 'med',
+  }
 }
 
 describe('detectDayType', () => {
