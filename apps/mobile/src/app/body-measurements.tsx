@@ -13,6 +13,7 @@ import Svg, { Path, Circle } from 'react-native-svg'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -147,9 +148,9 @@ export default function BodyMeasurementsScreen() {
         </Pressable>
         <View className="flex-row items-end justify-between pb-4">
           <View className="flex-1">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {t('progress.bodyFat.kicker')}
-            </Text>
+            </Kicker>
             <Text className="font-bebas text-4xl text-foreground">
               {t('progress.bodyMeasurements.title')}
             </Text>

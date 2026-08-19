@@ -12,6 +12,7 @@ import { EmojiPicker } from '../components/social/EmojiPicker'
 import { CommentsSheet } from '../components/social/CommentsSheet'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
+import { EmptyState } from '../components/ui/empty-state'
 import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { shareWorkoutSession, shareContent } from '../lib/share'
@@ -111,14 +112,16 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       )}
 
       {!loading && items.length === 0 && (
-        <div className="text-center py-16 motion-safe:animate-scale-in">
-          <div className="text-3xl mb-3">📡</div>
-          <div className="text-sm text-muted-foreground mb-1">{t('feed.empty')}</div>
-          <div className="text-xs text-muted-foreground mb-4">{t('feed.emptyHint')}</div>
-          <Button onClick={() => navigate('/friends')} className="bg-lime text-lime-foreground hover:bg-lime/90">
-            {t('feed.findFriends')}
-          </Button>
-        </div>
+        <EmptyState
+          icon="📡"
+          title={t('feed.empty')}
+          hint={t('feed.emptyHint')}
+          action={(
+            <Button onClick={() => navigate('/friends')} variant="limeSolid">
+              {t('feed.findFriends')}
+            </Button>
+          )}
+        />
       )}
 
       {!loading && items.length > 0 && (

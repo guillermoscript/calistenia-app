@@ -129,7 +129,8 @@ export default function RaceLobby() {
         {!hasJoined && (
           <Button
             onClick={handleJoin}
-            className="w-full h-14 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-xl tracking-widest"
+            variant="limeSolid"
+            className="w-full h-14 font-bebas text-xl tracking-widest"
           >
             {t('race.join')}
           </Button>
@@ -137,8 +138,8 @@ export default function RaceLobby() {
         {hasJoined && me?.status !== 'ready' && !isCreator && (
           <Button
             onClick={actions.markReady}
-            variant="outline"
-            className="w-full h-12 font-bebas text-lg tracking-widest border-lime/30 text-lime hover:bg-lime/10"
+            variant="lime"
+            className="w-full h-12 font-bebas text-lg tracking-widest"
           >
             {t('race.ready').toUpperCase()}
           </Button>
@@ -170,7 +171,8 @@ export default function RaceLobby() {
         {canStart && (
           <Button
             onClick={actions.startCountdown}
-            className="w-full h-14 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-xl tracking-widest"
+            variant="limeSolid"
+            className="w-full h-14 font-bebas text-xl tracking-widest"
           >
             {t('race.start')}
           </Button>

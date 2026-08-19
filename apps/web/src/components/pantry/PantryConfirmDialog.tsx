@@ -236,9 +236,10 @@ export function PantryConfirmDialog({
             {t('common.cancel')}
           </Button>
           <Button
+            variant="limeSolid"
             onClick={confirm}
             disabled={!canConfirm || busy}
-            className="flex-1 bg-lime-400 font-mono text-xs uppercase tracking-[2px] text-zinc-900 hover:bg-lime-300"
+            className="flex-1 font-mono text-xs uppercase tracking-[2px]"
           >
             {busy ? <Spinner className="size-4" /> : t('pantry.confirm')}
           </Button>

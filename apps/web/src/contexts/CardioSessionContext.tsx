@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, use, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import i18n from '../lib/i18n'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -406,7 +406,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 }
 
 export function useCardioSessionContext() {
-  const ctx = useContext(CardioSessionContext)
+  const ctx = use(CardioSessionContext)
   if (!ctx) throw new Error('useCardioSessionContext must be used within CardioSessionProvider')
   return ctx
 }

@@ -144,7 +144,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                           variant="outline"
                           size="sm"
                           onClick={(e) => { e.stopPropagation(); onEdit(prog.id) }}
-                          className="h-7 px-2.5 text-[10px] tracking-wide hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+                          className="h-7 px-2.5 text-[10px] tracking-wide hover:border-lime hover:text-lime"
                         >
                           EDITAR
                         </Button>

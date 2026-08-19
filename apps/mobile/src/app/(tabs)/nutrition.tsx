@@ -18,6 +18,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { runOnJS } from 'react-native-reanimated'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -651,9 +652,9 @@ export default function NutritionTab() {
               className="flex-row items-end justify-between border-b border-border pb-4 active:opacity-70"
             >
               <View className="gap-1.5">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                <Kicker>
                   {t('pantry.title')}
-                </Text>
+                </Kicker>
                 {pantryCount > 0 ? (
                   <Text className="font-bebas text-3xl leading-none text-foreground">
                     {pantryCount}

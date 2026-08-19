@@ -114,71 +114,23 @@ import {
   ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon, BellIcon,
   ReferralIcon, CircuitIcon,
 } from './components/icons/nav-icons'
+import { NAV_ITEMS, MOBILE_TABS, NAV_SECTIONS } from './lib/nav-routes'
+import { useAutoRestoreNavigate } from './hooks/useAutoRestoreNavigate'
 
-/** Auto-navigates to /session on mount if a persisted session exists */
+/** Reanuda la sesión de entreno persistida llevando a /session. */
 function SessionRestoreNavigator() {
   const { isActive } = useActiveSession()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const hasNavigated = useRef(false)
-
-  useEffect(() => {
-    // Depende de isActive (no solo mount): la sesión puede llegar async desde
-    // el server (reanudar entre dispositivos) poco después de cargar la app.
-    if (isActive && location.pathname !== '/session' && !hasNavigated.current) {
-      hasNavigated.current = true
-      navigate('/session', { replace: true })
-    }
-  }, [isActive]) // eslint-disable-line react-hooks/exhaustive-deps
-
+  useAutoRestoreNavigate(isActive, '/session')
   return null
 }
 
-/** Auto-navigates to /circuit/active on mount if a persisted circuit session exists */
+/** Reanuda la sesión de circuito persistida llevando a /circuit/active. */
 function CircuitRestoreNavigator() {
   const { isActive } = useCircuitSession()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const hasNavigated = useRef(false)
-
-  useEffect(() => {
-    if (isActive && location.pathname !== '/circuit/active' && !hasNavigated.current) {
-      hasNavigated.current = true
-      navigate('/circuit/active', { replace: true })
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
+  useAutoRestoreNavigate(isActive, '/circuit/active')
   return null
 }
 
-interface NavItem {
-  path: string
-  labelKey: string
-  icon: React.FC<IconProps>
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { path: '/',          labelKey: 'nav.dashboard',      icon: LayoutIcon },
-  { path: '/workout',   labelKey: 'nav.workout',        icon: DumbbellIcon },
-  { path: '/lumbar',    labelKey: 'nav.lumbar',          icon: SpineIcon },
-  { path: '/progress',  labelKey: 'nav.progress',       icon: ChartIcon },
-  { path: '/nutrition', labelKey: 'nav.nutrition',       icon: NutritionIcon },
-  { path: '/calendar',  labelKey: 'nav.calendar',       icon: CalendarNavIcon },
-  { path: '/sleep',     labelKey: 'nav.sleep',           icon: SleepIcon },
-  { path: '/programs',  labelKey: 'nav.programs',        icon: ProgramIcon },
-  { path: '/exercises', labelKey: 'nav.exercises',       icon: ExerciseIcon },
-  { path: '/free-session', labelKey: 'nav.freeSession',  icon: FreeSessionIcon },
-  { path: '/cardio',    labelKey: 'nav.cardio',          icon: RunningIcon },
-  { path: '/circuit',   labelKey: 'nav.circuit',         icon: CircuitIcon },
-  { path: '/feed',      labelKey: 'nav.activity',        icon: ActivityIcon },
-  { path: '/friends',   labelKey: 'nav.friends',         icon: FriendsIcon },
-  { path: '/leaderboard', labelKey: 'nav.leaderboard',   icon: TrophyIcon },
-  { path: '/challenges', labelKey: 'nav.challenges',     icon: ChallengeIcon },
-  { path: '/community-programs', labelKey: 'nav.communityPrograms', icon: CalendarNavIcon },
-  { path: '/referrals', labelKey: 'nav.referrals',       icon: ReferralIcon },
-  { path: '/notifications', labelKey: 'nav.notifications', icon: BellIcon },
-  { path: '/profile',   labelKey: 'nav.profile',         icon: ProfileIcon },
-]
 
 // ── Hoisted RegExp for breadcrumb matching ──────────────────────────────────
 const RE_PROGRAM_EDIT = /^\/programs\/[^/]+\/edit$/
@@ -217,13 +169,6 @@ const AppLoader: React.FC = () => (
 
 // ── Mobile bottom tab bar ───────────────────────────────────────────────────
 
-const MOBILE_TABS: { path: string; labelKey: string; icon: React.FC<IconProps> }[] = [
-  { path: '/',          labelKey: 'nav.home',       icon: LayoutIcon },
-  { path: '/workout',   labelKey: 'nav.workout',    icon: DumbbellIcon },
-  { path: '/feed',      labelKey: 'nav.activity',   icon: ActivityIcon },
-  { path: '/progress',  labelKey: 'nav.progress',    icon: ChartIcon },
-  { path: '/profile',   labelKey: 'nav.profile',     icon: ProfileIcon },
-]
 
 function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; pathname: string }) {
   const { t } = useTranslation()
@@ -289,35 +234,6 @@ interface AppShellProps {
   children: ReactNode
 }
 
-const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
-  { labelKey: 'nav.sectionTraining', items: [
-    { path: '/', labelKey: 'nav.dashboard', icon: LayoutIcon },
-    { path: '/workout', labelKey: 'nav.workout', icon: DumbbellIcon },
-    { path: '/free-session', labelKey: 'nav.freeSession', icon: FreeSessionIcon },
-    { path: '/log-workout', labelKey: 'nav.logWorkout', icon: PencilIcon },
-    { path: '/cardio', labelKey: 'nav.cardio', icon: RunningIcon },
-    { path: '/circuit', labelKey: 'nav.circuit', icon: CircuitIcon },
-    { path: '/lumbar', labelKey: 'nav.lumbar', icon: SpineIcon },
-  ]},
-  { labelKey: 'nav.sectionTracking', items: [
-    { path: '/progress', labelKey: 'nav.progress', icon: ChartIcon },
-    { path: '/nutrition', labelKey: 'nav.nutrition', icon: NutritionIcon },
-    { path: '/sleep', labelKey: 'nav.sleep', icon: SleepIcon },
-    { path: '/calendar', labelKey: 'nav.calendar', icon: CalendarNavIcon },
-    { path: '/reminders', labelKey: 'nav.reminders', icon: BellIcon },
-  ]},
-  { labelKey: 'nav.sectionExplore', items: [
-    { path: '/programs', labelKey: 'nav.programs', icon: ProgramIcon },
-    { path: '/exercises', labelKey: 'nav.exercises', icon: ExerciseIcon },
-  ]},
-  { labelKey: 'nav.sectionSocial', items: [
-    { path: '/friends', labelKey: 'nav.friends', icon: FriendsIcon },
-    { path: '/challenges', labelKey: 'nav.challenges', icon: ChallengeIcon },
-    { path: '/community-programs', labelKey: 'nav.communityPrograms', icon: CalendarNavIcon },
-    { path: '/leaderboard', labelKey: 'nav.leaderboard', icon: TrophyIcon },
-    { path: '/referrals', labelKey: 'nav.referrals', icon: ReferralIcon },
-  ]},
-]
 
 function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
   const { t, i18n } = useTranslation()

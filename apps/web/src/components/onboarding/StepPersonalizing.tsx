@@ -157,8 +157,9 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
       </div>
 
       <Button
+        variant="limeSolid"
         onClick={onFinish}
-        className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+        className="w-full h-12 font-bebas text-xl tracking-wide"
       >
         {t('onboarding.startTraining')}
       </Button>

@@ -17,6 +17,26 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        // CTA de acento lima. Fondo y texto salen de los tokens `--lime` /
+        // `--lime-foreground`, nunca de una escala de Tailwind ni de
+        // `hsl(var(--lime))` a pelo: solo el token se adapta al modo claro,
+        // donde el lima es un oliva oscuro.
+        //
+        // El foreground fue casi-negro literal (`text-zinc-900`) mientras el
+        // token era blanco en claro, porque blanco sobre ese oliva da 2,33:1 y
+        // suspende WCAG AA. El #548 lo arregló en la raíz (ahora `0 0% 7%` en
+        // los dos temas, ~7,6:1 en claro), así que la variante vuelve al token
+        // como estaba previsto. `lib/lime-contrast.test.ts` falla en CI si el
+        // token se vuelve a aclarar. Espejo de `limeSolid` en móvil.
+        limeSolid: "bg-lime text-lime-foreground hover:bg-lime/90",
+        // Acento lima secundario: filete + tinte, sin relleno. El lima marca
+        // "activo/interactuable", así que esta es la forma por defecto de un
+        // botón lima que no es el CTA. Espejo de `lime` en móvil.
+        lime: "border border-lime/40 bg-lime/10 text-lime hover:bg-lime/20",
+        // Acción destructiva secundaria (bloquear, abandonar): espejo de `lime`
+        // en rojo. Para el botón destructivo principal existe `destructive`.
+        danger:
+          "border border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500/20",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

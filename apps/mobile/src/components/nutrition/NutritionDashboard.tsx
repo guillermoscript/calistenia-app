@@ -8,6 +8,7 @@ import { Image as ExpoImage } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { Copy, Trash2, Pencil, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { todayStr, localHour } from '@calistenia/core/lib/dateUtils'
@@ -526,9 +527,9 @@ function NutritionDashboard({
             </Text>
             <View className="flex-row justify-between">
               <View>
-                <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                <Kicker size="xs">
                   {t('nutrition.spend.today', { defaultValue: 'Hoy' })}
-                </Text>
+                </Kicker>
                 <Text className="font-bebas text-2xl text-foreground">
                   {/* ≥ del día, no de la semana: un parcial del lunes no vuelve incierto el "Hoy" */}
                   {(() => {
@@ -538,17 +539,17 @@ function NutritionDashboard({
                 </Text>
               </View>
               <View>
-                <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                <Kicker size="xs">
                   {t('nutrition.spend.week', { defaultValue: 'Semana' })}
-                </Text>
+                </Kicker>
                 <Text className="font-bebas text-2xl text-foreground">
                   {spend.hasPartial ? '≥' : ''}${formatMoney(spend.weekTotal)}
                 </Text>
               </View>
               <View>
-                <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                <Kicker size="xs">
                   {t('nutrition.spend.perMeal', { defaultValue: 'Prom/comida' })}
-                </Text>
+                </Kicker>
                 <Text className="font-bebas text-2xl text-foreground">
                   ${formatMoney(spend.avgPerMeal)}
                 </Text>

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { haptics } from '@/lib/haptics'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
@@ -85,9 +86,9 @@ export function BadgeCelebrationDialog({ badges, onDone }: BadgeCelebrationDialo
             className="w-80 max-w-full items-center rounded-2xl border border-lime/40 bg-card px-6 py-8"
             style={{ opacity, transform: [{ scale }] }}
           >
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-lime">
+            <Kicker tone="lime">
               {t('badges.unlockedKicker')}
-            </Text>
+            </Kicker>
             <Text className="mt-5 text-6xl leading-none">{def.icon}</Text>
             <Text className="mt-4 font-bebas text-4xl leading-none text-foreground">
               {def.label}

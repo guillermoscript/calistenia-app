@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -292,9 +293,9 @@ export default function FriendsScreen() {
       {/* Fixed header */}
       <View className="flex-row items-start justify-between px-4 pt-2 pb-3">
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             SOCIAL
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">Amigos</Text>
         </View>
         <Pressable

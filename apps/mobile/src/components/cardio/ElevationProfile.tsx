@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react'
 import { View } from 'react-native'
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg'
-import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { haversineDistance } from '@calistenia/core/lib/geo'
 import type { GpsPoint } from '@calistenia/core/types'
 
@@ -59,8 +59,8 @@ export default function ElevationProfile({ points, height = 80 }: { points: GpsP
   return (
     <View className="rounded-xl border border-border bg-card p-3" onLayout={(e) => setWidth(e.nativeEvent.layout.width - 24)}>
       <View className="mb-1 flex-row justify-between">
-        <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">{Math.round(maxAlt)}m</Text>
-        <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">{Math.round(minAlt)}m</Text>
+        <Kicker size="xs">{Math.round(maxAlt)}m</Kicker>
+        <Kicker size="xs">{Math.round(minAlt)}m</Kicker>
       </View>
       {width > 0 && (() => {
         const { line, area } = buildPaths(width, height)

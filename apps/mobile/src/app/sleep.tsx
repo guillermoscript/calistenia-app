@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronLeft, Moon, Plus, Trash2 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -206,9 +207,9 @@ export default function SleepScreen() {
                   )}
                 >
                   <CardContent className="gap-1 py-5">
-                    <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                    <Kicker>
                       {isLastNight ? t('sleep.lastNight') : dateLabel(targetDate)}
-                    </Text>
+                    </Kicker>
                     <View className="flex-row items-center justify-between gap-4">
                       {/* flex-1 + shrink-0: en RN `flexShrink` es 0 por defecto, así que sin
                           esto la columna izquierda se queda con todo el ancho y empuja la
@@ -250,7 +251,7 @@ export default function SleepScreen() {
             {/* ── Stats 7 días ── */}
             {stats.length > 0 && (
               <View className="gap-2">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('sleep.stats7days')}</Text>
+                <Kicker>{t('sleep.stats7days')}</Kicker>
                 <View className="gap-2">
                   {statRows.map((row, i) => (
                     <View key={i} className="flex-row gap-2">
@@ -265,7 +266,7 @@ export default function SleepScreen() {
             {/* ── Historial ── */}
             <View className="gap-2">
               <View className="flex-row items-center justify-between">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('sleep.historyLabel')}</Text>
+                <Kicker>{t('sleep.historyLabel')}</Kicker>
                 <Button size="sm" className="h-8 bg-indigo-500 px-3 active:bg-indigo-400" onPress={() => openFor(targetDate)}>
                   <Plus size={13} color="white" />
                   <Text className="font-bebas text-xs tracking-wide text-white">{t('sleep.addEntry')}</Text>

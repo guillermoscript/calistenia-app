@@ -502,7 +502,8 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       <Button
         onClick={handleSubmit}
         disabled={!canSubmit || creating}
-        className="w-full bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide h-12"
+        variant="limeSolid"
+        className="w-full font-bebas text-lg tracking-wide h-12"
       >
         {creating ? t('challenge.creating') : t('challenge.createButton')}
       </Button>

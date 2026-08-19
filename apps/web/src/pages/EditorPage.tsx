@@ -27,8 +27,9 @@ export default function EditorPage() {
         <h1 className="font-bebas text-5xl">{t('editor.title')}</h1>
         <div className="flex gap-2">
           <Button
+            variant="limeSolid"
             onClick={onCreateProgram}
-            className="bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background font-bebas text-lg tracking-widest px-6 h-11"
+            className="font-bebas text-lg tracking-widest px-6 h-11"
           >
             {t('editor.newProgram')}
           </Button>
@@ -68,7 +69,7 @@ export default function EditorPage() {
           <Button
             onClick={onCreateProgram}
             variant="outline"
-            className="text-[11px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+            className="text-[11px] tracking-widest hover:border-lime hover:text-lime"
           >
             {t('editor.createFirst')}
           </Button>
@@ -109,7 +110,7 @@ export default function EditorPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => onEditProgram(p.id)}
-                  className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+                  className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
                 >
                   {t('editor.edit')}
                 </Button>

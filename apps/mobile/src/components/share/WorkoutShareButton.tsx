@@ -16,17 +16,16 @@
  *     referralCode={referralCode}
  *   />
  */
-import React, { useRef, useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useWindowDimensions } from 'react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, shareWorkoutSession } from '@/lib/share'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
+import { useShareCardCapture } from '@/hooks/useShareCardCapture'
 
-import ShareCardCapture, {
-  type ShareCardCaptureHandle,
-} from '@/components/share/ShareCardCapture'
+import ShareCardCapture from '@/components/share/ShareCardCapture'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 
 export interface WorkoutShareButtonProps {
@@ -54,20 +53,10 @@ export default function WorkoutShareButton({
   avatarUrl,
   referralCode,
 }: WorkoutShareButtonProps) {
-  const captureRef = useRef<ShareCardCaptureHandle>(null)
-  const [sharing, setSharing] = useState(false)
   const { width: screenW, height: screenH } = useWindowDimensions()
 
-  const handleShare = useCallback(async () => {
-    if (sharing) return
-    setSharing(true)
-    try {
-      // Fonts are already loaded by _layout boot; RAF guards against a blank capture.
-      await new Promise((r) => requestAnimationFrame(() => r(null)))
-
-      const uri = await captureRef.current?.capture()
-      if (!uri) return
-
+  const onCapture = useCallback(
+    async (uri: string) => {
       const { message } = shareWorkoutSession({
         userName,
         workoutTitle,
@@ -82,12 +71,11 @@ export default function WorkoutShareButton({
         ...MOBILE_SHARE_CARD_CONTEXTS.workoutHistory,
         workout_id: workoutKey,
       })
-    } catch {
-      // User cancelled the share sheet or capture failed — no-op.
-    } finally {
-      setSharing(false)
-    }
-  }, [sharing, userName, workoutTitle, totalSets, durationMin, date, workoutKey, referralCode])
+    },
+    [userName, workoutTitle, totalSets, durationMin, date, workoutKey, referralCode],
+  )
+
+  const { captureRef, sharing, share } = useShareCardCapture({ onCapture })
 
   return (
     <>
@@ -114,7 +102,7 @@ export default function WorkoutShareButton({
         size="lg"
         className="w-full"
         disabled={sharing}
-        onPress={() => void handleShare()}
+        onPress={() => void share()}
       >
         <Text className="font-bebas text-lg tracking-[2px] text-foreground">
           {sharing ? 'GENERANDO…' : 'COMPARTIR'}

@@ -168,7 +168,8 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
         <Button
           type="submit"
           disabled={!exerciseId || !dailyTarget || submitting}
-          className="w-full h-10 bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 font-semibold text-sm mt-1"
+          variant="limeSolid"
+          className="w-full h-10 font-semibold text-sm mt-1"
         >
           {submitting ? t('challenge.creating') : t('challenge.createAndShare')}
         </Button>

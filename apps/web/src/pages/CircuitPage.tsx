@@ -111,8 +111,8 @@ export default function CircuitPage() {
       {/* Build custom button */}
       <Button
         id="tour-circuit-custom"
-        variant="outline"
-        className={cn('w-full mb-5', showCustomBuilder && 'border-lime/30 text-lime')}
+        variant={showCustomBuilder ? 'lime' : 'outline'}
+        className="w-full mb-5"
         onClick={handleCustom}
       >
         {t('circuit.buildCustom')}

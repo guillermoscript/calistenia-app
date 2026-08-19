@@ -4,7 +4,7 @@ import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
 import { trackShareCardShared } from '@calistenia/core/lib/analytics'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
-import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
+import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage, CARD_COLORS } from '../lib/canvas-helpers'
 import type { Exercise } from '@calistenia/core/types'
 
 interface Quote { q: string; a: string }
@@ -21,8 +21,8 @@ interface WorkoutShareCardProps {
   referralCode?: string | null
   /** Etiqueta del disparador; por defecto "COMPARTIR". */
   label?: string
-  /** 'outline' (por defecto) o 'default' para usarlo como CTA primario. */
-  variant?: 'outline' | 'default'
+  /** 'outline' (por defecto), 'default' o 'limeSolid' para usarlo como CTA primario. */
+  variant?: 'outline' | 'default' | 'limeSolid'
   className?: string
   /** Se invoca al pulsar, antes de generar la imagen (analítica del que lo aloja). */
   onPress?: () => void
@@ -48,15 +48,7 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
       const avatar = avatarUrl ? await loadImage(avatarUrl) : null
 
       // Colors
-      const lime = '#a3e635'
-      const limeDim = '#a3e63540'
-      const limeGlow = '#a3e63520'
-      const fg = '#fafafa'
-      const fgDim = '#a1a1aa'
-      const fgMuted = '#52525b'
-      const bg = '#09090b'
-      const cardBg = '#18181b'
-      const borderColor = '#27272a'
+      const { lime, limeDim, limeGlow, fg, fgDim, fgMuted, bg, cardBg, borderColor } = CARD_COLORS
       const exList = exercises || []
 
       // ── Background ──
@@ -342,9 +334,9 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
 
   return (
     <Button
-      variant={variant}
+      variant={variant === 'outline' ? 'lime' : variant}
       onClick={(e: React.MouseEvent) => { e.stopPropagation(); onPress?.(); handleShare() }}
-      className={className ?? 'font-mono text-[10px] tracking-[2px] border-lime/25 text-lime hover:bg-lime/10 h-11 px-5'}
+      className={className ?? 'font-mono text-[10px] tracking-[2px] h-11 px-5'}
     >
       {label ?? 'COMPARTIR'}
     </Button>

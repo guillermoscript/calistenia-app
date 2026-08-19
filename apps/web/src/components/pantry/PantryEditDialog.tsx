@@ -115,7 +115,8 @@ export function PantryEditDialog({ item, onSave, onDelete, onClose, onVerify, on
             </Button>
             <Button
               onClick={() => onSave(item, parseLocaleNumber(qty), parseLocaleNumber(price))}
-              className="flex-1 bg-lime-400 font-mono text-xs uppercase tracking-[2px] text-zinc-900 hover:bg-lime-300"
+              variant="limeSolid"
+              className="flex-1 font-mono text-xs uppercase tracking-[2px]"
             >
               {t('pantry.save')}
             </Button>

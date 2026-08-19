@@ -5,7 +5,7 @@
  * logros/a vigilar/sugerencia que InsightsCard.tsx (la card de Home).
  */
 import { useCallback, useEffect, useState } from 'react'
-import { View, Pressable, FlatList, ActivityIndicator } from 'react-native'
+import { View, Pressable, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated'
 
 import { Text } from '@/components/ui/text'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -208,7 +209,7 @@ export default function InsightsHistoryScreen() {
       {/* Body */}
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="small" color="#a3e635" />
+          <Loader size="sm" />
         </View>
       ) : isError ? (
         <View className="flex-1 items-center justify-center px-8">

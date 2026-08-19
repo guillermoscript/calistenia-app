@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Share2, Crown, Check } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useBattleContext } from '@/contexts/BattleContext'
@@ -107,9 +108,9 @@ export default function BattleLobby() {
 
       {/* Circuito */}
       <View className="gap-2">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('battle.circuit')}
-        </Text>
+        </Kicker>
         {battle.config.exercises.map((exercise) => (
           <View
             key={exercise.exercise_id}
@@ -127,9 +128,9 @@ export default function BattleLobby() {
 
       {/* Participantes */}
       <View className="gap-2">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('battle.participants')} ({participants.length}) · {readyCount} {t('battle.ready')}
-        </Text>
+        </Kicker>
         {participants.map((p) => (
           <View key={p.id} className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
             <View className="size-9 items-center justify-center rounded-full bg-muted">

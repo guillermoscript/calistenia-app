@@ -114,7 +114,8 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
               <Button
                 onClick={handleSave}
                 disabled={saving || !hasAnyValue}
-                className="h-8 bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
+                variant="limeSolid"
+                className="h-8 text-[10px] font-bold tracking-widest"
               >
                 {saving ? '...' : t('progress.bodyMeasurements.save')}
               </Button>

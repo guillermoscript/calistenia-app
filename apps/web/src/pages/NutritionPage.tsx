@@ -424,7 +424,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                       setPhaseChangeBanner(false)
                       setShowGoalSetup(true)
                     }}
-                    className="bg-lime hover:bg-lime/90 text-lime-foreground text-[10px] font-bebas tracking-widest h-8 px-3"
+                    variant="limeSolid"
+                    className="text-[10px] font-bebas tracking-widest h-8 px-3"
                   >
                     {t('nutrition.recalculate')}
                   </Button>
@@ -549,7 +550,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                               setGoalPickerOpen(false)
                               setSelectedGoal(null)
                             }}
-                            className="flex-1 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
+                            variant="limeSolid"
+                            className="flex-1 font-bebas text-lg tracking-wide"
                           >
                             {t('nutrition.changeGoal.apply')}
                           </Button>

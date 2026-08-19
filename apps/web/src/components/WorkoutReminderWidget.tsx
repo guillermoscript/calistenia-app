@@ -102,7 +102,8 @@ export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetP
             <Button
               onClick={handleSave}
               size="sm"
-              className="h-8 bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
+              variant="limeSolid"
+              className="h-8 text-[10px] font-bold tracking-widest"
             >
               {t('common.save')}
             </Button>

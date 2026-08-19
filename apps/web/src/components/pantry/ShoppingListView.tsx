@@ -198,8 +198,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                   {selectMode ? t('common.cancel') : t('common.edit')}
                 </button>
               )}
-              <Button size="sm" variant="outline" onClick={onGenerate} disabled={generate.isPending}
-                className="border-lime/40 text-lime hover:bg-lime/10 font-bebas text-sm tracking-wide">
+              <Button size="sm" variant="lime" onClick={onGenerate} disabled={generate.isPending}
+                className="font-bebas text-sm tracking-wide">
                 {t('shopping.regenerate')}
               </Button>
             </div>
@@ -219,7 +219,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
         <div className="px-2 py-10 text-center">
           <p className="font-sans text-sm text-muted-foreground">{t('shopping.firstRun')}</p>
           <Button
-            className="mt-5 bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-sm tracking-wide"
+            variant="limeSolid"
+            className="mt-5 font-bebas text-sm tracking-wide"
             onClick={onGenerate}
             disabled={generate.isPending}
           >
@@ -382,7 +383,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
             </div>
           </div>
           <Button
-            className="mt-3 w-full bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-sm tracking-wide"
+            variant="limeSolid"
+            className="mt-3 w-full font-bebas text-sm tracking-wide"
             onClick={() => setDoneConfirmOpen(true)}
             disabled={checkedCount === 0 || complete.isPending}
           >

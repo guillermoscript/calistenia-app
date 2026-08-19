@@ -7,7 +7,7 @@
  * de la plataforma: mantener la pantalla encendida durante la sesión y volver a pedir
  * un snapshot cuando la app regresa del segundo plano.
  */
-import { createContext, useContext, useEffect, type ReactNode } from 'react'
+import { createContext, use, useEffect, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { useQueryClient } from '@tanstack/react-query'
@@ -59,7 +59,7 @@ export function BattleProvider({ battleId, children }: { battleId: string; child
 }
 
 export function useBattleContext(): UseBattleResult {
-  const ctx = useContext(BattleContext)
+  const ctx = use(BattleContext)
   if (!ctx) throw new Error('useBattleContext debe usarse dentro de BattleProvider')
   return ctx
 }

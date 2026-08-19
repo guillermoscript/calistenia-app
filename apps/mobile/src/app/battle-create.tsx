@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { X, Swords } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -103,9 +104,9 @@ export default function BattleCreateScreen() {
             onPress={() => router.replace(`/battle/${active.id}`)}
             className="mb-6 rounded-xl border border-lime/40 bg-lime/5 px-4 py-3.5 active:bg-lime/10"
           >
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-lime">
+            <Kicker tone="lime">
               {t('battle.resumeKicker')}
-            </Text>
+            </Kicker>
             <Text className="mt-1 font-bebas text-2xl leading-none text-foreground">
               {t('battle.resumeAction')}
             </Text>

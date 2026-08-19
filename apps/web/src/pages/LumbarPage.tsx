@@ -124,16 +124,17 @@ function WorkDayClock() {
           {!workStart && (
             <Button
               onClick={checkIn}
-              className="bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide"
+              variant="limeSolid"
+              className="font-bebas text-lg tracking-wide"
             >
               {t('lumbar.startWorkday')}
             </Button>
           )}
           {isClockedIn && (
             <Button
-              variant="outline"
+              variant="danger"
               onClick={checkOut}
-              className="border-red-500/30 text-red-500 bg-red-500/10 hover:bg-red-500/20 hover:text-red-400 font-bebas text-lg tracking-wide"
+              className="font-bebas text-lg tracking-wide"
             >
               {t('lumbar.endWorkday')}
             </Button>

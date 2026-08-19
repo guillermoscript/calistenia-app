@@ -398,11 +398,10 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 onClick={handleFormLog}
                 disabled={!logReps}
                 size="sm"
+                variant={logReps ? 'limeSolid' : undefined}
                 className={cn(
                   'h-9 px-5 text-[11px] font-bold',
-                  logReps
-                    ? 'bg-lime text-lime-foreground hover:bg-lime/90'
-                    : 'bg-lime/20 text-muted-foreground cursor-not-allowed'
+                  !logReps && 'bg-lime/20 text-muted-foreground cursor-not-allowed'
                 )}
               >
                 {t('exercise.saveSet')}

@@ -252,8 +252,9 @@ function SharedLanding({
       {/* CTA buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Button
+          variant="limeSolid"
           onClick={onLogin}
-          className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-8 h-12 shadow-lg shadow-lime-400/10"
+          className="font-bebas text-lg tracking-widest px-8 h-12 shadow-lg shadow-lime-400/10"
         >
           REGISTRATE PARA USAR ESTE PROGRAMA
         </Button>

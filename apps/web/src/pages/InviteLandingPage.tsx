@@ -98,7 +98,8 @@ export default function InviteLandingPage() {
               onShare={handleShare}
               label="COMPARTIR"
               size="default"
-              className="w-full bg-lime text-lime-foreground hover:bg-lime/90 border-0"
+              variant="limeSolid"
+              className="w-full border-0"
             />
           </div>
 
@@ -230,7 +231,8 @@ export default function InviteLandingPage() {
               <Button
                 onClick={handleJoin}
                 disabled={joining}
-                className="w-full h-12 bg-lime text-lime-foreground hover:bg-lime/90 font-semibold text-sm"
+                variant="limeSolid"
+                className="w-full h-12 font-semibold text-sm"
               >
                 {joining ? 'Uniendote...' : 'Unirme al challenge'}
               </Button>
@@ -238,7 +240,8 @@ export default function InviteLandingPage() {
               <>
                 <Button
                   onClick={handleJoin}
-                  className="w-full h-12 bg-lime text-lime-foreground hover:bg-lime/90 font-semibold text-sm"
+                  variant="limeSolid"
+                  className="w-full h-12 font-semibold text-sm"
                 >
                   Unirme
                 </Button>

@@ -53,8 +53,9 @@ export function StepWelcome({ firstName, needsProfile, onStart, onSkipAll }: Pro
       </Card>
 
       <Button
+        variant="limeSolid"
         onClick={onStart}
-        className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+        className="w-full h-12 font-bebas text-xl tracking-wide"
       >
         {needsProfile ? t('onboarding.startBtn') : t('onboarding.chooseProgramBtn')}
       </Button>

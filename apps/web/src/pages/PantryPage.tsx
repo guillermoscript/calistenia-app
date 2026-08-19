@@ -19,7 +19,6 @@ import { PantryEditDialog } from '../components/pantry/PantryEditDialog'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { Button } from '../components/ui/button'
 import { parseReceipt } from '../lib/receipt-api'
-import { cn } from '../lib/utils'
 
 export default function PantryPage({ userId }: { userId: string | null }) {
   const navigate = useNavigate()
@@ -289,12 +288,9 @@ export default function PantryPage({ userId }: { userId: string | null }) {
               entrar/salir de selección múltiple. */}
           <Button
             size="sm"
-            variant="outline"
+            variant={selectionMode ? 'lime' : 'outline'}
             onClick={toggleSelectionMode}
-            className={cn(
-              'ml-1 font-mono text-[10px] uppercase tracking-[2px]',
-              selectionMode && 'border-lime-400/60 bg-lime-400/15 text-lime-400',
-            )}
+            className="ml-1 font-mono text-[10px] uppercase tracking-[2px]"
           >
             {selectionMode ? t('common.cancel') : t('common.edit')}
           </Button>

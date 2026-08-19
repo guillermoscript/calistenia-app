@@ -6,6 +6,7 @@ import { cn } from '../lib/utils'
 import { op } from '@calistenia/core/lib/analytics'
 import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 import { Button } from '../components/ui/button'
+import { EmptyState } from '../components/ui/empty-state'
 import { Loader } from '../components/ui/loader'
 
 type TimeFilter = 'week' | 'month'
@@ -106,13 +107,15 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
 
       {/* Empty — not following anyone */}
       {!loading && !error && !hasAnyFollows && (
-        <div className="text-center py-16 motion-safe:animate-scale-in">
-          <div className="text-3xl mb-3">🏆</div>
-          <div className="text-sm text-muted-foreground mb-4">{t('leaderboard.followToSee')}</div>
-          <Button onClick={() => navigate('/friends')} className="bg-lime text-lime-foreground hover:bg-lime/90">
-            {t('leaderboard.findFriends')}
-          </Button>
-        </div>
+        <EmptyState
+          icon="🏆"
+          title={t('leaderboard.followToSee')}
+          action={(
+            <Button onClick={() => navigate('/friends')} variant="limeSolid">
+              {t('leaderboard.findFriends')}
+            </Button>
+          )}
+        />
       )}
 
       {/* Ranking list */}

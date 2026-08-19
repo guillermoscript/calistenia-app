@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus, Search, X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
@@ -101,9 +102,9 @@ export function ExercisePickerSheet({ visible, onClose, onAdd }: ExercisePickerS
         {/* Header spec-sheet */}
         <View className="flex-row items-start justify-between px-4 pb-3">
           <View>
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {t('exercisePicker.catalogLabel')}
-            </Text>
+            </Kicker>
             <Text className="font-bebas text-3xl leading-none text-foreground">
               {t('exercisePicker.addExercise')}
             </Text>

@@ -9,6 +9,7 @@ import { View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { haptics } from '@/lib/haptics'
 import { useBattleContext } from '@/contexts/BattleContext'
 
@@ -29,9 +30,9 @@ export default function BattleCountdown() {
 
   return (
     <View className="flex-1 items-center justify-center gap-6">
-      <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+      <Kicker>
         {t('battle.getReady')}
-      </Text>
+      </Kicker>
       <Text className="font-bebas text-[120px] leading-none text-lime">
         {secondsToStart}
       </Text>

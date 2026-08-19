@@ -30,6 +30,7 @@ import {
 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
@@ -163,9 +164,9 @@ export default function ReferralsScreen() {
           >
             <ChevronLeft size={24} color="rgba(255,255,255,0.55)" />
           </Pressable>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('referrals.subtitle')}
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl text-foreground">{t('referrals.title')}</Text>
         </View>
 

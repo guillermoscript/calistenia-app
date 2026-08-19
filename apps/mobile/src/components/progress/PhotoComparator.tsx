@@ -14,6 +14,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Chip } from '@/components/ui/chip'
 import { haptics } from '@/lib/haptics'
 import ProgressShareButton from '@/components/progress/ProgressShareButton'
@@ -94,9 +95,9 @@ export default function PhotoComparator({ photos, onClose }: Props) {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-row items-center justify-between px-4 py-2">
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('progress.bodyPhotos.title')}
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-3xl text-foreground">
             {t('progress.bodyPhotos.compare')}
           </Text>
@@ -176,9 +177,9 @@ export default function PhotoComparator({ photos, onClose }: Props) {
           {/* Selectores antes / después */}
           <View className="mt-4 flex-row gap-4">
             <View className="flex-1 gap-2">
-              <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+              <Kicker size="xs">
                 {t('progress.bodyPhotos.before')}
-              </Text>
+              </Kicker>
               <View className="flex-row flex-wrap gap-1.5">
                 {filtered.map((p, i) => (
                   <DateChip key={p.id} uri={p.url} label={p.date.slice(5)} active={leftIdx === i} onPress={() => { haptics.selection(); setLeftIdx(i) }} />
@@ -186,9 +187,9 @@ export default function PhotoComparator({ photos, onClose }: Props) {
               </View>
             </View>
             <View className="flex-1 gap-2">
-              <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+              <Kicker size="xs">
                 {t('progress.bodyPhotos.after')}
-              </Text>
+              </Kicker>
               <View className="flex-row flex-wrap gap-1.5">
                 {filtered.map((p, i) => (
                   <DateChip key={p.id} uri={p.url} label={p.date.slice(5)} active={rightIdx === i} onPress={() => { haptics.selection(); setRightIdx(i) }} />

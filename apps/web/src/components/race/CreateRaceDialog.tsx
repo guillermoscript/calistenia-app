@@ -211,7 +211,8 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
           <Button
             type="submit"
             disabled={!name.trim() || loading}
-            className="w-full h-12 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-widest"
+            variant="limeSolid"
+            className="w-full h-12 font-bebas text-lg tracking-widest"
           >
             {loading ? '...' : t('race.create')}
           </Button>

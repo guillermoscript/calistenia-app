@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -224,9 +225,9 @@ export default function NutritionGoalSetup({
         {step === 0 && (
           <Card>
             <CardContent className="py-5 gap-4">
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              <Kicker>
                 {t('nutrition.setup.bodyData', { defaultValue: 'DATOS CORPORALES' })}
-              </Text>
+              </Kicker>
 
               {/* Weight */}
               <View className="gap-1">
@@ -310,9 +311,9 @@ export default function NutritionGoalSetup({
         {step === 1 && (
           <Card>
             <CardContent className="py-5 gap-3">
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              <Kicker>
                 {t('nutrition.setup.activityLevel', { defaultValue: 'Nivel de Actividad' }).toUpperCase()}
-              </Text>
+              </Kicker>
 
               {ACTIVITY_LEVELS.map(level => (
                 <Pressable
@@ -344,9 +345,9 @@ export default function NutritionGoalSetup({
           <>
             <Card>
               <CardContent className="py-5 gap-3">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                <Kicker>
                   {t('nutrition.setup.objective', { defaultValue: 'Objetivo' }).toUpperCase()}
-                </Text>
+                </Kicker>
 
                 <View className="flex-row flex-wrap gap-2">
                   {GOALS.map(g => (
@@ -379,9 +380,9 @@ export default function NutritionGoalSetup({
             {(goal === 'fat_loss' || goal === 'muscle_gain') && (
               <Card>
                 <CardContent className="py-5 gap-3">
-                  <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                  <Kicker>
                     RITMO
-                  </Text>
+                  </Kicker>
                   <View className="flex-row gap-2">
                     {PACES.map(p => (
                       <SelectorChip
@@ -438,9 +439,9 @@ export default function NutritionGoalSetup({
             {/* Calculated macros — editable */}
             <Card>
               <CardContent className="py-5 gap-4">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                <Kicker>
                   MACROS CALCULADOS
-                </Text>
+                </Kicker>
 
                 {/* Visual summary ring */}
                 <View className="rounded-lg bg-lime-400/10 border border-lime-400/20 p-4">

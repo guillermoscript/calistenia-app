@@ -53,6 +53,7 @@ import {
 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 
@@ -176,7 +177,7 @@ function SectionDivider({ label }: { label: string }) {
   return (
     <View className="mb-0.5 flex-row items-center gap-2 px-1">
       <View className="size-1.5 bg-lime" />
-      <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{label}</Text>
+      <Kicker>{label}</Kicker>
       <View className="h-px flex-1 bg-border" />
     </View>
   )

@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import type { QualityScore, QualityBreakdown, QualitySuggestion } from '@calistenia/core/types'
@@ -103,9 +104,9 @@ export default function QualityBreakdownPanel({
       <View className="flex-row items-start gap-2.5">
         <QualityScoreBadge score={score} size="md" />
         <View className="flex-1 gap-1">
-          <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+          <Kicker size="xs">
             {t(`nutrition.criteria${score}.label`, SCORE_LABEL[score])}
-          </Text>
+          </Kicker>
           {!!breakdown.summary && (
             <Text className="font-sans text-sm leading-snug text-foreground/80">
               {breakdown.summary}
@@ -152,9 +153,9 @@ export default function QualityBreakdownPanel({
               accessibilityState={{ expanded: showSuggestion }}
               hitSlop={8}
             >
-              <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
+              <Kicker size="xs" tone="lime">
                 {t('nutrition.logger.suggestionToggle', { defaultValue: 'Sugerencia de platos' })}
-              </Text>
+              </Kicker>
               <DisclosureChevron open={showSuggestion} size={14} color="rgba(255,255,255,0.45)" />
             </Pressable>
             {showSuggestion && (

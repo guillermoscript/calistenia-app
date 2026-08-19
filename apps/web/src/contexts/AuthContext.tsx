@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, use, useMemo, type ReactNode } from 'react'
 import { useAuth } from '@calistenia/core/hooks/useAuth'
 import type { AuthUser, UserRole, UserTier } from '@calistenia/core/types'
 
@@ -33,7 +33,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 // ── Hooks ───────────────────────────────────────────────────────────────────
 
 export function useAuthContext() {
-  const ctx = useContext(AuthContext)
+  const ctx = use(AuthContext)
   if (!ctx) throw new Error('useAuthContext must be used within AuthProvider')
   return ctx
 }

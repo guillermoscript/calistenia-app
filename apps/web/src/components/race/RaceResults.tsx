@@ -177,8 +177,8 @@ export default function RaceResults() {
         <Button
           onClick={handleSaveAsWorkout}
           disabled={saving || !!savedId}
-          variant="outline"
-          className="w-full h-11 font-bebas text-lg tracking-widest border-lime/30 text-lime hover:bg-lime/10"
+          variant="lime"
+          className="w-full h-11 font-bebas text-lg tracking-widest"
         >
           {savedId ? t('race.saved').toUpperCase() : saving ? '...' : t('race.saveAsWorkout').toUpperCase()}
         </Button>

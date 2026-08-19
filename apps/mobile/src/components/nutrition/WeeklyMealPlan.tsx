@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router'
 import { UtensilsCrossed } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import type {
   WeeklyMealPlan as WeeklyMealPlanType,
@@ -130,7 +131,7 @@ function MealCard({ meal, dayId, onLog, onDelete, onOpenRecipe }: MealCardProps)
             className="flex-1 items-center justify-center rounded-lg border border-lime-400/30 py-2 active:bg-lime-400/10"
           >
             {logging ? (
-              <ActivityIndicator size="small" color="#a3e635" />
+              <Loader size="sm" />
             ) : (
               <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
                 {t('nutrition.weeklyPlan.logMeal')}
@@ -281,7 +282,7 @@ export default function WeeklyMealPlan({
           >
             {generating ? (
               <View className="flex-row items-center gap-2">
-                <ActivityIndicator size="small" color="#a3e635" />
+                <Loader size="sm" />
                 <Text className="font-bebas tracking-widest text-lime-400">
                   {t('nutrition.weeklyPlan.generating', 'Generando...')}
                 </Text>
@@ -304,7 +305,7 @@ export default function WeeklyMealPlan({
             >
               {generatingPantry ? (
                 <View className="flex-row items-center gap-2">
-                  <ActivityIndicator size="small" color="#a3e635" />
+                  <Loader size="sm" />
                   <Text className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
                     {t('pantryPlan.generatingWeek')}
                   </Text>
@@ -358,7 +359,7 @@ export default function WeeklyMealPlan({
               className="rounded-lg border border-lime-400/30 px-3 py-1.5 active:bg-lime-400/10"
             >
               {generatingPantry ? (
-                <ActivityIndicator size="small" color="#a3e635" />
+                <Loader size="sm" />
               ) : (
                 <Text className="font-bebas text-sm tracking-widest text-lime-400">
                   {t('pantryPlan.fromPantryShort')}

@@ -1,5 +1,5 @@
 // Port 1:1 del WorkoutContext de apps/web — los hooks de core son portables.
-import { createContext, useContext, useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { createContext, use, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms } from '@calistenia/core/hooks/usePrograms'
@@ -55,7 +55,7 @@ interface WorkoutContextValue {
 const WorkoutContext = createContext<WorkoutContextValue | null>(null)
 
 export function useWorkout() {
-  const ctx = useContext(WorkoutContext)
+  const ctx = use(WorkoutContext)
   if (!ctx) throw new Error('useWorkout must be used within WorkoutProvider')
   return ctx
 }

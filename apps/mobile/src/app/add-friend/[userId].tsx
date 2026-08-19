@@ -6,11 +6,12 @@
  *   → sigue al usuario y reemplaza la ruta por /(tabs) (feed social / home).
  */
 import { useEffect, useRef } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { Text } from '@/components/ui/text'
+import { Loader } from '@/components/ui/loader'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 
@@ -45,7 +46,7 @@ export default function AddFriendScreen() {
   return (
     <SafeAreaView className="flex-1 items-center justify-center bg-background" edges={['top', 'bottom']}>
       <View className="items-center gap-4">
-        <ActivityIndicator size="large" color="#a3e635" />
+        <Loader size="lg" />
         <Text className="font-mono text-[11px] uppercase tracking-[3px] text-muted-foreground">
           Siguiendo...
         </Text>

@@ -9,7 +9,7 @@ interface ShareButtonProps {
   onInvite?: () => void
   className?: string
   size?: 'sm' | 'default'
-  variant?: 'outline' | 'ghost'
+  variant?: 'outline' | 'ghost' | 'limeSolid'
   label?: string
 }
 
@@ -33,11 +33,18 @@ export function ShareButton({ onShare, onInvite, className, size = 'sm', variant
     }
   }, [open])
 
+  // El "copiado ✓" se apaga solo a los 2s. El timer se guarda en un ref y se
+  // cancela al desmontar: sin eso, cerrar la pantalla dentro de esa ventana
+  // dejaba un setState sobre un componente ya desmontado (issue #488).
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(copiedTimer.current), [])
+
   const handle = async (method: ShareMethod) => {
     const ok = await onShare(method)
     if (method === 'copy' && ok) {
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      clearTimeout(copiedTimer.current)
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000)
     }
     setOpen(false)
   }

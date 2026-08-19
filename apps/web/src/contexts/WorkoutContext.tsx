@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react'
+import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms } from '@calistenia/core/hooks/usePrograms'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, ExerciseTiming } from '@calistenia/core/types'
@@ -57,7 +57,7 @@ const WorkoutContext = createContext<WorkoutContextValue | null>(null)
 //    them with the WorkoutProvider component in this same module) ───────────
 
 export function useWorkout() {
-  const ctx = useContext(WorkoutContext)
+  const ctx = use(WorkoutContext)
   if (!ctx) throw new Error('useWorkout must be used within WorkoutProvider')
   return ctx
 }

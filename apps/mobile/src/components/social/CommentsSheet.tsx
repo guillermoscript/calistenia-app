@@ -27,6 +27,7 @@ import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { KeyboardProvider, KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Text } from '@/components/ui/text'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@calistenia/core/lib/dateUtils'
 import { REACTION_EMOJIS } from '@calistenia/core/hooks/useReactions'
@@ -349,7 +350,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                 {/* ── Lista de comentarios ───────────────────────────────── */}
                 {loading ? (
                   <View className="flex-1 items-center justify-center py-12 gap-2">
-                    <ActivityIndicator color="#a3e635" size="small" />
+                    <Loader size="sm" />
                     <Text className="font-mono text-xs text-muted-foreground/60">Cargando…</Text>
                   </View>
                 ) : (

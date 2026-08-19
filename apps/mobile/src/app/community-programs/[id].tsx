@@ -6,13 +6,15 @@
  * que `challenges.tsx` + `challenges/[id].tsx`.
  */
 import { useCallback, useState } from 'react'
-import { View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { View, ScrollView, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import {
@@ -89,7 +91,7 @@ export default function CommunityProgramDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background" edges={['top']}>
-        <ActivityIndicator color="#a3e635" />
+        <Loader />
       </SafeAreaView>
     )
   }
@@ -118,9 +120,9 @@ export default function CommunityProgramDetailScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-row items-start justify-between px-4 pb-3 pt-2">
         <View className="flex-1 pr-3">
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('communityProgram.kicker')}
-          </Text>
+          </Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">
             {t(program.title_key)}
           </Text>

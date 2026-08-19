@@ -7,6 +7,7 @@ import { useNotificationsContext } from '../contexts/NotificationsContext'
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
+import { EmptyState } from '../components/ui/empty-state'
 import { Button } from '../components/ui/button'
 
 function GearIcon({ className }: { className?: string }) {
@@ -169,16 +170,16 @@ export default function NotificationsPage() {
       )}
 
       {!loading && notifications.length === 0 && (
-        <div className="text-center py-16 motion-safe:animate-scale-in">
-          <div className="text-3xl mb-3">
+        <EmptyState
+          icon={(
             <svg className="size-10 mx-auto text-muted-foreground/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6v2.5L2 10.5v1h12v-1l-1.5-2V6c0-2.5-2-4.5-4.5-4.5z" />
               <path d="M6 12.5a2 2 0 0 0 4 0" />
             </svg>
-          </div>
-          <div className="text-sm text-muted-foreground mb-1">{t('notif.empty')}</div>
-          <div className="text-xs text-muted-foreground">{t('notif.emptyHint')}</div>
-        </div>
+          )}
+          title={t('notif.empty')}
+          hint={t('notif.emptyHint')}
+        />
       )}
 
       {!loading && notifications.length > 0 && (

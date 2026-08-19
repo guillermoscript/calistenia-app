@@ -12,6 +12,14 @@ export const Variantes = () => (
   </div>
 )
 
+export const Lima = () => (
+  <div className="flex flex-wrap items-center gap-3">
+    <Button variant="limeSolid">Empezar entreno</Button>
+    <Button variant="lime">Ver el plan</Button>
+    <Button variant="danger">Bloquear usuario</Button>
+  </div>
+)
+
 export const Tamaños = () => (
   <div className="flex flex-wrap items-center gap-3">
     <Button size="lg">Empezar entreno</Button>

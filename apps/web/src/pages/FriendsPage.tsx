@@ -510,15 +510,13 @@ function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: U
         </div>
       </div>
       <Button
-        variant={isFollowing ? 'outline' : 'default'}
+        variant={isFollowing ? 'outline' : 'limeSolid'}
         size="sm"
         onClick={handleAction}
         disabled={actionLoading}
         className={cn(
           'text-[11px] tracking-widest h-8 shrink-0 transition-colors duration-200 active:scale-95',
-          isFollowing
-            ? 'hover:border-red-500 hover:text-red-500'
-            : 'bg-lime text-lime-foreground hover:bg-lime/90',
+          isFollowing && 'hover:border-red-500 hover:text-red-500',
         )}
       >
         {actionLoading ? '...' : isFollowing ? t('friends.followingBtn') : t('friends.followBtn')}

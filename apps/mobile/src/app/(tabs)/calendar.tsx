@@ -8,6 +8,7 @@ import i18n from '@/lib/i18n'
 import { ChevronLeft, ChevronRight, Dumbbell, Activity, Repeat, Sparkles, Utensils, Droplet, Moon, Scale, Ruler, Camera, ShieldCheck, X, ChevronRight as Caret } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
@@ -181,7 +182,7 @@ export default function CalendarScreen() {
       <ScrollView contentContainerClassName="px-4 pb-10 pt-2 gap-4">
         {/* Cabecera */}
         <View>
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('calendar.section')}</Text>
+          <Kicker>{t('calendar.section')}</Kicker>
           <Text className="font-bebas text-4xl leading-none text-foreground">{t('calendar.title')}</Text>
         </View>
 

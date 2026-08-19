@@ -300,11 +300,10 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   onClick={handleForm}
                   disabled={!customReps}
                   size="sm"
+                  variant={customReps ? 'limeSolid' : undefined}
                   className={cn(
                     'h-9 px-5 text-[11px] font-bold tracking-wide',
-                    customReps
-                      ? 'bg-lime text-lime-foreground hover:bg-lime/90'
-                      : 'bg-lime/20 text-muted-foreground cursor-not-allowed'
+                    !customReps && 'bg-lime/20 text-muted-foreground cursor-not-allowed'
                   )}
                 >
                   GUARDAR

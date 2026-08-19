@@ -137,8 +137,9 @@ export function PhotoStrip({ model }: ModelProps) {
         )}
       </div>
       <Button
+        variant="limeSolid"
         onClick={handleAnalyze}
-        className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-base tracking-widest shadow-lg shadow-lime-400/10"
+        className="w-full h-12 font-bebas text-base tracking-widest shadow-lg shadow-lime-400/10"
       >
         {t('nutrition.logger.analyzeWithAI')}
       </Button>
@@ -381,9 +382,10 @@ export function SaveTemplateRow({ model }: ModelProps) {
       />
       <Button
         size="sm"
+        variant="limeSolid"
         onClick={handleSaveTemplate}
         disabled={!templateName.trim()}
-        className="h-9 bg-lime-400 text-zinc-900 text-[10px] tracking-widest hover:bg-lime-300"
+        className="h-9 text-[10px] tracking-widest"
       >
         OK
       </Button>

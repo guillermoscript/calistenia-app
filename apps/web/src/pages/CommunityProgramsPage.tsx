@@ -118,7 +118,8 @@ function ProgramCard({
         size="sm"
         disabled={joining}
         onClick={() => (isMember ? onOpen(program.id) : onJoin(program.id))}
-        className="h-9 bg-lime text-[10px] tracking-widest text-lime-foreground hover:bg-lime/90"
+        variant="limeSolid"
+        className="h-9 text-[10px] tracking-widest"
       >
         {isMember
           ? t('challenge.preset.open')

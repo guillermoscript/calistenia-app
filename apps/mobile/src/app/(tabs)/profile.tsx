@@ -11,6 +11,7 @@ import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Cam
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -174,9 +175,9 @@ export default function ProfileScreen() {
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
         {/* Header */}
         <View className="pt-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('profile.accountLabel')}
-          </Text>
+          </Kicker>
           <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{t('profile.title')}</Text>
         </View>
 
@@ -222,9 +223,9 @@ export default function ProfileScreen() {
         {/* Cuerpo (#243 F4a): alimenta el objetivo nutricional 'auto' */}
         <Card>
           <CardContent className="gap-4 py-5">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {t('profile.sectionBody')}
-            </Text>
+            </Kicker>
 
             <View className="flex-row gap-3">
               <View className="flex-1 gap-1.5">
@@ -394,9 +395,9 @@ export default function ProfileScreen() {
         {/* Idioma */}
         <Card>
           <CardContent className="gap-3 py-4">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {t('profile.language')}
-            </Text>
+            </Kicker>
             <View className="flex-row gap-2">
               {([['es', 'Español'], ['en', 'English']] as const).map(([code, label]) => (
                 <Pressable
@@ -419,9 +420,9 @@ export default function ProfileScreen() {
         {/* Moneda (despensa: en qué moneda hablas; el gasto siempre se muestra en $) */}
         <Card>
           <CardContent className="gap-3 py-4">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {t('profile.currency', { defaultValue: 'Moneda' })}
-            </Text>
+            </Kicker>
             <View className="flex-row gap-2">
               {SUPPORTED_CURRENCIES.map(code => {
                 const active = currencyPrefs.defaultCurrency === code
@@ -450,9 +451,9 @@ export default function ProfileScreen() {
         {/* Tema */}
         <Card>
           <CardContent className="gap-3 py-4">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            <Kicker>
               {t('profile.theme')}
-            </Text>
+            </Kicker>
             <View className="flex-row gap-2">
               {([
                 ['system', t('profile.themeSystem'), Smartphone],

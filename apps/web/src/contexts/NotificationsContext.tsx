@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 
 type NotificationsContextType = ReturnType<typeof useNotifications>
@@ -15,7 +15,7 @@ export function NotificationsProvider({ userId, children }: { userId: string | n
 }
 
 export function useNotificationsContext(): NotificationsContextType {
-  const ctx = useContext(NotificationsContext)
+  const ctx = use(NotificationsContext)
   if (!ctx) throw new Error('useNotificationsContext must be used within NotificationsProvider')
   return ctx
 }

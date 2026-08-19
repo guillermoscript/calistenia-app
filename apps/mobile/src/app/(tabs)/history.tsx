@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays, Swords } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { OneShotHint } from '@/components/ui/one-shot-hint'
@@ -204,9 +205,9 @@ export default function HistoryScreen() {
         </Pressable>
 
         {rows.length > 0 && (
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          <Kicker>
             {t('progress.recentSessions')}
-          </Text>
+          </Kicker>
         )}
       </View>
     ),

@@ -57,9 +57,9 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone, 
           <Button size="sm" variant="outline" onClick={() => adjustTime(30)}
             className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground">+30</Button>
         </div>
-        <Button size="sm" variant="outline"
+        <Button size="sm" variant="lime"
           onClick={() => { setRunning(false); onDone?.() }}
-          className="font-mono text-[10px] tracking-wide text-[hsl(var(--lime))] border-[hsl(var(--lime))]/30 hover:bg-[hsl(var(--lime))]/10 hover:text-[hsl(var(--lime))]">
+          className="font-mono text-[10px] tracking-wide">
           {t('workout.skip')}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setRunning(r => !r)}

@@ -4,9 +4,8 @@
  * captures + shares the PNG. Compact lime button styled for the comparator
  * header.
  */
-import React, { useRef, useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { ActivityIndicator } from 'react-native'
-import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { Share2 } from 'lucide-react-native'
 
@@ -16,10 +15,9 @@ import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage } from '@/lib/share'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { Sentry } from '@/lib/instrument'
 import type { BodyPhoto } from '@calistenia/core/hooks/useBodyPhotos'
+import { useShareCardCapture } from '@/hooks/useShareCardCapture'
 
-import ShareCardCapture, {
-  type ShareCardCaptureHandle,
-} from '@/components/share/ShareCardCapture'
+import ShareCardCapture from '@/components/share/ShareCardCapture'
 import ProgressPhotoShareCard from '@/components/progress/ProgressPhotoShareCard'
 
 const CARD_W = 360
@@ -34,8 +32,6 @@ interface Props {
 export default function ProgressShareButton({ before, after }: Props) {
   const { t } = useTranslation()
   const user = useAuthUser()
-  const captureRef = useRef<ShareCardCaptureHandle>(null)
-  const [busy, setBusy] = useState(false)
 
   const labels = {
     before: t('progress.bodyPhotos.before'),
@@ -46,29 +42,24 @@ export default function ProgressShareButton({ before, after }: Props) {
     sameDay: t('progress.bodyPhotos.sameDay'),
   }
 
-  const handleShare = useCallback(async () => {
-    if (busy) return
-    setBusy(true)
-    try {
-      // Prefetch both photos into expo-image cache before capture.
-      const PREFETCH_TIMEOUT = 2500
-      await Promise.race([
-        Promise.all([Image.prefetch(before.url), Image.prefetch(after.url)]),
-        new Promise<void>((resolve) => setTimeout(resolve, PREFETCH_TIMEOUT)),
-      ])
-
-      const uri = await captureRef.current?.capture()
-      if (!uri) return
-
+  const onCapture = useCallback(
+    async (uri: string) => {
       await shareCardImage(uri, { title: t('progress.bodyPhotos.share') }, {
         ...MOBILE_SHARE_CARD_CONTEXTS.progressPhoto,
       })
-    } catch (e) {
-      Sentry.captureException(e)
-    } finally {
-      setBusy(false)
-    }
-  }, [busy, before.url, after.url, t])
+    },
+    [t],
+  )
+
+  const onError = useCallback((e: unknown) => {
+    Sentry.captureException(e)
+  }, [])
+
+  const { captureRef, sharing: busy, share } = useShareCardCapture({
+    onCapture,
+    prefetchUrls: [before.url, after.url],
+    onError,
+  })
 
   return (
     <>
@@ -88,7 +79,7 @@ export default function ProgressShareButton({ before, after }: Props) {
         variant="outline"
         size="sm"
         className="border-lime/30 bg-lime/5 active:bg-lime/10 dark:border-lime/30 dark:bg-lime/5"
-        onPress={() => void handleShare()}
+        onPress={() => void share()}
         disabled={busy}
       >
         {busy ? (

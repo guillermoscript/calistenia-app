@@ -4,6 +4,7 @@ import { cn } from '../../lib/utils'
 interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Nombre accesible; sin él el `role="status"` no anuncia nada. */
   label?: string
+  ref?: React.Ref<HTMLDivElement>
 }
 
 /**
@@ -20,8 +21,8 @@ interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
  * que decidir de qué color va. `border-t-transparent` es lo que deja ver el
  * giro — un anillo completo girando no se distingue de uno quieto.
  */
-const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
-  ({ className, label, ...props }, ref) => (
+function Spinner({ className, label, ref, ...props }: SpinnerProps) {
+  return (
     <div
       ref={ref}
       role="status"
@@ -32,8 +33,7 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
       )}
       {...props}
     />
-  ),
-)
-Spinner.displayName = 'Spinner'
+  )
+}
 
 export { Spinner }

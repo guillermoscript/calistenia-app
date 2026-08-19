@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { RotateCcw } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
@@ -112,9 +113,9 @@ export default function BattleResults() {
   return (
     <View className="flex-1 gap-5 pt-4">
       <View className="items-center">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('battle.kicker')}
-        </Text>
+        </Kicker>
         <Text className="mt-2 text-center font-bebas text-4xl leading-none text-foreground">
           {headline}
         </Text>

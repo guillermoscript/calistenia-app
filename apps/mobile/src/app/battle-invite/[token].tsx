@@ -17,6 +17,8 @@ import { useTranslation } from 'react-i18next'
 import { Swords } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -86,11 +88,11 @@ export default function BattleInviteScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 items-center justify-center gap-5 px-6">
         <Swords size={32} color="#a3e635" />
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('battle.kicker')}
-        </Text>
+        </Kicker>
 
-        {!preview && !error && <ActivityIndicator color="#a3e635" />}
+        {!preview && !error && <Loader />}
 
         {preview?.ok && preview.battle && (
           <>

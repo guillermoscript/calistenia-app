@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronLeft, Swords } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -35,9 +36,9 @@ const OUTCOME_KEY: Record<BattleOutcome, string> = {
 function StatBlock({ label, value }: { label: string; value: number }) {
   return (
     <View className="flex-1 border border-border px-3 py-3">
-      <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+      <Kicker size="xs">
         {label}
-      </Text>
+      </Kicker>
       <Text className="mt-1 font-bebas text-3xl leading-none text-foreground">{value}</Text>
     </View>
   )
@@ -145,9 +146,9 @@ export default function BattleHistoryScreen() {
                 <ChevronLeft size={22} color="#888899" />
               </Pressable>
               <View className="flex-1">
-                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                <Kicker>
                   {t('battle.historyKicker')}
-                </Text>
+                </Kicker>
                 <Text className="font-bebas text-4xl leading-none text-foreground">
                   {t('battle.historyTitle')}
                 </Text>
@@ -161,9 +162,9 @@ export default function BattleHistoryScreen() {
             </View>
 
             {entries.length > 0 && (
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              <Kicker>
                 {t('battle.compare')}
-              </Text>
+              </Kicker>
             )}
           </View>
         }

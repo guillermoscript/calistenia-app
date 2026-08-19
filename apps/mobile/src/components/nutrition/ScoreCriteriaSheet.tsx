@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { QualityScoreBadge } from './QualityBreakdownPanel'
 import type { QualityScore } from '@calistenia/core/types'
 
@@ -42,9 +43,9 @@ export default function ScoreCriteriaSheet({ visible, onClose }: ScoreCriteriaSh
           {/* Header */}
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-1 pr-3">
-              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              <Kicker>
                 {t('nutrition.dailyScore', { defaultValue: 'Score del día' })}
-              </Text>
+              </Kicker>
               <Text className="font-bebas text-2xl tracking-wide text-foreground">
                 {t('nutrition.scoreCriteriaTitle', { defaultValue: 'Cómo se calcula el score' })}
               </Text>

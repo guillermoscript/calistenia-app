@@ -73,10 +73,15 @@ existen porque la app los usa para los kickers en mono.
 
 ## Las cuatro reglas de marca que más se incumplen
 
-1. **El lima NO es el color de los botones.** `<Button>` por defecto es
-   casi-negro sobre claro y casi-blanco sobre oscuro. El lima marca
-   **completado / activo / interactuado**: `Badge` de completado, bordes activos
-   `border-lime/40`, pulsación `bg-lime/10`.
+1. **El lima no es el color por defecto de los botones.** `<Button>` sin
+   variante es casi-negro sobre claro y casi-blanco sobre oscuro, y es lo que
+   debe llevar la mayoría de la interfaz. El lima marca **completado / activo /
+   interactuado** (`Badge` de completado, bordes activos `border-lime/40`,
+   pulsación `bg-lime/10`) y **una sola acción por pantalla**: la principal, con
+   `variant="limeSolid"`, o `variant="lime"` si va de filete. Lo que no se hace
+   nunca es escribir el lima a mano en un `className`: existen las variantes, y
+   el token (`bg-lime`, `text-lime-foreground`) es lo único que se adapta al
+   modo claro — `bg-lime-400` y `bg-[hsl(var(--lime))]` no.
 2. **Filetes de 1px, no sombras.** Estructura con `border-border` y jerarquía
    tipográfica. Nada de `shadow-lg` en tarjetas, nada de tarjetas anidadas, nada
    de degradados ni glassmorphism.

@@ -482,7 +482,7 @@ export default function DashboardPage({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowProgramModal(true)}
-                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))] h-8 shrink-0"
+                className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-8 shrink-0"
               >
                 {t('dashboard.changeProgram')}
               </Button>

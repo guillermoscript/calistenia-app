@@ -245,16 +245,18 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
 
           {state.step < 4 ? (
             <Button
+              variant="limeSolid"
               onClick={handleNext}
-              className="font-mono text-[11px] tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90"
+              className="font-mono text-[11px] tracking-wide"
             >
               SIGUIENTE →
             </Button>
           ) : (
             <Button
+              variant="limeSolid"
               onClick={handleSave}
               disabled={state.isSaving}
-              className="font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90"
+              className="font-bebas text-lg tracking-wide"
             >
               {state.isSaving ? 'GUARDANDO...' : 'GUARDAR'}
             </Button>

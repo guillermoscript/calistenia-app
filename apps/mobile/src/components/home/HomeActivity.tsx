@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronRight, Users, Dumbbell, Apple, Activity } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
@@ -125,9 +126,9 @@ export default function HomeActivity() {
     <View className="gap-2.5">
       {/* Cabecera + tabs + ver todo */}
       <View className="flex-row items-center justify-between">
-        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        <Kicker>
           {t('dashboard.recentActivity')}
-        </Text>
+        </Kicker>
         <Pressable onPress={() => router.push(seeAllTarget)} className="flex-row items-center gap-0.5 active:opacity-60">
           <Text className="font-mono text-[10px] uppercase tracking-wide text-lime">{t('dashboard.seeAll')}</Text>
           <ChevronRight size={13} color={LIME} />

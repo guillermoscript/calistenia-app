@@ -15,6 +15,7 @@ import { View, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import { battleExerciseName } from '@calistenia/core/data/battle-presets'
@@ -110,12 +111,12 @@ function BattleStandingsRowComponent({
           {hasFinished ? '  ✓' : ''}
         </Text>
         {activity ? (
-          <Text
-            className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground"
+          <Kicker
+            size="xs"
             numberOfLines={1}
           >
             {activity}
-          </Text>
+          </Kicker>
         ) : null}
       </View>
       <BattleScoreCell

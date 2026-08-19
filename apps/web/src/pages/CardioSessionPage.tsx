@@ -216,11 +216,12 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               // Clear URL params after starting
               if (isFromProgram) setSearchParams({}, { replace: true })
             }}
+            variant={isFromProgram ? 'default' : 'limeSolid'}
             className={cn(
               'w-full h-14 font-bebas text-xl tracking-widest shadow-lg',
               isFromProgram
                 ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/10'
-                : 'bg-lime hover:bg-lime/90 text-zinc-900 shadow-lime/10'
+                : 'shadow-lime/10'
             )}
           >
             {t('cardio.start')} {t(ACTIVITIES.find(a => a.id === selectedActivity)?.labelKey || 'cardio.running').toUpperCase()}
@@ -385,7 +386,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 </Button>
                 <Button
                   onClick={handleFinish}
-                  className="flex-1 h-16 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bebas text-xl tracking-widest"
+                  variant="destructive"
+                  className="flex-1 h-16 font-bebas text-xl tracking-widest"
                 >
                   {t('cardio.stop')}
                 </Button>
@@ -394,13 +396,15 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               <>
                 <Button
                   onClick={resume}
-                  className="flex-1 h-16 bg-lime hover:bg-lime/90 active:bg-lime/80 text-zinc-900 font-bebas text-xl tracking-widest"
+                  variant="limeSolid"
+                  className="flex-1 h-16 active:bg-lime/80 font-bebas text-xl tracking-widest"
                 >
                   {t('cardio.resume')}
                 </Button>
                 <Button
                   onClick={handleFinish}
-                  className="flex-1 h-16 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bebas text-xl tracking-widest"
+                  variant="destructive"
+                  className="flex-1 h-16 font-bebas text-xl tracking-widest"
                 >
                   {t('cardio.end')}
                 </Button>
@@ -512,7 +516,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           <div className="flex gap-2">
             <Button
               onClick={handleNewSession}
-              className="flex-1 h-11 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
+              variant="limeSolid"
+              className="flex-1 h-11 font-bebas text-lg tracking-wide"
             >
               {t('cardio.newSession')}
             </Button>
