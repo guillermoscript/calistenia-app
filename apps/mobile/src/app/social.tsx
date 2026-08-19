@@ -3,7 +3,7 @@
  * Ruta apilada: /social
  */
 import { memo, useEffect, useRef, useCallback, useState } from 'react'
-import { View, FlatList, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, FlatList, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
