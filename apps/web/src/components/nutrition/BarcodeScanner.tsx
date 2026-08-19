@@ -84,7 +84,9 @@ export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeSca
       }
       scannerRef.current = null
     }
-  }, [scanning])
+    // `t` fuera a propósito: solo compone los mensajes de error de cámara, y
+    // reejecutar el efecto al cambiar de idioma reiniciaría el escáner. (#484)
+  }, [scanning]) // eslint-disable-line react-hooks/exhaustive-deps -- no reiniciar la cámara al cambiar de idioma
 
   if (!scanning) return null
 

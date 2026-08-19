@@ -8,7 +8,6 @@ import PhotoRevealAnimation from './PhotoRevealAnimation'
 
 interface PhasePhotoTimelineProps {
   currentPhase: number
-  photos: BodyPhoto[]
   getPhotosByPhase: (phase: number) => BodyPhoto[]
   uploadPhotos: (files: { file: File; category: string }[], phase: number) => Promise<BodyPhoto[]>
   onCompare?: (phaseA: number, phaseB: number) => void
@@ -17,7 +16,7 @@ interface PhasePhotoTimelineProps {
 const PHASES = [1, 2, 3, 4]
 
 export default function PhasePhotoTimeline({
-  currentPhase, photos, getPhotosByPhase, uploadPhotos, onCompare,
+  currentPhase, getPhotosByPhase, uploadPhotos, onCompare,
 }: PhasePhotoTimelineProps) {
   const { t } = useTranslation()
   const [uploadPhase, setUploadPhase] = useState<number | null>(null)
@@ -28,7 +27,9 @@ export default function PhasePhotoTimeline({
     const map: Record<number, BodyPhoto[]> = {}
     for (const p of PHASES) map[p] = getPhotosByPhase(p)
     return map
-  }, [photos, getPhotosByPhase])
+    // `photos` sobraba: `getPhotosByPhase` ya es un useCallback sobre `photos`,
+    // así que su identidad cambia con cada lote de fotos. (#484)
+  }, [getPhotosByPhase])
 
   const completedPhases = PHASES.filter(p => phasePhotos[p].length > 0)
   const showStartVsNow = completedPhases.length >= 2

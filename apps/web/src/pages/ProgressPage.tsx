@@ -118,7 +118,7 @@ export default function ProgressPage() {
         }
       })
       .sort((a, b) => b.date.localeCompare(a.date))
-  }, [progress])
+  }, [progress, t])
 
   const exerciseLogs = useMemo<Record<string, ExerciseLog[]>>(() => {
     const logs: Record<string, ExerciseLog[]> = {}
@@ -285,7 +285,6 @@ export default function ProgressPage() {
             {userId && (
               <PhasePhotoTimeline
                 currentPhase={currentPhase}
-                photos={photos}
                 getPhotosByPhase={getPhotosByPhase}
                 uploadPhotos={uploadPhotos}
               />

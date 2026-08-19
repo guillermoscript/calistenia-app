@@ -515,7 +515,8 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
 
       {/* ── Pause overlay ──────────────────────────────────────────────────── */}
       {isPaused && (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+        // a11y: overlay de pausa que reanuda al tocar en cualquier sitio; el
+        // botón de pausa sigue siendo el control accesible. (Sin regla jsx-a11y activa: #484)
         <div
           onClick={resume}
           className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-5 cursor-pointer"

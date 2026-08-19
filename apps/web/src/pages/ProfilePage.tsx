@@ -137,7 +137,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       setLoaded(true)
     }
     load()
-  }, [user?.id, loaded])
+    // `hydrate` es estable (useCallback sin deps sobre el dispatch del reducer
+    // de useProfileForm), así que entra en las deps sin recargar de más. (#484)
+  }, [user?.id, loaded, hydrate])
 
   const bmi = useMemo(() => calculateBmi(parseDecimal(weight), parseDecimal(height)), [weight, height])
 

@@ -32,8 +32,11 @@ jobs:
       - name: Typecheck (all workspaces)
         run: pnpm -r typecheck
 
-      - name: Lint (mobile — only workspace with an ESLint config today)
-        run: pnpm --filter @calistenia/mobile lint
+      # Web dejó de ser la excepción en el #484: ya tiene su propia flat config
+      # (react-hooks). `-r` se salta los paquetes sin script `lint`, así que el
+      # día que packages/core tenga uno entra solo.
+      - name: Lint (mobile + web)
+        run: pnpm -r lint
 
       - name: Unit tests (packages/core + mobile)
         run: pnpm -r test

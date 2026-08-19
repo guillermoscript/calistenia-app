@@ -76,7 +76,7 @@ export default function CardioSessionDetailPage() {
       .finally(() => setLoading(false))
     // `userId` entra en las dependencias porque decide si se pide la ruta:
     // si la sesión se restaura antes que el auth, hay que reintentar.
-  }, [id, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, userId]) // eslint-disable-line react-hooks/exhaustive-deps -- `t` solo compone el mensaje de error; no hay que recargar la sesión al cambiar de idioma
 
   const isOwn = session?.user === userId
 
@@ -85,11 +85,16 @@ export default function CardioSessionDetailPage() {
     return assessTrackQuality(session.gps_points, session.distance_km)
   }, [session])
 
+  // Extraído a variable: la dep era la expresión `!!session`, que ESLint no
+  // puede comprobar estáticamente. Con la variable el efecto queda limpio y sin
+  // disable — se emite una vez por sesión cargada, no en cada cambio. (#484)
+  const sessionLoaded = !!session
+
   useEffect(() => {
-    if (session && id) {
+    if (sessionLoaded && id) {
       op.track('cardio_detail_viewed', { own: isOwn })
     }
-  }, [id, isOwn, !!session]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, isOwn, sessionLoaded])
 
   const formattedDate = session?.started_at
     ? new Date(session.started_at.replace(' ', 'T')).toLocaleDateString(i18n.language, {

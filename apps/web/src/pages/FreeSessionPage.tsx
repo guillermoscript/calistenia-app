@@ -289,7 +289,9 @@ export default function FreeSessionPage() {
       result = result.filter(ex => l(ex.name).toLowerCase().includes(q) || l(ex.muscles).toLowerCase().includes(q))
     }
     return result
-  }, [catalog, activeCategory, activeEquipment, debouncedSearch])
+    // `l` en las deps: el filtro por equipo y la búsqueda leen nombres
+    // localizados; al cambiar de idioma hay que recalcularlos. (#484)
+  }, [catalog, activeCategory, activeEquipment, debouncedSearch, l])
 
   const selectedIds = useMemo(() => new Set(selected.map(e => e.id)), [selected])
   const selectedOrder = useMemo(() => {
@@ -666,7 +668,8 @@ export default function FreeSessionPage() {
 
         {/* Bottom sheet overlay */}
         {queueOpen && selected.length > 0 && (
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+          // a11y: fondo del bottom sheet, cierra al tocar fuera; el sheet tiene
+          // su propio botón de cerrar. (Sin regla jsx-a11y activa: #484)
           <div
             onKeyDown={(e) => { if (e.key === 'Escape') setQueueOpen(false) }}
           >

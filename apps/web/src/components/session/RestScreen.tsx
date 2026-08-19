@@ -58,7 +58,7 @@ export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextSt
       restCues('start')
       notif.notifyRestStart(initialSeconds, nextStep?.exercise.name)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- sonido y aviso de inicio de descanso, una vez al montar
 
   const handleTouchStart = (e: React.TouchEvent): void => { touchStartX.current = e.touches[0].clientX }
   const handleTouchEnd   = (e: React.TouchEvent): void => {

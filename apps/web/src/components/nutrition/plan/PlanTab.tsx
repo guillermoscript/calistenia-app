@@ -84,7 +84,9 @@ export function PlanTab(props: PlanTabProps) {
   const coverage = usePantryCoverage(userId, dailyGoals, pantryCount > 0)
 
   const today = todayStr()
-  const dates = useMemo(() => planDates(), [today])
+  // `today` es deliberado: `planDates()` lee la fecha actual por dentro, así que
+  // es el cache-buster que recalcula las fechas al cruzar la medianoche.
+  const dates = useMemo(() => planDates(), [today]) // eslint-disable-line react-hooks/exhaustive-deps -- cache-buster de medianoche
   const targetDate = targetDateFor(plan.horizon, dates)
 
   const dayPlan = plan.horizon === 'week' ? undefined : planForDate(targetDate)
