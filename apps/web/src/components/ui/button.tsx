@@ -17,18 +17,18 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        // CTA de acento lima. El fondo es el token `--lime`, nunca una escala de
-        // Tailwind ni `hsl(var(--lime))` a pelo: es lo único que se adapta al
-        // modo claro, donde el lima es un oliva oscuro.
+        // CTA de acento lima. Fondo y texto salen de los tokens `--lime` /
+        // `--lime-foreground`, nunca de una escala de Tailwind ni de
+        // `hsl(var(--lime))` a pelo: solo el token se adapta al modo claro,
+        // donde el lima es un oliva oscuro.
         //
-        // El texto NO usa `--lime-foreground` a propósito. Ese token es blanco
-        // en claro, y blanco sobre ese oliva da 2,33:1 — suspende WCAG AA. El
-        // casi-negro da 7,62:1 en claro y 13,82:1 en oscuro, y además es lo que
-        // ya hacía la mayoría de los call sites y lo que hace `limeSolid` en
-        // móvil (`text-black`). El token en sí está mal en claro: eso es el
-        // #548, y se arregla allí para no cambiar aquí, de paso y sin decirlo,
-        // sus otros 7 consumidores. Cuando el #548 esté, esto vuelve al token.
-        limeSolid: "bg-lime text-zinc-900 hover:bg-lime/90",
+        // El foreground fue casi-negro literal (`text-zinc-900`) mientras el
+        // token era blanco en claro, porque blanco sobre ese oliva da 2,33:1 y
+        // suspende WCAG AA. El #548 lo arregló en la raíz (ahora `0 0% 7%` en
+        // los dos temas, ~7,6:1 en claro), así que la variante vuelve al token
+        // como estaba previsto. `lib/lime-contrast.test.ts` falla en CI si el
+        // token se vuelve a aclarar. Espejo de `limeSolid` en móvil.
+        limeSolid: "bg-lime text-lime-foreground hover:bg-lime/90",
         // Acento lima secundario: filete + tinte, sin relleno. El lima marca
         // "activo/interactuable", así que esta es la forma por defecto de un
         // botón lima que no es el CTA. Espejo de `lime` en móvil.
