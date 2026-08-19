@@ -1,14 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 import { QueryClient } from '@tanstack/react-query'
 import { makeOptimisticListHandlers } from './optimistic'
 
 describe('makeOptimisticListHandlers', () => {
   let qc: QueryClient
-  let lsWrite: ReturnType<typeof vi.fn>
+  // `unknown` en el parámetro a propósito: el mismo mock se pasa como
+  // write-through de una lista (`number[]`) y de un contador (`number`).
+  let lsWrite: Mock<(next: unknown) => void>
 
   beforeEach(() => {
     qc = new QueryClient()
-    lsWrite = vi.fn()
+    lsWrite = vi.fn<(next: unknown) => void>()
   })
 
   it('onMutate parte de la caché existente, aplica el updater y hace write-through a LS', async () => {

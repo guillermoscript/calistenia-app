@@ -23,6 +23,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # "all workspaces" es literal desde #483: `pnpm -r` sólo ejecuta el script
+      # en los paquetes que lo declaran, y `packages/core` no tenía ni script
+      # `typecheck` ni `tsconfig.json`, así que se saltaba entero — su código
+      # sólo se validaba de rebote desde web (strict:false) y móvil (strict).
+      # Ahora entran los tres. Si alguien quita el script de core, esto vuelve a
+      # pasar en silencio: el paso seguiría verde comprobando una cosa menos.
       - name: Typecheck (all workspaces)
         run: pnpm -r typecheck
 

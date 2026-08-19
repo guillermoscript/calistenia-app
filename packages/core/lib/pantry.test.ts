@@ -88,6 +88,8 @@ describe('buildPantrySnapshot', () => {
 const baseItem = (over: Partial<PantryItem> = {}): PantryItem => ({
   id: 'x1', name: 'Pollo', nameNormalized: 'pollo', category: 'proteina',
   quantity: 1, unit: 'kg', priceTotal: null, currency: 'USD', priceSource: null,
+  // Campos de multimoneda: obligatorios en PantryItem, la fixture se quedó atrás.
+  priceOriginal: null, currencyOriginal: null, exchangeRate: null,
   purchaseDate: null, expiryEstimate: null, confidence: 'high', status: 'active',
   source: 'chat', ...over,
 })

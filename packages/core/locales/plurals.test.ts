@@ -38,18 +38,19 @@ function makeI18n(lng: string) {
     fallbackLng: 'es',
     resources: Object.fromEntries(locales.map((l) => [l, { translation: read(l) }])),
     interpolation: { escapeValue: false },
-    initImmediate: false,
   })
   return instance
 }
 
 /** Simula Hermes sin `Intl.PluralRules`. Devuelve el restaurador. */
 function withoutIntlPluralRules(): () => void {
-  const original = Intl.PluralRules
-  // @ts-expect-error — se borra a propósito para reproducir el entorno del móvil
-  delete Intl.PluralRules
+  // `Intl.PluralRules` es readonly para TS, pero en runtime es una propiedad
+  // normal: este alias deja borrarla y reponerla sin silenciar el compilador.
+  const intl = Intl as { PluralRules?: typeof Intl.PluralRules }
+  const original = intl.PluralRules
+  delete intl.PluralRules
   return () => {
-    Intl.PluralRules = original
+    intl.PluralRules = original
   }
 }
 
