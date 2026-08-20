@@ -44,6 +44,7 @@ export function useFreeSessionTemplates(userId: string | null) {
     enabled: !!userId,
     queryFn: async (): Promise<FreeSessionTemplate[]> => {
       const res = await pb.collection('free_session_templates').getList(1, 50, {
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-last_used_at',
       })
@@ -92,7 +93,7 @@ export function useFreeSessionTemplates(userId: string | null) {
   // — Re-lanzar: incrementa uso y devuelve los ejercicios guardados —
   const touchMutation = useMutation({
     mutationFn: async (id: string): Promise<Exercise[]> => {
-      const rec: any = await pb.collection('free_session_templates').getOne(id)
+      const rec: any = await pb.collection('free_session_templates').getOne(id, { requestKey: null })
       await pb.collection('free_session_templates').update(id, {
         usage_count: (rec.usage_count || 0) + 1,
         last_used_at: nowLocalForPB(),

@@ -372,6 +372,7 @@ export function useCommunityProgramDetail(programId: string, userId: string | nu
 
       const [sessions, cardio] = await Promise.all([
         pb.collection('sessions').getFullList({
+          requestKey: null,
           filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at < {:end}', {
             uid: userId, start: startFilter, end: endFilter,
           }),

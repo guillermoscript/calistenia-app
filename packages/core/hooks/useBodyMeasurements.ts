@@ -53,6 +53,7 @@ export function useBodyMeasurements(userId: string | null = null): UseBodyMeasur
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<BodyMeasurement[]> => {
       const res = await pb.collection('body_measurements').getList(1, 200, {
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-date',
       })

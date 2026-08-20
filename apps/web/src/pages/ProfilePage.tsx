@@ -106,7 +106,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           // Tres hidrataciones, no una: conservan el mismo escalonado de
           // renders que tenían los 16 setters sueltos (los campos de `users`
           // aparecen antes de esperar a las otras dos colecciones).
-          const rec = await pb.collection('users').getOne(user.id)
+          const rec = await pb.collection('users').getOne(user.id, { requestKey: null })
           setAvatarUrl(getUserAvatarUrl(rec, '200x200'))
           hydrate({
             displayName: rec.display_name || rec.name || '',

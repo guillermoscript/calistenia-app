@@ -65,7 +65,7 @@ export async function fetchMonthActivity(
   // (agua: varios vasos al día → un getList(1,500) podría descartar entradas en
   // meses intensos). Normalizamos a { items } para mantener la forma uniforme.
   const fullList = (collection: string, opts: Record<string, unknown>) =>
-    pb.collection(collection).getFullList(opts).then((items) => ({ items }))
+    pb.collection(collection).getFullList({ requestKey: null, ...opts }).then((items) => ({ items }))
 
   const [
     cardioRes, circuitRes, nutritionRes, waterRes, sleepRes, weightRes,
@@ -80,6 +80,7 @@ export async function fetchMonthActivity(
       fields: 'id,activity_type,distance_km,duration_seconds,started_at,finished_at,note',
     }),
     pb.collection('circuit_sessions').getList(1, 200, {
+      requestKey: null,
       filter: utcRange('started_at'),
       sort: '-started_at',
       fields: 'id,circuit_name,mode,rounds_completed,rounds_target,duration_seconds,started_at,finished_at,note',
@@ -93,19 +94,23 @@ export async function fetchMonthActivity(
       fields: 'id,logged_at,amount_ml',
     }),
     pb.collection('sleep_entries').getList(1, 62, {
+      requestKey: null,
       filter: dateRange,
       fields: 'id,date,quality,duration_minutes,bedtime,wake_time,awakenings,caffeine,screen_before_bed,stress_level',
     }),
     pb.collection('weight_entries').getList(1, 62, {
+      requestKey: null,
       filter: dateRange,
       fields: 'id,date,weight_kg,note',
     }),
     pb.collection('body_measurements').getList(1, 62, {
+      requestKey: null,
       filter: dateRange,
       sort: '-date',
       fields: 'id,date,waist,neck,hips',
     }),
     pb.collection('body_photos').getList(1, 300, {
+      requestKey: null,
       filter: dateRange,
       sort: '-date',
       fields: 'id,collectionId,collectionName,date,photo',
@@ -113,6 +118,7 @@ export async function fetchMonthActivity(
     // lumbar_checks.date es un campo `text` YYYY-MM-DD: la comparación lexicográfica
     // del rango sigue siendo válida porque el formato ordena cronológicamente.
     pb.collection('lumbar_checks').getList(1, 62, {
+      requestKey: null,
       filter: dateRange,
       sort: '-date',
       fields: 'id,date,lumbar_score',

@@ -55,6 +55,7 @@ export function useWeight(userId: string | null = null): UseWeightReturn {
     queryFn: async () => {
       // getFullList elimina el límite implícito de 500: obtiene todos los registros del usuario
       const res = await pb.collection('weight_entries').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-date',
       })

@@ -255,7 +255,7 @@ export default function FreeSessionPage() {
         const available = await isPocketBaseAvailable()
         if (available && !cancelled) {
           try {
-            const res = await pb.collection('exercises_catalog').getList(1, 200, { sort: 'name' })
+            const res = await pb.collection('exercises_catalog').getList(1, 200, { requestKey: null, sort: 'name' })
             if (!cancelled && res.items.length > 0) {
               setCatalog(res.items.map(mapPBRecord))
               setLoading(false)
@@ -355,7 +355,7 @@ export default function FreeSessionPage() {
       try {
         const available = await isPocketBaseAvailable()
         if (available) {
-          const res = await pb.collection('exercises_catalog').getList(1, 200, { sort: 'name' })
+          const res = await pb.collection('exercises_catalog').getList(1, 200, { requestKey: null, sort: 'name' })
           if (res.items.length > 0) {
             setCatalog(res.items.map(mapPBRecord))
             setLoading(false)

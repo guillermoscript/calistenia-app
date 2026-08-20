@@ -42,7 +42,7 @@ export async function fetchNutritionProfilePrefill(userId: string): Promise<Nutr
   const available = await isPocketBaseAvailable()
   if (!available) return {}
   try {
-    const user = await pb.collection('users').getOne(userId)
+    const user = await pb.collection('users').getOne(userId, { requestKey: null })
     const weight = Number(user.weight) || undefined
     const goalWeight = Number(user.goal_weight) || undefined
     return {

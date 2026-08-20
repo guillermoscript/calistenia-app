@@ -31,6 +31,7 @@ export function useSpendSummary(userId: string | null, weekStart: string) {
       const to = addDaysISO(weekStart, 8)
 
       const entryRecs = await pb.collection('nutrition_entries').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid} && logged_at >= {:from} && logged_at < {:to}', {
           uid: userId!, from: `${from} 00:00:00`, to: `${to} 00:00:00`,
         }),

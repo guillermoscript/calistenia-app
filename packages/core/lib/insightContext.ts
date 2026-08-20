@@ -500,6 +500,7 @@ async function fetchWindow(
   const strengthByDate: StrengthByDate = {}
   try {
     const sessions = (await pb.collection('sessions').getFullList({
+      requestKey: null,
       filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at < {:end}', {
         uid: userId,
         start: localMidnightAsUTCIn(start, tz),
@@ -528,6 +529,7 @@ async function fetchWindow(
   let watchAvailable = false
   try {
     const healthRows = (await pb.collection('daily_health_cache').getFullList({
+      requestKey: null,
       filter: pb.filter('user = {:uid} && date >= {:start} && date <= {:end}', { uid: userId, start, end }),
     })) as unknown as DailyHealthSummary[]
 
@@ -582,7 +584,7 @@ export async function buildInsightContext(
   // perfil vacío si falla.
   const bodyProfile: InsightBodyProfile = {}
   try {
-    const user = await pb.collection('users').getOne(userId, { fields: 'height' })
+    const user = await pb.collection('users').getOne(userId, { requestKey: null, fields: 'height' })
     bodyProfile.heightCm = Number((user as { height?: number }).height) || undefined
   } catch (err) {
     warn('buildInsightContext: user height fetch failed', err)
@@ -611,7 +613,7 @@ export async function buildInsightContext(
 
   let primaryGoal: string | undefined
   try {
-    const user = await pb.collection('users').getOne(userId, { fields: 'primary_goal' })
+    const user = await pb.collection('users').getOne(userId, { requestKey: null, fields: 'primary_goal' })
     primaryGoal = (user as { primary_goal?: string }).primary_goal || undefined
   } catch (err) {
     warn('buildInsightContext: user primary_goal fetch failed', err)

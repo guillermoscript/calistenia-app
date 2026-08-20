@@ -305,7 +305,7 @@ export default function ExerciseLibraryPage() {
         const available = await isPocketBaseAvailable()
         if (available && !cancelled) {
           try {
-            const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
+            const res = await pb.collection('exercises_catalog').getList(1, 500, { requestKey: null, sort: 'name' })
             if (!cancelled && res.items.length > 0) {
               setExercises(res.items.map(mapCatalogRecord))
               setLoading(false)
@@ -774,7 +774,7 @@ export default function ExerciseLibraryPage() {
                     setImportedIds(prev => new Set(prev).add(wgerId))
                     // Optimistic update: add to local exercises
                     try {
-                      const rec = await pb.collection('exercises_catalog').getOne(recordId)
+                      const rec = await pb.collection('exercises_catalog').getOne(recordId, { requestKey: null })
                       setExercises(prev => [...prev, mapCatalogRecord(rec)].sort((a, b) => l(a.name).localeCompare(l(b.name))))
                     } catch { /* Will show on next load */ }
                   } catch (err) {

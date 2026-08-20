@@ -105,10 +105,11 @@ export async function recomputeAutoNutritionGoal(
   try {
     const existing: any = await pb.collection('nutrition_goals').getFirstListItem(
       pb.filter('user = {:uid}', { uid: userId }),
+      { requestKey: null },
     )
     if (!shouldRecomputeAutoGoal(existing.source as NutritionGoal['source'])) return null
 
-    const user: any = await pb.collection('users').getOne(userId)
+    const user: any = await pb.collection('users').getOne(userId, { requestKey: null })
     const weight = Number(user.weight) || undefined
     const height = Number(user.height) || undefined
     // edad/sexo son PII: en `users` están marcados `hidden` (fix de seguridad
@@ -487,7 +488,7 @@ export function useNutrition(userId: string | null) {
           ...(goalsData.source !== undefined ? { source: goalsData.source } : {}),
         }
         try {
-          const existing = await pb.collection('nutrition_goals').getFirstListItem(pb.filter('user = {:uid}', { uid: userId }))
+          const existing = await pb.collection('nutrition_goals').getFirstListItem(pb.filter('user = {:uid}', { uid: userId }), { requestKey: null })
           const rec: any = await pb.collection('nutrition_goals').update(existing.id, pbData)
           newGoal.id = rec.id
         } catch {
@@ -586,6 +587,7 @@ export function useNutrition(userId: string | null) {
     if (usePB && userId) {
       try {
         const res = await pb.collection('nutrition_entries').getList(1, limit, {
+          requestKey: null,
           filter: pb.filter('user = {:uid}', { uid: userId }),
           sort: '-logged_at',
         })

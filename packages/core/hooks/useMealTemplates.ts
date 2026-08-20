@@ -29,6 +29,7 @@ export function useMealTemplates(userId: string | null) {
     enabled: !!userId,
     queryFn: async (): Promise<MealTemplate[]> => {
       const res = await pb.collection('meal_templates').getList(1, 50, {
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-usage_count',
       })
@@ -48,6 +49,7 @@ export function useMealTemplates(userId: string | null) {
         queryKey: key,
         queryFn: async () => {
           const res = await pb.collection('meal_templates').getList(1, 50, {
+            requestKey: null,
             filter: pb.filter('user = {:uid}', { uid: userId }),
             sort: '-usage_count',
           })
@@ -82,7 +84,7 @@ export function useMealTemplates(userId: string | null) {
   // — Mutación: leer plantilla + incrementar uso —
   const useTemplateMutation = useMutation({
     mutationFn: async (id: string): Promise<FoodItem[]> => {
-      const rec: any = await pb.collection('meal_templates').getOne(id)
+      const rec: any = await pb.collection('meal_templates').getOne(id, { requestKey: null })
       await pb.collection('meal_templates').update(id, {
         usage_count: (rec.usage_count || 0) + 1,
         last_used_at: nowLocalForPB(),

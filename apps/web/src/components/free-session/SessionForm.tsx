@@ -78,7 +78,8 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
     const loadGoals = async () => {
       try {
         const rec = await pb.collection('nutrition_goals').getFirstListItem(
-          pb.filter('user = {:uid}', { uid: user.id })
+          pb.filter('user = {:uid}', { uid: user.id }),
+          { requestKey: null },
         )
         if (rec.age) setAge(String(rec.age))
         if (rec.weight) setWeight(String(rec.weight))

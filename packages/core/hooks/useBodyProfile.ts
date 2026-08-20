@@ -24,13 +24,14 @@ export function useBodyProfile(userId: string | null): { profile: BodyProfile; i
     queryFn: async (): Promise<BodyProfile> => {
       const profile: BodyProfile = {}
       try {
-        const user: any = await pb.collection('users').getOne(userId!, { fields: 'height,weight' })
+        const user: any = await pb.collection('users').getOne(userId!, { requestKey: null, fields: 'height,weight' })
         profile.heightCm = Number(user.height) || undefined
         profile.weightKg = Number(user.weight) || undefined
       } catch { /* degrada a undefined */ }
       try {
         const goals: any = await pb.collection('nutrition_goals').getFirstListItem(
           pb.filter('user = {:uid}', { uid: userId! }),
+          { requestKey: null },
         )
         profile.sex = (goals.sex as Sex) || undefined
       } catch { /* sin fila de goals: sexo desconocido */ }

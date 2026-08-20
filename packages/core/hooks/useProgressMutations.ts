@@ -264,6 +264,7 @@ export function useProgressMutations(userId: string | null = null, activeProgram
         const dayEndDate = new Date(new Date(`${d}T00:00:00`).getTime() + 86400000)
         const dayEnd = localMidnightAsUTC(toLocalDateStr(dayEndDate))
         const records = await pb.collection('sessions').getList(1, 1, {
+          requestKey: null,
           filter: pb.filter(
             'user = {:uid} && workout_key = {:key} && completed_at >= {:from} && completed_at < {:to}',
             { uid: userId, key: workoutKey, from: dayStart, to: dayEnd },

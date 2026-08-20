@@ -218,6 +218,7 @@ export default function ExerciseDetailPage() {
           try {
             // Try by slug first, then by id
             const res = await pb.collection('exercises_catalog').getList(1, 1, {
+              requestKey: null,
               filter: pb.filter('slug = {:val} || id = {:val}', { val: id }),
             })
             if (!cancelled && res.items.length > 0) {

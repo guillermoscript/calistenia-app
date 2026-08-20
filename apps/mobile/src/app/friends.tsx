@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { shareReferralInvite, shareText, profileUrl } from '@/lib/share'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { isAutoCancelError } from '@calistenia/core/lib/pocketbase-errors'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { excludeBlocked } from '@calistenia/core/lib/blocks'
@@ -201,12 +202,13 @@ export default function FriendsScreen() {
         const { raw, params } = buildUserSearchFilter(query)
         const res = await pb.collection('users').getList(1, 20, {
           filter: pb.filter(raw, params),
-          $autoCancel: true,
+          // Clave propia: la búsqueda cancela la anterior sin pisar otras lecturas de `users` (#565).
+          requestKey: 'friends-user-search',
         })
         if (queryRef.current !== query) return // stale
         setSearchResults(mapPbItems(res.items, userId ?? ''))
       } catch (e) {
-        if ((e as { isAbort?: boolean })?.isAbort) return // cancelado por $autoCancel, no es error
+        if (isAutoCancelError(e)) return // cancelada por la siguiente pulsación, no es error
         Sentry.captureException(e, { tags: { feature: 'social', op: 'search_users' } })
         setSearchError(true)
         setSearchResults([])

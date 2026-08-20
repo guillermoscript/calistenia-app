@@ -67,7 +67,8 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
         pb.filter('user = {:uid} && subscription.endpoint = {:ep}', {
           uid: userId,
           ep: subJson.endpoint,
-        })
+        }),
+        { requestKey: null },
       )
       // Already exists
     } catch {
@@ -101,7 +102,8 @@ export async function unsubscribeFromPush(userId: string): Promise<void> {
           pb.filter('user = {:uid} && subscription.endpoint = {:ep}', {
             uid: userId,
             ep: endpoint,
-          })
+          }),
+          { requestKey: null },
         )
         await pb.collection('push_subscriptions').delete(rec.id)
       } catch { /* ignore */ }

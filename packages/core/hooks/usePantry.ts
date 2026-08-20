@@ -36,6 +36,7 @@ export function mapPantryRecord(r: Record<string, unknown>): PantryItem {
 /** Lee items activos y aplica la confianza computada (decay F4) al vuelo. */
 export async function fetchActivePantryItems(userId: string): Promise<PantryItem[]> {
   const res = await pb.collection('pantry_items').getFullList({
+    requestKey: null,
     filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
     sort: '-created',
   })
@@ -63,6 +64,7 @@ export function usePantryHistory(userId: string | null) {
     enabled: !!userId,
     queryFn: async (): Promise<PantryItem[]> => {
       const res = await pb.collection('pantry_items').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-created',
       })

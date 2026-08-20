@@ -238,6 +238,7 @@ async function fetchActiveEnrollment(uid: string): Promise<string | null> {
   try {
     const rec = await pb.collection('user_programs').getFirstListItem(
       pb.filter('user = {:uid} && is_current = true', { uid }),
+      { requestKey: null },
     )
     return rec.program as string
   } catch {
@@ -327,6 +328,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       try {
         existing = await pb.collection('user_programs').getFirstListItem(
           pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
+          { requestKey: null },
         )
       } catch { /* not found */ }
       const wasAlreadyCurrent = existing?.is_current === true
@@ -340,6 +342,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       }
 
       const currentList = await pb.collection('user_programs').getList(1, 100, {
+        requestKey: null,
         filter: pb.filter('user = {:uid} && is_current = true && program != {:pid}', { uid: userId, pid: programId }),
       })
       await Promise.all(currentList.items.map(rec =>
@@ -383,6 +386,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       try {
         upRecord = await pb.collection('user_programs').getFirstListItem(
           pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
+          { requestKey: null },
         )
       } catch { /* not found */ }
       if (!upRecord) return false
@@ -501,7 +505,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         for (const p of phasesR.items) await pb.collection('program_phases').delete(p.id)
       } catch { /* no phases */ }
       try {
-        const userProgs = await pb.collection('user_programs').getList(1, 100, { filter: pb.filter('program = {:pid}', { pid: programId }) })
+        const userProgs = await pb.collection('user_programs').getList(1, 100, { requestKey: null, filter: pb.filter('program = {:pid}', { pid: programId }) })
         for (const up of userProgs.items) await pb.collection('user_programs').delete(up.id)
       } catch { /* no user_programs */ }
 
@@ -517,6 +521,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         let nextEnrollmentProgramId: string | null = null
         try {
           const userEnrollments = await pb.collection('user_programs').getList(1, 1, {
+            requestKey: null,
             filter: pb.filter('user = {:uid} && program != {:pid} && status = "active"', { uid: userId, pid: programId }),
             sort: '-started_at',
           })
@@ -530,6 +535,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
             // Marcar esa inscripción como current en PB.
             const nextEnrollment = await pb.collection('user_programs').getFirstListItem(
               pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: nextEnrollmentProgramId }),
+              { requestKey: null },
             )
             await pb.collection('user_programs').update(nextEnrollment.id, { is_current: true, status: 'active', ended_at: '' })
             qc.setQueryData(qk.programs.activeEnrollment(userId), nextEnrollmentProgramId)

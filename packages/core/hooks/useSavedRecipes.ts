@@ -27,6 +27,7 @@ export function useSavedRecipes(userId: string | null) {
     enabled: !!userId,
     queryFn: async () => {
       const res = await pb.collection('saved_recipes').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-created',
       })
@@ -47,6 +48,7 @@ export function useToggleSavedRecipe(userId: string | null) {
       if (!userId) return
       const norm = normalizePantryName(label)
       const existing = await pb.collection('saved_recipes').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid} && label_normalized = {:norm}', { uid: userId, norm }),
       })
       if (existing.length > 0) {
