@@ -2,17 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
-
-function relativeTime(dateStr: string): string {
-  const now = Date.now()
-  const then = new Date(dateStr.replace(' ', 'T')).getTime()
-  const diffMin = Math.floor((now - then) / 60000)
-  if (diffMin < 60) return `${diffMin}m`
-  const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `${diffH}h`
-  const diffD = Math.floor(diffH / 24)
-  return `${diffD}d`
-}
+import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 
 interface ActivityFeedWidgetProps {
   items: FeedItem[]
@@ -76,7 +66,7 @@ export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, o
                   <span className={cn('font-medium', phaseColor?.text || 'text-lime')}>{item.workoutTitle}</span>
                 </div>
               </div>
-              <span className="text-[10px] text-muted-foreground shrink-0">{relativeTime(item.completedAt)}</span>
+              <span className="text-[10px] text-muted-foreground shrink-0">{timeAgoShort(item.completedAt)}</span>
             </div>
           )
         })}

@@ -22,6 +22,7 @@ import {
   localDateForPB,
   diffDays,
   timeAgo,
+  timeAgoShort,
   relativeDate,
   formatDateRange,
 } from './dateUtils'
@@ -303,6 +304,45 @@ describe('timeAgo', () => {
     const result = timeAgo('2026-06-28 10:00:00.000Z')
     expect(result).not.toMatch(/hace/i)
     expect(result).toMatch(/^\d{1,2}\s/)
+  })
+})
+
+describe('timeAgoShort', () => {
+  beforeEach(() => {
+    setTimezone('UTC')
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+  })
+
+  it('vacío e inválido -> ""', () => {
+    expect(timeAgoShort('')).toBe('')
+    expect(timeAgoShort('garbage')).toBe('')
+  })
+
+  it('formato corto en español con las claves feed.*', () => {
+    expect(timeAgoShort('2026-07-08 11:59:30.000Z')).toBe('ahora')
+    expect(timeAgoShort('2026-07-08 11:55:00.000Z')).toBe('hace 5 min')
+    expect(timeAgoShort('2026-07-08 09:00:00.000Z')).toBe('hace 3 h')
+    expect(timeAgoShort('2026-07-07 09:00:00.000Z')).toBe('ayer')
+    expect(timeAgoShort('2026-07-05 09:00:00.000Z')).toBe('hace 3 días')
+  })
+
+  it('acepta el formato con T de PocketBase', () => {
+    expect(timeAgoShort('2026-07-08T11:55:00.000Z')).toBe('hace 5 min')
+  })
+
+  it('más de 7 días -> fecha corta, no texto relativo', () => {
+    const result = timeAgoShort('2026-06-28 10:00:00.000Z')
+    expect(result).not.toMatch(/hace/)
+    expect(result).toMatch(/^28\s/)
+  })
+
+  it('sigue el idioma activo (en)', async () => {
+    await i18n.changeLanguage('en')
+    expect(timeAgoShort('2026-07-08 11:55:00.000Z')).toBe('5m ago')
+    expect(timeAgoShort('2026-07-08 09:00:00.000Z')).toBe('3h ago')
+    expect(timeAgoShort('2026-07-07 09:00:00.000Z')).toBe('yesterday')
+    expect(timeAgoShort('2026-07-05 09:00:00.000Z')).toBe('3d ago')
   })
 })
 

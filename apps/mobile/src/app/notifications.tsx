@@ -16,6 +16,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import type { AppNotification, NotificationType } from '@calistenia/core/hooks/useNotifications'
 import { getNotifRoute } from '@/lib/notification-route'
+import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -23,22 +24,6 @@ import { getNotifRoute } from '@/lib/notification-route'
 
 /** Separador de fila estable (a nivel de módulo: no se remonta en cada render). */
 const NotifSeparator = () => <View className="mx-4 h-px bg-border/40" />
-
-/** Tiempo relativo en español */
-function relativeTimeEs(dateStr: string): string {
-  if (!dateStr) return ''
-  const then = new Date(dateStr.replace(' ', 'T')).getTime()
-  if (isNaN(then)) return ''
-  const diffMin = Math.floor((Date.now() - then) / 60000)
-  if (diffMin < 1) return 'ahora'
-  if (diffMin < 60) return `hace ${diffMin}m`
-  const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `hace ${diffH}h`
-  const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return 'ayer'
-  if (diffD <= 7) return `hace ${diffD}d`
-  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString('es', { day: 'numeric', month: 'short' })
-}
 
 /** Mensaje localizado para cada tipo de notificación */
 function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record<string, unknown>) => string): string {
@@ -149,7 +134,7 @@ function NotificationRow({ item, onPress }: NotificationRowProps) {
           {getNotificationMessage(item, t)}
         </Text>
         <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground/60">
-          {relativeTimeEs(item.created)}
+          {timeAgoShort(item.created)}
         </Text>
       </View>
 
