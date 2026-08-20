@@ -325,7 +325,11 @@ export default function ExerciseLibraryPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+    // Carga única: meter `i18n.language` aquí dispararía un refetch completo del
+    // catálogo a PocketBase en cada cambio de idioma. El precio conocido es que
+    // el orden alfabético inicial se queda con el idioma de carga; los nombres
+    // visibles y la búsqueda sí se re-localizan (ver el memo `filtered`). (#484)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- carga única del catálogo
 
 
   // Filtered exercises
@@ -381,7 +385,9 @@ export default function ExerciseLibraryPage() {
     }
 
     return result
-  }, [exercises, showFavoritesOnly, favoriteIds, activeCategory, activeDifficulty, activeMuscle, activeEquipment, search])
+    // `l` en las deps: al cambiar de idioma el filtro de búsqueda tiene que
+    // recalcularse contra los nombres del idioma nuevo. (#484)
+  }, [exercises, showFavoritesOnly, favoriteIds, activeCategory, activeDifficulty, activeMuscle, activeEquipment, search, l])
 
   // Incremental rendering — the catalog is ~1600 entries and the grid is not
   // virtualized, so cap the DOM and grow on demand.

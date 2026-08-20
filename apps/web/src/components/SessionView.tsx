@@ -126,7 +126,7 @@ export default function SessionView({
     const ex = steps[stepIdx]?.exercise
     if (!ex) return
     timingTracker.enterExercise({ id: ex.id, name: ex.name })
-  }, [stepIdx, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stepIdx, phase]) // eslint-disable-line react-hooks/exhaustive-deps -- `timingTracker` es estable y `steps` se lee fresco; incluirlos reasignaría tiempos
 
   // Finalizar exactamente una vez al llegar por primera vez a la nota.
   useEffect(() => {
@@ -135,12 +135,12 @@ export default function SessionView({
       finalTimingsRef.current = result
       setFinalTimings(result)
     }
-  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps -- finalizar exactamente una vez al entrar en la nota
 
   // Empujar el progreso al contexto para que sobreviva a navegar fuera y volver
   useEffect(() => {
     setProgress({ stepIdx, phase, setsCount, timing: timingTracker.getState() })
-  }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps -- se empuja el progreso al avanzar, no cuando cambia la identidad de `setProgress`
 
   // Permiso de notificaciones al arrancar la sesión
   useEffect(() => { notif.requestPermission() }, [])

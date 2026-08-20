@@ -683,7 +683,7 @@ export default function AppTour({ pathname, userId, autoStart = false }: AppTour
     }, 800)
 
     return () => clearTimeout(timer)
-  }, [pathname, userId, autoStart]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname, userId, autoStart]) // eslint-disable-line react-hooks/exhaustive-deps -- `tourLabels` se recrea en cada render y relanzaría el tour
 
   return null
 }

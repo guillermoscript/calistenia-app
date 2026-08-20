@@ -45,7 +45,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     } else {
       resetEditor()
     }
-  }, [programId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [programId]) // eslint-disable-line react-hooks/exhaustive-deps -- cargar/resetear solo al cambiar de programa, no al recrearse las acciones del store
 
   // La fase seleccionada puede desaparecer al eliminar fases (issue #536). Sin
   // esto el índice se quedaba apuntando a una fase que ya no existe y los pasos

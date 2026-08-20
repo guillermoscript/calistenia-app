@@ -102,7 +102,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         return cached?.status === 'pending' || cached?.status === 'processing' ? true : false
       })
     })
-  }, [jobId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [jobId]) // eslint-disable-line react-hooks/exhaustive-deps -- se resuelve un job por id; reejecutar al recrearse los getters relanzaría el toast
 
   useEffect(() => {
     if (!jobId || !jobLoading) return
@@ -117,7 +117,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
       setJobLoading(false)
       setSearchParams({}, { replace: true })
     }
-  }, [jobId, jobLoading, getJob, clearJob, loadJobResult, setSearchParams])
+  }, [jobId, jobLoading, getJob, clearJob, loadJobResult, setSearchParams, t])
 
   // ─── Background send ──────────────────────────────────────────────────────
   const handleSendToBackground = useCallback((imageFiles: File[], mealType: string, description?: string) => {
@@ -135,7 +135,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         clearJob('_pending')
         toast.error(t('nutrition.analysisError'), { description: t('nutrition.analysisErrorDesc') })
       })
-  }, [addJob, clearJob])
+  }, [addJob, clearJob, t])
 
   // ── F4 (#173): depleción de despensa post-log ──────────────────────────────
   // La página navega a /nutrition tras guardar; si hay match en vuelo o filas

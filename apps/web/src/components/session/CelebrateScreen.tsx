@@ -54,7 +54,8 @@ export default function CelebrateScreen({
   }, [])
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    // a11y: "toca para continuar" a pantalla completa; el avance también ocurre
+    // solo al terminar la animación. (Sin regla jsx-a11y activa: #484)
     <div
       onClick={onDone}
       className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 py-10 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] gap-7 cursor-pointer text-center relative w-full"

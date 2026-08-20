@@ -72,7 +72,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
     setHistoryLoading(true)
     getHistory(20).then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false))
     loadStats()
-  }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps -- `savedSession` solo abre la guarda; recargar al guardar lo dispara ya el paso a idle
 
   // Preload RouteMap chunk (+ leaflet) on idle so first map paint is instant
   // whether the user starts tracking or expands history.
@@ -136,7 +136,9 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
     const dist = displaySession?.distance_km ?? distance
     if (pts.length < 2) return null
     return assessTrackQuality(pts, dist)
-  }, [state, displaySession, distance, pointsRef, pointsCount]) // pointsCount triggers recompute when points change
+    // `pointsCount` es deliberado: los puntos viven en un ref que muta en sitio,
+    // así que es la única dep que delata que el track ha cambiado.
+  }, [state, displaySession, distance, pointsRef, pointsCount]) // eslint-disable-line react-hooks/exhaustive-deps -- cache-buster del ref de puntos
 
   const isTracking = state === 'tracking' || state === 'paused'
 

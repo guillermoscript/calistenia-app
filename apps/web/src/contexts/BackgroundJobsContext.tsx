@@ -89,7 +89,7 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
     }
     setPending(prev => [...prev, { id, type, createdAt: Date.now() }])
     return true
-  }, [])
+  }, [t])
 
   const clearJob = useCallback((id: string) => {
     setPending(prev => prev.filter(j => j.id !== id))

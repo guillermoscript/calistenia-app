@@ -72,7 +72,7 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
     getReferrals()
     getReferralStats()
     getTransactions()
-  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps -- una carga por usuario; los getters del hook se recrean en cada render
 
   const loading = refLoading || ptsLoading
   const error = refError ?? ptsError ?? null
@@ -211,7 +211,7 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
     } else {
       copyLink()
     }
-  }, [inviteUrl, copyLink])
+  }, [inviteUrl, copyLink, t])
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-border bg-card">

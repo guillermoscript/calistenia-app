@@ -81,7 +81,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         clearJob('_pending')
         toast.error(t('nutrition.logger.analyzeError'), { description: t('nutrition.logger.checkConnection') })
       })
-  }, [addJob, clearJob])
+  }, [addJob, clearJob, t])
 
   // Fetch user profile data for pre-filling nutrition goal setup
   useEffect(() => {
@@ -260,7 +260,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         })
       }
     })
-  }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps -- se persiste una vez por score/día; `entries` cambia en cada log y duplicaría los toasts de badge
 
   const loggedMealTypes = useMemo(
     () => [...new Set(todayEntries.map(e => e.mealType))],
@@ -282,7 +282,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     setPhaseChangeBanner(false)
     setShowGoalSetup(false)
     setPendingGoal(null)
-  }, [saveGoals, userId, pendingGoal, goals])
+  }, [saveGoals, userId, goals])
 
   const handleCalculateMacros = useCallback((
     weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string, pace?: string,

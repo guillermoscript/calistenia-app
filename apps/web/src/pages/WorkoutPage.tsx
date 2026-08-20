@@ -53,7 +53,7 @@ export default function WorkoutPage() {
       setSelectedDay(dayParam)
       setSearchParams({}, { replace: true })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- el ?day= se consume una sola vez, al montar
 
   useEffect(() => {
     setRestTime(null)
@@ -69,11 +69,14 @@ export default function WorkoutPage() {
   const isDone   = workoutKey ? isWorkoutDone(workoutKey) : false
 
   // Trigger workout detail tour when a day is selected for the first time
+  const hasWorkout = !!workout
   useEffect(() => {
-    if (workout) {
+    if (hasWorkout) {
       triggerWorkoutDetailTour(userId)
     }
-  }, [!!workout]) // eslint-disable-line react-hooks/exhaustive-deps
+    // `userId` fuera a propósito: si el auth se restaura después de montar, el
+    // tour se relanzaría una segunda vez sobre la misma pantalla. (#484)
+  }, [hasWorkout]) // eslint-disable-line react-hooks/exhaustive-deps -- el tour se lanza una vez por día seleccionado
 
   const handleStartSession = useCallback(() => {
     if (!workout || !workoutKey) return

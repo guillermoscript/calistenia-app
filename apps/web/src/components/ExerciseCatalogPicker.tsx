@@ -149,7 +149,10 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
       )
     }
     return items
-  }, [catalog, search, category])
+    // `l` cambia de identidad al cambiar de idioma (useLocalize → useCallback
+    // sobre el locale): sin él, el buscador seguía filtrando por los nombres
+    // del idioma anterior. (#484)
+  }, [catalog, search, category, l])
 
   const handleAdd = (ex: CatalogExercise) => {
     onAdd({

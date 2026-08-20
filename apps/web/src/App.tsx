@@ -545,7 +545,7 @@ function AuthenticatedApp({
       markOnboardingDone(user.id)
       setOnboardingDone(true)
     }
-  }, [pbReady, programsReady, user?.id, activeProgram, setOnboardingDone])
+  }, [pbReady, programsReady, user, activeProgram, setOnboardingDone])
 
   if (!pbReady || !programsReady) return <AppLoader />
 
@@ -682,7 +682,7 @@ function AppInner() {
   useEffect(() => {
     if (user) setOnboardingDone(isOnboardingDone(user.id))
     else setOnboardingDone(false)
-  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- solo al cambiar de usuario; `user` entero re-dispararía en cada authRefresh
 
   useEffect(() => { return setupAutoSync(pb, () => queryClient.invalidateQueries()) }, [])
 

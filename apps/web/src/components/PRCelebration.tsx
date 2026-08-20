@@ -39,7 +39,8 @@ export default function PRCelebration({ prEvent, onDismiss }: PRCelebrationProps
   }, [])
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    // a11y: capa de descarte por clic; se auto-cierra sola por temporizador, así
+    // que no atrapa a quien navega con teclado. (Sin regla jsx-a11y activa: #484)
     <div
       onClick={onDismiss}
       className="absolute inset-x-0 top-0 z-20 px-4 pt-[calc(12px+env(safe-area-inset-top,0px))]"

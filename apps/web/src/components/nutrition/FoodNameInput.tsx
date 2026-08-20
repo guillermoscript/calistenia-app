@@ -131,7 +131,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps -- solo al teclear; `doSearch`/`doRecentSearch` se recrean en cada render
 
   const hasAnyResults = catalogResults.length > 0 || recentResults.length > 0 || offResults.length > 0
   const showDropdown = open && (hasAnyResults || searching || aiLoading || aiError || value.trim().length >= 2)

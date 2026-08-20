@@ -104,7 +104,8 @@ export default function PostWorkoutActions({
   if (dismissed) return null
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    // a11y: contenedor que solo frena la propagación del clic; los controles
+    // reales de dentro son botones enfocables. (Sin regla jsx-a11y activa: #484)
     <div
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
       className="w-full max-w-[380px] text-left"

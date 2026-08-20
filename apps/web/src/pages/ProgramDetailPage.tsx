@@ -295,7 +295,10 @@ export default function ProgramDetailPage({
     } finally {
       setLoading(false)
     }
-  }, [programId, locale])
+    // `userId` es prop y decide si se piden las últimas sesiones por día: cuando
+    // el auth se restaura después de montar, sin él en las deps `fetchProgram`
+    // no se recreaba y el historial por día no llegaba nunca. (#484)
+  }, [programId, locale, userId, t])
 
   useEffect(() => {
     fetchProgram()
@@ -349,7 +352,7 @@ export default function ProgramDetailPage({
     if (phaseWorkouts.length > 0) {
       setExpandedDays(new Set([`${phaseWorkouts[0].phase}_${phaseWorkouts[0].day}`]))
     }
-  }, [phaseNum, phaseWorkouts.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phaseNum, phaseWorkouts.length]) // eslint-disable-line react-hooks/exhaustive-deps -- auto-expandir solo al cambiar de fase; con `phaseWorkouts` reabriría el día al plegarlo
 
   const toggleDay = useCallback((key: string) => {
     setExpandedDays(prev => {

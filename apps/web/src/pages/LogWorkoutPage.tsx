@@ -154,7 +154,9 @@ export default function LogWorkoutPage() {
         return name.includes(q) || muscles.includes(q)
       })
       .slice(0, 8)
-  }, [catalog, search, i18n.language])
+    // `l` sustituye a `i18n.language`: es lo que realmente se usa aquí y ya
+    // cambia de identidad con el idioma (useLocalize). (#484)
+  }, [catalog, search, l])
 
   // ── Exercise management ──────────────────────────────────────────────────
 

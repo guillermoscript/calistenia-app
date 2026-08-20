@@ -167,7 +167,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
     return getAllCatalogEntries()
       .filter(ex => stripAccents(ex.name.es ?? '').includes(q) || stripAccents(ex.name.en ?? '').includes(q))
       .slice(0, 15)
-  }, [exerciseQuery, catalogReady])
+  }, [exerciseQuery, catalogReady]) // eslint-disable-line react-hooks/exhaustive-deps -- `catalogReady` es el cache-buster del catálogo lazy (#486)
 
   const selectExercise = (slug: string) => {
     setExerciseSlug(slug)

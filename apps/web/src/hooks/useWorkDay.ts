@@ -219,7 +219,7 @@ export function useWorkDay(): UseWorkDayReturn {
       }
     }
     return () => stopAll()
-  }, [today]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [today]) // eslint-disable-line react-hooks/exhaustive-deps -- se rehidrata solo al cambiar de día; los timers se recrean en cada render
 
   // ── Check-in ────────────────────────────────────────────────────────────────
   const checkIn = useCallback(async (): Promise<void> => {
