@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import type { WgerSearchSuggestion } from '@calistenia/core/lib/wger'
 
@@ -8,7 +9,7 @@ interface WgerResultCardProps {
   imported: boolean
   /** Compact mode for picker dialogs */
   compact?: boolean
-  /** Extra label for the import button */
+  /** Extra label for the import button. Por defecto, `wger.import`. */
   importLabel?: string
 }
 
@@ -18,9 +19,11 @@ export default function WgerResultCard({
   importing,
   imported,
   compact = false,
-  importLabel = 'IMPORTAR',
+  importLabel,
 }: WgerResultCardProps) {
+  const { t } = useTranslation()
   const { id, name, category } = suggestion.data
+  const label = importLabel ?? t('wger.import')
 
   if (compact) {
     return (
@@ -48,7 +51,7 @@ export default function WgerResultCard({
                 : 'bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 active:scale-95'
           )}
         >
-          {imported ? '✓' : importing ? '...' : importLabel}
+          {imported ? '✓' : importing ? '...' : label}
         </button>
       </div>
     )
@@ -98,7 +101,7 @@ export default function WgerResultCard({
             'text-[11px] font-bebas tracking-wide',
             imported ? 'text-emerald-400' : importing ? 'text-muted-foreground' : 'text-sky-400'
           )}>
-            {imported ? '✓ IMPORTADO' : importing ? 'IMPORTANDO...' : 'IMPORTAR →'}
+            {imported ? t('wger.imported') : importing ? t('wger.importing') : t('wger.importCta')}
           </span>
         </div>
       </div>

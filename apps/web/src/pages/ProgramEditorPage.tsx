@@ -236,11 +236,11 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
             disabled={state.step === 1}
             className="font-mono text-[11px] tracking-wide"
           >
-            ← ATRÁS
+            {t('programEditor.back')}
           </Button>
 
           <div className="text-[10px] text-muted-foreground">
-            Paso {state.step} de 4
+            {t('programEditor.stepOf', { n: state.step, total: 4 })}
           </div>
 
           {state.step < 4 ? (
@@ -249,7 +249,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               onClick={handleNext}
               className="font-mono text-[11px] tracking-wide"
             >
-              SIGUIENTE →
+              {t('programEditor.next')}
             </Button>
           ) : (
             <Button

@@ -33,7 +33,7 @@ const PR_DEFS = [
 ]
 
 export default function UserProfilePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const l = useLocalize()
   const { settings } = useWorkoutState()
   const { getLongestStreak, getTotalSessions } = useWorkoutActions()
@@ -123,7 +123,7 @@ export default function UserProfilePage() {
           <div className="flex-1 min-w-0">
             <h1 className="font-bebas text-3xl sm:text-4xl leading-none truncate">{profile.displayName}</h1>
             <div className="text-xs text-muted-foreground mt-1">
-              Miembro desde {profile.memberSince} · Fase {profile.phase}
+              {t('profile.memberSince')} {profile.memberSince} · {t('profile.phase', { phase: profile.phase })}
             </div>
           </div>
         </div>
@@ -222,10 +222,10 @@ export default function UserProfilePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatBox label="Sesiones" value={profile.totalSessions} compareValue={comparing ? currentUserSessions : undefined} accent="text-[hsl(var(--lime))]" />
+        <StatBox label={t('profile.sessions')} value={profile.totalSessions} compareValue={comparing ? currentUserSessions : undefined} accent="text-[hsl(var(--lime))]" />
         <StatBox label={t('profile.currentStreak')} value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit={t('profile.days')} />
         <StatBox label={t('profile.bestStreak')} value={profile.bestStreak} accent="text-amber-400" unit={t('profile.days')} />
-        <StatBox label="Nivel" value={profile.level} accent="text-pink-500" />
+        <StatBox label={t('profile.level')} value={profile.level} accent="text-pink-500" />
       </div>
 
       {/* Extended compare metrics */}
@@ -279,11 +279,11 @@ export default function UserProfilePage() {
       {profile.activeProgram ? (
         <Card className="mb-8">
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-widest mb-2 uppercase">Programa actual</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest mb-2 uppercase">{t('profile.currentProgram')}</div>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">{l(profile.activeProgram.name)}</div>
-                <div className="text-xs text-muted-foreground">Fase {profile.phase}</div>
+                <div className="text-xs text-muted-foreground">{t('profile.phase', { phase: profile.phase })}</div>
               </div>
               <Button
                 variant="outline"
@@ -291,7 +291,7 @@ export default function UserProfilePage() {
                 onClick={() => navigate(`/u/${userId}/routine`)}
                 className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
               >
-                VER RUTINA
+                {t('profile.viewRoutine')}
               </Button>
             </div>
           </CardContent>
@@ -336,22 +336,22 @@ export default function UserProfilePage() {
       {isOwnProfile && (
         <Card className="mb-8">
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">Referidos y Puntos</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">{t('profile.referralsAndPoints')}</div>
             <div className="grid grid-cols-3 gap-4 mb-3">
               <div>
                 <div className="font-bebas text-2xl leading-none text-[hsl(var(--lime))]">{referralStats.totalReferred}</div>
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Referidos</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">{t('referrals.statReferred')}</div>
               </div>
               <div>
                 <div className="font-bebas text-2xl leading-none text-amber-400">{referralStats.pointsBalance}</div>
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Puntos</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">{t('profile.points')}</div>
               </div>
               <div>
                 <div className="font-bebas text-2xl leading-none text-sky-500">{referralStats.totalEarned}</div>
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Total ganado</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">{t('profile.totalEarned')}</div>
               </div>
             </div>
-            <div className="text-xs text-muted-foreground mb-3">Tus puntos desbloquearan funciones de IA proximamente</div>
+            <div className="text-xs text-muted-foreground mb-3">{t('profile.pointsUnlockSoon')}</div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -359,7 +359,7 @@ export default function UserProfilePage() {
                 onClick={() => navigate('/referrals')}
                 className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
               >
-                VER MIS REFERIDOS
+                {t('profile.viewMyReferrals')}
               </Button>
               <Button
                 variant="outline"
@@ -367,7 +367,7 @@ export default function UserProfilePage() {
                 onClick={handleInvite}
                 className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
               >
-                INVITAR AMIGO
+                {t('profile.inviteFriend')}
               </Button>
             </div>
           </CardContent>
@@ -376,7 +376,7 @@ export default function UserProfilePage() {
 
       {/* Activity calendar */}
       <div className="mb-8">
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Actividad este mes</div>
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('profile.activityThisMonth')}</div>
         <div className="flex gap-1 flex-wrap">
           {calDays.map(([date, active]) => (
             <div
@@ -398,12 +398,12 @@ export default function UserProfilePage() {
       {/* Recent sessions */}
       {profile.recentSessions.length > 0 && (
         <div className="mb-8">
-          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Sesiones recientes</div>
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('profile.recentSessions')}</div>
           <div className="flex flex-col gap-2">
             {profile.recentSessions.map(session => {
               const phaseColor = PHASE_COLORS[session.phase]
               const dateObj = new Date(session.completedAt.replace(' ', 'T'))
-              const formattedDate = dateObj.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })
+              const formattedDate = dateObj.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })
               // El hook devuelve título y nota crudos: se localizan aquí, y la
               // nota se comprueba ya localizada (un `{"es":""}` sería truthy).
               const workoutTitle = l(session.workoutTitle)

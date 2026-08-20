@@ -36,7 +36,7 @@ import type { CircuitDefinition, Exercise, FreeSessionTemplate } from '@calisten
 
 export default function FreeSessionScreen() {
   const router = useRouter()
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = i18n.language || 'es'
   const startFreeSession = useStartFreeSession()
   const { startCircuit } = useCircuitSession()
@@ -115,12 +115,12 @@ export default function FreeSessionScreen() {
           <Text className="font-bebas text-2xl leading-none text-foreground">{title}</Text>
           {mode === 'manual' && view === 'pick' && (
             <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-              {CATALOG.length} ejercicios disponibles
+              {t('freeSession.catalogAvailable', { count: CATALOG.length })}
             </Text>
           )}
           {mode === 'manual' && view === 'review' && (
             <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-              {selected.length} seleccionados
+              {t('common.selectedMany', { n: selected.length })}
             </Text>
           )}
         </View>
@@ -343,7 +343,7 @@ function PickView({
         <Input
           value={search}
           onChangeText={setSearch}
-          placeholder="Buscar ejercicio…"
+          placeholder={t('freeSession.searchExercisePlaceholder')}
           placeholderTextColor={COLORS.placeholder}
           className="h-11 rounded-xl"
           clearButtonMode="while-editing"
@@ -409,10 +409,10 @@ function PickView({
         <View className="absolute bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-3">
           <View className="flex-row items-center gap-3">
             <Text className="flex-1 font-mono text-[11px] text-muted-foreground">
-              {selected.length} seleccionados
+              {t('common.selectedMany', { n: selected.length })}
             </Text>
             <Button onPress={onContinue} size="sm" className="px-5">
-              <Text className="font-bebas text-base tracking-wide">Continuar</Text>
+              <Text className="font-bebas text-base tracking-wide">{t('common.continue')}</Text>
             </Button>
           </View>
         </View>
@@ -478,7 +478,7 @@ function ReviewView({
           disabled={selected.length === 0}
           className="w-full"
         >
-          <Text className="font-bebas text-lg tracking-wide">Empezar</Text>
+          <Text className="font-bebas text-lg tracking-wide">{t('common.start')}</Text>
         </Button>
       </View>
     </View>

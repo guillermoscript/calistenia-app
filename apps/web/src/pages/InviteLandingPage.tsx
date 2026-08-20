@@ -9,6 +9,7 @@ import { shareContent, type ShareMethod } from '../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useInviteLanding } from '@calistenia/core/hooks/useInviteLanding'
+import { REFERRAL_BONUS_POINTS, REFERRAL_SIGNUP_POINTS } from '@calistenia/core/hooks/useReferrals'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
@@ -69,8 +70,8 @@ export default function InviteLandingPage() {
 
   const handleShare = (method: ShareMethod) =>
     shareContent({
-      title: `${inviter.displayName} te invita a entrenar`,
-      text: `💪 ${inviter.displayName} te invitó a entrenar juntos en Calistenia App`,
+      title: t('referrals.inviteShareTitle', { name: inviter.displayName }),
+      text: t('referrals.inviteShareText', { name: inviter.displayName }),
       url: inviteUrl,
     }, method)
 
@@ -85,18 +86,21 @@ export default function InviteLandingPage() {
           </div>
 
           <div className="bg-card border border-border rounded-xl p-6">
-            <div className="text-xs tracking-widest uppercase text-muted-foreground mb-3">TU LINK DE INVITACION</div>
+            <div className="text-xs tracking-widest uppercase text-muted-foreground mb-3">{t('referrals.linkLabel')}</div>
             <p className="text-sm text-muted-foreground mb-6">
-              Comparte este link con tus amigos. Tu ganas 100 pts y ellos 50 pts al registrarse.
+              {t('referrals.shareLinkHelp', {
+                referrerPoints: REFERRAL_SIGNUP_POINTS,
+                referredPoints: REFERRAL_BONUS_POINTS,
+              })}
             </p>
 
             <div className="bg-muted border border-border rounded-lg px-3 py-2.5 text-sm text-muted-foreground mb-6 truncate select-all">
               {inviteUrl}
             </div>
 
+            {/* Sin `label`: ShareButton ya usa `t('share.share').toUpperCase()`. */}
             <ShareButton
               onShare={handleShare}
-              label="COMPARTIR"
               size="default"
               variant="limeSolid"
               className="w-full border-0"
@@ -107,7 +111,7 @@ export default function InviteLandingPage() {
             onClick={() => navigate('/')}
             className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Volver al inicio
+            {t('common.backHome')}
           </button>
         </div>
       </div>
@@ -174,21 +178,21 @@ export default function InviteLandingPage() {
               </div>
               <div>
                 <div className="font-bebas text-2xl text-foreground leading-none">{inviter.displayName}</div>
-                <p className="text-sm text-muted-foreground mt-1">te invito a entrenar juntos</p>
+                <p className="text-sm text-muted-foreground mt-1">{t('referrals.invitesYouToTrain')}</p>
               </div>
             </div>
 
             {/* Social proof stats */}
             <div className="grid grid-cols-3 gap-3 mb-6">
-              <StatChip label="Nivel" value={inviter.level} />
-              <StatChip label="Racha" value={inviter.currentStreak} unit="d" />
-              <StatChip label="Sesiones" value={inviter.totalSessions} />
+              <StatChip label={t('referrals.statLevel')} value={inviter.level} />
+              <StatChip label={t('referrals.statStreak')} value={inviter.currentStreak} unit="d" />
+              <StatChip label={t('referrals.statSessions')} value={inviter.totalSessions} />
             </div>
 
             {/* Preview: challenge or program */}
             {challenge && (
               <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-                <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">CHALLENGE EXPRESS</div>
+                <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">{t('challenge.expressEyebrow')}</div>
                 <div className="font-bebas text-lg text-foreground leading-tight mb-3">{challenge.title}</div>
                 <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                   {challenge.exerciseName && (
@@ -199,15 +203,15 @@ export default function InviteLandingPage() {
                   )}
                   <div className="flex items-center gap-2">
                     <TargetIcon className="size-3.5 text-lime shrink-0" />
-                    <span>{challenge.dailyTarget} reps / dia</span>
+                    <span>{t('challenge.repsPerDay', { count: challenge.dailyTarget })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="size-3.5 text-lime shrink-0" />
-                    <span>{challenge.durationDays} dias</span>
+                    <span>{challenge.durationDays} {t('challenge.unitDays')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <UsersIcon className="size-3.5 text-lime shrink-0" />
-                    <span>{challenge.participantCount} participante{challenge.participantCount !== 1 ? 's' : ''}</span>
+                    <span>{t('challenge.participantCount', { count: challenge.participantCount })}</span>
                   </div>
                 </div>
               </div>
@@ -215,10 +219,10 @@ export default function InviteLandingPage() {
 
             {!challenge && program && (
               <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-                <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">PROGRAMA ACTUAL</div>
+                <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">{t('referrals.currentProgram')}</div>
                 <div className="font-bebas text-lg text-foreground leading-tight">{l(program.name)}</div>
                 {program.durationWeeks > 0 && (
-                  <div className="text-xs text-muted-foreground mt-1">{program.durationWeeks} semanas</div>
+                  <div className="text-xs text-muted-foreground mt-1">{program.durationWeeks} {t('programs.weeks')}</div>
                 )}
                 {programDescription && (
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{programDescription}</p>
@@ -234,7 +238,7 @@ export default function InviteLandingPage() {
                 variant="limeSolid"
                 className="w-full h-12 font-semibold text-sm"
               >
-                {joining ? 'Uniendote...' : 'Unirme al challenge'}
+                {joining ? t('referrals.joining') : t('referrals.joinChallenge')}
               </Button>
             ) : (
               <>
@@ -243,18 +247,22 @@ export default function InviteLandingPage() {
                   variant="limeSolid"
                   className="w-full h-12 font-semibold text-sm"
                 >
-                  Unirme
+                  {t('referrals.join')}
                 </Button>
                 <p className="text-center mt-3 text-xs text-muted-foreground">
-                  {inviter.displayName} gana 100 pts y tu ganas 50 pts al registrarte
+                  {t('referrals.bothEarnPoints', {
+                    name: inviter.displayName,
+                    referrerPoints: REFERRAL_SIGNUP_POINTS,
+                    referredPoints: REFERRAL_BONUS_POINTS,
+                  })}
                 </p>
                 <p className="text-center mt-3 text-sm text-muted-foreground">
-                  Ya tienes cuenta?{' '}
+                  {t('referrals.alreadyHaveAccount')}{' '}
                   <button
                     onClick={handleLogin}
                     className="text-lime hover:text-lime/80 transition-colors"
                   >
-                    Inicia sesion
+                    {t('referrals.logIn')}
                   </button>
                 </p>
               </>

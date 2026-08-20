@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type L from 'leaflet'
 import { cn } from '../../lib/utils'
 
@@ -45,6 +46,7 @@ function injectMePulse() {
 }
 
 export default function RouteDrawer({ points, onChange, height = '250px', className }: RouteDrawerProps) {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layersRef = useRef<L.LayerGroup | null>(null)
@@ -276,13 +278,13 @@ export default function RouteDrawer({ points, onChange, height = '250px', classN
       {/* Permission denied banner with retry */}
       {permDenied && (
         <div className="rounded bg-amber-500/15 border border-amber-500/40 px-3 py-2 text-xs text-amber-300 flex items-center justify-between gap-2">
-          <span>Sin permiso de ubicación</span>
+          <span>{t('race.locationPermissionDenied')}</span>
           <button
             type="button"
             onClick={handleRequestLocation}
             className="rounded bg-amber-500 text-zinc-900 px-2 py-1 text-[11px] font-bebas tracking-widest"
           >
-            ACTIVAR GPS
+            {t('race.enableGps')}
           </button>
         </div>
       )}

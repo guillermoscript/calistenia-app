@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { View, Pressable, Share, Alert, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { Share2, Crown, Check } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -16,6 +17,7 @@ import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
 export default function BattleLobby() {
   const { t, i18n } = useTranslation()
+  const l = useLocalize()
   const { snapshot, isCreator, busy, can, actions } = useBattleContext()
   const [sharing, setSharing] = useState(false)
 
@@ -57,7 +59,7 @@ export default function BattleLobby() {
   }
 
   const handleStart = () => {
-    Alert.alert(preset?.name.es ?? t('battle.title'), `${t('battle.start')}?`, [
+    Alert.alert((preset && l(preset.name)) || t('battle.title'), `${t('battle.start')}?`, [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('battle.start'),
@@ -93,7 +95,7 @@ export default function BattleLobby() {
       {/* Cabecera */}
       <View className="items-center pt-4">
         <Text className="text-center font-bebas text-4xl leading-none text-foreground">
-          {preset?.name.es ?? t('battle.title')}
+          {(preset && l(preset.name)) || t('battle.title')}
         </Text>
         <Text className="mt-1.5 font-mono text-xs text-lime">
           {battle.config.rounds} {t('battle.rounds')} · {battle.config.exercises.length} {t('battle.exercises')}

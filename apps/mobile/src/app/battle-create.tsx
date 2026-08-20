@@ -10,6 +10,7 @@ import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { X, Swords } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -29,6 +30,7 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 
 export default function BattleCreateScreen() {
   const { t } = useTranslation()
+  const l = useLocalize()
   const router = useRouter()
   const user = useAuthUser()
 
@@ -131,13 +133,13 @@ export default function BattleCreateScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <Text className={cn('font-bebas text-2xl leading-none', active ? 'text-lime' : 'text-foreground')}>
-                    {preset.name.es}
+                    {l(preset.name)}
                   </Text>
                   <Text className="font-mono text-[10px] uppercase tracking-[1px] text-muted-foreground">
                     ~{preset.estimatedMinutes} min
                   </Text>
                 </View>
-                <Text className="mt-1 text-xs text-muted-foreground">{preset.description.es}</Text>
+                <Text className="mt-1 text-xs text-muted-foreground">{l(preset.description)}</Text>
               </Pressable>
             )
           })}

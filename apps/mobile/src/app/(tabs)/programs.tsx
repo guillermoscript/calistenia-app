@@ -179,9 +179,9 @@ export default function ProgramsScreen() {
                 <Dumbbell size={16} color={LIME} />
               </View>
               <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">Sesión libre</Text>
+                <Text className="font-sans-medium text-foreground">{t('freeSession.freeSessionTitle')}</Text>
                 <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Arma tu propio entreno
+                  {t('freeSession.buildYourOwn')}
                 </Text>
               </View>
               <ChevronRight size={18} color={LIME} />

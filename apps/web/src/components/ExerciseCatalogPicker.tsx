@@ -266,7 +266,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                 key={suggestion.data.id}
                 suggestion={suggestion}
                 compact
-                importLabel="IMPORTAR + AGREGAR"
+                importLabel={t('wger.importAndAdd')}
                 onImport={async (wgerId) => {
                   try {
                     const recordId = await importExercise(wgerId)

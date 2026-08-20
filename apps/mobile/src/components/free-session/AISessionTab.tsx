@@ -28,25 +28,38 @@ import {
 } from '@/lib/ai-message-parts'
 import { useFreeSessionChat } from '@/lib/use-free-session-chat'
 import { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, View } from 'react-native'
 import { Search } from 'lucide-react-native'
 import { AISessionForm } from './AISessionForm'
 import { AISessionPreview } from './AISessionPreview'
 
-const SUGGESTIONS = ['Más core', 'Más fácil', 'Menos tiempo', 'Agregar calentamiento']
+// Claves de i18n, no texto: el valor se resuelve con `t()` al pintar. Mismas
+// claves que la versión web de esta pantalla.
+const SUGGESTION_KEYS = [
+  'freeSession.aiSuggestMoreCore',
+  'freeSession.aiSuggestEasier',
+  'freeSession.aiSuggestShorter',
+  'freeSession.aiSuggestWarmup',
+]
 
-const SEARCH_LABELS: Record<string, string> = {
-  push: 'empuje', pull: 'tirón', legs: 'piernas', core: 'core',
-  lumbar: 'lumbar', full: 'cuerpo completo', skill: 'skills',
-  movilidad: 'movilidad', yoga: 'yoga',
+const SEARCH_LABEL_KEYS: Record<string, string> = {
+  push: 'freeSession.searchPush', pull: 'freeSession.searchPull',
+  legs: 'freeSession.searchLegs', core: 'freeSession.searchCore',
+  lumbar: 'freeSession.searchLumbar', full: 'freeSession.searchFull',
+  skill: 'freeSession.searchSkill', movilidad: 'freeSession.searchMobility',
+  yoga: 'freeSession.searchYoga',
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 function SearchLine({ part }: { part: SearchPart }) {
+  const { t } = useTranslation()
   const args = part.input ?? {}
   const loading = part.state !== 'output-available'
-  const label = args.category ? SEARCH_LABELS[args.category] || args.category : args.muscles || 'ejercicios'
+  const label = args.category
+    ? (SEARCH_LABEL_KEYS[args.category] ? t(SEARCH_LABEL_KEYS[args.category]) : args.category)
+    : args.muscles || t('common.exercises')
   const found = part.state === 'output-available' ? part.output?.found : null
   return (
     <View className="flex-row items-center gap-2 py-0.5">
@@ -54,7 +67,7 @@ function SearchLine({ part }: { part: SearchPart }) {
         ? <ActivityIndicator size="small" color={COLORS.lime} />
         : <Search size={12} color={COLORS.lime} />}
       <Text className="font-mono text-[10px] text-muted-foreground">
-        {loading ? 'Buscando' : 'Buscó'} {label}
+        {loading ? t('common.searchingShort') : t('freeSession.aiSearched')} {label}
         {found != null ? ` → ${found}` : ''}
       </Text>
     </View>
@@ -76,6 +89,7 @@ function StreamingLoader({ messages }: { messages: FreeSessionUIMessage[] }) {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export function AISessionTab() {
+  const { t } = useTranslation()
   const [input, setInput] = useState('')
 
   const {
@@ -109,9 +123,9 @@ export function AISessionTab() {
             <Text className="text-[11px]">AI</Text>
           </View>
           <View className="flex-1">
-            <Text className="font-sans-medium text-foreground">Coach IA</Text>
+            <Text className="font-sans-medium text-foreground">{t('freeSession.aiCoachName')}</Text>
             <Text className="mt-0.5 text-sm text-muted-foreground">
-              Configura tu sesión y te armo una rutina personalizada.
+              {t('freeSession.aiCoachIntro')}
             </Text>
           </View>
         </View>
@@ -177,7 +191,7 @@ export function AISessionTab() {
           {error && (
             <View className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
               <Text className="text-sm text-destructive">
-                Error generando la sesión. Intenta de nuevo.
+                {t('freeSession.aiError')}
               </Text>
             </View>
           )}
@@ -189,8 +203,8 @@ export function AISessionTab() {
       <View className="gap-2 border-t border-border px-4 pb-2 pt-2">
         {!isStreaming && (
           <Suggestions contentClassName="px-0">
-            {SUGGESTIONS.map((s) => (
-              <Suggestion key={s} suggestion={s} onPress={send} />
+            {SUGGESTION_KEYS.map((key) => (
+              <Suggestion key={key} suggestion={t(key)} onPress={send} />
             ))}
           </Suggestions>
         )}
@@ -200,7 +214,7 @@ export function AISessionTab() {
             <PromptInputTextarea
               value={input}
               onChangeText={setInput}
-              placeholder="Pide cambios… (más core, etc.)"
+              placeholder={t('freeSession.aiChatPlaceholder')}
               onSubmit={handleSend}
               editable={!isStreaming}
             />

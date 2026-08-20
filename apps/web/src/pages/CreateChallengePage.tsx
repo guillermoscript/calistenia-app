@@ -439,7 +439,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
         {following.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs text-muted-foreground mb-3">
-              Sigue a alguien primero para poder invitarlos
+              {t('challenge.followSomeoneFirst')}
             </div>
             <div className="flex gap-2">
               <Button
@@ -448,7 +448,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
                 onClick={() => navigate('/friends')}
                 className="text-[10px] tracking-widest h-8"
               >
-                BUSCAR AMIGOS
+                {t('challenge.findFriends')}
               </Button>
               <Button
                 size="sm"
@@ -456,7 +456,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
                 className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] tracking-widest h-8"
               >
                 <WhatsAppIcon className="size-3.5 mr-1" />
-                INVITAR POR WHATSAPP
+                {t('challenge.inviteByWhatsApp')}
               </Button>
             </div>
           </div>
