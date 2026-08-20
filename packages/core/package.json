@@ -9,9 +9,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "dayjs": "^1.11.21",
+    "dayjs": "^1.11.22",
     "i18next": "^26.3.6",
-    "pocketbase": "^0.27.1",
+    "pocketbase": "^0.27.3",
     "react-i18next": "^17.0.11"
   },
   "peerDependencies": {
