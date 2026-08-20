@@ -2,9 +2,9 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import i18n from '../lib/i18n'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
+import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { EmptyState } from '../components/ui/empty-state'
@@ -17,22 +17,6 @@ function GearIcon({ className }: { className?: string }) {
       <circle cx="12" cy="12" r="3" />
     </svg>
   )
-}
-
-function relativeTime(dateStr: string, t: TFunction): string {
-  if (!dateStr) return ''
-  const now = Date.now()
-  const then = new Date(dateStr.replace(' ', 'T')).getTime()
-  if (isNaN(then)) return ''
-  const diffMin = Math.floor((now - then) / 60000)
-  if (diffMin < 1) return t('feed.now')
-  if (diffMin < 60) return t('feed.minutesAgo', { count: diffMin })
-  const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return t('feed.hoursAgo', { count: diffH })
-  const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return t('common.yesterday')
-  if (diffD <= 7) return t('common.daysAgo', { count: diffD })
-  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
 function getNotificationMessage(n: AppNotification, t: TFunction): string {
@@ -211,7 +195,7 @@ export default function NotificationsPage() {
                     {getNotificationMessage(n, t)}
                   </div>
                   <div className="text-[11px] text-muted-foreground/60 mt-0.5">
-                    {relativeTime(n.created, t)}
+                    {timeAgoShort(n.created)}
                   </div>
                 </div>
                 {/* Unread dot */}

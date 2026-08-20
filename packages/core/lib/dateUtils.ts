@@ -189,6 +189,28 @@ export function timeAgo(dateStr: string): string {
   return d.tz(_tz).fromNow()
 }
 
+/**
+ * Compact relative time for list rows and badges (notifications, activity
+ * widget): "ahora", "hace 5 min", "hace 3 h", "ayer", "hace 3 días" / "now",
+ * "5m ago", "3h ago", "yesterday", "3d ago". Falls back to a short date past
+ * 7 days. Uses the `feed.*` i18n keys, so it follows the active language.
+ * Shorter than `timeAgo` (dayjs `fromNow`), which reads as a sentence.
+ */
+export function timeAgoShort(dateStr: string): string {
+  if (!dateStr) return ''
+  const d = parsePBTimestamp(dateStr)
+  if (!d.isValid()) return ''
+  const diffMin = Math.floor(dayjs().diff(d, 'minute'))
+  if (diffMin < 1) return i18n.t('feed.now')
+  if (diffMin < 60) return i18n.t('feed.minutesAgo', { count: diffMin })
+  const diffH = Math.floor(diffMin / 60)
+  if (diffH < 24) return i18n.t('feed.hoursAgo', { count: diffH })
+  const diffD = Math.floor(diffH / 24)
+  if (diffD === 1) return i18n.t('feed.yesterday')
+  if (diffD <= 7) return i18n.t('feed.daysAgo', { count: diffD })
+  return d.tz(_tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+}
+
 /** Human-friendly relative date label (Today, Yesterday, N days ago, or short date). */
 export function relativeDate(dateStr: string): string {
   const today = todayStr()
