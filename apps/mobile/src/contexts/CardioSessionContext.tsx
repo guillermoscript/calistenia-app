@@ -377,32 +377,36 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   const getHistory = useCallback(async (limit = 20): Promise<CardioSession[]> => {
     if (!userId) return []
-    try {
-      const res = await pb.collection('cardio_sessions').getList(1, limit, {
-        filter: pb.filter('user = {:userId}', { userId }),
-        sort: '-started_at',
-      })
-      // Las rutas viven aparte (#299): segunda consulta, sólo en el historial
-      // propio. El muro nunca las pide.
-      return hydrateCardioRoutes(res.items.map((r: any) => ({
-        id: r.id,
-        user: r.user,
-        activity_type: r.activity_type,
-        gps_points: [] as GpsPoint[],
-        distance_km: r.distance_km,
-        duration_seconds: r.duration_seconds,
-        avg_pace: r.avg_pace,
-        elevation_gain: r.elevation_gain,
-        started_at: r.started_at,
-        finished_at: r.finished_at,
-        note: r.note,
-        calories_burned: r.calories_burned,
-        max_pace: r.max_pace,
-        avg_speed_kmh: r.avg_speed_kmh,
-        max_speed_kmh: r.max_speed_kmh,
-        splits: r.splits,
-      })))
-    } catch { return [] }
+    // Sin try/catch: un fallo aqui NO es «no hay sesiones» — debe llegar al
+    // caller, que distingue y reporta (#559). Antes cualquier abort/fallo
+    // devolvia [] y se pintaba el estado vacio aunque hubiera datos.
+    const res = await pb.collection('cardio_sessions').getList(1, limit, {
+      filter: pb.filter('user = {:userId}', { userId }),
+      sort: '-started_at',
+      // Sin auto-cancelación: chocaba con el getFullList de stats y el getList
+      // del widget sobre la misma colección (#559).
+      requestKey: null,
+    })
+    // Las rutas viven aparte (#299): segunda consulta, sólo en el historial
+    // propio. El muro nunca las pide.
+    return hydrateCardioRoutes(res.items.map((r: any) => ({
+      id: r.id,
+      user: r.user,
+      activity_type: r.activity_type,
+      gps_points: [] as GpsPoint[],
+      distance_km: r.distance_km,
+      duration_seconds: r.duration_seconds,
+      avg_pace: r.avg_pace,
+      elevation_gain: r.elevation_gain,
+      started_at: r.started_at,
+      finished_at: r.finished_at,
+      note: r.note,
+      calories_burned: r.calories_burned,
+      max_pace: r.max_pace,
+      avg_speed_kmh: r.avg_speed_kmh,
+      max_speed_kmh: r.max_speed_kmh,
+      splits: r.splits,
+    })))
   }, [userId])
 
   // ── Restaurar la sesión persistida al montar ────────────────────────────

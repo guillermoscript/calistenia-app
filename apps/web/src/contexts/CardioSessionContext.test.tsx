@@ -554,3 +554,15 @@ describe('CardioSessionContext', () => {
     expect(localStorage.getItem(UNSAVED_KEY)).toBeNull()
   })
 })
+
+describe('getHistory — errores (#559)', () => {
+  it('propaga el fallo en vez de devolver [] (un error no es «no hay sesiones»)', async () => {
+    mockPb({ getList: vi.fn().mockRejectedValue(new Error('network down')) })
+    const { wrapper } = makeWrapper('user1')
+    const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+    // Antes un try/catch interno devolvía [] y el caller pintaba el estado
+    // vacío; ahora el error llega al caller, que decide (Sentry + no mentir).
+    await expect(result.current.getHistory(20)).rejects.toThrow('network down')
+  })
+})
