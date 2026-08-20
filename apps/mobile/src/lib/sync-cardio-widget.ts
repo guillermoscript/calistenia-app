@@ -27,6 +27,9 @@ export async function syncCardioWidget(userId: string | null): Promise<void> {
     const res = await pb.collection('cardio_sessions').getList(1, 50, {
       filter: pb.filter('user = {:userId}', { userId }),
       sort: '-started_at',
+      // Best-effort: sin auto-cancelación para no matar (ni morir por) las consultas
+      // de historial y stats a esta misma colección (#559).
+      requestKey: null,
       fields: 'activity_type,distance_km,duration_seconds,avg_pace,started_at',
     })
 

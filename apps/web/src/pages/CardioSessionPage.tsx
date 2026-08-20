@@ -5,6 +5,7 @@ import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '@calistenia/core/lib/geo'
 import { useTranslation } from 'react-i18next'
+import * as Sentry from '@sentry/react'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 // Leaflet + RouteMap is ~150kb gzipped — split into its own chunk and preload on idle
@@ -70,7 +71,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   useEffect(() => {
     if (!isIdle && !savedSession) return
     setHistoryLoading(true)
-    getHistory(20).then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false))
+    // El catch ya solo ve fallos reales (la auto-cancelacion murio en #559): reportar, no tragar.
+    getHistory(20).then(setHistory).catch((e) => { Sentry.captureException(e, { tags: { feature: 'cardio', op: 'load_history' } }) }).finally(() => setHistoryLoading(false))
     loadStats()
   }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps -- `savedSession` solo abre la guarda; recargar al guardar lo dispara ya el paso a idle
 

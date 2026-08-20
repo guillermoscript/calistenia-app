@@ -74,6 +74,9 @@ export async function fetchMonthActivity(
     pb.collection('cardio_sessions').getList(1, 200, {
       filter: utcRange('started_at'),
       sort: '-started_at',
+      // Sin auto-cancelación: la vista de mes puede convivir con el historial/stats
+      // de cardio, que consultan esta misma colección (#559).
+      requestKey: null,
       fields: 'id,activity_type,distance_km,duration_seconds,started_at,finished_at,note',
     }),
     pb.collection('circuit_sessions').getList(1, 200, {

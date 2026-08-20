@@ -72,6 +72,9 @@ export async function fetchCardioSessions(userId: string): Promise<CardioSession
     const res = await pb.collection('cardio_sessions').getFullList({
       filter: pb.filter('user = {:userId}', { userId }),
       sort: '-started_at',
+      // Clave explícita: la auto-cancelación por defecto (método+ruta) chocaba con
+      // el getList del historial y el del widget sobre esta misma colección (#559).
+      requestKey: null,
       fields: 'id,activity_type,distance_km,duration_seconds,avg_pace,elevation_gain,started_at,finished_at,note,calories_burned,max_pace,avg_speed_kmh,max_speed_kmh,splits',
     })
     return res.map((r: any) => ({
