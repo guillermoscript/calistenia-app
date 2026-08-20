@@ -3,6 +3,7 @@ import { AppState } from 'react-native'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { CARDIO_UNSAVED_KEY as UNSAVED_KEY } from '@calistenia/core/lib/storage-keys'
 import { saveCardioRoute, splitRoute } from '@calistenia/core/lib/cardioRoutes'
+import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
 
 import { syncStorage } from '@/lib/storage'
 import { onOnline } from '@/lib/connectivity'
@@ -72,6 +73,9 @@ export function useUnsavedCardioQueue({ userId, onFlushed }: Options): UnsavedCa
     try {
       const remaining: Record<string, unknown>[] = []
       for (const session of queue) {
+        // Una sesión accidental (#562) encolada antes de este umbral se tira
+        // en vez de reintentarse para siempre.
+        if (isCardioSessionTooShort(session)) continue
         try {
           // La cola guarda la sesión entera, ruta incluida: se parte aquí para
           // que una entrada encolada antes de #299 también funcione.

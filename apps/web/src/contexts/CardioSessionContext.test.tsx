@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -330,7 +330,60 @@ describe('CardioSessionContext', () => {
     })
   })
 
+  // `finish()` mide la duración con `Date.now()`; en el test transcurren ~0 ms
+  // y desde #562 una sesión así se descarta. `elapse` adelanta el reloj sin
+  // fake timers (que sustituirían `Intl.DateTimeFormat`).
   describe('finish', () => {
+    let clockOffset = 0
+    const elapse = (ms: number) => { clockOffset += ms }
+
+    beforeEach(() => {
+      clockOffset = 0
+      const realNow = Date.now
+      vi.spyOn(Date, 'now').mockImplementation(() => realNow() + clockOffset)
+    })
+    afterEach(() => {
+      vi.mocked(Date.now).mockRestore()
+    })
+
+    it('descarta una sesión accidental (2 s, 0 km) sin guardar ni encolar (#562)', async () => {
+      const create = vi.fn().mockResolvedValue({ id: 'sess-1' })
+      mockPb({ create })
+      const { wrapper, invalidateSpy } = makeWrapper('user1', 80)
+      const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+      act(() => result.current.start('running'))
+      elapse(2_000)
+
+      let saved: unknown
+      await act(async () => {
+        saved = await result.current.finish()
+      })
+
+      expect(saved).toBeNull()
+      expect(create).not.toHaveBeenCalled()
+      expect(invalidateSpy).not.toHaveBeenCalled()
+      expect(localStorage.getItem(UNSAVED_KEY)).toBeNull()
+      expect(result.current.unsavedCount).toBe(0)
+      expect(result.current.state).toBe('idle')
+      expect(result.current.duration).toBe(0)
+    })
+
+    it('guarda una sesión larga sin distancia (interior / sin fix GPS)', async () => {
+      const create = vi.fn().mockResolvedValue({ id: 'sess-1' })
+      mockPb({ create })
+      const { wrapper } = makeWrapper('user1', 80)
+      const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+      act(() => result.current.start('walking'))
+      elapse(60_000)
+      await act(async () => { await result.current.finish() })
+
+      expect(create).toHaveBeenCalledTimes(1)
+      expect(create.mock.calls[0][0].distance_km).toBe(0)
+      expect(create.mock.calls[0][0].duration_seconds).toBe(60)
+    })
+
     it('guarda la sesión en PocketBase con los campos clave y limpia el estado', async () => {
       const create = vi.fn().mockResolvedValue({ id: 'sess-1' })
       mockPb({ create })
@@ -342,6 +395,7 @@ describe('CardioSessionContext', () => {
       act(() => lastWatchCallback().success(makePosition(40.001, -3.0, 10_000)))
 
       let saved: unknown
+      elapse(120_000)
       await act(async () => {
         saved = await result.current.finish('nota de prueba')
       })
@@ -376,6 +430,7 @@ describe('CardioSessionContext', () => {
 
       act(() => result.current.start('running'))
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
+      elapse(120_000)
       act(() => lastWatchCallback().success(makePosition(40.001, -3.0, 10_000)))
       await act(async () => { await result.current.finish() })
 
@@ -398,6 +453,7 @@ describe('CardioSessionContext', () => {
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
       act(() => result.current.start('walking'))
+      elapse(120_000)
       await act(async () => { await result.current.finish() })
 
       expect(create).toHaveBeenCalledTimes(1)
@@ -411,6 +467,7 @@ describe('CardioSessionContext', () => {
       act(() => result.current.start('walking'))
 
       let saved: unknown
+      elapse(120_000)
       await act(async () => {
         saved = await result.current.finish()
       })
@@ -426,6 +483,7 @@ describe('CardioSessionContext', () => {
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
       act(() => result.current.start('running'))
+      elapse(120_000)
       await act(async () => {
         await result.current.finish()
       })
@@ -551,6 +609,25 @@ describe('CardioSessionContext', () => {
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(result.current.unsavedCount).toBe(0))
+    expect(localStorage.getItem(UNSAVED_KEY)).toBeNull()
+  })
+
+  it('la cola tira una sesión accidental encolada en vez de reintentarla (#562)', async () => {
+    localStorage.setItem(
+      UNSAVED_KEY,
+      JSON.stringify([
+        { user: 'user1', activity_type: 'running', distance_km: 0, duration_seconds: 2 },
+        { user: 'user1', activity_type: 'running', distance_km: 1, duration_seconds: 600 },
+      ]),
+    )
+    const create = vi.fn().mockResolvedValue({ id: 'retried' })
+    mockPb({ create })
+    const { wrapper } = makeWrapper('user1')
+    const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+    await waitFor(() => expect(result.current.unsavedCount).toBe(0))
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(create.mock.calls[0][0].duration_seconds).toBe(600)
     expect(localStorage.getItem(UNSAVED_KEY)).toBeNull()
   })
 })
