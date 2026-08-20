@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import type { TooltipValueType } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -135,8 +136,8 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
                   fontSize: '12px',
                   color: 'var(--chart-tooltip-text)',
                 }}
-                labelFormatter={(v: string) => `${t('progress.weight.date')}: ${v}`}
-                formatter={(value: number) => [`${value} kg`, t('progress.weight.weightLabel')]}
+                labelFormatter={(v: ReactNode) => `${t('progress.weight.date')}: ${v}`}
+                formatter={(value: TooltipValueType | undefined) => [`${value} kg`, t('progress.weight.weightLabel')]}
               />
               <Line
                 type="monotone"

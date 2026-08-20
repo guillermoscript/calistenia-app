@@ -65,6 +65,7 @@ export interface CatalogIndexEntry {
   media?: CatalogStaticMedia
   youtube_query?: string
   youtube_search?: string
+  images?: string[]
   [key: string]: unknown
 }
 

@@ -70,7 +70,7 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-1 motion-safe:animate-fade-in">
           <div className="px-3 py-1.5 text-[10px] tracking-widest uppercase text-muted-foreground">{t('share.quickInvite')}</div>
-          {navigator.share && (
+          {typeof navigator.share === 'function' && (
             <DropItem label={t('share.shareNative')} onClick={() => handleQuickInvite('native')} />
           )}
           <DropItem label="WhatsApp" onClick={() => handleQuickInvite('whatsapp')} accent="text-emerald-400" />

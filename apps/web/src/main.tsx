@@ -1,7 +1,7 @@
 import "./instrument";              // Sentry — MUST be first import
 import "./lib/init-core";           // Platform adapter de @calistenia/core — MUST be second
 
-import React from 'react'
+import React, { type ErrorInfo } from 'react'
 import ReactDOM from 'react-dom/client'
 import { reactErrorHandler } from "@sentry/react"
 import { BrowserRouter } from 'react-router-dom'
@@ -67,7 +67,7 @@ if ('serviceWorker' in navigator) {
 
 const trackAndHandleError = (type: string) => {
   const sentryHandler = reactErrorHandler()
-  return (error: unknown, errorInfo: unknown) => {
+  return (error: unknown, errorInfo: ErrorInfo) => {
     op.track('page_error', { error_type: type, message: error instanceof Error ? error.message : String(error) })
     sentryHandler(error, errorInfo)
   }

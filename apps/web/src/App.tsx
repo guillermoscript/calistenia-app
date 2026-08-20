@@ -639,7 +639,7 @@ function AuthenticatedApp({
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />
-            <Route path="/shared/:shareCode" element={<SharedProgramPageRoute userId={userId} />} />
+            <Route path="/shared/:shareCode" element={<SharedProgramPageRoute userId={userId ?? undefined} />} />
             <Route path="/legal" element={<LegalPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

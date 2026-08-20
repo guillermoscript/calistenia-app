@@ -96,10 +96,10 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                           <button
                             key={opt.value}
                             type="button"
-                            onClick={() => updateDay(dayKey, { cardioActivityType: opt.value } as any)}
+                            onClick={() => updateDay(dayKey, { cardioActivityType: opt.value })}
                             className={cn(
                               'flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] border transition-all',
-                              (day as any).cardioActivityType === opt.value
+                              day.cardioActivityType === opt.value
                                 ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400'
                                 : 'border-border text-muted-foreground hover:text-foreground'
                             )}
@@ -117,8 +117,8 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                           type="number"
                           min={0}
                           step={0.5}
-                          value={(day as any).cardioTargetDistanceKm || ''}
-                          onChange={e => updateDay(dayKey, { cardioTargetDistanceKm: parseFloat(e.target.value) || undefined } as any)}
+                          value={day.cardioTargetDistanceKm || ''}
+                          onChange={e => updateDay(dayKey, { cardioTargetDistanceKm: parseFloat(e.target.value) || undefined })}
                           placeholder={t('programEditor.distancePlaceholder')}
                           className="text-sm h-8"
                         />
@@ -128,8 +128,8 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                         <Input
                           type="number"
                           min={0}
-                          value={(day as any).cardioTargetDurationMin || ''}
-                          onChange={e => updateDay(dayKey, { cardioTargetDurationMin: parseInt(e.target.value) || undefined } as any)}
+                          value={day.cardioTargetDurationMin || ''}
+                          onChange={e => updateDay(dayKey, { cardioTargetDurationMin: parseInt(e.target.value) || undefined })}
                           placeholder={t('programEditor.durationPlaceholder')}
                           className="text-sm h-8"
                         />
@@ -146,8 +146,8 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                         <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.modes.circuit')} / {t('circuit.modes.timed')}</label>
                         <select
                           className="w-full h-8 rounded-md border border-input bg-background px-3 text-sm"
-                          value={(day as any).circuitMode ?? 'circuit'}
-                          onChange={(e) => updateDay(dayKey, { circuitMode: e.target.value as 'circuit' | 'timed' } as any)}
+                          value={day.circuitMode ?? 'circuit'}
+                          onChange={(e) => updateDay(dayKey, { circuitMode: e.target.value as 'circuit' | 'timed' })}
                         >
                           <option value="circuit">{t('circuit.modes.circuit')}</option>
                           <option value="timed">{t('circuit.modes.timed')}</option>
@@ -157,19 +157,19 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                         <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.rounds')}</label>
                         <Input
                           type="number" min={1} max={20}
-                          value={(day as any).circuitRounds ?? 3}
-                          onChange={(e) => updateDay(dayKey, { circuitRounds: parseInt(e.target.value) || 3 } as any)}
+                          value={day.circuitRounds ?? 3}
+                          onChange={(e) => updateDay(dayKey, { circuitRounds: parseInt(e.target.value) || 3 })}
                           className="text-sm h-8"
                         />
                       </div>
-                      {((day as any).circuitMode ?? 'circuit') === 'timed' && (
+                      {(day.circuitMode ?? 'circuit') === 'timed' && (
                         <>
                           <div>
                             <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.workTime')}</label>
                             <Input
                               type="number" min={5} max={120} step={5}
-                              value={(day as any).circuitWorkSeconds ?? 40}
-                              onChange={(e) => updateDay(dayKey, { circuitWorkSeconds: parseInt(e.target.value) || 40 } as any)}
+                              value={day.circuitWorkSeconds ?? 40}
+                              onChange={(e) => updateDay(dayKey, { circuitWorkSeconds: parseInt(e.target.value) || 40 })}
                               className="text-sm h-8"
                             />
                           </div>
@@ -177,8 +177,8 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                             <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.restTime')}</label>
                             <Input
                               type="number" min={0} max={60} step={5}
-                              value={(day as any).circuitRestSeconds ?? 20}
-                              onChange={(e) => updateDay(dayKey, { circuitRestSeconds: parseInt(e.target.value) || 20 } as any)}
+                              value={day.circuitRestSeconds ?? 20}
+                              onChange={(e) => updateDay(dayKey, { circuitRestSeconds: parseInt(e.target.value) || 20 })}
                               className="text-sm h-8"
                             />
                           </div>
@@ -188,8 +188,8 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                         <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.restBetweenExercises')}</label>
                         <Input
                           type="number" min={0} max={120} step={5}
-                          value={(day as any).circuitRestBetweenExercises ?? 0}
-                          onChange={(e) => updateDay(dayKey, { circuitRestBetweenExercises: parseInt(e.target.value) || 0 } as any)}
+                          value={day.circuitRestBetweenExercises ?? 0}
+                          onChange={(e) => updateDay(dayKey, { circuitRestBetweenExercises: parseInt(e.target.value) || 0 })}
                           className="text-sm h-8"
                         />
                       </div>
@@ -197,8 +197,8 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                         <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.restBetweenRounds')}</label>
                         <Input
                           type="number" min={0} max={180} step={15}
-                          value={(day as any).circuitRestBetweenRounds ?? 60}
-                          onChange={(e) => updateDay(dayKey, { circuitRestBetweenRounds: parseInt(e.target.value) || 60 } as any)}
+                          value={day.circuitRestBetweenRounds ?? 60}
+                          onChange={(e) => updateDay(dayKey, { circuitRestBetweenRounds: parseInt(e.target.value) || 60 })}
                           className="text-sm h-8"
                         />
                       </div>

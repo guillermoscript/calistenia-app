@@ -163,7 +163,7 @@ export default function RouteDrawer({ points, onChange, height = '250px', classN
       if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
         const ro = new ResizeObserver(() => map.invalidateSize())
         ro.observe(containerRef.current)
-        ;(map as any).__ro = ro
+        ;(map as L.Map & { __ro?: ResizeObserver }).__ro = ro
       }
 
       // Click on map → add waypoint
@@ -233,7 +233,7 @@ export default function RouteDrawer({ points, onChange, height = '250px', classN
         navigator.geolocation.clearWatch(meWatchIdRef.current)
         meWatchIdRef.current = null
       }
-      ;(mapRef.current as any)?.__ro?.disconnect?.()
+      ;(mapRef.current as (L.Map & { __ro?: ResizeObserver }) | null)?.__ro?.disconnect?.()
       mapRef.current?.remove()
       mapRef.current = null
       layersRef.current = null

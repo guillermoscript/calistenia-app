@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, ReferenceLine, Cell,
@@ -20,7 +21,13 @@ interface WeeklyNutritionChartProps {
   calorieGoal: number
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+type CustomTooltipProps = {
+  active?: boolean
+  payload?: { payload: DayData }[]
+  label?: ReactNode
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   const { t } = useTranslation()
   if (!active || !payload?.length) return null
   const d = payload[0]?.payload as DayData

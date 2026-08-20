@@ -47,7 +47,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
           fields: 'id,name',
           $autoCancel: false,
         })
-        setExercises(res.items.map((e: any) => ({ id: e.id, name: localize(e.name, 'es') })))
+        setExercises(res.items.map(e => ({ id: e.id, name: localize(e.name, 'es') })))
       } catch { /* */ }
     }
     loadExercises()

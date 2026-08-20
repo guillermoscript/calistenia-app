@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import type { RecordModel } from 'pocketbase'
 import { WORKOUTS, PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
 import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
@@ -59,9 +60,9 @@ function extractCatalog(): CatalogItem[] {
   }
 
   // Carga perezosa (#486): quien llama ya ha esperado a `loadCatalogIndex()`.
-  const catalogCategories = (getCatalogIndexSync()?.raw.categories ?? {}) as any
-  for (const catData of Object.values(catalogCategories) as any[]) {
-    for (const ex of (catData as any).exercises || []) {
+  const catalogCategories = getCatalogIndexSync()?.raw.categories ?? {}
+  for (const catData of Object.values(catalogCategories)) {
+    for (const ex of catData.exercises || []) {
       if (!seen.has(ex.id)) seen.set(ex.id, { id: ex.id, name: ex.name ?? '', muscles: ex.muscles ?? '' })
     }
   }
@@ -71,7 +72,7 @@ function extractCatalog(): CatalogItem[] {
   )
 }
 
-function mapPBCatalog(rec: any): CatalogItem {
+function mapPBCatalog(rec: RecordModel): CatalogItem {
   // Identity MUST be the stable, human-meaningful slug — never the random PB
   // primary key (rec.id), which silently fragments score history. See
   // `catalogExerciseIdentity()` for why (#474).

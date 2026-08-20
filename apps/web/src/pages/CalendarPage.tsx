@@ -133,13 +133,16 @@ export default function CalendarPage() {
     })
 
     // Circuit sessions
-    circuitSessions.forEach((cs: any) => {
+    circuitSessions.forEach(cs => {
       const date = utcToLocalDateStr(cs.started_at || '')
       if (!date) return
       if (!map[date]) map[date] = []
-      const name = typeof cs.circuit_name === 'object'
-        ? (cs.circuit_name?.[i18n.language] || cs.circuit_name?.en || cs.circuit_name?.es || '')
-        : (cs.circuit_name || '')
+      // `circuit_name` viaja como `unknown` desde core: puede ser un string o un campo
+      // traducible. Se acota aquí en vez de anular el registro entero con un `any`.
+      const nameField = cs.circuit_name as Record<string, string> | string | undefined
+      const name = typeof nameField === 'object' && nameField !== null
+        ? (nameField[i18n.language] || nameField.en || nameField.es || '')
+        : (nameField || '')
       map[date].push({
         type: 'circuit',
         date,

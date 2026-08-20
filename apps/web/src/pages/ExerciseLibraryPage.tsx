@@ -138,8 +138,8 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
   // Add exercises from master catalog JSON (wger-sourced + any new).
   // El catálogo se carga perezosamente (#486); quien llama aquí ya ha esperado
   // a `loadCatalogIndex()`.
-  const catalogCategories = (getCatalogIndexSync()?.raw.categories ?? {}) as any
-  for (const catData of Object.values(catalogCategories) as any[]) {
+  const catalogCategories = getCatalogIndexSync()?.raw.categories ?? {}
+  for (const catData of Object.values(catalogCategories)) {
     for (const ex of catData.exercises || []) {
       if (seen.has(ex.id)) {
         // Enrich existing exercise with images/taxonomy from catalog
@@ -161,7 +161,9 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
         name: ex.name,
         muscles: ex.muscles || '',
         category: ex.category || 'full',
-        priority: ex.priority || 'med',
+        // El catálogo JSON no está validado: `priority` y `difficulty` llegan como `string`. Los
+        // casts acotan la suposición a esos campos, en vez de tapar el objeto con un `any`.
+        priority: (ex.priority || 'med') as Priority,
         sets: ex.sets ?? 3,
         reps: ex.reps || '8-12',
         rest: ex.rest ?? 60,
@@ -170,7 +172,7 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
         isTimer: ex.isTimer || false,
         timerSeconds: ex.timerSeconds,
         demoImages: ex.images?.length ? ex.images : undefined,
-        difficulty: ex.difficulty,
+        difficulty: ex.difficulty as DifficultyLevel | undefined,
         equipment: Array.isArray(ex.equipment) ? ex.equipment : undefined,
         muscle_groups: Array.isArray(ex.muscle_groups) ? ex.muscle_groups : undefined,
       })

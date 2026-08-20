@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import type { TooltipValueType } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { isFreeSession } from '@calistenia/core/lib/progressUtils'
@@ -111,8 +112,8 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
                     fontSize: '12px',
                     color: 'var(--chart-tooltip-text)',
                   }}
-                  labelFormatter={(v: string) => `${t('progress.exerciseChart.date')}: ${v}`}
-                  formatter={(value: number) => [`${value} reps`, t('progress.exerciseChart.maxReps')]}
+                  labelFormatter={(v: ReactNode) => `${t('progress.exerciseChart.date')}: ${v}`}
+                  formatter={(value: TooltipValueType | undefined) => [`${value} reps`, t('progress.exerciseChart.maxReps')]}
                 />
                 <Line
                   type="monotone"
@@ -120,7 +121,7 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
                   stroke={accentColor === 'violet' ? '#a78bfa' : '#a3e635'}
                   strokeWidth={2}
                   dot={showSessionType
-                    ? (props: any) => {
+                    ? (props: { cx?: number; cy?: number; payload: { date: string; isFree: boolean } }) => {
                         const { cx, cy, payload } = props
                         const color = payload.isFree ? '#a78bfa' : '#a3e635'
                         return <circle key={`${payload.date}`} cx={cx} cy={cy} r={3} fill={color} stroke="none" />

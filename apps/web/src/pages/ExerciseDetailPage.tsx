@@ -62,9 +62,9 @@ const PRIORITY_COLORS: Record<Priority, { text: string; bg: string; border: stri
 function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
   // Check catalog JSON first (has i18n translations). Carga perezosa (#486):
   // quien llama ya ha esperado a `loadCatalogIndex()`.
-  const cats = (getCatalogIndexSync()?.raw.categories ?? {}) as any
-  for (const catData of Object.values(cats) as any[]) {
-    const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
+  const cats = getCatalogIndexSync()?.raw.categories ?? {}
+  for (const catData of Object.values(cats)) {
+    const found = (catData.exercises || []).find(ex => ex.id === idOrSlug)
     if (found) {
       return {
         id: found.id,
@@ -72,7 +72,9 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
         name: found.name,
         muscles: found.muscles || '',
         category: found.category || 'full',
-        priority: found.priority || 'med',
+        // El catálogo JSON no está validado: `priority` llega como `string`. El cast acota la
+        // suposición a este campo, en vez de tapar el objeto entero con un `any`.
+        priority: (found.priority || 'med') as Priority,
         sets: found.sets ?? 3,
         reps: found.reps || '8-12',
         rest: found.rest ?? 60,

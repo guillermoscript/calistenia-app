@@ -23,7 +23,7 @@ interface UseMealSaveParams {
   onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<NutritionEntry | void>
   onSaved?: (entryId: string, foods: FoodItem[]) => void
   saveFoodToCatalog: (food: FoodItem) => Promise<unknown>
-  trackFood: (food: FoodItem, mealType: string, hour: number) => void
+  trackFood: (food: FoodItem, mealType: MealType, hour: number) => void | Promise<void>
   setStep: (step: Step) => void
   setError: (error: string | null) => void
 }

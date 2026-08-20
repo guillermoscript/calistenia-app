@@ -308,7 +308,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       })
       // Las rutas viven aparte (#299) y se rellenan en una segunda consulta.
       // Solo se hace aquí, en el historial propio; el muro no las pide.
-      return hydrateCardioRoutes(res.items.map((r: any) => ({
+      return hydrateCardioRoutes(res.items.map(r => ({
         id: r.id,
         user: r.user,
         activity_type: r.activity_type,

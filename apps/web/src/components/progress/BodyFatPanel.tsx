@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import type { TooltipValueType } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { useBodyMeasurements } from '@calistenia/core/hooks/useBodyMeasurements'
@@ -97,7 +98,7 @@ export default function BodyFatPanel({ userId }: BodyFatPanelProps) {
                         fontSize: '12px',
                         color: 'var(--chart-tooltip-text)',
                       }}
-                      formatter={(value: number) => [`${value}%`, t('progress.bodyFat.estimateLabel')]}
+                      formatter={(value: TooltipValueType | undefined) => [`${value}%`, t('progress.bodyFat.estimateLabel')]}
                     />
                     <Line
                       type="monotone"

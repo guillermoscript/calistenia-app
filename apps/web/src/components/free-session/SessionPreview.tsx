@@ -46,8 +46,8 @@ function buildCatalogMap(catalogData: RawCatalog | null): Map<string, Exercise> 
   }
 
   // From catalog JSON — perezoso desde el #486, vacío hasta que llega
-  const categories = (catalogData as any)?.categories || {}
-  for (const catData of Object.values(categories) as any[]) {
+  const categories = catalogData?.categories || {}
+  for (const catData of Object.values(categories)) {
     for (const ex of catData.exercises || []) {
       if (!map.has(ex.id)) {
         map.set(ex.id, {
@@ -59,7 +59,8 @@ function buildCatalogMap(catalogData: RawCatalog | null): Map<string, Exercise> 
           rest: ex.rest ?? 60,
           note: typeof ex.note === 'object' ? (ex.note.es || ex.note.en || '') : (ex.note || ''),
           youtube: ex.youtube_query || '',
-          priority: ex.priority || 'med',
+          // El catálogo JSON no está validado: `priority` llega como `string`.
+          priority: (ex.priority || 'med') as Exercise['priority'],
           isTimer: ex.isTimer || false,
           timerSeconds: ex.timerSeconds,
           demoImages: ex.images?.length ? ex.images : undefined,
@@ -89,7 +90,8 @@ export function parseExercisesFromMarkdown(text: string): AIExercise[] {
       const parsed = JSON.parse(match[1])
       const exercises = parsed.exercises || parsed
       if (Array.isArray(exercises)) {
-        return exercises.filter((e: any) => e && typeof e.id === 'string')
+        return (exercises as unknown[]).filter(
+          (e): e is AIExercise => !!e && typeof (e as AIExercise).id === 'string')
       }
     } catch { /* try next block */ }
   }

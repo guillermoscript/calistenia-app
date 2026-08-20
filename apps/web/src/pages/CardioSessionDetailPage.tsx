@@ -59,7 +59,7 @@ export default function CardioSessionDetailPage() {
           max_speed_kmh: record.max_speed_kmh,
         }
         setSession(s)
-        const expandedUser = (record as any).expand?.user
+        const expandedUser = record.expand?.user
         if (expandedUser) {
           setAuthorName(expandedUser.display_name || expandedUser.email?.split('@')[0] || '')
           setAuthorAvatarUrl(getUserAvatarUrl(expandedUser, '200x200'))

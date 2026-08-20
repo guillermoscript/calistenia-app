@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { Html5Qrcode } from 'html5-qrcode'
 import { useTranslation } from 'react-i18next'
 
 interface BarcodeScannerProps {
@@ -9,7 +10,7 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeScannerProps) {
   const { t } = useTranslation()
-  const scannerRef = useRef<any>(null)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const onScanRef = useRef(onScan)
   onScanRef.current = onScan

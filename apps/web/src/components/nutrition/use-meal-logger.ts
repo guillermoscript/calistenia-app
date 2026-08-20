@@ -166,7 +166,7 @@ export function useMealLogger({
 
   /** Reemplaza una comida por la elegida en el autocompletado del catálogo. */
   const selectCatalogFood = useCallback((index: number, selected: FoodItem) => {
-    const normalized = migrateLegacyFood(selected as any)
+    const normalized = migrateLegacyFood(selected)
     setFoods(prev => prev.map((f, i) => i === index ? normalized : f))
   }, [])
 

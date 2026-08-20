@@ -67,7 +67,7 @@ export default function SessionDetailPage() {
         date={date}
         share={{
           userName: user?.display_name || user?.email?.split('@')[0],
-          avatarUrl: user ? getUserAvatarUrl(user as any, '200x200') : null,
+          avatarUrl: user ? getUserAvatarUrl(user, '200x200') : null,
           referralCode: user?.referral_code || null,
         }}
       />

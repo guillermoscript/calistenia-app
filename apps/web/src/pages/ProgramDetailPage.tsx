@@ -288,8 +288,8 @@ export default function ProgramDetailPage({
       } catch {
         // Not critical
       }
-    } catch (e: any) {
-      if (e?.code === 0) return // auto-cancelled, ignore
+    } catch (e) {
+      if ((e as { code?: number } | null)?.code === 0) return // auto-cancelled, ignore
       console.error('ProgramDetailPage: fetch error', e)
       setError(t('programDetail.loadError'))
     } finally {

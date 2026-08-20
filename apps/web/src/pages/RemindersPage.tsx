@@ -168,9 +168,9 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     try {
       await updateItem(editingItem, parseHour(hour), parseMinute(minute), days)
       setEditingItem(null)
-    } catch (e: any) {
+    } catch (e) {
       console.error('Update reminder error:', e)
-      setError(e?.message || t('reminders.updateError'))
+      setError((e as { message?: string } | null)?.message || t('reminders.updateError'))
     } finally {
       setSaving(false)
     }

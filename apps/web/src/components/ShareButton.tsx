@@ -67,7 +67,7 @@ export function ShareButton({ onShare, onInvite, className, size = 'sm', variant
 
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-card border border-border rounded-lg shadow-lg py-1 motion-safe:animate-fade-in">
-          {navigator.share && (
+          {typeof navigator.share === 'function' && (
             <DropItem icon={<ShareIcon className="size-3.5" />} label={t('share.shareNative')} onClick={() => handle('native')} />
           )}
           <DropItem icon={<WhatsAppIcon className="size-3.5" />} label="WhatsApp" onClick={() => handle('whatsapp')} accent="text-emerald-400" />

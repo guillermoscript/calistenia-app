@@ -94,7 +94,7 @@ export function setLastMealType(mealType: MealType): void {
 export function normalizeFoods(foods: NutritionEntry['foods'] | FoodItem[]): FoodItem[] {
   return (foods || []).map(f => {
     if (!('baseCal100' in f) || !(f as FoodItem).baseCal100) {
-      return migrateLegacyFood(f as any)
+      return migrateLegacyFood(f as Parameters<typeof migrateLegacyFood>[0])
     }
     return f as FoodItem
   })
