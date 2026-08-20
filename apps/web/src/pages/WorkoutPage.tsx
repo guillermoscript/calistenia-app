@@ -72,7 +72,7 @@ export default function WorkoutPage() {
   const hasWorkout = !!workout
   useEffect(() => {
     if (hasWorkout) {
-      triggerWorkoutDetailTour(userId)
+      triggerWorkoutDetailTour(userId ?? undefined)
     }
     // `userId` fuera a propósito: si el auth se restaura después de montar, el
     // tour se relanzaría una segunda vez sobre la misma pantalla. (#484)
@@ -278,15 +278,11 @@ export default function WorkoutPage() {
           </div>
         )
       })() : selectedDay && selectedDayType === 'circuit' && selectedWeekDay?.circuitConfig ? (() => {
-        // If circuitConfig exists but has no exercises, build from workout exercises
+        // Esta rama solo se alcanza cuando `workout` es nulo (ver el ternario de arriba), así
+        // que el antiguo relleno de `circuitCfg.exercises` desde `workout.exercises` nunca podía
+        // ejecutarse. `strict` lo destapó al tipar `workout` como `never` aquí. Se elimina: era
+        // código muerto que además mutaba el `WeekDay` del contexto. (#483)
         const circuitCfg = selectedWeekDay.circuitConfig
-        if (circuitCfg.exercises.length === 0 && workout?.exercises) {
-          circuitCfg.exercises = workout.exercises.map(ex => ({
-            exerciseId: ex.id,
-            name: { es: ex.name, en: ex.name },
-            reps: ex.reps,
-          }))
-        }
         return (
           <div className="space-y-4">
             <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">

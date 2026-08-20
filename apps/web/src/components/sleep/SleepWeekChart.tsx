@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, ReferenceLine,
@@ -79,7 +80,13 @@ function buildChartData(entries: SleepEntry[], t: (key: string) => string): Char
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
 
-function CustomTooltip({ active, payload, label }: any) {
+type CustomTooltipProps = {
+  active?: boolean
+  payload?: { payload: ChartDataPoint }[]
+  label?: ReactNode
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   const { t } = useTranslation()
   const QUALITY_LABELS = ['', t('sleep.qualityVeryBad'), t('sleep.qualityBad'), t('sleep.qualityFair'), t('sleep.qualityGood'), t('sleep.qualityExcellent')]
 

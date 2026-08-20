@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { AuthUser } from '@calistenia/core/types'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent } from '../components/ui/card'
@@ -24,7 +25,7 @@ import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
-  user: any
+  user: AuthUser
 }
 
 export default function ProfilePage({ user }: ProfilePageProps) {
@@ -105,8 +106,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           // Tres hidrataciones, no una: conservan el mismo escalonado de
           // renders que tenían los 16 setters sueltos (los campos de `users`
           // aparecen antes de esperar a las otras dos colecciones).
-          const rec = await pb.collection('users').getOne(user.id) as Record<string, any>
-          setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
+          const rec = await pb.collection('users').getOne(user.id)
+          setAvatarUrl(getUserAvatarUrl(rec, '200x200'))
           hydrate({
             displayName: rec.display_name || rec.name || '',
             ...bodyFromUserRecord(rec),
@@ -163,7 +164,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         formData.append('avatar', file)
         const updated = await pb.collection('users').update(user.id, formData)
         // Add cache-busting param so the browser doesn't show the old cached image
-        const url = getUserAvatarUrl(updated as any, '200x200')
+        const url = getUserAvatarUrl(updated, '200x200')
         setAvatarUrl(url ? `${url}&t=${Date.now()}` : null)
         // Refresh auth to sync avatar in authStore
         await pb.collection('users').authRefresh()
@@ -695,7 +696,10 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               >
                 {(() => {
                   try {
-                    const allTz = (Intl as any).supportedValuesOf('timeZone') as string[]
+                    // `supportedValuesOf` es ES2022 y el `lib` de web sigue en ES2020.
+                    const allTz = (Intl as typeof Intl & {
+                      supportedValuesOf(key: string): string[]
+                    }).supportedValuesOf('timeZone')
                     const filtered = tzSearch
                       ? allTz.filter(tz => tz.toLowerCase().includes(tzSearch.toLowerCase()))
                       : allTz

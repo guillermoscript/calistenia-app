@@ -13,6 +13,7 @@ import { cn } from '../lib/utils'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { usePublicProfile } from '@calistenia/core/hooks/usePublicProfile'
+import type { ProfilePRs } from '@calistenia/core/lib/public-profile'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { useReports } from '@calistenia/core/hooks/useReports'
@@ -24,7 +25,13 @@ import { useReferrals } from '@calistenia/core/hooks/useReferrals'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { ShareMethod } from '../lib/share'
 
-const PR_DEFS = [
+const PR_DEFS: {
+  key: keyof ProfilePRs
+  label: string
+  unit: string
+  goal: number
+  accent: string
+}[] = [
   { key: 'pr_pullups',   label: 'Pull-ups',        unit: 'reps', goal: 20, accent: 'text-sky-500' },
   { key: 'pr_pushups',   label: 'Push-ups',        unit: 'reps', goal: 50, accent: 'text-[hsl(var(--lime))]' },
   { key: 'pr_lsit',      label: 'L-sit',           unit: 's',    goal: 30, accent: 'text-amber-400' },
@@ -77,7 +84,7 @@ export default function UserProfilePage() {
     if (!isOwnProfile || !currentUserId) return
     getReferralStats()
     pb.collection('users').getOne(currentUserId, { fields: 'referral_code', $autoCancel: false })
-      .then((u: any) => setReferralCode(u.referral_code || null))
+      .then(u => setReferralCode(u.referral_code || null))
       .catch(() => {})
   }, [isOwnProfile, currentUserId, getReferralStats])
 

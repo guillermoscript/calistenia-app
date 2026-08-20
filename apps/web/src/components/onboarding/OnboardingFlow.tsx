@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { AuthUser } from '@calistenia/core/types'
 import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
 import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
@@ -21,7 +22,7 @@ interface OnboardingFlowProps {
   programs: ProgramMeta[]
   activeProgram: ProgramMeta | null
   userId?: string
-  user?: any
+  user?: AuthUser
   onSelectProgram: (programId: string) => Promise<boolean>
   onCreateProgram: () => void
   onComplete: () => void

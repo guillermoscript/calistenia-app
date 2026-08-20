@@ -532,7 +532,7 @@ export default function DashboardPage({
       {activeMilestone && userId && (
         <StreakMilestone
           streak={activeMilestone}
-          userId={userId}
+          userId={userId ?? undefined}
           userName={displayName}
           referralCode={user?.referral_code}
           onDismiss={() => setDismissedMilestone(true)}
@@ -642,7 +642,7 @@ export default function DashboardPage({
           onClose={() => setShowProgramModal(false)}
           onDuplicate={onDuplicateProgram ? (id: string) => { setShowProgramModal(false); onDuplicateProgram(id) } : undefined}
           onEdit={onEditProgram ? (id: string) => { setShowProgramModal(false); onEditProgram(id) } : undefined}
-          userId={userId}
+          userId={userId ?? undefined}
         />
       )}
     </div>

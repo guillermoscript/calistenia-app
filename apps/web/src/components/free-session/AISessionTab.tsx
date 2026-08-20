@@ -43,6 +43,14 @@ function stripJsonBlocks(text: string): string {
   return text.replace(/```json\s*[\s\S]*?```/g, '').trim()
 }
 
+// NOTA (#483): los `any` de este fichero se dejan a propósito. El código filtra las partes del
+// mensaje por `p.type === 'tool-invocation'` y lee `p.toolName` en plano, que es la forma del AI
+// SDK v4; con el `ai@7` que hay instalado las tool parts son `type: 'tool-<nombre>'`, así que esos
+// filtros no casan nunca y `SearchToolUI`/`SessionToolUI` no llegan a renderizarse (todo va por el
+// fallback que parsea el JSON del texto). Tiparlo contra el SDK rompe la compilación al instante
+// —que es justo la señal que faltaba— pero arreglarlo cambia comportamiento y necesita QA del flujo
+// de IA, así que va en su propio issue y no en esta PR de tooling.
+
 /** Extract text content from message parts */
 function getMessageText(parts: any[]): string {
   return parts

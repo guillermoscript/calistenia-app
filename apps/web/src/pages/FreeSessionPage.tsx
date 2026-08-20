@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import type { RecordModel } from 'pocketbase'
 import { FREE_SESSION_QUEUE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
@@ -131,13 +132,15 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
 
   // Add exercises from master catalog JSON. Carga perezosa (#486): quien llama
   // ya ha esperado a `loadCatalogIndex()`.
-  const catalogCategories = (getCatalogIndexSync()?.raw.categories ?? {}) as any
-  for (const catData of Object.values(catalogCategories) as any[]) {
+  const catalogCategories = getCatalogIndexSync()?.raw.categories ?? {}
+  for (const catData of Object.values(catalogCategories)) {
     for (const ex of catData.exercises || []) {
       if (seen.has(ex.id)) continue
       seen.set(ex.id, {
         id: ex.id, name: ex.name, muscles: ex.muscles || '',
-        category: ex.category || 'full', priority: ex.priority || 'med',
+        category: ex.category || 'full',
+        // El catálogo JSON no está validado: `priority` llega como `string`.
+        priority: (ex.priority || 'med') as CatalogExercise['priority'],
         sets: ex.sets ?? 3, reps: ex.reps || '8-12', rest: ex.rest ?? 60,
         note: ex.note || '', youtube: ex.youtube_query || '',
         isTimer: ex.isTimer || false, timerSeconds: ex.timerSeconds,
@@ -149,7 +152,7 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
   return Array.from(seen.values()).sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
 }
 
-function mapPBRecord(rec: any): CatalogExercise {
+function mapPBRecord(rec: RecordModel): CatalogExercise {
   return {
     id: catalogExerciseIdentity(rec), name: rec.name ?? '', muscles: rec.muscles ?? '',
     category: rec.category || 'full', priority: rec.priority || 'med',
@@ -188,7 +191,8 @@ function loadSavedQueue(): CatalogExercise[] {
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.filter((e: any) => e && typeof e.id === 'string' && typeof e.name === 'string')
+    return (parsed as unknown[]).filter((e): e is CatalogExercise =>
+      !!e && typeof (e as CatalogExercise).id === 'string' && typeof (e as CatalogExercise).name === 'string')
   } catch {
     return []
   }

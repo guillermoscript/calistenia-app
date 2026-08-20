@@ -24,14 +24,21 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ComponentProps,
+  type Dispatch,
+  type ReactElement,
+  type ReactNode,
+  type SetStateAction,
 } from "react";
-import { Streamdown } from "streamdown";
+import { Streamdown, type PluginConfig } from "streamdown";
+
+export type MessageRole = "user" | "assistant" | "system";
 
 export const Message = ({
   className,
   from,
   ...props
-}: any) => (
+}: ComponentProps<"div"> & { from: MessageRole }) => (
   <div
     className={cn(
       "group flex w-full max-w-[95%] flex-col gap-2",
@@ -45,7 +52,7 @@ export const MessageContent = ({
   children,
   className,
   ...props
-}: any) => (
+}: ComponentProps<"div">) => (
   <div
     className={cn(
       "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
@@ -62,7 +69,7 @@ export const MessageActions = ({
   className,
   children,
   ...props
-}: any) => (
+}: ComponentProps<"div">) => (
   <div className={cn("flex items-center gap-1", className)} {...props}>
     {children}
   </div>
@@ -75,7 +82,7 @@ export const MessageAction = ({
   variant = "ghost",
   size = "icon-sm",
   ...props
-}: any) => {
+}: ComponentProps<typeof Button> & { tooltip?: ReactNode; label?: string }) => {
   const button = (
     <Button size={size} type="button" variant={variant} {...props}>
       {children}
@@ -99,7 +106,16 @@ export const MessageAction = ({
   return button;
 };
 
-const MessageBranchContext = createContext(null);
+type MessageBranchContextValue = {
+  branches: ReactNode[];
+  currentBranch: number;
+  goToNext: () => void;
+  goToPrevious: () => void;
+  setBranches: Dispatch<SetStateAction<ReactNode[]>>;
+  totalBranches: number;
+};
+
+const MessageBranchContext = createContext<MessageBranchContextValue | null>(null);
 
 const useMessageBranch = () => {
   const context = useContext(MessageBranchContext);
@@ -116,11 +132,14 @@ export const MessageBranch = ({
   onBranchChange,
   className,
   ...props
-}: any) => {
+}: ComponentProps<"div"> & {
+  defaultBranch?: number;
+  onBranchChange?: (branch: number) => void;
+}) => {
   const [currentBranch, setCurrentBranch] = useState(defaultBranch);
-  const [branches, setBranches] = useState([]);
+  const [branches, setBranches] = useState<ReactNode[]>([]);
 
-  const handleBranchChange = useCallback((newBranch) => {
+  const handleBranchChange = useCallback((newBranch: number) => {
     setCurrentBranch(newBranch);
     onBranchChange?.(newBranch);
   }, [onBranchChange]);
@@ -156,7 +175,7 @@ export const MessageBranch = ({
 export const MessageBranchContent = ({
   children,
   ...props
-}: any) => {
+}: ComponentProps<"div">) => {
   const { currentBranch, setBranches, branches } = useMessageBranch();
   const childrenArray = useMemo(() => (Array.isArray(children) ? children : [children]), [children]);
 
@@ -167,7 +186,7 @@ export const MessageBranchContent = ({
     }
   }, [childrenArray, branches, setBranches]);
 
-  return childrenArray.map((branch, index) => (
+  return (childrenArray as ReactElement[]).map((branch, index) => (
     <div
       className={cn(
         "grid gap-2 overflow-hidden [&>div]:pb-0",
@@ -183,7 +202,7 @@ export const MessageBranchContent = ({
 export const MessageBranchSelector = ({
   className,
   ...props
-}: any) => {
+}: ComponentProps<typeof ButtonGroup>) => {
   const { totalBranches } = useMessageBranch();
 
   // Don't render if there's only one branch
@@ -205,7 +224,7 @@ export const MessageBranchSelector = ({
 export const MessageBranchPrevious = ({
   children,
   ...props
-}: any) => {
+}: ComponentProps<typeof Button>) => {
   const { goToPrevious, totalBranches } = useMessageBranch();
 
   return (
@@ -225,7 +244,7 @@ export const MessageBranchPrevious = ({
 export const MessageBranchNext = ({
   children,
   ...props
-}: any) => {
+}: ComponentProps<typeof Button>) => {
   const { goToNext, totalBranches } = useMessageBranch();
 
   return (
@@ -245,7 +264,7 @@ export const MessageBranchNext = ({
 export const MessageBranchPage = ({
   className,
   ...props
-}: any) => {
+}: ComponentProps<typeof ButtonGroupText>) => {
   const { currentBranch, totalBranches } = useMessageBranch();
 
   return (
@@ -257,17 +276,25 @@ export const MessageBranchPage = ({
   );
 };
 
-const streamdownPlugins = { cjk, code, math, mermaid };
+// `@streamdown/code@1.1.1` resuelve shiki@3 mientras `streamdown@2.5.0` resuelve shiki@4, así
+// que sus `BundledLanguage` no son el mismo tipo aunque el plugin sea correcto en runtime. El
+// cast acota esa duplicación de shiki al único punto donde se nota; el arreglo de verdad es
+// deduplicar shiki en el grafo de dependencias.
+const streamdownPlugins = { cjk, code, math, mermaid } as PluginConfig;
+
+type MessageResponseProps = ComponentProps<typeof Streamdown> & {
+  isAnimating?: boolean;
+};
 
 export const MessageResponse = memo(({
   className,
   ...props
-}: any) => (
+}: MessageResponseProps) => (
   <Streamdown
     className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
     plugins={streamdownPlugins}
     {...props} />
-), (prevProps: any, nextProps: any) =>
+), (prevProps: MessageResponseProps, nextProps: MessageResponseProps) =>
   prevProps.children === nextProps.children &&
   nextProps.isAnimating === prevProps.isAnimating);
 
@@ -277,7 +304,7 @@ export const MessageToolbar = ({
   className,
   children,
   ...props
-}: any) => (
+}: ComponentProps<"div">) => (
   <div
     className={cn("mt-4 flex w-full items-center justify-between gap-4", className)}
     {...props}>

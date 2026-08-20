@@ -11,7 +11,8 @@ interface BeforeInstallPromptEvent extends Event {
 
 function isStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches
-    || (navigator as any).standalone === true
+    // `standalone` es propietario de Safari en iOS y no está en el tipo estándar.
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true
 }
 
 function getBrowserInfo(): { isFirefox: boolean; isSafari: boolean; isChromium: boolean; isIOS: boolean; isAndroid: boolean } {

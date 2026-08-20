@@ -54,7 +54,7 @@ export function ReferralList({ referrals }: ReferralListProps) {
             )}>
               {ref.referredAvatar && !ref.referredDeleted ? (
                 <img
-                  src={pb.files.getURL({ id: ref.referred, collectionId: '_pb_users_auth_', collectionName: 'users' } as any, ref.referredAvatar, { thumb: '100x100' })}
+                  src={pb.files.getURL({ id: ref.referred, collectionId: '_pb_users_auth_', collectionName: 'users' } as Parameters<typeof pb.files.getURL>[0], ref.referredAvatar, { thumb: '100x100' })}
                   alt={name}
                   className="size-full object-cover"
                 />

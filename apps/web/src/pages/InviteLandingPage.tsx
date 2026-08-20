@@ -21,7 +21,8 @@ export default function InviteLandingPage() {
   const [joining, setJoining] = useState(false)
 
   const isLoggedIn = pb.authStore.isValid
-  const currentUserId = isLoggedIn ? ((pb.authStore as any).record?.id ?? (pb.authStore as any).model?.id) : null
+  // `model` es el alias antiguo de `record` en el SDK; se conserva el fallback tal cual.
+  const currentUserId = isLoggedIn ? (pb.authStore.record?.id ?? (pb.authStore as { model?: { id?: string } }).model?.id ?? null) : null
 
   // La carga la sirve core (#473). El hook no navega ni toca localStorage a
   // propósito: devuelve un veredicto en `status` y esta pantalla decide.

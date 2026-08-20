@@ -1,18 +1,25 @@
 "use client";;
 import { cn } from "../../lib/utils";
-import { motion } from "motion/react";
-import { memo, useMemo } from "react";
+import { motion, type DOMMotionComponents } from "motion/react";
+import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
+
+type ShimmerTag = keyof DOMMotionComponents;
 
 // Cache motion components at module level to avoid creating during render
-const motionComponentCache = new Map();
+const motionComponentCache = new Map<ShimmerTag, DOMMotionComponents[ShimmerTag]>();
 
-const getMotionComponent = (element) => {
+// El componente se expone con la forma de `motion.p`: `DOMMotionComponents[ShimmerTag]` es la
+// union de todos los tags y el JSX no puede resolver props contra una union. Las props de motion
+// (`className`, `style`, `animate`, `transition`) son las mismas para todos los tags HTML, así
+// que el único punto que el cast tapa es el juego de atributos propios del elemento, que este
+// componente no usa.
+const getMotionComponent = (element: ShimmerTag): typeof motion.p => {
   let component = motionComponentCache.get(element);
   if (!component) {
     component = motion.create(element);
     motionComponentCache.set(element, component);
   }
-  return component;
+  return component as typeof motion.p;
 };
 
 const ShimmerComponent = ({
@@ -21,10 +28,22 @@ const ShimmerComponent = ({
   className,
   duration = 2,
   spread = 2
-}: any) => {
+}: {
+  children?: ReactNode;
+  as?: ShimmerTag;
+  className?: string;
+  duration?: number;
+  spread?: number;
+}) => {
   const MotionComponent = getMotionComponent(Component);
 
-  const dynamicSpread = useMemo(() => (children?.length ?? 0) * spread, [children, spread]);
+  const dynamicSpread = useMemo(() => {
+    // Equivalente al `children?.length ?? 0` original: string y array tienen `length`,
+    // cualquier otro ReactNode cuenta como 0.
+    const length =
+      typeof children === "string" || Array.isArray(children) ? children.length : 0;
+    return length * spread;
+  }, [children, spread]);
 
   return (
     <MotionComponent
@@ -41,7 +60,7 @@ const ShimmerComponent = ({
 
           backgroundImage:
             "var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground))"
-        }
+        } as CSSProperties
       }
       transition={{
         duration,

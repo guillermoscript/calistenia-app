@@ -396,7 +396,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                                     {g.food.name || t('nutrition.noName')}
                                     {g.count > 1 && <span className="text-lime ml-1 font-medium">x{g.count}</span>}
                                   </span>
-                                  <span className="text-muted-foreground/60 text-[10px]">{(g.food as any).portionAmount ?? ''}{(g.food as any).portionUnit ?? (g.food as any).portion ?? ''}</span>
+                                  <span className="text-muted-foreground/60 text-[10px]">{g.food.portionAmount ?? ''}{g.food.portionUnit ?? (g.food as { portion?: string }).portion ?? ''}</span>
                                   <span className="text-muted-foreground w-14 text-right tabular-nums">{Math.round(g.food.calories * g.count)} kcal</span>
                                 </div>
                               ))

@@ -133,20 +133,20 @@ export function StepExercises({
       {currentDay?.type === 'cardio' && (
         <Card className="border-emerald-400/30 bg-emerald-400/5">
           <CardContent className="p-5 text-center">
-            <div className="text-3xl mb-2">{CARDIO_ACTIVITY[(currentDay as any).cardioActivityType || 'running']?.icon || '🏃'}</div>
+            <div className="text-3xl mb-2">{CARDIO_ACTIVITY[currentDay.cardioActivityType || 'running']?.icon || '🏃'}</div>
             <div className="font-bebas text-xl text-emerald-400 tracking-wide mb-1">{t('programEditor.cardioDay')}</div>
             <div className="text-sm text-muted-foreground mb-3">
-              {t(`cardio.${(currentDay as any).cardioActivityType || 'running'}`)}
+              {t(`cardio.${currentDay.cardioActivityType || 'running'}`)}
             </div>
             <div className="flex justify-center gap-4 text-[11px]">
-              {(currentDay as any).cardioTargetDistanceKm && (
+              {currentDay.cardioTargetDistanceKm && (
                 <div className="text-emerald-400">
-                  <span className="font-bold">{(currentDay as any).cardioTargetDistanceKm}</span> km
+                  <span className="font-bold">{currentDay.cardioTargetDistanceKm}</span> km
                 </div>
               )}
-              {(currentDay as any).cardioTargetDurationMin && (
+              {currentDay.cardioTargetDurationMin && (
                 <div className="text-emerald-400">
-                  <span className="font-bold">{(currentDay as any).cardioTargetDurationMin}</span> min
+                  <span className="font-bold">{currentDay.cardioTargetDurationMin}</span> min
                 </div>
               )}
             </div>

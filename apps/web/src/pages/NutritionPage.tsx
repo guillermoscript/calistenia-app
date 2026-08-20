@@ -288,7 +288,11 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string, pace?: string,
   ) => {
     const result = calculateMacros(
-      weight, height, age, sex as any, activityLevel as any, goal as any, pace as any
+      weight, height, age,
+      sex as Parameters<typeof calculateMacros>[3],
+      activityLevel as Parameters<typeof calculateMacros>[4],
+      goal as Parameters<typeof calculateMacros>[5],
+      pace as Parameters<typeof calculateMacros>[6],
     )
     return {
       dailyCalories: result.dailyCalories,

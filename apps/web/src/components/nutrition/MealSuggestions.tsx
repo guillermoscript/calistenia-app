@@ -31,7 +31,7 @@ async function fetchTopFoodsByCategory(category: string, limit = 4): Promise<Cat
       sort: '-calories',
       expand: 'category',
     })
-    return res.items.map((r: any) => ({
+    return res.items.map(r => ({
       name: r.name_display,
       portionLabel: r.portion || '100g',
       protein: r.protein,

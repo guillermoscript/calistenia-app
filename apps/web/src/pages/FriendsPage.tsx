@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import type { RecordModel } from 'pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { excludeBlocked } from '@calistenia/core/lib/blocks'
@@ -25,10 +26,10 @@ interface FriendsPageProps {
 
 // ── Pure helper — no closures over component state ───────────────────────────
 // [C1 fix] Extracted as a pure function so it can't go stale inside useCallback
-function mapPbItems(items: any[], excludeUserId: string): SearchResult[] {
+function mapPbItems(items: RecordModel[], excludeUserId: string): SearchResult[] {
   return items
-    .filter((u: any) => u.id !== excludeUserId)
-    .map((u: any) => ({
+    .filter(u => u.id !== excludeUserId)
+    .map(u => ({
       id: u.id,
       displayName: u.display_name || u.name || u.username || '?',
       username: u.username || '',
