@@ -25,9 +25,15 @@ export async function writeWidgetSnapshot(snapshot: WidgetSnapshot): Promise<voi
       const { requestWidgetUpdate } = await import('react-native-android-widget')
       const React = await import('react')
       const { TodayWidget } = await import('../widgets/TodayWidget')
+      const { NextSessionWidget } = await import('../widgets/NextSessionWidget')
       await requestWidgetUpdate({
         widgetName: 'TodayWidget',
         renderWidget: () => React.createElement(TodayWidget, { snapshot, today: snapshot.date }),
+        widgetNotFound: () => {},
+      })
+      await requestWidgetUpdate({
+        widgetName: 'NextSessionWidget',
+        renderWidget: () => React.createElement(NextSessionWidget, { snapshot, today: snapshot.date }),
         widgetNotFound: () => {},
       })
     }

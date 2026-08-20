@@ -215,6 +215,36 @@
               "targetCellWidth": 2,
               "targetCellHeight": 2,
               "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "MealStreakWidget",
+              "label": "Racha de comidas",
+              "description": "Días seguidos con score de comida A/B",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "WaterWidget",
+              "label": "Agua",
+              "description": "Vasos de agua de hoy vs. tu meta",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "NextSessionWidget",
+              "label": "Próxima sesión",
+              "description": "Qué toca mañana, en una franja fina",
+              "minWidth": "250dp",
+              "minHeight": "40dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 1,
+              "updatePeriodMillis": 1800000
             }
           ]
         }

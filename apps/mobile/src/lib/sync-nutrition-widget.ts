@@ -1,6 +1,7 @@
 /**
  * Sincroniza los widgets de nutrición: escribe el snapshot en AsyncStorage
- * y fuerza el refresh de NutritionWidget + NutritionRingWidget.
+ * y fuerza el refresh de NutritionWidget + NutritionRingWidget + MealStreakWidget
+ * + WaterWidget.
  * Best-effort: nunca lanza (un fallo de widget no rompe la app).
  */
 import { Platform } from 'react-native'
@@ -13,7 +14,27 @@ import type { DailyTotals, NutritionGoal } from '@calistenia/core/types'
 
 let lastJson: string | null = null
 
-export async function syncNutritionWidget(totals: DailyTotals, goals: NutritionGoal | null): Promise<void> {
+/** Racha de comidas — mismo dato que `nutrition_coach_insights.streaks.currentGood`,
+ *  calculado por `upsertDailyInsight` (core). Nunca se recalcula aquí. */
+export interface MealStreakArgs {
+  mealStreak: number
+  mealStreakToday: boolean
+}
+
+/** ml consumidos / meta diaria de agua (`useWater`). Se sincroniza tal cual,
+ *  sin recalcular: la mutación optimista de `useWater` ya es la fuente de
+ *  verdad y persiste offline-first. */
+export interface WaterWidgetArgs {
+  waterMl: number
+  waterGoalMl: number
+}
+
+export async function syncNutritionWidget(
+  totals: DailyTotals,
+  goals: NutritionGoal | null,
+  meal: MealStreakArgs,
+  water: WaterWidgetArgs,
+): Promise<void> {
   if (Platform.OS !== 'android') return
   try {
     const snapshot: NutritionWidgetSnapshot = {
@@ -26,6 +47,10 @@ export async function syncNutritionWidget(totals: DailyTotals, goals: NutritionG
       proteinGoal: goals?.dailyProtein ?? 0,
       carbsGoal: goals?.dailyCarbs ?? 0,
       fatGoal: goals?.dailyFat ?? 0,
+      mealStreak: meal.mealStreak,
+      mealStreakToday: meal.mealStreakToday,
+      waterMl: water.waterMl,
+      waterGoalMl: water.waterGoalMl,
       lang: i18n.language?.startsWith('en') ? 'en' : 'es',
       tz: getTimezone(),
     }
@@ -39,6 +64,8 @@ export async function syncNutritionWidget(totals: DailyTotals, goals: NutritionG
     const React = await import('react')
     const { NutritionWidget } = await import('../widgets/NutritionWidget')
     const { NutritionRingWidget } = await import('../widgets/NutritionRingWidget')
+    const { MealStreakWidget } = await import('../widgets/MealStreakWidget')
+    const { WaterWidget } = await import('../widgets/WaterWidget')
 
     await requestWidgetUpdate({
       widgetName: 'NutritionWidget',
@@ -48,6 +75,16 @@ export async function syncNutritionWidget(totals: DailyTotals, goals: NutritionG
     await requestWidgetUpdate({
       widgetName: 'NutritionRingWidget',
       renderWidget: () => React.createElement(NutritionRingWidget, { snapshot, today: todayStr() }),
+      widgetNotFound: () => {},
+    })
+    await requestWidgetUpdate({
+      widgetName: 'MealStreakWidget',
+      renderWidget: () => React.createElement(MealStreakWidget, { snapshot, today: todayStr() }),
+      widgetNotFound: () => {},
+    })
+    await requestWidgetUpdate({
+      widgetName: 'WaterWidget',
+      renderWidget: () => React.createElement(WaterWidget, { snapshot, today: todayStr() }),
       widgetNotFound: () => {},
     })
   } catch (e) {

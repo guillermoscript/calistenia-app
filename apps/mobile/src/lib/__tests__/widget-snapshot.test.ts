@@ -15,6 +15,8 @@ const baseArgs = {
   ],
   workout: { title: 'Pull Day', exerciseCount: 6 },
   todayType: 'strength',
+  tomorrowType: 'rest',
+  workoutTomorrow: null,
   isDone: (key: string) => key === 'p2_lun',
   streak: 4,
   lastSessionDate: '2026-06-10',
@@ -63,5 +65,24 @@ describe('buildWidgetSnapshot', () => {
     expect(snap.workoutToday).toEqual({
       title: '', type: 'rest', done: false, exerciseCount: 0, programPhase: 2,
     })
+  })
+
+  it('rellena workoutTomorrow con metadatos de mañana, sin done ni programPhase', () => {
+    const snap = buildWidgetSnapshot({
+      ...baseArgs,
+      tomorrowType: 'strength',
+      workoutTomorrow: { title: 'Push Day', exerciseCount: 5 },
+    })
+    expect(snap.workoutTomorrow).toEqual({ title: 'Push Day', type: 'strength', exerciseCount: 5 })
+  })
+
+  it('workoutTomorrow con type rest y title vacío si mañana es descanso', () => {
+    const snap = buildWidgetSnapshot({ ...baseArgs, tomorrowType: 'rest', workoutTomorrow: null })
+    expect(snap.workoutTomorrow).toEqual({ title: '', type: 'rest', exerciseCount: 0 })
+  })
+
+  it('workoutTomorrow null sin programa activo', () => {
+    const snap = buildWidgetSnapshot({ ...baseArgs, programName: null, workoutTomorrow: null })
+    expect(snap.workoutTomorrow).toBeNull()
   })
 })

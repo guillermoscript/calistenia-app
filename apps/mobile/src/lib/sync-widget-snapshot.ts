@@ -17,9 +17,13 @@ export function syncWidgetSnapshot(args: {
   weeklyDone: number
 }): void {
   const todayId = DAY_IDS[localDay()]
+  const tomorrowId = DAY_IDS[(localDay() + 1) % 7]
   const phase = args.settings.phase || 1
   const workout = args.programName ? args.getWorkout(phase, todayId) : null
+  // Misma fase que hoy: los programas no cambian de fase a mitad de semana.
+  const workoutTomorrow = args.programName ? args.getWorkout(phase, tomorrowId) : null
   const todayMeta = args.weekDays.find(d => d.id === todayId)
+  const tomorrowMeta = args.weekDays.find(d => d.id === tomorrowId)
 
   void writeWidgetSnapshot(buildWidgetSnapshot({
     today: todayStr(),
@@ -29,8 +33,10 @@ export function syncWidgetSnapshot(args: {
     programPhase: phase,
     todayId,
     todayType: todayMeta?.type || 'strength',
+    tomorrowType: tomorrowMeta?.type || 'strength',
     weekDays: args.weekDays.map(d => ({ id: d.id, type: d.type })),
     workout: workout ? { title: workout.title, exerciseCount: workout.exercises.length } : null,
+    workoutTomorrow: workoutTomorrow ? { title: workoutTomorrow.title, exerciseCount: workoutTomorrow.exercises.length } : null,
     isDone: args.isWorkoutDone,
     streak: args.streak,
     lastSessionDate: args.lastSessionDate,

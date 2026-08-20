@@ -17,6 +17,14 @@ export interface WidgetSnapshot {
     exerciseCount: number
     programPhase: number
   } | null
+  /** Sesión de mañana (NextSessionWidget, #230). null si no hay programa
+   *  activo; con programa activo, siempre un objeto (type 'rest' si mañana
+   *  toca descanso) — mismo criterio que `workoutToday`. */
+  workoutTomorrow: {
+    title: string
+    type: string
+    exerciseCount: number
+  } | null
   week: { id: string; done: boolean; type: string }[]
   /** Racha ACTIVA (termina hoy o ayer), no el récord histórico. */
   streak: number
@@ -39,8 +47,10 @@ export function buildWidgetSnapshot(args: {
   programPhase: number
   todayId: string
   todayType: string
+  tomorrowType: string
   weekDays: { id: string; type: string }[]
   workout: { title: string; exerciseCount: number } | null
+  workoutTomorrow: { title: string; exerciseCount: number } | null
   isDone: (key: string) => boolean
   streak: number
   /** Última fecha con sesión ('YYYY-MM-DD'), o null si no hay ninguna. */
@@ -61,6 +71,13 @@ export function buildWidgetSnapshot(args: {
           done: args.isDone(`p${programPhase}_${args.todayId}`),
           exerciseCount: args.workout?.exerciseCount ?? 0,
           programPhase,
+        }
+      : null,
+    workoutTomorrow: hasProgram
+      ? {
+          title: args.workoutTomorrow?.title ?? '',
+          type: args.tomorrowType,
+          exerciseCount: args.workoutTomorrow?.exerciseCount ?? 0,
         }
       : null,
     week: args.weekDays.map(d => ({
