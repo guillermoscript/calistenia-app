@@ -23,6 +23,7 @@ import {
 } from '@calistenia/core/lib/geo'
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
+import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 import { haptics } from '@/lib/haptics'
@@ -311,6 +312,21 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       program_day_key: programDayKeyRef.current || undefined,
     }
 
+    // Un start/stop accidental (2 s, 0 km) no se guarda ni se encola: tapaba
+    // la sesión real en «ÚLTIMA SESIÓN» y sumaba a los totales (#562).
+    if (isCardioSessionTooShort(session)) {
+      setSessionState('idle')
+      resetMetrics()
+      setDuration(0)
+      setError(null)
+      setNote('')
+      setProgramId(null)
+      setProgramDayKey(null)
+      programIdRef.current = null
+      programDayKeyRef.current = null
+      return null
+    }
+
     if (userId) {
       const saveData: Record<string, unknown> = { user: userId, ...session }
       try {
@@ -331,7 +347,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     return session
   }, [
-    stopGps, stopTimer, setDuration, clearSnapshot, points,
+    stopGps, stopTimer, setDuration, clearSnapshot, points, resetMetrics,
     setSessionState, userId, userWeight, queryClient, enqueue,
   ])
 

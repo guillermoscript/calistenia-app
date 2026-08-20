@@ -104,6 +104,10 @@ export default function CardioScreen() {
       if (session.id && session.program_day_key) {
         markCardioDayDone(session.program_day_key, session.id, session.note ?? '')
       }
+    } else {
+      // Demasiado corta: el contexto la descartó sin guardar (#562).
+      op.track('cardio_discarded', { activity_type: selectedActivity, reason: 'too_short', platform: 'mobile' })
+      Alert.alert(t('cardio.discardSession'), t('cardio.tooShortDiscarded'))
     }
     setSavedSession(session)
   }

@@ -910,6 +910,7 @@
   "cardio.end": "FINISH",
   "cardio.quickNotes": "Quick notes...",
   "cardio.discardSession": "Discard session",
+  "cardio.tooShortDiscarded": "Session too short, not saved",
   "cardio.discardConfirm": "Discard this {{activity}} session? All data will be lost.",
   "cardio.discard": "DISCARD",
   "cardio.continue": "CONTINUE",

@@ -6,6 +6,7 @@ import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '@calistenia/core/lib/geo'
 import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
+import { toast } from 'sonner'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 // Leaflet + RouteMap is ~150kb gzipped — split into its own chunk and preload on idle
@@ -97,6 +98,10 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       if (session.id && session.program_day_key) {
         markCardioDayDone(session.program_day_key, session.id, session.note ?? '')
       }
+    } else {
+      // Demasiado corta: el contexto la descartó sin guardar (#562).
+      op.track('cardio_discarded', { activity_type: selectedActivity, reason: 'too_short' })
+      toast(t('cardio.tooShortDiscarded'))
     }
     setSavedSession(session)
   }
