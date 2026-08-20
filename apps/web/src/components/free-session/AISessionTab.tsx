@@ -15,77 +15,28 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { AI_API_URL } from '@calistenia/core/lib/ai-api'
 import { cn } from '../../lib/utils'
 import {
+  type AIExercise,
+  type CreateSessionResult,
+  type FreeSessionUIMessage,
+  type SearchPart,
+  type SessionPart,
+  getMessageText,
+  getSearchParts,
+  getSessionParts,
+  getSessionFromParts,
+  hasAssistantContent,
+  parseExercisesFromText,
+} from '../../lib/ai-message-parts'
+import {
   BotMessageSquareIcon, UserIcon, SendHorizonalIcon, SquareIcon,
   LoaderIcon, DumbbellIcon, CheckCircleIcon, SearchIcon,
 } from 'lucide-react'
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface AIExercise {
-  id: string
-  sets: number
-  reps: string
-  rest: number
-  phase?: 'warmup' | 'main' | 'cooldown'
-}
-
-interface CreateSessionResult {
-  success: boolean
-  exercises: AIExercise[]
-  exercise_count: number
-  format?: string
-  invalid_ids?: string[]
-}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Strip ```json ... ``` blocks from AI text (backward compat for old responses) */
 function stripJsonBlocks(text: string): string {
   return text.replace(/```json\s*[\s\S]*?```/g, '').trim()
-}
-
-// NOTA (#483): los `any` de este fichero se dejan a propósito. El código filtra las partes del
-// mensaje por `p.type === 'tool-invocation'` y lee `p.toolName` en plano, que es la forma del AI
-// SDK v4; con el `ai@7` que hay instalado las tool parts son `type: 'tool-<nombre>'`, así que esos
-// filtros no casan nunca y `SearchToolUI`/`SessionToolUI` no llegan a renderizarse (todo va por el
-// fallback que parsea el JSON del texto). Tiparlo contra el SDK rompe la compilación al instante
-// —que es justo la señal que faltaba— pero arreglarlo cambia comportamiento y necesita QA del flujo
-// de IA, así que va en su propio issue y no en esta PR de tooling.
-
-/** Extract text content from message parts */
-function getMessageText(parts: any[]): string {
-  return parts
-    ?.filter((p: any) => p.type === 'text')
-    .map((p: any) => p.text)
-    .join('') || ''
-}
-
-/** Parse exercises from a create_session tool result */
-function getSessionFromParts(parts: any[]): AIExercise[] | null {
-  if (!parts) return null
-  for (const part of parts) {
-    if (part.type === 'tool-invocation' && part.toolName === 'create_session' && part.state === 'result') {
-      const result = part.result as CreateSessionResult
-      if (result?.exercises?.length > 0) return result.exercises
-    }
-  }
-  return null
-}
-
-/** Fallback: parse exercises from JSON blocks in text (backward compat) */
-function parseExercisesFromText(text: string): AIExercise[] {
-  const jsonBlockRegex = /```json\s*([\s\S]*?)```/g
-  let match: RegExpExecArray | null
-  while ((match = jsonBlockRegex.exec(text)) !== null) {
-    try {
-      const parsed = JSON.parse(match[1])
-      const exercises = parsed.exercises || parsed
-      if (Array.isArray(exercises)) {
-        return exercises.filter((e: any) => e && typeof e.id === 'string')
-      }
-    } catch { /* try next block */ }
-  }
-  return []
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -162,17 +113,17 @@ function SessionContext({ context }: { context: UserContext }) {
 }
 
 /** Renders a search_exercises tool invocation inline */
-function SearchToolUI({ part }: { part: any }) {
+function SearchToolUI({ part }: { part: SearchPart }) {
   const { t } = useTranslation()
-  const args = part.args || {}
-  const state = part.state as string
-  const isLoading = state !== 'result'
+  const args = part.input ?? {}
+  const isDone = part.state === 'output-available' || part.state === 'output-error'
+  const isLoading = !isDone
 
   const label = args.category
     ? (SEARCH_LABEL_KEYS[args.category] ? t(SEARCH_LABEL_KEYS[args.category]) : args.category)
     : args.muscles || t('common.exercises')
 
-  const resultCount = state === 'result' ? part.result?.found : null
+  const resultCount = part.state === 'output-available' ? (part.output?.found ?? null) : null
 
   return (
     <div className="flex items-center gap-2 text-[11px] text-muted-foreground py-0.5">
@@ -195,16 +146,19 @@ function SearchToolUI({ part }: { part: any }) {
 }
 
 /** Renders a create_session tool invocation as the session card */
-function SessionToolUI({ part, onRemove, onReorder, onAdd }: {
-  part: any
+function SessionToolUI({ part, exercises, onRemove, onReorder, onAdd }: {
+  part: SessionPart
+  /** Ejercicios a pintar (con las ediciones locales); si no se pasa, los del tool output. */
+  exercises?: AIExercise[]
   onRemove: (idx: number) => void
   onReorder: (from: number, to: number) => void
   onAdd: (ex: AIExercise) => void
 }) {
   const { t } = useTranslation()
-  const state = part.state as string
-  const isLoading = state !== 'result'
-  const result = part.result as CreateSessionResult | undefined
+  const isDone = part.state === 'output-available' || part.state === 'output-error'
+  const isLoading = !isDone
+  const result: CreateSessionResult | undefined =
+    part.state === 'output-available' ? part.output : undefined
 
   if (isLoading) {
     return (
@@ -242,7 +196,7 @@ function SessionToolUI({ part, onRemove, onReorder, onAdd }: {
           )}
         </div>
         <SessionPreview
-          exercises={result.exercises}
+          exercises={exercises ?? result.exercises}
           onRemove={onRemove}
           onReorder={onReorder}
           onAdd={onAdd}
@@ -339,7 +293,7 @@ export default function AISessionTab() {
     },
   }), [])
 
-  const { messages, sendMessage, status, error } = useChat({ transport })
+  const { messages, sendMessage, status, error } = useChat<FreeSessionUIMessage>({ transport })
 
   const isStreaming = status === 'streaming' || status === 'submitted'
   const hasMessages = messages.length > 0
@@ -368,6 +322,16 @@ export default function AISessionTab() {
 
     return []
   }, [messages, localExercises])
+
+  // Último mensaje del asistente con una sesión del tool: es el único cuya tarjeta
+  // pinta las ediciones locales (las anteriores quedan como las devolvió la IA).
+  const latestSessionMsgId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m.role === 'assistant' && getSessionFromParts(m.parts)) return m.id
+    }
+    return null
+  }, [messages])
 
   // Reset local edits when a new create_session result arrives
   useEffect(() => {
@@ -459,14 +423,10 @@ export default function AISessionTab() {
             }
 
             // ── Assistant messages: render text + tool invocations ──
-            const parts = message.parts || []
-            const textParts = parts.filter((p: any) => p.type === 'text')
-            const toolParts = parts.filter((p: any) => p.type === 'tool-invocation')
-            const searchTools = toolParts.filter((p: any) => p.toolName === 'search_exercises')
-            const sessionTools = toolParts.filter((p: any) => p.toolName === 'create_session')
-
-            const rawText = textParts.map((p: any) => p.text).join('')
-            const displayText = stripJsonBlocks(rawText)
+            const parts = message.parts
+            const searchTools = getSearchParts(parts)
+            const sessionTools = getSessionParts(parts)
+            const displayText = stripJsonBlocks(getMessageText(parts))
 
             // Skip if nothing to show
             if (!displayText && searchTools.length === 0 && sessionTools.length === 0) return null
@@ -478,8 +438,8 @@ export default function AISessionTab() {
                   <div className="flex items-start gap-2.5">
                     <CoachAvatar className="mt-0.5 size-5 [&_svg]:size-3 opacity-60" />
                     <div className="flex flex-col gap-0.5">
-                      {searchTools.map((t: any, i: number) => (
-                        <SearchToolUI key={t.toolCallId || i} part={t} />
+                      {searchTools.map(part => (
+                        <SearchToolUI key={part.toolCallId} part={part} />
                       ))}
                     </div>
                   </div>
@@ -498,10 +458,11 @@ export default function AISessionTab() {
                 )}
 
                 {/* Session tool call — the main card */}
-                {sessionTools.map((t: any) => (
+                {sessionTools.map(part => (
                   <SessionToolUI
-                    key={t.toolCallId}
-                    part={t}
+                    key={part.toolCallId}
+                    part={part}
+                    exercises={message.id === latestSessionMsgId ? sessionExercises : undefined}
                     onRemove={handleRemoveExercise}
                     onReorder={handleReorder}
                     onAdd={handleAddExercise}
@@ -537,11 +498,7 @@ export default function AISessionTab() {
           {/* Loading shimmer when no assistant text yet */}
           {isStreaming && (() => {
             const lastMsg = messages[messages.length - 1]
-            const hasContent = lastMsg?.role === 'assistant' &&
-              lastMsg.parts?.some((p: any) =>
-                (p.type === 'text' && p.text.length > 0) ||
-                p.type === 'tool-invocation'
-              )
+            const hasContent = lastMsg?.role === 'assistant' && hasAssistantContent(lastMsg.parts)
             if (!hasContent) {
               return (
                 <div className="flex items-start gap-2.5">
