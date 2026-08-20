@@ -276,11 +276,7 @@ export const MessageBranchPage = ({
   );
 };
 
-// `@streamdown/code@1.1.1` resuelve shiki@3 mientras `streamdown@2.5.0` resuelve shiki@4, así
-// que sus `BundledLanguage` no son el mismo tipo aunque el plugin sea correcto en runtime. El
-// cast acota esa duplicación de shiki al único punto donde se nota; el arreglo de verdad es
-// deduplicar shiki en el grafo de dependencias.
-const streamdownPlugins = { cjk, code, math, mermaid } as PluginConfig;
+const streamdownPlugins: PluginConfig = { cjk, code, math, mermaid };
 
 type MessageResponseProps = ComponentProps<typeof Streamdown> & {
   isAnimating?: boolean;
