@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
-## [1.10.0] - 2026-08-20
+## [1.10.1] - 2026-08-21
 
 _Home-screen widgets for your streak, meals, water and next session; private accounts with follower approval; battle results with rematch and a share card; and a solid batch of fixes to cardio and offline saving._
 
@@ -311,8 +311,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.0...HEAD
-[1.10.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.0
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...HEAD
+[1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1

@@ -9,7 +9,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
-## [1.10.0] - 2026-08-20
+## [1.10.1] - 2026-08-21
 
 _Widgets en la pantalla de inicio para la racha, las comidas, el agua y tu próxima sesión; cuentas privadas con aprobación de seguidores; resultados de batalla con revancha y tarjeta para compartir; y un buen puñado de arreglos en cardio y en el guardado sin conexión._
 
@@ -311,8 +311,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.0...HEAD
-[1.10.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.0
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...HEAD
+[1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1

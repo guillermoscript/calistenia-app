@@ -2,8 +2,8 @@
   "generated": "2026-08-20T21:52:25.089Z",
   "versions": [
     {
-      "version": "1.10.0",
-      "date": "2026-08-20",
+      "version": "1.10.1",
+      "date": "2026-08-21",
       "summary": {
         "es": "Widgets en la pantalla de inicio para la racha, las comidas, el agua y tu próxima sesión; cuentas privadas con aprobación de seguidores; resultados de batalla con revancha y tarjeta para compartir; y un buen puñado de arreglos en cardio y en el guardado sin conexión.",
         "en": "Home-screen widgets for your streak, meals, water and next session; private accounts with follower approval; battle results with rematch and a share card; and a solid batch of fixes to cardio and offline saving."
