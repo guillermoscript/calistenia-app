@@ -9,6 +9,24 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.10.0] - 2026-08-20
+
+_Widgets en la pantalla de inicio para la racha, las comidas, el agua y tu próxima sesión; cuentas privadas con aprobación de seguidores; resultados de batalla con revancha y tarjeta para compartir; y un buen puñado de arreglos en cardio y en el guardado sin conexión._
+
+### Añadido
+
+- **Widgets en la pantalla de inicio** — Añade a tu pantalla de inicio la racha (también en formato 2x2, ahora con la racha real), la racha de comidas, el agua que llevas y tu próxima sesión. El widget de hoy muestra más información de un vistazo.
+- **Cuentas privadas** — Puedes hacer tu cuenta privada: quien quiera seguirte tendrá que pedírtelo y tú apruebas o rechazas. El servidor es quien decide qué se muestra, así que tus entrenos no salen en el muro ni en los rankings de quien no apruebes.
+- **Batallas: resultados, revancha y tarjeta** — Al acabar una batalla ves un resumen con el puesto de cada uno, puedes pedir revancha con un toque y compartir la tarjeta del resultado. Los empates se muestran como tal en el marcador, la espera y el historial, y el trabajo por tiempo aparece en el marcador.
+- **Retos: Push-up Builder y detalle renovado** — Nuevo reto listo para unirse, Push-up Builder, con puntuación acumulada. El detalle del reto tiene ahora dos vistas, meta y ranking, y los retos caducados se cierran solos en el servidor en vez de quedarse abiertos.
+- **Foto de perfil desde la app** — Cambia tu foto de perfil directamente desde el móvil, sin pasar por la web.
+
+### Corregido
+
+- **Guardado sin conexión más fiable** — Las series, las sesiones y los circuitos que no pueden guardarse por falta de cobertura se encolan y se reintentan solos cuando vuelve la conexión.
+- **Cardio: historial y sesiones accidentales** — El historial de cardio y otras listas podían aparecer vacías al entrar: arreglado. Si paras una sesión de cardio a los pocos segundos se descarta en vez de guardarse como un entreno de 0 metros, y los textos en inglés que se colaban en cardio y carreras están traducidos.
+- **Pequeños arreglos** — El texto sobre el color lima se lee bien en modo claro, los chevrones plegables giran como deben, las notificaciones push siguen llegando al cambiar de cuenta en el mismo móvil y guardar un programa ya no borra y recrea sus días.
+
 ## [1.9.0] - 2026-08-14
 
 _Programas de comunidad con hitos semanales para seguir un plan de verdad, estadísticas de perfil que por fin cuentan todos tus entrenos, y las batallas con la misma pantalla de entreno que una sesión normal._
@@ -293,7 +311,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.0...HEAD
+[1.10.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.0
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
