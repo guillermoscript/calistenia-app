@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -23,6 +24,7 @@ interface ProgramSelectorModalProps {
 }
 
 export default function ProgramSelectorModal({ programs, activeProgram, onSelect, onClose, onDuplicate, onEdit, userId }: ProgramSelectorModalProps) {
+  const { t } = useTranslation()
   const [pending, setPending] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -48,21 +50,20 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="max-w-[520px] max-sm:max-w-[95vw] max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">CATÁLOGO DE PROGRAMAS</div>
-          <DialogTitle className="font-bebas text-[32px] leading-none">SELECCIONA PROGRAMA</DialogTitle>
+          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">{t('programs.catalogEyebrow')}</div>
+          <DialogTitle className="font-bebas text-[32px] leading-none">{t('programs.selectProgram')}</DialogTitle>
         </DialogHeader>
 
         {pending ? (
           <div className="px-5 py-5 bg-[hsl(var(--lime))]/5 border border-[hsl(var(--lime))]/20 rounded-lg">
             <div className="font-mono text-[11px] text-[hsl(var(--lime))] tracking-[1.5px] mb-2.5">
-              CONFIRMAR CAMBIO DE PROGRAMA
+              {t('programs.confirmSwitchTitle')}
             </div>
             <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">
-              Vas a cambiar al programa{' '}
+              {t('programs.confirmSwitchIntro')}{' '}
               <strong className="text-foreground">{programs.find(p => p.id === pending)?.name}</strong>.
               <br />
-              Tu historial actual se conservará de forma separada.
-              Podrás volver a este programa en cualquier momento.
+              {t('programs.confirmSwitchNote')}
             </p>
             <div className="flex gap-2.5">
               <Button
@@ -70,7 +71,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                 disabled={loading}
                 className="font-bebas text-lg tracking-wide"
               >
-                {loading ? 'CAMBIANDO...' : 'CONFIRMAR'}
+                {loading ? t('programs.switching') : t('programs.confirmSwitchCta')}
               </Button>
               <Button
                 variant="outline"
@@ -78,7 +79,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                 disabled={loading}
                 className="font-mono text-[11px] tracking-wide"
               >
-                CANCELAR
+                {t('programs.cancelUpper')}
               </Button>
             </div>
           </div>
@@ -136,7 +137,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                           onClick={(e) => { e.stopPropagation(); onDuplicate(prog.id) }}
                           className="h-7 px-2.5 text-[10px] tracking-wide hover:border-sky-500 hover:text-sky-500"
                         >
-                          DUPLICAR Y EDITAR
+                          {t('programs.duplicateAndEdit')}
                         </Button>
                       )}
                       {onEdit && userId && prog.created_by === userId && (
@@ -146,7 +147,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                           onClick={(e) => { e.stopPropagation(); onEdit(prog.id) }}
                           className="h-7 px-2.5 text-[10px] tracking-wide hover:border-lime hover:text-lime"
                         >
-                          EDITAR
+                          {t('programs.editUpper')}
                         </Button>
                       )}
                     </div>
@@ -163,7 +164,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
             onClick={onClose}
             className="w-full font-mono text-[11px] tracking-wide"
           >
-            CERRAR
+            {t('programs.closeUpper')}
           </Button>
         </DialogFooter>
       </DialogContent>

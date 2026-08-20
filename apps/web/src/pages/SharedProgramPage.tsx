@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../components/ui/button'
 import type { ProgramMeta } from '@calistenia/core/types'
@@ -87,6 +88,7 @@ function SharedLanding({
   onBack: () => void
   onLogin: () => void
 }) {
+  const { t } = useTranslation()
   const l = useLocalize()
   const [program, setProgram] = useState<PreviewProgram | null>(null)
   const [exercises, setExercises] = useState<PreviewExercise[]>([])
@@ -166,10 +168,10 @@ function SharedLanding({
             <line x1="9" y1="9" x2="15" y2="15" />
           </svg>
         </div>
-        <p className="text-muted-foreground text-sm mb-4">Programa no encontrado</p>
+        <p className="text-muted-foreground text-sm mb-4">{t('programs.notFound')}</p>
         <button onClick={onBack} className="text-[11px] font-mono tracking-widest text-muted-foreground hover:text-foreground transition-colors uppercase">
           <ArrowLeftIcon className="size-4 inline mr-1.5" />
-          Volver
+          {t('common.back')}
         </button>
       </div>
     )
@@ -180,13 +182,13 @@ function SharedLanding({
       {/* Back */}
       <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-10">
         <ArrowLeftIcon className="size-4" />
-        <span className="font-mono text-[11px] tracking-widest uppercase">Volver</span>
+        <span className="font-mono text-[11px] tracking-widest uppercase">{t('common.back')}</span>
       </button>
 
       {/* Badge */}
       <div className="inline-block mb-4">
         <span className="text-[10px] font-mono tracking-[0.3em] text-lime-400 bg-lime-400/10 px-3 py-1 rounded-full uppercase">
-          Programa compartido
+          {t('programs.sharedBadge')}
         </span>
       </div>
 
@@ -202,7 +204,7 @@ function SharedLanding({
         {program.duration_weeks > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-lime-400 font-bebas text-xl">{program.duration_weeks}</span>
-            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">semanas</span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programs.weeks')}</span>
           </div>
         )}
         {phaseCount > 0 && (
@@ -210,7 +212,7 @@ function SharedLanding({
             <div className="w-px h-5 bg-muted" />
             <div className="flex items-center gap-2">
               <span className="text-lime-400 font-bebas text-xl">{phaseCount}</span>
-              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">fase{phaseCount !== 1 ? 's' : ''}</span>
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programs.phaseUnit', { count: phaseCount })}</span>
             </div>
           </>
         )}
@@ -219,7 +221,7 @@ function SharedLanding({
             <div className="w-px h-5 bg-muted" />
             <div className="flex items-center gap-2">
               <span className="text-lime-400 font-bebas text-xl">{exercises.length}+</span>
-              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">ejercicios</span>
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('common.exercises')}</span>
             </div>
           </>
         )}
@@ -228,7 +230,7 @@ function SharedLanding({
       {/* Exercise preview list */}
       {exercises.length > 0 && (
         <div className="mb-10">
-          <h2 className="font-bebas text-xl tracking-widest mb-4 uppercase text-muted-foreground">Vista previa de ejercicios</h2>
+          <h2 className="font-bebas text-xl tracking-widest mb-4 uppercase text-muted-foreground">{t('programs.exercisePreview')}</h2>
           <div className="rounded-xl bg-muted/60 overflow-hidden divide-y divide-border/50">
             {exercises.map((ex, idx) => (
               <div key={idx} className="flex items-center gap-4 px-5 py-3.5">
@@ -256,14 +258,14 @@ function SharedLanding({
           onClick={onLogin}
           className="font-bebas text-lg tracking-widest px-8 h-12 shadow-lg shadow-lime-400/10"
         >
-          REGISTRATE PARA USAR ESTE PROGRAMA
+          {t('programs.signUpToUse')}
         </Button>
         <Button
           variant="outline"
           onClick={onLogin}
           className="font-mono text-[11px] tracking-widest h-12 px-6 border-border hover:border-muted-foreground hover:text-foreground"
         >
-          YA TENGO CUENTA
+          {t('programs.alreadyHaveAccount')}
         </Button>
       </div>
     </div>

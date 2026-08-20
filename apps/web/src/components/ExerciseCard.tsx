@@ -141,12 +141,12 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 <span className="text-[9px] text-pink-500 font-mono tracking-[0.5px] px-1.5 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">SS</span>
               )}
               {isComplete && (
-                <span className="text-[11px] text-emerald-500 font-mono tracking-[0.5px]">✓ COMPLETADO</span>
+                <span className="text-[11px] text-emerald-500 font-mono tracking-[0.5px]">{t('exercise.completedBadge')}</span>
               )}
             </div>
             <div className="flex gap-4 mb-1.5 flex-wrap">
               <span className="font-mono text-[12px] text-lime">{totalSets} × {exercise.reps}</span>
-              <span className="font-mono text-[11px] text-muted-foreground">descanso {exercise.rest}s</span>
+              <span className="font-mono text-[11px] text-muted-foreground">{t('common.rest')} {exercise.rest}s</span>
               <span className={cn('font-mono text-[10px] tracking-wide', PRIORITY_COLORS[exercise.priority]?.text)}>
                 {t(PRIORITY_LABEL_KEYS[exercise.priority])}
               </span>
@@ -180,7 +180,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
         {/* Progressive overload hint */}
         {lastLog && lastBestReps > 0 && setsLogged === 0 && (
           <div className="text-[11px] text-amber-400/80 bg-amber-400/5 rounded px-3 py-2 mt-2.5 border-l-2 border-amber-400/30">
-            {t('exercise.lastTime')} <strong>{lastBestReps}</strong> reps
+            {t('exercise.lastTime')} <strong>{lastBestReps}</strong> {t('common.reps')}
             {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
             {' — '}
             {lastBestWeight > 0

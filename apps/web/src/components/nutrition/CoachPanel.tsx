@@ -84,10 +84,10 @@ export function CoachPanel({
         <div className="flex items-center gap-3">
           <QualityScoreBadge score={dailyInsight.overallScore} size="lg" />
           <div>
-            <div className="text-sm font-medium">Score del dia</div>
+            <div className="text-sm font-medium">{t('nutrition.coachDailyScore')}</div>
             {dailyInsight.streaks && dailyInsight.streaks.currentGood > 1 && (
               <div className="text-xs text-green-400">
-                Racha: {dailyInsight.streaks.currentGood} dias seguidos
+                {t('nutrition.coachStreakDays', { count: dailyInsight.streaks.currentGood })}
               </div>
             )}
           </div>
@@ -155,6 +155,7 @@ function WeeklyCoachView({
   generating: boolean
   dayScores?: { date: string; dayLabel: string; score?: QualityScore }[]
 }) {
+  const { t } = useTranslation()
   if (generating) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -168,7 +169,7 @@ function WeeklyCoachView({
   if (!insight) {
     return (
       <div className="text-center py-6 text-sm text-muted-foreground">
-        No hay suficientes datos para el resumen semanal
+        {t('nutrition.coachNotEnoughWeekly')}
       </div>
     )
   }
@@ -179,7 +180,7 @@ function WeeklyCoachView({
       {insight.overallScore && (
         <div className="flex items-center gap-3">
           <QualityScoreBadge score={insight.overallScore} size="lg" />
-          <div className="text-sm font-medium">Score de la semana</div>
+          <div className="text-sm font-medium">{t('nutrition.coachWeeklyScore')}</div>
         </div>
       )}
 

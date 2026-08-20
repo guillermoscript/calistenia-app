@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { op } from '@calistenia/core/lib/analytics'
 
 const DISMISS_KEY = 'calistenia_install_dismiss'
@@ -26,7 +27,24 @@ function getBrowserInfo(): { isFirefox: boolean; isSafari: boolean; isChromium: 
   }
 }
 
+type BrowserInfo = ReturnType<typeof getBrowserInfo>
+
+// Las seis condiciones originales eran excluyentes entre sí (`isSafari` exige
+// que no haya «Chrome» en el UA, y el Firefox de escritorio no manda el token
+// «Safari»), así que una cadena ordenada renderiza exactamente lo mismo. El
+// último caso hace de fallback: antes, un navegador que no casara con ninguna
+// pintaba el hueco vacío.
+function manualGuideKey(browser: BrowserInfo): string {
+  if (browser.isIOS && browser.isSafari) return 'install.guideIosSafari'
+  if (browser.isIOS && browser.isFirefox) return 'install.guideIosFirefox'
+  if (browser.isAndroid && browser.isFirefox) return 'install.guideAndroidFirefox'
+  if (!browser.isIOS && !browser.isAndroid && browser.isFirefox) return 'install.guideDesktopFirefox'
+  if (!browser.isIOS && !browser.isAndroid && browser.isSafari) return 'install.guideDesktopSafari'
+  return 'install.guideGeneric'
+}
+
 export default function InstallPrompt() {
+  const { t } = useTranslation()
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
   const [showPrompt, setShowPrompt] = useState(false)
   const [showManualGuide, setShowManualGuide] = useState(false)
@@ -91,16 +109,16 @@ export default function InstallPrompt() {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground">
-              Instala Calistenia como app
+              {t('install.title')}
             </p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Recibe notificaciones, accede sin conexion y abre mas rapido desde tu pantalla de inicio
+              {t('install.body')}
             </p>
           </div>
           <button
             onClick={handleDismiss}
             className="text-muted-foreground hover:text-foreground text-lg leading-none p-1"
-            aria-label="Cerrar"
+            aria-label={t('common.close')}
           >
             &times;
           </button>
@@ -108,31 +126,19 @@ export default function InstallPrompt() {
 
         {showManualGuide ? (
           <div className="mt-3">
-            <div className="text-[11px] text-muted-foreground leading-relaxed">
-              {browser.isIOS && browser.isSafari && (
-                <>Toca el boton <strong className="text-foreground">Compartir</strong> (cuadrado con flecha) y luego <strong className="text-foreground">Agregar a inicio</strong></>
-              )}
-              {browser.isIOS && browser.isFirefox && (
-                <>Abre esta pagina en <strong className="text-foreground">Safari</strong>, toca <strong className="text-foreground">Compartir</strong> y luego <strong className="text-foreground">Agregar a inicio</strong></>
-              )}
-              {browser.isAndroid && browser.isFirefox && (
-                <>Toca el menu <strong className="text-foreground">⋮</strong> y selecciona <strong className="text-foreground">Instalar</strong> o <strong className="text-foreground">Agregar a inicio</strong></>
-              )}
-              {!browser.isIOS && !browser.isAndroid && browser.isFirefox && (
-                <>Abre el menu y busca <strong className="text-foreground">Instalar este sitio como aplicacion</strong> en la barra de direcciones</>
-              )}
-              {!browser.isIOS && !browser.isAndroid && browser.isSafari && (
-                <>Ve a <strong className="text-foreground">Archivo → Agregar al Dock</strong> para instalar como app</>
-              )}
-              {!browser.isFirefox && !browser.isSafari && !browser.isIOS && (
-                <>Busca el icono de instalar en la barra de direcciones de tu navegador</>
-              )}
-            </div>
+            {/* El `<strong>` va dentro del valor traducido: partir la frase en
+                trozos deja al traductor sin la oración completa y el orden de
+                las palabras cambia entre idiomas. Mismo patrón que
+                `programs.chooseToStartDesc` en ProgramsPage. */}
+            <div
+              className="text-[11px] text-muted-foreground leading-relaxed [&_strong]:text-foreground"
+              dangerouslySetInnerHTML={{ __html: t(manualGuideKey(browser)) }}
+            />
             <button
               onClick={handleDismiss}
               className="mt-3 w-full text-sm text-muted-foreground hover:text-foreground py-2 transition-colors"
             >
-              Entendido
+              {t('install.gotIt')}
             </button>
           </div>
         ) : (
@@ -141,13 +147,13 @@ export default function InstallPrompt() {
               onClick={handleInstall}
               className="flex-1 bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-lime-foreground text-sm font-semibold rounded-lg px-4 py-2 transition-colors"
             >
-              Instalar
+              {t('install.install')}
             </button>
             <button
               onClick={handleDismiss}
               className="text-sm text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
             >
-              Ahora no
+              {t('install.notNow')}
             </button>
           </div>
         )}

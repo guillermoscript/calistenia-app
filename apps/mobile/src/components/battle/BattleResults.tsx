@@ -18,6 +18,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, ScrollView, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { RotateCcw } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -35,6 +36,7 @@ import { findBattlePreset } from '@calistenia/core/data/battle-presets'
 
 export default function BattleResults() {
   const { t } = useTranslation()
+  const l = useLocalize()
   const router = useRouter()
   const user = useAuthUser()
   const { snapshot, standings, phase, isCreator, busy, actions } = useBattleContext()
@@ -76,7 +78,7 @@ export default function BattleResults() {
   // con plancha enseña los segundos que aguantó cada uno.
   const columns = battleWorkColumns(snapshot?.battle.config)
   const preset = findBattlePreset(snapshot?.battle.config?.workout_template_id ?? '')
-  const circuitName = preset?.name.es ?? t('battle.title')
+  const circuitName = (preset && l(preset.name)) || t('battle.title')
 
   const headline = headlineFor(t, result.state, result.outcome)
 

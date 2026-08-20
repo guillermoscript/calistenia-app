@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import SessionForm, { type UserContext } from './SessionForm'
@@ -89,26 +90,33 @@ function parseExercisesFromText(text: string): AIExercise[] {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const SUGGESTIONS = [
-  'Más core',
-  'Más fácil',
-  'Menos tiempo',
-  'Agregar calentamiento',
+// Los mapas guardan CLAVES de i18n, no texto: el valor se resuelve con `t()`
+// al pintar, así un cambio de idioma no exige recargar el módulo. Mismo patrón
+// que `PRIORITY_LABEL_KEYS` en ExerciseCard.
+const SUGGESTION_KEYS = [
+  'freeSession.aiSuggestMoreCore',
+  'freeSession.aiSuggestEasier',
+  'freeSession.aiSuggestShorter',
+  'freeSession.aiSuggestWarmup',
 ]
 
-const GOAL_LABELS: Record<string, string> = {
-  fuerza: 'Fuerza', resistencia: 'Resistencia', movilidad: 'Movilidad',
-  yoga: 'Yoga', circuito: 'Circuito', mixto: 'Mixto',
+const GOAL_LABEL_KEYS: Record<string, string> = {
+  fuerza: 'freeSession.goalStrength', resistencia: 'freeSession.goalEndurance',
+  movilidad: 'freeSession.goalMobility', yoga: 'freeSession.goalYoga',
+  circuito: 'freeSession.goalCircuit', mixto: 'freeSession.goalMixed',
 }
 
-const LOCATION_LABELS: Record<string, string> = {
-  casa: 'Casa', parque: 'Parque', gimnasio: 'Gimnasio',
+const LOCATION_LABEL_KEYS: Record<string, string> = {
+  casa: 'freeSession.locationHome', parque: 'freeSession.locationPark',
+  gimnasio: 'freeSession.locationGym',
 }
 
-const SEARCH_LABELS: Record<string, string> = {
-  push: 'empuje', pull: 'tirón', legs: 'piernas', core: 'core',
-  lumbar: 'lumbar', full: 'cuerpo completo', skill: 'skills',
-  movilidad: 'movilidad', yoga: 'yoga',
+const SEARCH_LABEL_KEYS: Record<string, string> = {
+  push: 'freeSession.searchPush', pull: 'freeSession.searchPull',
+  legs: 'freeSession.searchLegs', core: 'freeSession.searchCore',
+  lumbar: 'freeSession.searchLumbar', full: 'freeSession.searchFull',
+  skill: 'freeSession.searchSkill', movilidad: 'freeSession.searchMobility',
+  yoga: 'freeSession.searchYoga',
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -136,15 +144,17 @@ function UserAvatar({ className }: { className?: string }) {
 }
 
 function SessionContext({ context }: { context: UserContext }) {
+  const { t } = useTranslation()
+  // Sin clave conocida cae al valor crudo, que es el que llegó del formulario.
   const parts = [
-    GOAL_LABELS[context.goal] || context.goal,
+    GOAL_LABEL_KEYS[context.goal] ? t(GOAL_LABEL_KEYS[context.goal]) : context.goal,
     `${context.availableTime} min`,
-    LOCATION_LABELS[context.location] || context.location,
+    LOCATION_LABEL_KEYS[context.location] ? t(LOCATION_LABEL_KEYS[context.location]) : context.location,
   ]
   return (
     <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1 pb-1">
       <CoachAvatar className="size-5 [&_svg]:size-3" />
-      <span className="font-medium text-foreground/70">Coach IA</span>
+      <span className="font-medium text-foreground/70">{t('freeSession.aiCoachName')}</span>
       <span className="text-muted-foreground/40">·</span>
       <span>{parts.join(' · ')}</span>
     </div>
@@ -153,13 +163,14 @@ function SessionContext({ context }: { context: UserContext }) {
 
 /** Renders a search_exercises tool invocation inline */
 function SearchToolUI({ part }: { part: any }) {
+  const { t } = useTranslation()
   const args = part.args || {}
   const state = part.state as string
   const isLoading = state !== 'result'
 
   const label = args.category
-    ? SEARCH_LABELS[args.category] || args.category
-    : args.muscles || 'ejercicios'
+    ? (SEARCH_LABEL_KEYS[args.category] ? t(SEARCH_LABEL_KEYS[args.category]) : args.category)
+    : args.muscles || t('common.exercises')
 
   const resultCount = state === 'result' ? part.result?.found : null
 
@@ -171,12 +182,12 @@ function SearchToolUI({ part }: { part: any }) {
         <SearchIcon className="size-3 text-lime/50" />
       )}
       <span>
-        {isLoading ? 'Buscando' : 'Buscó'} {label}
+        {isLoading ? t('common.searchingShort') : t('freeSession.aiSearched')} {label}
         {args.equipment && ` · ${args.equipment}`}
       </span>
       {resultCount !== null && (
         <span className="text-muted-foreground/50">
-          → {resultCount} encontrados
+          → {t('freeSession.aiFoundCount', { count: resultCount })}
         </span>
       )}
     </div>
@@ -190,6 +201,7 @@ function SessionToolUI({ part, onRemove, onReorder, onAdd }: {
   onReorder: (from: number, to: number) => void
   onAdd: (ex: AIExercise) => void
 }) {
+  const { t } = useTranslation()
   const state = part.state as string
   const isLoading = state !== 'result'
   const result = part.result as CreateSessionResult | undefined
@@ -200,7 +212,7 @@ function SessionToolUI({ part, onRemove, onReorder, onAdd }: {
         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-lime/15 text-lime animate-pulse">
           <DumbbellIcon className="size-4" />
         </div>
-        <Shimmer className="text-sm">Armando tu sesión...</Shimmer>
+        <Shimmer className="text-sm">{t('freeSession.aiBuilding')}</Shimmer>
       </div>
     )
   }
@@ -209,7 +221,7 @@ function SessionToolUI({ part, onRemove, onReorder, onAdd }: {
     return (
       <div className="flex items-center gap-2.5 text-sm text-muted-foreground py-2">
         <DumbbellIcon className="size-4 text-amber-400" />
-        <span>No se pudo generar la sesión. Intenta con otros parámetros.</span>
+        <span>{t('freeSession.aiGenerateFailed')}</span>
       </div>
     )
   }
@@ -221,11 +233,11 @@ function SessionToolUI({ part, onRemove, onReorder, onAdd }: {
       </div>
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-lime">Sesión generada</span>
+          <span className="text-xs font-medium text-lime">{t('freeSession.aiSessionReady')}</span>
           <CheckCircleIcon className="size-3.5 text-lime/70" />
           {result.invalid_ids && result.invalid_ids.length > 0 && (
             <span className="text-[10px] text-amber-400">
-              ({result.invalid_ids.length} no encontrados)
+              {t('freeSession.aiNotFoundCount', { count: result.invalid_ids.length })}
             </span>
           )}
         </div>
@@ -248,6 +260,7 @@ function ChatInput({ value, onChange, onSubmit, status, disabled }: {
   status: 'ready' | 'submitted' | 'streaming' | 'error'
   disabled: boolean
 }) {
+  const { t } = useTranslation()
   const isGenerating = status === 'submitted' || status === 'streaming'
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -272,7 +285,7 @@ function ChatInput({ value, onChange, onSubmit, status, disabled }: {
         value={value}
         onChange={e => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Pide cambios... (más core, quita dominadas, etc.)"
+        placeholder={t('freeSession.aiChatPlaceholder')}
         rows={1}
         className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none min-h-[24px] max-h-[120px] py-0.5"
       />
@@ -304,6 +317,7 @@ function ChatInput({ value, onChange, onSubmit, status, disabled }: {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function AISessionTab() {
+  const { t } = useTranslation()
   const [input, setInput] = useState('')
   const [localExercises, setLocalExercises] = useState<AIExercise[] | null>(null)
   const userContextRef = useRef<UserContext | null>(null)
@@ -408,9 +422,9 @@ export default function AISessionTab() {
         <div className="mb-4 flex items-start gap-3">
           <CoachAvatar className="mt-0.5" />
           <div>
-            <div className="text-sm font-medium text-foreground">Coach IA</div>
+            <div className="text-sm font-medium text-foreground">{t('freeSession.aiCoachName')}</div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Configura tu sesión y te armo una rutina personalizada.
+              {t('freeSession.aiCoachIntro')}
             </p>
           </div>
         </div>
@@ -504,7 +518,7 @@ export default function AISessionTab() {
                     </div>
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-lime">Sesión generada</span>
+                        <span className="text-xs font-medium text-lime">{t('freeSession.aiSessionReady')}</span>
                         <CheckCircleIcon className="size-3.5 text-lime/70" />
                       </div>
                       <SessionPreview
@@ -536,7 +550,7 @@ export default function AISessionTab() {
                   </div>
                   <Message from="assistant">
                     <MessageContent>
-                      <Shimmer className="text-sm">Buscando ejercicios...</Shimmer>
+                      <Shimmer className="text-sm">{t('freeSession.aiSearching')}</Shimmer>
                     </MessageContent>
                   </Message>
                 </div>
@@ -550,7 +564,7 @@ export default function AISessionTab() {
             <div className="flex items-start gap-2.5">
               <CoachAvatar className="mt-1 bg-red-500/15 text-red-400" />
               <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
-                Error generando sesión. Intenta de nuevo.
+                {t('freeSession.aiError')}
               </div>
             </div>
           )}
@@ -562,13 +576,13 @@ export default function AISessionTab() {
       <div className="shrink-0 pt-3 space-y-2.5 pb-1">
         {!isStreaming && hasMessages && (
           <div className="flex flex-wrap gap-1.5">
-            {SUGGESTIONS.map(s => (
+            {SUGGESTION_KEYS.map(key => (
               <button
-                key={s}
-                onClick={() => handleSuggestion(s)}
+                key={key}
+                onClick={() => handleSuggestion(t(key))}
                 className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-lime/30 hover:bg-lime/5 transition-colors"
               >
-                {s}
+                {t(key)}
               </button>
             ))}
           </div>
