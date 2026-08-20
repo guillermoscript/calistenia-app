@@ -25,7 +25,7 @@ export function useUserCurrency(userId: string | null) {
     queryKey: qk.pantry.currency(userId),
     enabled: !!userId,
     queryFn: async (): Promise<UserCurrencyPrefs> => {
-      const rec = (await pb.collection('users').getOne(userId!)) as Record<string, any>
+      const rec = (await pb.collection('users').getOne(userId!, { requestKey: null })) as Record<string, any>
       const rates: Record<string, number> = {}
       if (rec.currency_rates && typeof rec.currency_rates === 'object') {
         for (const [k, v] of Object.entries(rec.currency_rates)) {

@@ -51,7 +51,7 @@ function useCatalog() {
       const available = await isPocketBaseAvailable()
       if (available) {
         try {
-          const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
+          const res = await pb.collection('exercises_catalog').getList(1, 500, { requestKey: null, sort: 'name' })
           if (!cancelled && res.items.length > 0) {
             setCatalog(
               res.items.map((r) => ({

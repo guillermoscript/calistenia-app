@@ -117,7 +117,7 @@ export default function ProfileScreen() {
     ;(async () => {
       try {
         // Peso/altura/actividad viven en `users` (no ocultos).
-        const rec: any = await pb.collection('users').getOne(user.id)
+        const rec: any = await pb.collection('users').getOne(user.id, { requestKey: null })
         if (cancelled) return
         const body = bodyFromUserRecord(rec)
         setWeight(body.weight)

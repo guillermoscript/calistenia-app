@@ -39,6 +39,7 @@ export function useBodyPhotos(userId: string | null = null): UseBodyPhotosReturn
       if (!available || !userId) return []
 
       const res = await pb.collection('body_photos').getList(1, 200, {
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId }),
         sort: '-date',
       })

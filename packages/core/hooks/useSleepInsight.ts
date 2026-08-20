@@ -21,6 +21,7 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
+import { isAutoCancelError } from '../lib/pocketbase-errors'
 import { aiApiFetch } from '../lib/ai-api'
 import { qk } from '../lib/query-keys'
 import { buildInsightContext } from '../lib/buildInsightContext'
@@ -67,7 +68,7 @@ function mapInsight(rec: any): SleepInsight {
  * visible nunca incluye datos de usuario.
  */
 function reportInsightError(op: string, periodType: SleepInsightPeriodType, err: unknown) {
-  if ((err as any)?.isAbort) return
+  if (isAutoCancelError(err)) return
   const status = (err as any)?.status ?? (err as any)?.response?.status
   const wrapped = new Error(
     `[sleep-insight] ${op} failed (period=${periodType}${status != null ? `, pbStatus=${status}` : ''})`,

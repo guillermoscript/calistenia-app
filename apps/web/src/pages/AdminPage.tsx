@@ -44,7 +44,7 @@ export default function AdminPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const usersRes = await pb.collection('users').getList(1, 1)
+        const usersRes = await pb.collection('users').getList(1, 1, { requestKey: null })
         const officialCount = programs.filter(p => p.is_official).length
         setStats({
           totalUsers: usersRes.totalItems,
@@ -66,6 +66,7 @@ export default function AdminPage() {
     try {
       const q = searchQuery.trim()
       const res = await pb.collection('users').getList(1, 50, {
+        requestKey: null,
         filter: pb.filter('email ~ {:q} || display_name ~ {:q}', { q }),
         sort: '-created',
       })

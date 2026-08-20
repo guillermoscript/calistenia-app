@@ -24,6 +24,7 @@ export function useFoodHistory(userId: string | null) {
         queryFn: async () => {
           try {
             const res = await pb.collection('food_history').getList(1, limit, {
+              requestKey: null,
               filter: pb.filter('user = {:uid}', { uid: userId }),
               sort: '-last_used_at',
             })
@@ -49,6 +50,7 @@ export function useFoodHistory(userId: string | null) {
             const hours = [Math.max(0, hour - 1), hour, Math.min(23, hour + 1)]
             const hourFilter = hours.map(h => `logged_hour = ${h}`).join(' || ')
             const res = await pb.collection('food_history').getList(1, 10, {
+              requestKey: null,
               filter: pb.filter(
                 `user = {:uid} && usage_count >= 2 && (${hourFilter})`,
                 { uid: userId },
@@ -81,6 +83,7 @@ export function useFoodHistory(userId: string | null) {
       // Busca registro existente por nombre de alimento + usuario
       const name = food.name.toLowerCase().trim()
       const existing = await pb.collection('food_history').getList(1, 1, {
+        requestKey: null,
         filter: pb.filter('user = {:uid} && food_data.name ~ {:name}', {
           uid: userId,
           name,

@@ -121,6 +121,7 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
     queryFn: async () => {
       // getFullList elimina el límite implícito de 500: obtiene todas las entradas del usuario
       const res = await pb.collection('sleep_entries').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-date',
       })

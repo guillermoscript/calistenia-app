@@ -90,7 +90,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       const available = await isPocketBaseAvailable()
       if (!available) return
       try {
-        const user = await pb.collection('users').getOne(userId)
+        const user = await pb.collection('users').getOne(userId, { requestKey: null })
         const weight = user.weight || undefined
         const goalWeight = user.goal_weight || undefined
         // Edad/sexo ya no existen en `users` (PII → nutrition_goals); el wizard

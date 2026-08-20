@@ -18,6 +18,7 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
+import { isAutoCancelError } from '../lib/pocketbase-errors'
 import { aiApiFetch } from '../lib/ai-api'
 import { qk } from '../lib/query-keys'
 import { buildInsightContext } from '../lib/buildInsightContext'
@@ -90,7 +91,7 @@ function mapInsight(rec: any): CrossInsight {
  */
 function reportInsightError(op: string, periodType: InsightPeriodType, err: unknown) {
   // Sin PII: solo op + periodType + código de estado PB.
-  if ((err as any)?.isAbort) return
+  if (isAutoCancelError(err)) return
   const status = (err as any)?.status ?? (err as any)?.response?.status
   const wrapped = new Error(
     `[cross-insights] ${op} failed (period=${periodType}${status != null ? `, pbStatus=${status}` : ''})`,

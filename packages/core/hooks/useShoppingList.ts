@@ -68,7 +68,7 @@ export function useShoppingCadence(userId: string | null) {
     queryKey: qk.shopping.cadence(userId),
     enabled: !!userId,
     queryFn: async (): Promise<number> => {
-      const rec = (await pb.collection('users').getOne(userId!)) as Record<string, any>
+      const rec = (await pb.collection('users').getOne(userId!, { requestKey: null })) as Record<string, any>
       const n = Number(rec.shopping_cadence_days)
       return n > 0 ? n : DEFAULT_CADENCE
     },
@@ -106,6 +106,7 @@ export function useGenerateShoppingList(userId: string | null) {
     mutationFn: async ({ planIngredients, linkedPlan, horizonDays, lastPurchaseDate }: GenerateInput): Promise<ShoppingList> => {
       if (!userId) throw new Error('No user')
       const pantryAll = (await pb.collection('pantry_items').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid}', { uid: userId }),
         sort: '-created',
       })) as Record<string, any>[]
@@ -324,6 +325,7 @@ export function useCompletePurchase(userId: string | null) {
       const today = todayStr()
       const pantryAll = (
         await pb.collection('pantry_items').getFullList({
+          requestKey: null,
           filter: pb.filter('user = {:uid}', { uid: userId }),
           sort: '-created',
         })

@@ -135,6 +135,7 @@ async function mergeSleepEntries(userId: string, sleep: hc.SleepSample[]): Promi
   if (dates.length === 0) return 0
   const minDay = dates.reduce((a, b) => (a < b ? a : b))
   const existing = await pb.collection('sleep_entries').getFullList({
+    requestKey: null,
     filter: pb.filter('user = {:uid} && date >= {:d}', { uid: userId, d: `${minDay} 00:00:00` }),
     fields: 'id,date,source',
   })
@@ -178,6 +179,7 @@ async function mergeWeightEntries(
   if (dates.length === 0) return 0
   const minDay = dates.reduce((a, b) => (a < b ? a : b))
   const existing = await pb.collection('weight_entries').getFullList({
+    requestKey: null,
     filter: pb.filter('user = {:uid} && date >= {:d}', { uid: userId, d: `${minDay} 00:00:00` }),
     fields: 'id,date,source',
   })
@@ -282,6 +284,7 @@ async function mergeSessionMetrics(
   // cardio + circuit: ventana exacta por started_at/finished_at (texto ISO)
   for (const coll of ['cardio_sessions', 'circuit_sessions']) {
     const rows = await pb.collection(coll).getFullList({
+      requestKey: null,
       filter: pb.filter('user = {:uid} && started_at >= {:s}', { uid: userId, s: rangeStartISO }),
       fields: 'id,started_at,finished_at,hr_avg',
     })
@@ -299,6 +302,7 @@ async function mergeSessionMetrics(
 
   // fuerza/yoga: ventana aproximada con completed_at - duration_seconds
   const strength = await pb.collection('sessions').getFullList({
+    requestKey: null,
     filter: pb.filter('user = {:uid} && completed_at >= {:s}', { uid: userId, s: rangeStartISO }),
     fields: 'id,completed_at,duration_seconds,hr_avg',
   })
@@ -380,6 +384,7 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     if (dates.size > 0) {
       const startDay = localDay(range.startTime)
       const existing = await pb.collection('daily_health_cache').getFullList({
+        requestKey: null,
         filter: pb.filter('user = {:uid} && date >= {:d}', { uid: opts.userId, d: startDay }),
       })
       const byDate = new Map<string, { id: string }>(

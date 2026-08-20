@@ -272,7 +272,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                     const recordId = await importExercise(wgerId)
                     setImportedIds(prev => new Set(prev).add(wgerId))
                     // Fetch the created record and add to program
-                    const rec = await pb.collection('exercises_catalog').getOne(recordId)
+                    const rec = await pb.collection('exercises_catalog').getOne(recordId, { requestKey: null })
                     onAdd({
                       exerciseId: catalogExerciseIdentity(rec),
                       name: l(rec.name),

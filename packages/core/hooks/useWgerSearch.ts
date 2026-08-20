@@ -51,7 +51,7 @@ export function useWgerSearch() {
   const importExercise = useCallback(async (wgerId: number, language = 'es'): Promise<string> => {
     // Deduplicación: si ya existe en catálogo local, devolver su id
     try {
-      const existing = await pb.collection('exercises_catalog').getFirstListItem(pb.filter('wger_id = {:wgerId}', { wgerId }))
+      const existing = await pb.collection('exercises_catalog').getFirstListItem(pb.filter('wger_id = {:wgerId}', { wgerId }), { requestKey: null })
       if (existing) return existing.id
     } catch {
       // No encontrado — continuar con la importación
