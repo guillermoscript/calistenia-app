@@ -1,6 +1,531 @@
 {
-  "generated": "2026-08-13T22:16:54.884Z",
+  "generated": "2026-08-20T21:52:25.089Z",
   "versions": [
+    {
+      "version": "1.10.1",
+      "date": "2026-08-21",
+      "summary": {
+        "es": "Widgets en la pantalla de inicio para la racha, las comidas, el agua y tu próxima sesión; cuentas privadas con aprobación de seguidores; resultados de batalla con revancha y tarjeta para compartir; y un buen puñado de arreglos en cardio y en el guardado sin conexión.",
+        "en": "Home-screen widgets for your streak, meals, water and next session; private accounts with follower approval; battle results with rematch and a share card; and a solid batch of fixes to cardio and offline saving."
+      },
+      "highlights": [
+        {
+          "icon": "📱",
+          "type": "feat",
+          "title": {
+            "es": "Widgets en la pantalla de inicio",
+            "en": "Home-screen widgets"
+          },
+          "body": {
+            "es": "Añade a tu pantalla de inicio la racha (también en formato 2x2, ahora con la racha real), la racha de comidas, el agua que llevas y tu próxima sesión. El widget de hoy muestra más información de un vistazo.",
+            "en": "Add your streak (also as a 2x2, now showing the real current streak), your meal streak, today's water and your next session to your home screen. The Today widget shows more at a glance."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "feat",
+          "title": {
+            "es": "Cuentas privadas",
+            "en": "Private accounts"
+          },
+          "body": {
+            "es": "Puedes hacer tu cuenta privada: quien quiera seguirte tendrá que pedírtelo y tú apruebas o rechazas. El servidor es quien decide qué se muestra, así que tus entrenos no salen en el muro ni en los rankings de quien no apruebes.",
+            "en": "You can now make your account private: anyone who wants to follow you has to ask, and you approve or decline. The server decides what is visible, so your workouts stay out of the feed and leaderboards of anyone you haven't approved."
+          }
+        },
+        {
+          "icon": "⚔️",
+          "type": "feat",
+          "title": {
+            "es": "Batallas: resultados, revancha y tarjeta",
+            "en": "Battles: results, rematch and share card"
+          },
+          "body": {
+            "es": "Al acabar una batalla ves un resumen con el puesto de cada uno, puedes pedir revancha con un toque y compartir la tarjeta del resultado. Los empates se muestran como tal en el marcador, la espera y el historial, y el trabajo por tiempo aparece en el marcador.",
+            "en": "When a battle ends you get a results screen with everyone's placing, a one-tap rematch and a share card. Ties now show as ties on the scoreboard, the waiting room and history, and timed work shows up on the scoreboard."
+          }
+        },
+        {
+          "icon": "🏆",
+          "type": "feat",
+          "title": {
+            "es": "Retos: Push-up Builder y detalle renovado",
+            "en": "Challenges: Push-up Builder and a new detail view"
+          },
+          "body": {
+            "es": "Nuevo reto listo para unirse, Push-up Builder, con puntuación acumulada. El detalle del reto tiene ahora dos vistas, meta y ranking, y los retos caducados se cierran solos en el servidor en vez de quedarse abiertos.",
+            "en": "A new ready-made challenge, Push-up Builder, with cumulative scoring. The challenge detail now has two views, goal and ranking, and expired challenges are closed automatically on the server instead of lingering open."
+          }
+        },
+        {
+          "icon": "🖼️",
+          "type": "feat",
+          "title": {
+            "es": "Foto de perfil desde la app",
+            "en": "Profile photo from the app"
+          },
+          "body": {
+            "es": "Cambia tu foto de perfil directamente desde el móvil, sin pasar por la web.",
+            "en": "Change your profile photo right from your phone, no need to go through the web."
+          }
+        },
+        {
+          "icon": "📶",
+          "type": "fix",
+          "title": {
+            "es": "Guardado sin conexión más fiable",
+            "en": "More reliable offline saving"
+          },
+          "body": {
+            "es": "Las series, las sesiones y los circuitos que no pueden guardarse por falta de cobertura se encolan y se reintentan solos cuando vuelve la conexión.",
+            "en": "Sets, sessions and circuits that can't be saved without signal are queued and retried on their own once you're back online."
+          }
+        },
+        {
+          "icon": "🏃",
+          "type": "fix",
+          "title": {
+            "es": "Cardio: historial y sesiones accidentales",
+            "en": "Cardio: history and accidental sessions"
+          },
+          "body": {
+            "es": "El historial de cardio y otras listas podían aparecer vacías al entrar: arreglado. Si paras una sesión de cardio a los pocos segundos se descarta en vez de guardarse como un entreno de 0 metros, y los textos en inglés que se colaban en cardio y carreras están traducidos.",
+            "en": "The cardio history and some other lists could show up empty on open — fixed. Stopping a cardio session after a few seconds now discards it instead of saving a 0-metre workout, and the stray English text in cardio and races is translated."
+          }
+        },
+        {
+          "icon": "🎨",
+          "type": "fix",
+          "title": {
+            "es": "Pequeños arreglos",
+            "en": "Small fixes"
+          },
+          "body": {
+            "es": "El texto sobre el color lima se lee bien en modo claro, los chevrones plegables giran como deben, las notificaciones push siguen llegando al cambiar de cuenta en el mismo móvil y guardar un programa ya no borra y recrea sus días.",
+            "en": "Text on the lime colour is readable in light mode, collapsible chevrons rotate properly, push notifications keep arriving after switching accounts on the same phone, and saving a program no longer deletes and recreates its days."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Widgets de racha de comidas, agua y próxima sesión (#230) (#551)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "585d4c9"
+            },
+            {
+              "description": "Widget de racha 2x2, racha actual real y TodayWidget más completo (closes #229) (#533)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "03138e8"
+            },
+            {
+              "description": "Cerrar los retos caducados en el servidor con un cron (closes #515) (#529)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "b4d1a2c"
+            },
+            {
+              "description": "Version gate, telemetría de versiones y política de esquema (#509)",
+              "scope": "platform",
+              "breaking": false,
+              "hash": "a8ae6ef"
+            },
+            {
+              "description": "Cuentas privadas con aprobación en el servidor (refs #422) (#505)",
+              "scope": "privacy",
+              "breaking": false,
+              "hash": "b761486"
+            },
+            {
+              "description": "Activar el preset Push-up Builder con puntuación acumulada (refs #345) (#446)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "4fffa71"
+            },
+            {
+              "description": "Battle results, rematch, share card and analytics (#443)",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "a5aa7c8"
+            },
+            {
+              "description": "Ramificar el detalle en dos layouts, meta y ranking (#383) (#431)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "0293bf8"
+            },
+            {
+              "description": "Subir la foto de perfil desde la app (#434)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "880e2f0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Deduplicar shiki quitando la dependencia directa huérfana (#558) (#570)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "ebefa2e"
+            },
+            {
+              "description": "Renderizar la UI de herramientas del chat de IA con las tool parts del AI SDK v7 (#557) (#569)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "7becad8"
+            },
+            {
+              "description": "Descartar sesiones de cardio accidentales en vez de guardarlas (#562) (#567)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "61377d7"
+            },
+            {
+              "description": "RequestKey en las lecturas concurrentes que se auto-cancelaban (#565) (#566)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "79c07c6"
+            },
+            {
+              "description": "RequestKey en las consultas de cardio_sessions que se auto-cancelaban (#559) (#564)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "1155cfd"
+            },
+            {
+              "description": "Traducir los valores en inglés del locale es en cardio y carreras (#560) (#563)",
+              "scope": "core,web",
+              "breaking": false,
+              "hash": "7d297dc"
+            },
+            {
+              "description": "--lime-foreground casi-negro en modo claro para cumplir AA (closes #548) (#549)",
+              "scope": "web,mobile",
+              "breaking": false,
+              "hash": "841ed7e"
+            },
+            {
+              "description": "Reportar a Sentry el fallo del reintento del push de carrera (closes #545) (#546)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "c2382ed"
+            },
+            {
+              "description": "Pasar requestKey: null en las escrituras paralelas de PocketBase (closes #536) (#537)",
+              "scope": "core,web",
+              "breaking": false,
+              "hash": "8251082"
+            },
+            {
+              "description": "Los temporizadores de sesión sobre usePausableCountdown (#469) (#516)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "058b9be"
+            },
+            {
+              "description": "Unificar catálogo de ejercicios y recuperar difficulty (closes #474) (#527)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "23d60aa"
+            },
+            {
+              "description": "Usar processCardioFix() de core en el cardio web (closes #467) (#522)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "bf37d00"
+            },
+            {
+              "description": "Ocultar restos de depuración en cardio/carreras (closes #454) (#519)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "cb7d123"
+            },
+            {
+              "description": "Mover session-machine a core y unificar buildSteps, sets: 0 → 0 pasos (#452) (#520)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "dd61ab2"
+            },
+            {
+              "description": "Registrar en USER_SCOPED_STORAGE_KEYS las 7 claves de sesión activa/colas (#456) (#521)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "7446e7e"
+            },
+            {
+              "description": "Cortar el bucle infinito de refetch del auto-cierre (closes #451) (#511)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "731d9d5"
+            },
+            {
+              "description": "Derivar empates con battleDisplayRanks en marcador, espera e historial (closes #453) (#510)",
+              "scope": "battle",
+              "breaking": false,
+              "hash": "3f4db14"
+            },
+            {
+              "description": "Encadenar e.next() en referral_side_effects + guardarrail estatico (closes #457) (#508)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "de37fb7"
+            },
+            {
+              "description": "Restaurar los emoji de medalla en el ranking (refs #455) (#507)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "c3d4ca0"
+            },
+            {
+              "description": "Pasar actorId en los pushes de batalla y no filtrar el email (closes #458) (#506)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "b749c43"
+            },
+            {
+              "description": "Usar la cola offline de core para las sesiones de circuito (#464) (#493)",
+              "scope": "circuit",
+              "breaking": false,
+              "hash": "9134626"
+            },
+            {
+              "description": "Notificar circuit_sessions (#459) (#490)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "5459000"
+            },
+            {
+              "description": "Reconciliar el guardado del editor de programas en vez de borrar y recrear (#463) (#494)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "ed46e0a"
+            },
+            {
+              "description": "Reutilizar cálculo canónico de macros (#460) (#491)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "64f3df4"
+            },
+            {
+              "description": "Vincular parámetros en los filtros de PocketBase (#461) (#492)",
+              "scope": "security",
+              "breaking": false,
+              "hash": "f4ee39c"
+            },
+            {
+              "description": "Cerrar la fuga de la suscripción realtime y estabilizar la key de useProgress (#462) (#489)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "d0283d0"
+            },
+            {
+              "description": "Añadir las claves que se pintaban en crudo y un guardarraíl código→locales (closes #444) (#445)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "91c0b1e"
+            },
+            {
+              "description": "Reintentar las series y las sesiones por la cola offline (closes #301) (#441)",
+              "scope": "offline",
+              "breaking": false,
+              "hash": "01b1712"
+            },
+            {
+              "description": "Que los chevrons plegables se vean al girarlos (#435) (#436)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "ec1d9f6"
+            },
+            {
+              "description": "Mostrar el trabajo por tiempo en el marcador de una batalla (#426) (#429)",
+              "scope": "battle",
+              "breaking": false,
+              "hash": "8ad68c7"
+            },
+            {
+              "description": "Separar la etiqueta de despertares del sufijo con número (#420) (#430)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "503e178"
+            },
+            {
+              "description": "Reasignar el token cuando el dispositivo cambia de cuenta (#428)",
+              "scope": "push",
+              "breaking": false,
+              "hash": "3ec0f96"
+            }
+          ]
+        },
+        {
+          "label": "Mejoras internas",
+          "emoji": "♻️",
+          "type": "refactor",
+          "items": [
+            {
+              "description": "RelativeTime() local ×3 → timeAgoShort de core (#468) (#571)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "3367cbb"
+            },
+            {
+              "description": "Composición de ui/ — variantes de Button, primitivos y React 19 (#488) (#547)",
+              "scope": "web,mobile",
+              "breaking": false,
+              "hash": "080481e"
+            },
+            {
+              "description": "MoveExercise → moveItem y EmojiPicker a core (#468) (#550)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "1c6ac4b"
+            },
+            {
+              "description": "Un solo índice del catálogo y carga perezosa en web (closes #486) (#541)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "8271f04"
+            },
+            {
+              "description": "Lifecycle en CorePlatform y 3 contextos de sesión a core (closes #482) (#544)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "db2042a"
+            },
+            {
+              "description": "Rendimiento de listas, reloj de circuito y tipado de health (#487) (#542)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "351a038"
+            },
+            {
+              "description": "SessionView nativo sobre el reducer de core (#475) (#539)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "5448005"
+            },
+            {
+              "description": "Reducer de sesión en core y SessionView web descompuesto (#475) (#538)",
+              "scope": "core,web",
+              "breaking": false,
+              "hash": "d167697"
+            },
+            {
+              "description": "Partir ProgramEditorPage en pasos y el perfil en hook + reducer (closes #478) (#535)",
+              "scope": "web,mobile",
+              "breaking": false,
+              "hash": "c0d3cbb"
+            },
+            {
+              "description": "Restos del #479 — panel de stats de cardio, andamiaje de las share cards y AuthUser (#534)",
+              "scope": "web,core",
+              "breaking": false,
+              "hash": "8c36935"
+            },
+            {
+              "description": "Partir CardioSessionContext y RaceContext en hooks, un solo fin de carrera (closes #479) (#532)",
+              "scope": "web,mobile",
+              "breaking": false,
+              "hash": "d6a3607"
+            },
+            {
+              "description": "Partir MealLoggerContent y sacar el canvas de DailySummaryCard (closes #477) (#530)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "b1356e0"
+            },
+            {
+              "description": "Extracciones mecánicas de duplicados web/móvil a core (refs #468) (#526)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "9820b41"
+            },
+            {
+              "description": "Exportar RANK_MEDALS y unificar las medallas del ranking (closes #455) (#525)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "c56a0a4"
+            },
+            {
+              "description": "Fetch inline de páginas web/móvil a hooks de core (closes #473) (#528)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "822aa97"
+            },
+            {
+              "description": "Capa de datos repos/, runStructuredGeneration e insight context en core (closes #480) (#517)",
+              "scope": "mcp-server",
+              "breaking": false,
+              "hash": "aa1e66a"
+            },
+            {
+              "description": "Unificar recordatorios en useReminderTimeline (closes #471) (#523)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "724ce59"
+            },
+            {
+              "description": "Partir useProgress en lectura/mutaciones/PRs + lib pura (#476) (#524)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "0fc8933"
+            },
+            {
+              "description": "Partir battles.js en módulos, push en lote y snapshot sin N+1 (#481) (#518)",
+              "scope": "pb_hooks",
+              "breaking": false,
+              "hash": "9bad7ac"
+            },
+            {
+              "description": "Nutrición sobre hooks de core, sin I/O de PB inline (closes #470) (#514)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "ae4aeba"
+            },
+            {
+              "description": "Mover lib/race/{raceApi,raceRealtime,errors} a @calistenia/core (#466) (#512)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "4c956da"
+            },
+            {
+              "description": "Unificar el guardado del onboarding en useOnboardingSubmit (#472) (#513)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "94e0b8b"
+            },
+            {
+              "description": "Migrar mcp-use v1.34.6 → v2.2.3 (widgets → Views) (closes #442) (#447)",
+              "scope": "mcp-server",
+              "breaking": false,
+              "hash": "2bbff25"
+            },
+            {
+              "description": "Compilar prompts de Langfuse con variables (#298)",
+              "scope": "ai",
+              "breaking": false,
+              "hash": "1323536"
+            },
+            {
+              "description": "Titular el puesto en la pantalla de espera (#432) (#433)",
+              "scope": "battle",
+              "breaking": false,
+              "hash": "39afc55"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.9.0",
       "date": "2026-08-14",

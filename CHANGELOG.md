@@ -9,6 +9,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.10.1] - 2026-08-21
+
+_Home-screen widgets for your streak, meals, water and next session; private accounts with follower approval; battle results with rematch and a share card; and a solid batch of fixes to cardio and offline saving._
+
+### Added
+
+- **Home-screen widgets** — Add your streak (also as a 2x2, now showing the real current streak), your meal streak, today's water and your next session to your home screen. The Today widget shows more at a glance.
+- **Private accounts** — You can now make your account private: anyone who wants to follow you has to ask, and you approve or decline. The server decides what is visible, so your workouts stay out of the feed and leaderboards of anyone you haven't approved.
+- **Battles: results, rematch and share card** — When a battle ends you get a results screen with everyone's placing, a one-tap rematch and a share card. Ties now show as ties on the scoreboard, the waiting room and history, and timed work shows up on the scoreboard.
+- **Challenges: Push-up Builder and a new detail view** — A new ready-made challenge, Push-up Builder, with cumulative scoring. The challenge detail now has two views, goal and ranking, and expired challenges are closed automatically on the server instead of lingering open.
+- **Profile photo from the app** — Change your profile photo right from your phone, no need to go through the web.
+
+### Fixed
+
+- **More reliable offline saving** — Sets, sessions and circuits that can't be saved without signal are queued and retried on their own once you're back online.
+- **Cardio: history and accidental sessions** — The cardio history and some other lists could show up empty on open — fixed. Stopping a cardio session after a few seconds now discards it instead of saving a 0-metre workout, and the stray English text in cardio and races is translated.
+- **Small fixes** — Text on the lime colour is readable in light mode, collapsible chevrons rotate properly, push notifications keep arriving after switching accounts on the same phone, and saving a program no longer deletes and recreates its days.
+
 ## [1.9.0] - 2026-08-14
 
 _Community programs with weekly milestones so you can follow a real plan, profile stats that finally count every workout you do, and battles that now use the same training screen as a regular session._
@@ -293,7 +311,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...HEAD
+[1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
