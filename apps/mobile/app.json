@@ -129,7 +129,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Usamos tu ubicaci\u00f3n para registrar la ruta, distancia y ritmo de tus sesiones de cardio.",
+          "locationWhenInUsePermission": "Usamos tu ubicación para registrar la ruta, distancia y ritmo de tus sesiones de cardio.",
           "isAndroidForegroundServiceEnabled": true
         }
       ],
@@ -169,7 +169,7 @@
             {
               "name": "TodayWidget",
               "label": "Entrenamiento de hoy",
-              "description": "Qu\u00e9 toca hoy, semana y racha",
+              "description": "Qué toca hoy, semana y racha",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -179,7 +179,7 @@
             {
               "name": "CardioWidget",
               "label": "Cardio",
-              "description": "Km de la semana y \u00faltima sesi\u00f3n",
+              "description": "Km de la semana y última sesión",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -188,8 +188,8 @@
             },
             {
               "name": "NutritionWidget",
-              "label": "Nutrici\u00f3n",
-              "description": "Calor\u00edas y macros de hoy + registro r\u00e1pido",
+              "label": "Nutrición",
+              "description": "Calorías y macros de hoy + registro rápido",
               "minWidth": "250dp",
               "minHeight": "210dp",
               "targetCellWidth": 4,
@@ -198,8 +198,8 @@
             },
             {
               "name": "NutritionRingWidget",
-              "label": "Calor\u00edas",
-              "description": "Anillo de calor\u00edas de hoy",
+              "label": "Calorías",
+              "description": "Anillo de calorías de hoy",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -209,7 +209,7 @@
             {
               "name": "StreakWidget",
               "label": "Racha",
-              "description": "D\u00edas seguidos entrenando y la semana",
+              "description": "Días seguidos entrenando y la semana",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -219,7 +219,7 @@
             {
               "name": "MealStreakWidget",
               "label": "Racha de comidas",
-              "description": "D\u00edas seguidos con score de comida A/B",
+              "description": "Días seguidos con score de comida A/B",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -238,8 +238,8 @@
             },
             {
               "name": "NextSessionWidget",
-              "label": "Pr\u00f3xima sesi\u00f3n",
-              "description": "Qu\u00e9 toca ma\u00f1ana, en una franja fina",
+              "label": "Próxima sesión",
+              "description": "Qué toca mañana, en una franja fina",
               "minWidth": "250dp",
               "minHeight": "40dp",
               "targetCellWidth": 4,
