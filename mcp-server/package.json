@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "@calistenia/core": "file:../packages/core",
-    "@ai-sdk/anthropic": "^4.0.27",
-    "@ai-sdk/google": "^4.0.31",
-    "@ai-sdk/openai": "^4.0.27",
-    "@ai-sdk/otel": "^1.0.48",
+    "@ai-sdk/anthropic": "^4.0.38",
+    "@ai-sdk/google": "^4.0.43",
+    "@ai-sdk/openai": "^4.0.41",
+    "@ai-sdk/otel": "^1.0.64",
     "@langfuse/core": "^5.10.0",
     "@langfuse/otel": "^5.10.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
@@ -46,7 +46,7 @@
     "@types/web-push": "^3.6.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tsx": "^4.23.5",
+    "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
