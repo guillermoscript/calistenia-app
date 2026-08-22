@@ -225,17 +225,16 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   }
 
   return (
-    <div className="max-w-[600px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">{t('profile.accountLabel')}</div>
-      <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-8">{t('profile.title')}</div>
-
-      {/* Avatar */}
-      <div className="flex flex-col items-center mb-6">
+    <div className="max-w-[1080px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="h-1 bg-lime" />
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between md:p-7">
+          <div className="flex items-center gap-4">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadingAvatar}
-          className="relative group size-24 rounded-full overflow-hidden bg-accent border-2 border-border hover:border-lime transition-colors focus:outline-none focus:ring-2 focus:ring-lime"
+          className="relative group size-20 shrink-0 rounded-full overflow-hidden bg-accent border-2 border-border hover:border-lime transition-colors focus:outline-none focus:ring-2 focus:ring-lime"
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
@@ -263,13 +262,15 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           onChange={handleAvatarChange}
           className="hidden"
         />
-        <span className="text-[10px] text-muted-foreground mt-2">{t('profile.changePhoto')}</span>
-      </div>
-
-      {/* Share profile */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-4 motion-safe:animate-fade-in">
-        <div className="text-xs text-muted-foreground mb-3">{t('profile.shareProfile')}</div>
-        <div className="flex flex-wrap gap-2">
+            <div className="min-w-0">
+              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('profile.accountLabel')}</div>
+              <h1 className="mt-1 truncate font-bebas text-[40px] leading-none md:text-[52px]">{displayName || t('profile.title')}</h1>
+              <div className="mt-2 text-xs text-muted-foreground">{user?.email || '—'} · {t('profile.changePhoto')}</div>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <div className="mb-3 text-[10px] font-mono tracking-[2px] text-muted-foreground uppercase">{t('profile.shareProfile')}</div>
+            <div className="flex flex-wrap gap-2">
           <Button
             onClick={shareWhatsApp}
             size="sm"
@@ -296,10 +297,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               </>
             )}
           </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col gap-5">
+      <div className="grid gap-5 lg:grid-cols-2">
         {/* Body & demographics */}
         <Card id="tour-personal-info">
           <CardContent className="p-5 flex flex-col gap-4">
@@ -564,7 +567,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         </Card>
 
         {/* Training */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardContent className="p-5 flex flex-col gap-4">
             <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionTraining')}</div>
 
@@ -761,56 +764,47 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           </CardContent>
         </Card>
 
-        {/* Reminders link */}
-        <Card
-          className="cursor-pointer hover:border-lime-400/30 transition-colors"
-          onClick={() => navigate('/reminders')}
-        >
-          <CardContent className="p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🔔</span>
-              <div>
-                <div className="text-sm font-medium">{t('profile.reminders')}</div>
-                <div className="text-[10px] text-muted-foreground">{t('profile.remindersDesc')}</div>
-              </div>
-            </div>
-            <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </CardContent>
-        </Card>
-
-        {/* Blocked users link */}
-        <Card
-          className="cursor-pointer hover:border-lime-400/30 transition-colors"
-          onClick={() => navigate('/settings/blocked')}
-        >
-          <CardContent className="p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🚫</span>
-              <div>
-                <div className="text-sm font-medium">{t('blocks.manageEntry')}</div>
-              </div>
-            </div>
-            <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </CardContent>
-        </Card>
+        {/* Herramientas con jerarquía: el hábito diario tiene más peso visual. */}
+        <section className="space-y-3 lg:col-span-2" aria-label={t('profile.quickActions')}>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('profile.quickActions')}</div>
+          <div className="grid gap-3 sm:grid-cols-[1.45fr_1fr]">
+            <Card
+              className="cursor-pointer border-lime bg-lime text-lime-foreground transition-transform hover:-translate-y-0.5"
+              onClick={() => navigate('/reminders')}
+            >
+              <CardContent className="p-5 flex h-full items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-full bg-black/10 text-xl">🔔</span>
+                  <div><div className="text-sm font-medium">{t('profile.reminders')}</div><div className="mt-0.5 text-[10px] text-lime-foreground/70">{t('profile.remindersDesc')}</div></div>
+                </div>
+                <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer border-border/80 transition-colors hover:border-lime/50 hover:bg-muted/40"
+              onClick={() => navigate('/settings/blocked')}
+            >
+              <CardContent className="p-5 flex h-full items-center justify-between gap-3">
+                <div><span className="mb-3 flex size-9 items-center justify-center rounded-full bg-muted text-lg">🚫</span><div className="text-sm font-medium">{t('blocks.manageEntry')}</div></div>
+                <svg className="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
         {/* Save button */}
         <Button
           onClick={handleSave}
           disabled={saving}
           variant="limeSolid"
-          className="h-11 font-bebas text-lg tracking-wide"
+          className="h-11 font-bebas text-lg tracking-wide lg:col-span-2"
         >
           {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
         </Button>
 
         {/* Zona de peligro: baja de cuenta (#300). Al final y separada del
             resto para que no se pulse de paso mientras se editan campos. */}
-        <Card className="border-destructive/30">
+        <Card className="border-destructive/30 lg:col-span-2">
           <CardContent className="p-5 flex flex-col gap-3">
             <div className="text-[10px] text-destructive tracking-[3px] uppercase">{t('account.dangerZone')}</div>
             <p className="text-sm text-muted-foreground">{t('account.deleteDesc')}</p>
