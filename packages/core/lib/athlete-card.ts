@@ -47,6 +47,11 @@ export interface AthleteSkill extends SkillDef {
  * Marcas → skills ordenadas para pintarlas en fila: primero las desbloqueadas
  * (la mejor primero) y luego las que están en camino, de más cerca a más lejos.
  *
+ * **Solo devuelve las empezadas.** Una skill a 0 no es «en camino», es una que
+ * no existe todavía: en el teléfono cuatro píldoras diciendo «· 0 %» tapaban la
+ * única que contaba algo. Si el usuario no tiene ninguna marca la lista vuelve
+ * vacía y la UI enseña su estado vacío.
+ *
  * Acepta el objeto de settings entero a propósito: los cinco `pr_*` legacy se
  * mantienen sincronizados con el mapa `prs` y son los que ya lee el perfil
  * público, así que un `Settings` o una fila de `public_prs` valen igual.
@@ -60,6 +65,7 @@ export function buildSkills(prs: Partial<Record<string, number | null | undefine
       const pct = def.goal > 0 ? Math.min(100, Math.round((value / def.goal) * 100)) : 0
       return { ...def, value, pct, achieved: value >= def.goal }
     })
+    .filter(s => s.value > 0)
     .sort((a, b) => {
       if (a.achieved !== b.achieved) return a.achieved ? -1 : 1
       return b.pct - a.pct

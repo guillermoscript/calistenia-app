@@ -7,10 +7,15 @@ beforeAll(() => {
 })
 
 describe('buildSkills', () => {
-  it('devuelve las cinco skills a cero cuando no hay marcas', () => {
-    const skills = buildSkills(null)
-    expect(skills).toHaveLength(SKILL_DEFS.length)
-    expect(skills.every(s => s.value === 0 && s.pct === 0 && !s.achieved)).toBe(true)
+  it('no devuelve nada cuando no hay marcas: sin empezar no es «en camino»', () => {
+    expect(buildSkills(null)).toEqual([])
+    expect(buildSkills({})).toEqual([])
+  })
+
+  it('deja fuera las que siguen a cero y conserva las empezadas', () => {
+    const skills = buildSkills({ pr_pushups: 15, pr_lsit: 0 })
+    expect(skills.map(s => s.key)).toEqual(['pr_pushups'])
+    expect(skills.length).toBeLessThan(SKILL_DEFS.length)
   })
 
   it('marca como desbloqueada la que llega al objetivo', () => {
@@ -32,17 +37,14 @@ describe('buildSkills', () => {
   it('ordena desbloqueadas primero y luego por cercanía al objetivo', () => {
     const skills = buildSkills({ pr_pullups: 20, pr_lsit: 3, pr_pushups: 40 })
     expect(skills.map(s => s.key)).toEqual([
-      'pr_pullups',   // 100 %, desbloqueada
-      'pr_pushups',   // 80 %
-      'pr_lsit',      // 10 %
-      'pr_pistol',    // 0 %
-      'pr_handstand', // 0 %
+      'pr_pullups', // 100 %, desbloqueada
+      'pr_pushups', // 80 %
+      'pr_lsit',    // 10 %
     ])
   })
 
-  it('ignora valores basura sin romper el porcentaje', () => {
-    const skills = buildSkills({ pr_pullups: -4, pr_lsit: Number.NaN })
-    expect(skills.every(s => s.value === 0 && s.pct === 0)).toBe(true)
+  it('ignora valores basura en vez de pintarlos como skill', () => {
+    expect(buildSkills({ pr_pullups: -4, pr_lsit: Number.NaN })).toEqual([])
   })
 })
 

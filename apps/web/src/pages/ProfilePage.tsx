@@ -420,7 +420,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
       {/* Skills: lo desbloqueado en lima, lo que está en camino con su avance. */}
       <Kicker className="mb-2 mt-6">{t('profile.skills')}</Kicker>
-      {skills.some(s => s.value > 0) ? (
+      {skills.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {skills.map(s => (
             <span
@@ -484,8 +484,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       <Kicker className="mb-1 mt-6">{t('profile.settings')}</Kicker>
       <div className="overflow-hidden rounded-lg border border-border px-4 md:px-5">
         <SettingsRow
+          // Sin valor a la derecha a propósito: la tarjeta «Cuerpo» de arriba ya
+          // enseña esas mismas cifras y repetirlas a dos dedos parece un fallo.
           label={t('profile.rowBodyGoals')}
-          value={weight && height ? `${weight} kg · ${height} cm` : undefined}
           open={openSection === 'body'}
           onClick={() => toggleSection('body')}
         >

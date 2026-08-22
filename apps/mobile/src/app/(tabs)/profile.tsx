@@ -135,7 +135,6 @@ export default function ProfileScreen() {
   const streak = getLongestStreak()
   const weeklyDone = getWeeklyDoneCount()
   const skills = buildSkills(settings as unknown as Record<string, number>)
-  const hasSkills = skills.some(s => s.value > 0)
   const week = programWeek(settings.startDate, activeProgram?.duration_weeks, todayStr())
   const levelLabel = level && LEVEL_LABEL_KEYS[level] ? t(LEVEL_LABEL_KEYS[level]) : ''
   const identityLine = [
@@ -250,7 +249,7 @@ export default function ProfileScreen() {
         {/* Skills: lo desbloqueado en lima, lo que está en camino con su avance. */}
         <View className="mt-3 gap-2">
           <Kicker>{t('profile.skills')}</Kicker>
-          {hasSkills ? (
+          {skills.length > 0 ? (
             <View className="flex-row flex-wrap gap-2">
               {skills.map(s => (
                 <View
@@ -318,8 +317,10 @@ export default function ProfileScreen() {
           <Kicker>{t('profile.settings')}</Kicker>
           <Card className="gap-0 overflow-hidden py-1">
             <SettingsRow
+              // Sin valor a la derecha a propósito: la tarjeta «Cuerpo» de
+              // arriba ya enseña esas cifras y repetirlas a dos dedos parece
+              // un fallo.
               label={t('profile.rowBodyGoals')}
-              value={weight && height ? `${weight} kg · ${height} cm` : undefined}
               open={openSection === 'body'}
               onPress={() => toggleSection('body')}
               bordered={false}
