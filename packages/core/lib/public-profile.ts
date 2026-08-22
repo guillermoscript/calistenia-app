@@ -85,6 +85,13 @@ export interface PublicProfile {
   monthActivity: Record<string, boolean>
   recentSessions: ProfileRecentSession[]
   activeProgram: { id: string; name: TranslatableField } | null
+  /**
+   * Cuenta privada (#422). Si el espectador no tiene un follow aceptado, las
+   * views `public_*` le devuelven 0 filas EN SILENCIO: las estadísticas de
+   * arriba son ceros falsos y la pantalla debe pintar «cuenta privada», no un
+   * perfil vacío.
+   */
+  isPrivate: boolean
 }
 
 /** Número de sesiones recientes que pintan las dos pantallas. */

@@ -33,7 +33,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { challenge, leaderboard, loading, participantIds, load, inviteUser } = useChallengeDetail(id || null, userId)
+  const { challenge, leaderboard, hiddenPrivateCount, loading, participantIds, load, inviteUser } = useChallengeDetail(id || null, userId)
   const { progress: expressProgress, loading: expressLoading } = useExpressProgress(challenge)
   const { following } = useFollows(userId)
   const [showInvite, setShowInvite] = useState(false)
@@ -338,6 +338,14 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
       {(isExpress ? expressProgress.length === 0 && !expressLoading : leaderboard.length === 0 && !loading) && (
         <div className="text-center py-12 text-sm text-muted-foreground">{t('challenge.noParticipants')}</div>
+      )}
+
+      {/* Cuentas privadas (#422): fuera del ranking para los demás, como en Strava. */}
+      {!isExpress && !loading && (hiddenPrivateCount > 0 || leaderboard.some(e => e.isCurrentUser && e.isPrivate)) && (
+        <div className="text-[11px] text-muted-foreground text-center pb-4 flex flex-col gap-1" role="note">
+          {leaderboard.some(e => e.isCurrentUser && e.isPrivate) && <span>{t('privacy.rankingHiddenSelf')}</span>}
+          {hiddenPrivateCount > 0 && <span>{t('privacy.rankingHiddenOthers', { count: hiddenPrivateCount })}</span>}
+        </div>
       )}
     </div>
   )

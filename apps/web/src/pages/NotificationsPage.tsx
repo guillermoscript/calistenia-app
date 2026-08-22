@@ -1,8 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
+import { useAuthState } from '../contexts/AuthContext'
+import { useFollows } from '@calistenia/core/hooks/useFollows'
+import type { FollowRequest } from '@calistenia/core/hooks/useFollows'
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
 import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 import { cn } from '../lib/utils'
@@ -23,6 +26,10 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
   switch (n.type) {
     case 'follow':
       return t('notif.follow', { name: n.actorName })
+    case 'follow_request':
+      return t('notif.followRequest', { name: n.actorName })
+    case 'follow_accepted':
+      return t('notif.followAccepted', { name: n.actorName })
     case 'reaction': {
       // Reacción a un comentario vs. a la sesión (el hook marca data.onComment).
       const emoji = n.data?.emoji || ''
@@ -68,6 +75,8 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
 function getNotificationRoute(n: AppNotification): string {
   switch (n.type) {
     case 'follow':
+    case 'follow_request':
+    case 'follow_accepted':
       return `/u/${n.actorId}`
     case 'reaction':
     case 'comment':
@@ -98,9 +107,43 @@ function getNotificationRoute(n: AppNotification): string {
   }
 }
 
+/** Aceptar / rechazar una solicitud de seguimiento (#422). Fuera del botón de
+ *  la fila: dos `<button>` no se pueden anidar. */
+function RequestActions({ request, onAccept, onReject, t }: {
+  request: FollowRequest
+  onAccept: (id: string) => Promise<boolean>
+  onReject: (id: string) => Promise<boolean>
+  t: TFunction
+}) {
+  const [busy, setBusy] = useState(false)
+  const run = async (fn: (id: string) => Promise<boolean>) => {
+    setBusy(true)
+    await fn(request.id)
+    setBusy(false)
+  }
+  return (
+    <div className="flex gap-2 mt-2">
+      <Button size="sm" variant="limeSolid" disabled={busy} onClick={() => run(onAccept)} className="h-8 text-[10px] tracking-widest uppercase">
+        {t('privacy.accept')}
+      </Button>
+      <Button size="sm" variant="outline" disabled={busy} onClick={() => run(onReject)} className="h-8 text-[10px] tracking-widest uppercase">
+        {t('privacy.reject')}
+      </Button>
+    </div>
+  )
+}
+
 export default function NotificationsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuthState()
+  // Bandeja de solicitudes (#422): la fila de `follows` vive en useFollows;
+  // la notificación solo sabe quién la pidió.
+  const { pendingIncoming, acceptRequest, rejectRequest } = useFollows(user?.id ?? null)
+  const requestByActor = useMemo(
+    () => new Map(pendingIncoming.map(r => [r.user.id, r])),
+    [pendingIncoming],
+  )
   const {
     notifications,
     loading,
@@ -153,7 +196,31 @@ export default function NotificationsPage() {
         <Loader label={t('notif.loading')} className="py-12" />
       )}
 
-      {!loading && notifications.length === 0 && (
+      {pendingIncoming.length > 0 && (
+        <section className="mb-6" aria-label={t('privacy.requestsTitle')}>
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('privacy.requestsTitle')}</div>
+          <div className="flex flex-col gap-1.5">
+            {pendingIncoming.map(r => (
+              <div key={r.id} className="rounded-lg px-4 py-3 bg-lime-400/5 border-l-2 border-lime-400">
+                <div className="flex items-start gap-3">
+                  <button type="button" onClick={() => navigate(`/u/${r.user.id}`)} className="size-9 rounded-full bg-accent flex items-center justify-center text-sm font-semibold text-foreground shrink-0 mt-0.5 overflow-hidden">
+                    {r.user.avatarUrl ? <img src={r.user.avatarUrl} alt="" className="size-full object-cover" /> : (r.user.displayName[0]?.toUpperCase() ?? '?')}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <button type="button" onClick={() => navigate(`/u/${r.user.id}`)} className="text-sm leading-snug text-foreground text-left">
+                      {t('notif.followRequest', { name: r.user.displayName })}
+                    </button>
+                    <div className="text-[11px] text-muted-foreground/60 mt-0.5">{timeAgoShort(r.created)}</div>
+                    <RequestActions request={r} onAccept={acceptRequest} onReject={rejectRequest} t={t} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!loading && notifications.length === 0 && pendingIncoming.length === 0 && (
         <EmptyState
           icon={(
             <svg className="size-10 mx-auto text-muted-foreground/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -168,18 +235,24 @@ export default function NotificationsPage() {
 
       {!loading && notifications.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          {notifications.map((n, i) => (
-            <button
+          {notifications.map((n, i) => {
+            // Solicitud aún sin resolver → la fila lleva aceptar/rechazar.
+            const request = n.type === 'follow_request' ? requestByActor.get(n.actorId) : undefined
+            return (
+            <div
               key={n.id}
-              type="button"
-              onClick={() => handleTap(n)}
               className={cn(
-                'w-full text-left rounded-lg px-4 py-3 transition-colors motion-safe:animate-fade-in',
+                'w-full rounded-lg motion-safe:animate-fade-in',
                 n.read
                   ? 'bg-card hover:bg-accent/50'
                   : 'bg-lime-400/5 border-l-2 border-lime-400 hover:bg-lime-400/10',
               )}
               style={{ animationDelay: `${Math.min(i, 15) * 40}ms`, animationFillMode: 'both' }}
+            >
+            <button
+              type="button"
+              onClick={() => handleTap(n)}
+              className="w-full text-left px-4 py-3 transition-colors"
             >
               <div className="flex items-start gap-3">
                 {/* Actor avatar */}
@@ -204,7 +277,13 @@ export default function NotificationsPage() {
                 )}
               </div>
             </button>
-          ))}
+            {request && (
+              <div className="px-4 pb-3 pl-16">
+                <RequestActions request={request} onAccept={acceptRequest} onReject={rejectRequest} t={t} />
+              </div>
+            )}
+            </div>
+          )})}
         </div>
       )}
     </div>

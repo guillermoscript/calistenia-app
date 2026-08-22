@@ -118,6 +118,7 @@ export function usePublicProfile(userId: string | null) {
         monthActivity: buildMonthActivity(yearMonth, sessions),
         recentSessions: mapRecentSessions(sessions),
         activeProgram,
+        isPrivate: (user as { is_private?: boolean }).is_private === true,
       }
     },
   })
