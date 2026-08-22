@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { localDay } from '@calistenia/core/lib/dateUtils'
+import { DAY_BY_INDEX, nextTrainingDay } from '@calistenia/core/lib/training-day'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { WeekDay, ProgramMeta } from '@calistenia/core/types'
 
@@ -18,9 +19,13 @@ export default function TodayWorkoutHero({
 }: TodayWorkoutHeroProps) {
   const { t } = useTranslation()
 
-  const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
+  const todayDayId = DAY_BY_INDEX[localDay()]
   const todayDay = weekDays.find(d => d.id === todayDayId)
   const todayIsRest = todayDay?.type === 'rest'
+  // #574: en descanso el héroe era un callejón sin salida; ofrece el próximo entreno.
+  const nextDayId = todayIsRest ? nextTrainingDay(weekDays, todayDayId) : null
+  const nextDay = nextDayId ? weekDays.find(d => d.id === nextDayId) : undefined
+  const restClickable = todayIsRest && !!nextDay
   const todayIsCardio = todayDay?.type === 'cardio'
   const todayIsYoga = todayDay?.type === 'yoga'
   const todayWorkoutKey = `p${phase || 1}_${todayDayId}`
@@ -37,7 +42,7 @@ export default function TodayWorkoutHero({
             : todayIsCardio
               ? 'border-emerald-400/30 bg-emerald-400/5 cursor-pointer hover:border-emerald-400/50 active:scale-[0.99]'
               : todayIsRest
-                ? 'border-border bg-card'
+                ? cn('border-border bg-card', restClickable && 'cursor-pointer hover:border-foreground/30 active:scale-[0.99]')
                 : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
       )}
       onClick={() => {
@@ -45,8 +50,9 @@ export default function TodayWorkoutHero({
         if (todayIsYoga) onStart(todayDayId)
         else if (todayIsCardio) onStart(todayDayId)
         else if (!todayIsRest) onStart(todayDayId)
+        else if (nextDayId) onStart(nextDayId)
       }}
-      role={!todayIsRest && !todayDone ? 'button' : undefined}
+      role={(!todayIsRest || restClickable) && !todayDone ? 'button' : undefined}
     >
       <div className="flex items-center justify-between gap-4">
         <div>
@@ -69,6 +75,11 @@ export default function TodayWorkoutHero({
           {activeProgram && (
             <div className="text-xs text-muted-foreground mt-1">
               {activeProgram.name} · {t('workout.phaseLabel', { phase: phase || 1 })}
+            </div>
+          )}
+          {restClickable && nextDay && (
+            <div className="text-xs text-[hsl(var(--lime))] mt-2">
+              {t('dashboard.seeNextWorkout', { day: nextDay.nameKey ? t(nextDay.nameKey) : nextDay.name })} →
             </div>
           )}
         </div>

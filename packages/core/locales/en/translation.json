@@ -518,6 +518,7 @@
   "dashboard.youLogged": "You logged",
   "dashboard.kcal": "{{count}} kcal",
   "dashboard.restDay": "REST DAY",
+  "dashboard.seeNextWorkout": "See next workout: {{day}}",
   "dashboard.train": "TRAIN",
   "dashboard.checklist.kicker": "Getting started",
   "dashboard.checklist.title": "All set!",
@@ -594,6 +595,7 @@
   "workout.startCardio": "START CARDIO",
   "workout.restDay": "Rest day",
   "workout.restDayHint": "You can pick another day if you want to train — the actual day doesn't matter.",
+  "workout.trainAnyway": "Train anyway → {{day}}",
   "workout.chooseWorkout": "Choose your workout",
   "workout.chooseWorkoutHint": "Select a day of the week to see the exercises",
 

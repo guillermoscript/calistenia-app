@@ -518,6 +518,7 @@
   "dashboard.youLogged": "Registraste",
   "dashboard.kcal": "{{count}} kcal",
   "dashboard.restDay": "DIA DE DESCANSO",
+  "dashboard.seeNextWorkout": "Ver próximo entreno: {{day}}",
   "dashboard.train": "ENTRENAR",
   "dashboard.checklist.kicker": "Primeros pasos",
   "dashboard.checklist.title": "¡Todo listo!",
@@ -594,6 +595,7 @@
   "workout.startCardio": "EMPEZAR CARDIO",
   "workout.restDay": "Día de descanso",
   "workout.restDayHint": "Puedes elegir otro día si quieres entrenar — no importa el día real.",
+  "workout.trainAnyway": "Entrenar de todas formas → {{day}}",
   "workout.chooseWorkout": "Elige tu entrenamiento",
   "workout.chooseWorkoutHint": "Selecciona un día de la semana para ver los ejercicios",
 

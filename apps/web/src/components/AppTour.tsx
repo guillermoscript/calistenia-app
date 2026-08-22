@@ -589,9 +589,11 @@ function getCircuitSteps(): DriveStep[] {
 }
 
 // Map page paths to their tour steps
-const PAGE_TOURS: Record<string, { page: string; getSteps: () => DriveStep[] }> = {
+// `requires`: el tour no arranca hasta que ese elemento esté en el DOM (#574:
+// se lanzaba sobre /workout antes de cargar el programa, overlay sobre pantalla vacía).
+const PAGE_TOURS: Record<string, { page: string; getSteps: () => DriveStep[]; requires?: string }> = {
   '/': { page: 'dashboard', getSteps: getDashboardSteps },
-  '/workout': { page: 'workout', getSteps: getWorkoutSteps },
+  '/workout': { page: 'workout', getSteps: getWorkoutSteps, requires: '#tour-start-session' },
   '/programs': { page: 'programs', getSteps: getProgramsSteps },
   '/nutrition': { page: 'nutrition', getSteps: getNutritionSteps },
   '/progress': { page: 'progress', getSteps: getProgressSteps },
@@ -678,11 +680,20 @@ export default function AppTour({ pathname, userId, autoStart = false }: AppTour
     if (isPageTourDone(tourDef.page, userId)) return
 
     hasRun.current = true
-    const timer = setTimeout(() => {
+    let attempts = 0
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const tryStart = () => {
+      if (tourDef.requires && !document.querySelector(tourDef.requires)) {
+        // Sin el contenido aún: reintentar hasta ~6 s y desistir sin marcar como hecho.
+        if (++attempts < 20) timer = setTimeout(tryStart, 300)
+        else hasRun.current = false
+        return
+      }
       runTour(tourDef.getSteps(), () => markPageTourDone(tourDef.page, userId), tourLabels)
-    }, 800)
+    }
+    timer = setTimeout(tryStart, 800)
 
-    return () => clearTimeout(timer)
+    return () => { if (timer) clearTimeout(timer) }
   }, [pathname, userId, autoStart]) // eslint-disable-line react-hooks/exhaustive-deps -- `tourLabels` se recrea en cada render y relanzaría el tour
 
   return null
