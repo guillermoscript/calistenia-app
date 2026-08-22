@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { dismissOverlays, suppressOverlays, TEST_PASS, TEST_NAME } from './helpers.js'
+import { dismissOverlays, suppressOverlays, selectDay, TEST_PASS, TEST_NAME } from './helpers.js'
 
 /**
  * Golden path: onboarding completo + activación de programa real.
@@ -146,7 +146,7 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   await page.goto('/workout')
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await dismissOverlays(page)
-  await page.getByRole('button', { name: /lun|mon/i }).first().click()
+  await selectDay(page)
   // "Push – Pecho y tríceps" es del seed; el fallback usa "Empuje + Core Lumbar"
   await expect(page.getByText(/Pecho y tríceps/i).first()).toBeVisible({ timeout: 8000 })
 })

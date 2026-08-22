@@ -163,3 +163,22 @@ export async function navigateTo(page, path) {
   await page.waitForTimeout(300)
   await dismissOverlays(page)
 }
+
+/**
+ * Selecciona un día en /workout. Desde #574 la página autoselecciona hoy (o
+ * el siguiente entrenable) y el botón del día es un toggle: pulsarlo cuando ya
+ * está seleccionado lo deselecciona. Solo hace clic si hace falta.
+ */
+export async function selectDay(page, name = /lun|mon/i) {
+  const btn = page.getByRole('button', { name }).first()
+  await expect(btn).toBeVisible({ timeout: 8000 })
+  // Con el día autoseleccionado, el tour de detalle (driver.js) salta a los
+  // 500 ms del montaje y tapa la página: descartarlo justo antes de pulsar.
+  await page.waitForTimeout(700)
+  await dismissOverlays(page)
+  if ((await btn.getAttribute('aria-pressed')) !== 'true') {
+    await btn.click()
+    await page.waitForTimeout(700)
+    await dismissOverlays(page)
+  }
+}

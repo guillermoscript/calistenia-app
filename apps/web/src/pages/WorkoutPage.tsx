@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '@calistenia/core/data/workouts'
@@ -6,6 +6,7 @@ import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useCircuitSession } from '../contexts/CircuitSessionContext'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { localDay } from '@calistenia/core/lib/dateUtils'
+import { DAY_BY_INDEX, pickTrainingDay, nextTrainingDay } from '@calistenia/core/lib/training-day'
 import { useAuthState } from '../contexts/AuthContext'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
@@ -39,8 +40,14 @@ export default function WorkoutPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const dayParam = searchParams.get('day') as DayId | null
 
+  const todayId  = DAY_BY_INDEX[localDay()]
+
   const [selectedPhase, setSelectedPhase] = useState(settings?.phase || 1)
-  const [selectedDay,   setSelectedDay]   = useState<DayId | null>(dayParam)
+  // #574: sin `?day=` la página nacía vacía y los usuarios nuevos nunca llegaban
+  // a un entreno. Por defecto, hoy (o el siguiente día entrenable), como en móvil.
+  const [selectedDay,   setSelectedDay]   = useState<DayId | null>(() => dayParam ?? pickTrainingDay(WEEK_DAYS, todayId))
+  // El usuario deseleccionó a mano: no volver a autoseleccionar hasta que elija otro día.
+  const manualClear = useRef(false)
   const [restTime,      setRestTime]      = useState<number | null>(null)
   const [restExerciseId, setRestExerciseId] = useState<string | null>(null)
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
@@ -55,11 +62,23 @@ export default function WorkoutPage() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- el ?day= se consume una sola vez, al montar
 
+  // La semana del programa llega async: cuando cambia (o tras cambiar de fase)
+  // y no hay día elegido, autoseleccionar salvo que el usuario lo quitara a mano.
+  useEffect(() => {
+    if (selectedDay || manualClear.current) return
+    const next = pickTrainingDay(WEEK_DAYS, todayId)
+    if (next) setSelectedDay(next)
+  }, [WEEK_DAYS, selectedPhase, selectedDay, todayId])
+
+  const chooseDay = useCallback((id: DayId | null) => {
+    manualClear.current = id === null
+    setSelectedDay(id)
+  }, [])
+
   useEffect(() => {
     setRestTime(null)
   }, [selectedDay])
 
-  const todayId  = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
   const workout  = selectedDay ? getWorkout(selectedPhase, selectedDay) : null
   const workoutDuration = useMemo(() => {
     if (!workout) return 0
@@ -110,7 +129,7 @@ export default function WorkoutPage() {
                   key={p.id}
                   variant={isSelected ? 'outline' : 'ghost'}
                   size="sm"
-                  onClick={() => { setSelectedPhase(p.id); setSelectedDay(null) }}
+                  onClick={() => { setSelectedPhase(p.id); manualClear.current = false; setSelectedDay(null) }}
                   className={cn(
                     'whitespace-nowrap text-[11px] tracking-wide transition-all duration-200 shrink-0',
                     isSelected ? cn(pa, 'bg-accent/50') : 'text-muted-foreground'
@@ -144,7 +163,7 @@ export default function WorkoutPage() {
                 key={day.id}
                 aria-pressed={isSelected}
                 aria-label={`${day.nameKey ? t(day.nameKey) : day.name} - ${day.focusKey ? t(day.focusKey) : day.focus}${done ? ` - ${t('dashboard.completed').toLowerCase()}` : ''}${isToday ? ` - ${t('common.today').toLowerCase()}` : ''}`}
-                onClick={() => setSelectedDay(day.id === selectedDay ? null : day.id)}
+                onClick={() => chooseDay(day.id === selectedDay ? null : day.id)}
                 className={cn(
                   'relative rounded-md border text-center transition-all duration-200',
                   'snap-start shrink-0 w-[52px] min-h-[64px] py-2.5 px-1',
@@ -321,6 +340,22 @@ export default function WorkoutPage() {
           <div className="text-xs text-muted-foreground/70">
             {t('workout.restDayHint')}
           </div>
+          {(() => {
+            // #574: el descanso no puede ser un callejón sin salida.
+            const next = nextTrainingDay(WEEK_DAYS, selectedDay)
+            const nextDay = next && WEEK_DAYS.find(d => d.id === next)
+            if (!nextDay) return null
+            return (
+              <Button
+                id="tour-train-anyway"
+                variant="outline"
+                className="mt-6"
+                onClick={() => chooseDay(nextDay.id)}
+              >
+                {t('workout.trainAnyway', { day: nextDay.nameKey ? t(nextDay.nameKey) : nextDay.name })}
+              </Button>
+            )
+          })()}
         </div>
       ) : (
         <div className="text-center py-16 px-5 text-muted-foreground">

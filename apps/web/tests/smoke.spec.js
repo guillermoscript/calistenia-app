@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { register, navigateTo, dismissOverlays } from './helpers.js'
+import { register, navigateTo, dismissOverlays, selectDay } from './helpers.js'
 
 /**
  * Smoke test del golden path (#145): signup → primera sesión de entrenamiento.
@@ -47,9 +47,11 @@ test('signup → primera sesión completada y persistida en PocketBase', async (
   // 1. Registro (auto-login) + saltar onboarding
   await register(page)
 
-  // 2. Workout: elegir el primer día de entrenamiento del programa fallback
+  // 2. Workout: elegir el primer día de entrenamiento del programa fallback.
+  // Desde #574 /workout autoselecciona hoy; el botón del día es un toggle, así
+  // que solo se pulsa LUN si no está ya seleccionado (si no, lo deseleccionaría).
   await navigateTo(page, '/workout')
-  await page.getByRole('button', { name: /lun|mon/i }).first().click()
+  await selectDay(page)
   const startBtn = page.getByRole('button', { name: /▶ START|▶ EMPEZAR|empezar/i }).first()
   await expect(startBtn).toBeVisible({ timeout: 8000 })
 

@@ -557,7 +557,7 @@ function AuthenticatedApp({
         displayName={displayName} programs={programs} activeProgram={activeProgram}
         userId={user.id} user={user} onSelectProgram={selectProgram}
         onCreateProgram={() => { markOnboardingDone(user.id); setOnboardingDone(true); navigate('/programs/new') }}
-        onComplete={() => { setOnboardingDone(true); navigate('/') }}
+        onComplete={() => { setOnboardingDone(true); navigate('/workout') }}
         onFirstMeasurement={() => { setOnboardingDone(true); navigate('/progress?tab=cuerpo') }}
       />
     )

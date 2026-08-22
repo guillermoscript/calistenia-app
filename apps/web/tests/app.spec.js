@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { register, login, navigateTo, dismissOverlays } from './helpers.js'
+import { register, login, navigateTo, dismissOverlays, selectDay } from './helpers.js'
 
 const TEST_PASS  = 'TestPass123!'
 
@@ -8,8 +8,7 @@ const TEST_PASS  = 'TestPass123!'
 /** Navigate to Workout page, pick first training day, and wait for the exercise list */
 async function goToWorkout(page) {
   await navigateTo(page, '/workout')
-  // Click the first day button (LUN / MON)
-  await page.getByRole('button', { name: /lun|mon/i }).first().click()
+  await selectDay(page)
   await expect(page.getByRole('button', { name: /▶ START|▶ EMPEZAR|empezar/i }).first()).toBeVisible({ timeout: 8000 })
 }
 
@@ -122,13 +121,13 @@ test.describe('Workout - vista de lista', () => {
   })
 
   test('puede ver ejercicios al seleccionar un día', async ({ page }) => {
-    await page.getByRole('button', { name: /lun|mon/i }).first().click()
+    await selectDay(page)
     // Exercise cards should be visible (exercise name + sets info)
     await expect(page.getByText(/SETS|sets|series/i).first()).toBeVisible({ timeout: 5000 })
   })
 
   test('muestra botón EMPEZAR cuando el workout no está completado', async ({ page }) => {
-    await page.getByRole('button', { name: /lun|mon/i }).first().click()
+    await selectDay(page)
     await expect(page.getByRole('button', { name: /▶ START|▶ EMPEZAR|empezar/i }).first()).toBeVisible({ timeout: 5000 })
   })
 
