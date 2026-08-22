@@ -136,6 +136,10 @@ const op = new OpenPanel({
   clientSecret: process.env.EXPO_PUBLIC_OPENPANEL_CLIENT_SECRET,
   storage: AsyncStorage,
   networkInfo: NetInfo,
+  // Los eventos se encolan hasta identify() (o ready() si no hay sesión): así
+  // los primeros screen_view del arranque llevan profileId en vez de salir
+  // anónimos. Ver identifyFromAuthStore() más abajo.
+  waitForProfile: true,
 })
 
 /**
@@ -188,7 +192,36 @@ initCore({
 // authStore (login con OAuth2, refresh) para cubrir la primera sesión y
 // reinstalaciones.
 import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
+  // ── Identidad de analytics ──────────────────────────────────────────────
+  // `op.identify()` solo se llamaba desde useAuth, que en móvil se monta
+  // únicamente en la pantalla de login. Con sesión restaurada al arrancar no
+  // corría nunca y el SDK guarda el profileId solo en memoria → TODOS los
+  // eventos de un usuario ya logueado salían como «Anonymous» en OpenPanel.
+  // Se identifica aquí, en cada arranque y en cada cambio del authStore.
+  let identifiedAs: string | null = null
+  const identifyFromAuthStore = () => {
+    const user = pb.authStore.isValid
+      ? ((pb.authStore as any).record ?? (pb.authStore as any).model)
+      : null
+    if (user?.id) {
+      if (identifiedAs === user.id) return
+      identifiedAs = user.id
+      if (__DEV__) { console.log('[analytics] identify', user.id); return }
+      op.identify({
+        profileId: user.id,
+        firstName: user.display_name || user.name || '',
+        email: user.email,
+        properties: { tier: user.tier || 'free', role: user.role || 'user', platform: 'mobile' },
+      })
+    } else {
+      identifiedAs = null
+      // Invitado: soltar la cola para no perder los eventos de onboarding/login.
+      if (!__DEV__) op.ready()
+    }
+  }
+
   const tryRegister = () => {
+    identifyFromAuthStore()
     if (pb.authStore.isValid) {
       const user = (pb.authStore as any).record ?? (pb.authStore as any).model
       if (user?.id) {
@@ -196,7 +229,7 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
         // Zona horaria: el servidor la necesita para enviar los recordatorios a
         // la hora local correcta. Va AQUÍ y no en useAuth porque en móvil
         // useAuth solo se monta en la pantalla de login (mismo motivo que la
-        // identidad de analytics de más abajo): con sesión ya iniciada nunca
+        // identidad de analytics de más arriba): con sesión ya iniciada nunca
         // llegaría a ejecutarse y `users.timezone` se quedaría vacío.
         import('@calistenia/core/lib/timezone-sync').then(({ syncUserTimezone }) =>
           syncUserTimezone(user.id, user.timezone),
