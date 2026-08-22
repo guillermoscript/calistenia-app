@@ -7,6 +7,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
+import { EmptyState } from '../components/ui/empty-state'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
@@ -24,6 +25,15 @@ import { shareProfile, shareReferralInvite } from '../lib/share'
 import { useReferrals } from '@calistenia/core/hooks/useReferrals'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { ShareMethod } from '../lib/share'
+
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
+}
 
 const PR_DEFS: {
   key: keyof ProfilePRs
@@ -56,7 +66,7 @@ export default function UserProfilePage() {
   const { profile, loading } = usePublicProfile(userId ?? null)
   const [comparing, setComparing] = useState(false)
   const isOwnProfile = currentUserId === userId
-  const { isFollowing, follow, unfollow, followingCount, followersCount } = useFollows(currentUserId || null)
+  const { isFollowing, isRequested, follow, unfollow, followingCount, followersCount } = useFollows(currentUserId || null)
   const { isBlocked, block, unblock } = useBlocks(currentUserId || null)
   const blocked = userId ? isBlocked(userId) : false
   const [followLoading, setFollowLoading] = useState(false)
@@ -115,6 +125,22 @@ export default function UserProfilePage() {
   const today = todayStr()
   const calDays = Object.entries(profile.monthActivity)
 
+  // Cuenta privada sin follow aceptado (#422): las views `public_*` han
+  // devuelto 0 filas en silencio, así que los números de abajo son ceros
+  // falsos. Se pinta el candado en su lugar; la cabecera y el botón se quedan.
+  const following = !!userId && isFollowing(userId)
+  const requested = !!userId && isRequested(userId)
+  const locked = profile.isPrivate && !isOwnProfile && !following
+  const followLabel = followLoading
+    ? '...'
+    : following
+      ? t('friends.followingBtn')
+      : requested
+        ? t('friends.requestedBtn')
+        : profile.isPrivate
+          ? t('friends.requestBtn')
+          : t('friends.followBtn')
+
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-8">
       {/* Header */}
@@ -153,23 +179,25 @@ export default function UserProfilePage() {
             ) : (
               <>
                 <Button
-                  variant={isFollowing(userId) ? 'limeSolid' : 'outline'}
+                  variant={following ? 'limeSolid' : 'outline'}
                   size="sm"
                   disabled={followLoading}
+                  title={requested ? t('friends.cancelRequest') : undefined}
                   onClick={async () => {
                     setFollowLoading(true)
-                    if (isFollowing(userId)) await unfollow(userId)
+                    // unfollow también retira una solicitud pendiente
+                    if (following || requested) await unfollow(userId)
                     else await follow(userId)
                     setFollowLoading(false)
                   }}
                   className={cn(
                     'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
-                    isFollowing(userId)
+                    following || requested
                       ? 'hover:bg-red-500 hover:text-white'
                       : 'hover:border-lime hover:text-lime'
                   )}
                 >
-                  {followLoading ? '...' : isFollowing(userId) ? t('friends.followingBtn') : t('friends.followBtn')}
+                  {followLabel}
                 </Button>
                 <Button
                   variant={comparing ? 'limeSolid' : 'outline'}
@@ -227,6 +255,15 @@ export default function UserProfilePage() {
         </div>
       </div>
 
+      {locked ? (
+        <EmptyState
+          icon={<LockIcon className="size-6" />}
+          title={t('privacy.lockedTitle')}
+          hint={requested ? t('privacy.lockedPending') : t('privacy.lockedBody', { name: profile.displayName })}
+          className="py-16"
+        />
+      ) : (
+      <>
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatBox label={t('profile.sessions')} value={profile.totalSessions} compareValue={comparing ? currentUserSessions : undefined} accent="text-[hsl(var(--lime))]" />
@@ -444,6 +481,8 @@ export default function UserProfilePage() {
             })}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )

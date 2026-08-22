@@ -85,6 +85,13 @@ export interface PublicProfile {
   monthActivity: Record<string, boolean>
   recentSessions: ProfileRecentSession[]
   activeProgram: { id: string; name: TranslatableField } | null
+  /**
+   * Cuenta privada (#422). Si el espectador no tiene un follow aceptado, las
+   * views `public_*` le devuelven 0 filas EN SILENCIO: las estadísticas de
+   * arriba son ceros falsos y la pantalla debe pintar «cuenta privada», no un
+   * perfil vacío.
+   */
+  isPrivate: boolean
 }
 
 /** Número de sesiones recientes que pintan las dos pantallas. */
@@ -169,8 +176,12 @@ export function mapRecentSessions(
 }
 
 /** Nombre visible con los mismos fallbacks que usaban ambas pantallas. */
-export function profileDisplayName(user: { display_name?: string; email?: string }): string {
-  return user.display_name || user.email?.split('@')[0] || ''
+export function profileDisplayName(user: { display_name?: string; name?: string; email?: string }): string {
+  // `name` va entre display_name y el email a propósito: users_field_privacy.pb.js
+  // (#411) esconde `email` salvo emailVisibility, pero publica `name`. Sin este
+  // escalón, quien se dio de alta con Google (rellena `name`, no `display_name`)
+  // salía como cadena vacía o «?».
+  return user.display_name || user.name || user.email?.split('@')[0] || ''
 }
 
 /** PRs con ceros por defecto: `public_prs` puede no tener fila todavía. */

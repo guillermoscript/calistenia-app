@@ -44,15 +44,23 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
 interface LeaderboardQueryResult {
   entries: LeaderboardEntry[]
   participantIds: string[]
+  /**
+   * Participantes con cuenta privada (#422) que NO salen en el ranking para
+   * los demás. Como Strava: la actividad no pública queda fuera del
+   * leaderboard en vez de recalcularse por espectador. El propio usuario
+   * privado sí se ve a sí mismo (entrada con `isPrivate: true`).
+   */
+  hiddenPrivateCount: number
 }
 
-async function fetchLeaderboard(
+/** Exportada para testearla en node (core no renderiza hooks). */
+export async function fetchLeaderboard(
   challengeId: string,
   challenge: Challenge,
   currentUserId: string,
 ): Promise<LeaderboardQueryResult> {
   const available = await isPocketBaseAvailable()
-  if (!available) return { entries: [], participantIds: [] }
+  if (!available) return { entries: [], participantIds: [], hiddenPrivateCount: 0 }
 
   // Obtener participantes con usuario expandido
   const participants = await pb.collection('challenge_participants').getFullList({
@@ -67,11 +75,23 @@ async function fetchLeaderboard(
   const startStr = localMidnightAsUTC(challenge.starts_at)
   const endStr = localMidnightAsUTC(addDays(challenge.ends_at, 1))
 
+  // Las cuentas privadas no compiten en público: fuera del ranking salvo para
+  // sí mismas. Se decide ANTES de pedir los scores: para un espectador sin
+  // follow aceptado las views `public_*` devuelven 0 filas en silencio y el
+  // privado aparecería clavado a 0 en el último puesto, que es peor que no
+  // aparecer.
+  const visible = participants.filter((p: any) => {
+    const isPrivate = p.expand?.user?.is_private === true
+    return !isPrivate || p.user === currentUserId
+  })
+  const hiddenPrivateCount = participants.length - visible.length
+
   const ranked = await Promise.all(
-    participants.map(async (p: any) => {
+    visible.map(async (p: any) => {
       const user = p.expand?.user
       const uid = p.user as string
-      const displayName = user?.display_name || user?.email?.split('@')[0] || '?'
+      // `name` antes del email: el email lo esconde users_field_privacy.pb.js (#411).
+      const displayName = user?.display_name || user?.name || user?.email?.split('@')[0] || '?'
 
       let value = 0
       try {
@@ -85,6 +105,7 @@ async function fetchLeaderboard(
           avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
           value,
           isCurrentUser: uid === currentUserId,
+          isPrivate: user?.is_private === true,
         } satisfies LeaderboardEntry,
         // Desempate determinista: quien se unió antes gana; ver compareLeaderboardEntries.
         joinedAt: (p.created as string) || '',
@@ -100,6 +121,7 @@ async function fetchLeaderboard(
   return {
     entries: ranked.map(r => r.entry),
     participantIds,
+    hiddenPrivateCount,
   }
 }
 
@@ -128,6 +150,7 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
   })
 
   const leaderboard = leaderboardQuery.data?.entries ?? []
+  const hiddenPrivateCount = leaderboardQuery.data?.hiddenPrivateCount ?? 0
   // La API pública sigue exponiendo un Set (los consumidores usan `.has`); se
   // reconstruye aquí porque en el caché solo viven datos JSON-serializables.
   // El guard Array.isArray sanea entradas viejas de la caché persistida donde
@@ -188,6 +211,7 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
   return {
     challenge,
     leaderboard,
+    hiddenPrivateCount,
     loading,
     participantIds,
     load,

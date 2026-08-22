@@ -1,13 +1,13 @@
 // Versión compacta del ProfilePage web: identidad, idioma, cuenta y sesión.
 // Los campos extensos (peso/altura/salud/timezone) siguen solo en la web.
 import { useEffect, useState } from 'react'
-import { View, ScrollView, Pressable, Linking } from 'react-native'
+import { View, ScrollView, Pressable, Linking, Switch, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
 import { useQueryClient } from '@tanstack/react-query'
-import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX, Compass, Ruler, ShieldCheck, Trash2, Users } from 'lucide-react-native'
+import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX, Compass, Ruler, ShieldCheck, Trash2, Users, Lock } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
@@ -27,6 +27,7 @@ import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
+import { usePrivateAccount } from '@calistenia/core/hooks/usePrivateAccount'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 import {
   fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
@@ -92,6 +93,12 @@ export default function ProfileScreen() {
   // Lime se aclara/oscurece según el tema (paridad con reminders.tsx); muted = chevron gris.
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
   const muted = 'hsl(0 0% 45%)'
+  // Cuenta privada (#422): seguirte requiere aprobación.
+  const { isPrivate, saving: privacySaving, setPrivate } = usePrivateAccount(user?.id ?? null)
+  const togglePrivate = async (next: boolean) => {
+    const ok = await setPrivate(next)
+    if (!ok) Alert.alert(t('privacy.saveError'))
+  }
 
   const queryClient = useQueryClient()
   const [name, setName] = useState((user?.display_name as string) || (user?.name as string) || '')
@@ -392,6 +399,36 @@ export default function ProfileScreen() {
             {accountActions.map((action, index) => <AccountShortcut key={action.label} action={action} bordered={index > 0} muted={muted} />)}
           </Card>
         </View>
+
+        {/* Cuenta privada (#422). Fuera de «herramientas de cuenta» a propósito:
+            esas navegan a otra pantalla y ésta es un interruptor que vive aquí. */}
+        <Card>
+          <CardContent className="flex-row items-center gap-3 py-4">
+            <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+              <Lock size={18} color="hsl(74 90% 57%)" />
+            </View>
+            <View className="flex-1">
+              <Text className="font-sans-medium text-foreground">{t('privacy.privateAccount')}</Text>
+              <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                {isPrivate ? t('privacy.privateAccountDesc') : t('privacy.publicAccountDesc')}
+              </Text>
+              {isPrivate ? (
+                <Text className="mt-1.5 font-mono text-[10px] leading-4 tracking-wide text-muted-foreground">
+                  {t('privacy.privateNote')}
+                </Text>
+              ) : null}
+            </View>
+            <Switch
+              value={isPrivate}
+              onValueChange={(v) => { void togglePrivate(v) }}
+              disabled={privacySaving}
+              trackColor={{ false: 'rgba(255,255,255,0.15)', true: lime }}
+              thumbColor="#ffffff"
+              ios_backgroundColor="rgba(255,255,255,0.15)"
+              accessibilityLabel={t('privacy.privateAccount')}
+            />
+          </CardContent>
+        </Card>
 
         {/* Idioma */}
         <Card>

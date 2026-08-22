@@ -177,8 +177,19 @@ describe('profileDisplayName', () => {
     expect(profileDisplayName({ display_name: 'Guille', email: 'g@x.test' })).toBe('Guille')
   })
 
-  it('cae a la parte local del correo', () => {
+  it('cae a `name` antes que al correo', () => {
+    // El escalón que faltaba: users_field_privacy.pb.js (#411) esconde `email`
+    // pero publica `name`, así que sin esto quien se dio de alta con Google
+    // (rellena `name`, no `display_name`) salía como cadena vacía.
+    expect(profileDisplayName({ name: 'Test B', email: 'b@x.test' })).toBe('Test B')
+  })
+
+  it('cae a la parte local del correo cuando no hay ni display_name ni name', () => {
     expect(profileDisplayName({ email: 'guille@x.test' })).toBe('guille')
+  })
+
+  it('sin correo visible (lo normal en un perfil ajeno) usa `name`', () => {
+    expect(profileDisplayName({ name: 'Test B' })).toBe('Test B')
   })
 
   it('devuelve cadena vacía si no hay nada', () => {

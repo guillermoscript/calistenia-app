@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 
-export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined'
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined' | 'follow_request' | 'follow_accepted'
 
 export interface AppNotification {
   id: string
@@ -24,7 +24,9 @@ function mapNotification(r: any): AppNotification {
     userId: r.user,
     type: r.type as NotificationType,
     actorId: r.actor,
-    actorName: r.expand?.actor?.display_name || r.expand?.actor?.email?.split('@')[0] || '?',
+    // `name` antes del email: users_field_privacy.pb.js (#411) esconde `email` pero
+    // publica `name`, así que sin este escalón el alta por Google salía como «?».
+    actorName: r.expand?.actor?.display_name || r.expand?.actor?.name || r.expand?.actor?.email?.split('@')[0] || '?',
     referenceId: r.reference_id,
     referenceType: r.reference_type,
     read: r.read || false,

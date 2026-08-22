@@ -22,6 +22,7 @@ import {
   useProfileForm, fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
 } from '@calistenia/core/hooks/useProfileForm'
 import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
+import { PrivateAccountCard } from '../components/profile/PrivateAccountCard'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
@@ -791,6 +792,10 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </Card>
           </div>
         </section>
+
+        {/* Cuenta privada (#422). Fuera de «acciones rápidas» a propósito: esas
+            navegan a otra pantalla y ésta es un interruptor que se queda aquí. */}
+        <PrivateAccountCard userId={user?.id ?? null} className="lg:col-span-2" />
 
         {/* Save button */}
         <Button

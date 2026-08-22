@@ -104,7 +104,7 @@ export function usePublicProfile(userId: string | null) {
 
       return {
         id: user.id,
-        displayName: profileDisplayName(user as { display_name?: string; email?: string }),
+        displayName: profileDisplayName(user as { display_name?: string; name?: string; email?: string }),
         avatarUrl: getUserAvatarUrl(user, '200x200'),
         email: user.email ?? '',
         memberSince: user.created ? utcToLocalDateStr(user.created) : '',
@@ -118,6 +118,7 @@ export function usePublicProfile(userId: string | null) {
         monthActivity: buildMonthActivity(yearMonth, sessions),
         recentSessions: mapRecentSessions(sessions),
         activeProgram,
+        isPrivate: (user as { is_private?: boolean }).is_private === true,
       }
     },
   })

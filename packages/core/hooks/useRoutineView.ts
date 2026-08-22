@@ -58,7 +58,7 @@ export function useRoutineView(userId: string | null) {
           .catch(() => null),
       ])
 
-      const userName = profileDisplayName(user as { display_name?: string; email?: string })
+      const userName = profileDisplayName(user as { display_name?: string; name?: string; email?: string })
       const programRec = enrollment?.expand?.program as
         | { id: string; name?: TranslatableField; description?: TranslatableField; duration_weeks?: number }
         | undefined

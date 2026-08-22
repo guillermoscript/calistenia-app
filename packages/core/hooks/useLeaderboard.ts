@@ -10,6 +10,8 @@ export interface LeaderboardEntry {
   avatarUrl: string | null
   value: number
   isCurrentUser: boolean
+  /** Cuenta privada (#422): solo la ve su dueño en los rankings. */
+  isPrivate?: boolean
 }
 
 export type LeaderboardCategory = 'sessions_week' | 'sessions_month' | 'streak' | 'streak_best' | 'total_sessions' | 'xp' | 'total_sets' | 'pr_pullups' | 'pr_pushups' | 'pr_lsit' | 'pr_handstand'
@@ -61,7 +63,11 @@ export function useLeaderboard(userId: string | null) {
         filter: pb.filter('follower = {:uid}', { uid: userId! }),
         $autoCancel: false,
       })
-      const followedIds = followsRes.map((r: any) => r.following as string)
+      // Solo los aceptados: una solicitud pendiente a una cuenta privada (#422)
+      // no es un seguido, y sus views devolverían 0 filas en silencio.
+      const followedIds = followsRes
+        .filter((r: any) => r.status !== 'pending')
+        .map((r: any) => r.following as string)
       const allUserIds = [...new Set([userId!, ...followedIds])]
 
       // No sigo a nadie → leaderboard vacío.

@@ -30,6 +30,8 @@ export type NotifRoute = string
 export function getNotifRoute(n: AppNotification): NotifRoute {
   switch (n.type) {
     case 'follow':
+    case 'follow_request':
+    case 'follow_accepted':
       return n.actorId ? `/u/${n.actorId}` : '/social'
 
     case 'reaction':

@@ -56,7 +56,7 @@ function SkeletonRow() {
 export default function FriendsPage({ userId }: FriendsPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { following, followers, followingIds, loading, follow, unfollow } = useFollows(userId)
+  const { following, followers, followingIds, pendingOutgoingIds, loading, follow, unfollow } = useFollows(userId)
   const { blockedIds } = useBlocks(userId)
   const [tab, setTab] = useState<Tab>('siguiendo')
   const [search, setSearch] = useState('')
@@ -321,6 +321,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
                     key={user.id}
                     user={user}
                     isFollowing={followingIds.has(user.id)}
+                    isRequested={pendingOutgoingIds.has(user.id)}
                     isMutual={followingIds.has(user.id) && followerIds.has(user.id)}
                     onFollow={() => follow(user.id)}
                     onUnfollow={() => unfollow(user.id)}
@@ -430,6 +431,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
                       <UserRow
                         user={user}
                         isFollowing={followingIds.has(user.id)}
+                        isRequested={pendingOutgoingIds.has(user.id)}
                         isMutual={followingIds.has(user.id)}
                         onFollow={() => follow(user.id)}
                         onUnfollow={() => unfollow(user.id)}
@@ -452,13 +454,15 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
 interface UserRowProps {
   user: { id: string; displayName: string; username?: string; avatarUrl?: string | null }
   isFollowing: boolean
+  /** Solicitud pendiente hacia una cuenta privada (#422). */
+  isRequested?: boolean
   isMutual?: boolean
   onFollow: () => void
   onUnfollow: () => void
   onTap: () => void
 }
 
-function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: UserRowProps) {
+function UserRow({ user, isFollowing, isRequested = false, isMutual, onFollow, onUnfollow, onTap }: UserRowProps) {
   const { t } = useTranslation()
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -467,7 +471,8 @@ function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: U
     if (actionLoading) return
     setActionLoading(true)
     try {
-      if (isFollowing) await onUnfollow()
+      // unfollow también retira una solicitud pendiente
+      if (isFollowing || isRequested) await onUnfollow()
       else await onFollow()
     } finally {
       setActionLoading(false)
@@ -511,16 +516,17 @@ function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: U
         </div>
       </div>
       <Button
-        variant={isFollowing ? 'outline' : 'limeSolid'}
+        variant={isFollowing || isRequested ? 'outline' : 'limeSolid'}
         size="sm"
         onClick={handleAction}
         disabled={actionLoading}
+        title={isRequested ? t('friends.cancelRequest') : undefined}
         className={cn(
           'text-[11px] tracking-widest h-8 shrink-0 transition-colors duration-200 active:scale-95',
-          isFollowing && 'hover:border-red-500 hover:text-red-500',
+          (isFollowing || isRequested) && 'hover:border-red-500 hover:text-red-500',
         )}
       >
-        {actionLoading ? '...' : isFollowing ? t('friends.followingBtn') : t('friends.followBtn')}
+        {actionLoading ? '...' : isFollowing ? t('friends.followingBtn') : isRequested ? t('friends.requestedBtn') : t('friends.followBtn')}
       </Button>
     </div>
   )

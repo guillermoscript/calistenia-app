@@ -54,7 +54,7 @@ export default function ChallengeDetailScreen() {
   // la barra de navegación de Android.
   const insets = useSafeAreaInsets()
 
-  const { challenge, leaderboard, loading, participantIds, load } = useChallengeDetail(id ?? null, userId)
+  const { challenge, leaderboard, hiddenPrivateCount, loading, participantIds, load } = useChallengeDetail(id ?? null, userId)
   const [joining, setJoining] = useState(false)
   // La clasificación de la rama con meta nace plegada: el héroe es el progreso.
   const [leaderboardOpen, setLeaderboardOpen] = useState(false)
@@ -150,7 +150,7 @@ export default function ChallengeDetailScreen() {
         surface: 'challenge_detail',
         source: 'challenge_detail',
         challenge_id: id,
-        participant_count: leaderboard.length + 1,
+        participant_count: leaderboard.length + hiddenPrivateCount + 1,
         result: 'joined',
       })
       load()
@@ -211,6 +211,21 @@ export default function ChallengeDetailScreen() {
     </View>
   ))
 
+  // Cuentas privadas (#422): el servidor las saca del ranking para los demás.
+  // Se avisa debajo de la lista: cuántas faltan, y si la tuya es una de ellas.
+  const privacyNotes = (hiddenPrivateCount > 0 || currentEntry?.isPrivate) ? (
+    <View className="gap-1 px-4 pt-3">
+      {currentEntry?.isPrivate ? (
+        <Text className="font-mono text-[10px] leading-4 text-muted-foreground">{t('privacy.rankingHiddenSelf')}</Text>
+      ) : null}
+      {hiddenPrivateCount > 0 ? (
+        <Text className="font-mono text-[10px] leading-4 text-muted-foreground">
+          {t('privacy.rankingHiddenOthers', { count: hiddenPrivateCount })}
+        </Text>
+      ) : null}
+    </View>
+  ) : null
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <Header router={router} title="" />
@@ -267,7 +282,7 @@ export default function ChallengeDetailScreen() {
                   : t('challenge.preset.expired')}
             </Text>
             <Text className="font-mono text-[10px] text-muted-foreground">
-              · {t('challenges.participants', { count: leaderboard.length })}
+              · {t('challenges.participants', { count: leaderboard.length + hiddenPrivateCount })}
             </Text>
           </View>
 
@@ -308,7 +323,7 @@ export default function ChallengeDetailScreen() {
               accessibilityLabel={t('challenge.leaderboard')}
             >
               <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length })}
+                {t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length + hiddenPrivateCount })}
               </Text>
               {/* El giro va en la View, no en el icono: react-native-svg se queda
                   el `transform` del style y lo aplica como transformación SVG con
@@ -325,6 +340,7 @@ export default function ChallengeDetailScreen() {
                 ) : (
                   rankRows
                 )}
+                {privacyNotes}
               </View>
             )}
           </View>
@@ -336,6 +352,7 @@ export default function ChallengeDetailScreen() {
             ) : (
               rankRows
             )}
+            {privacyNotes}
           </View>
         )}
       </ScrollView>
