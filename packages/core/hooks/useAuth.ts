@@ -123,6 +123,21 @@ interface UseAuthReturn {
  *   signUp(email, password, displayName)
  *   signOut()
  */
+/** Identifica al usuario en analytics. Idempotente por id: no reenvía en cada refresh de token. */
+let lastIdentified: string | null = null
+export function identifyUser(u: { id: string; display_name?: unknown; name?: unknown; email?: unknown; tier?: unknown; role?: unknown }) {
+  if (lastIdentified === u.id) return
+  lastIdentified = u.id
+  op.identify({
+    profileId: u.id,
+    firstName: String(u.display_name || u.name || ''),
+    email: u.email as string | undefined,
+    properties: { tier: (u.tier as string) || 'free', role: (u.role as string) || 'user' },
+  })
+}
+/** Olvida el último id identificado (logout y tests). */
+export function resetIdentifiedUser() { lastIdentified = null }
+
 export function useAuth(): UseAuthReturn {
   const qc = useQueryClient()
   const [user, setUser] = useState<AuthUser | null>(getCurrentUser)
@@ -140,7 +155,7 @@ export function useAuth(): UseAuthReturn {
         if (u?.timezone) setTimezone(u.timezone)
         else setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
         if (u) {
-          op.identify({ profileId: u.id, firstName: u.display_name || u.name || '', email: u.email, properties: { tier: u.tier || 'free', role: u.role || 'user' } })
+          identifyUser(u)
           // Persistir la zona en el registro: el servidor la necesita para
           // enviar los recordatorios a la hora local correcta.
           void syncUserTimezone(u.id, u.timezone as string | undefined)
@@ -172,6 +187,10 @@ export function useAuth(): UseAuthReturn {
       else if (record) setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
       // Login (incl. OAuth) / refresh: asegurar que el servidor conoce la zona.
       if (record) void syncUserTimezone(record.id, record.timezone as string | undefined)
+      // Login de un usuario EXISTENTE: el arranque corrió con u=null y solo
+      // los registros nuevos pasaban por identify → la sesión entera salía
+      // anónima en OpenPanel hasta la siguiente recarga (en móvil, nunca).
+      if (record) identifyUser(record as RecordModel & Record<string, unknown>)
       // Logout (propio o sincronizado desde otra pestaña vía storage event):
       // vaciar la caché de queries también AQUÍ, no solo en signOut(). Si otra
       // pestaña conserva en memoria las queries del usuario anterior, su
@@ -282,6 +301,7 @@ export function useAuth(): UseAuthReturn {
     // Captura el id ANTES de logout(): luego authStore queda vacío.
     const signedOutUserId = pb.authStore.record?.id ?? pb.authStore.model?.id
     op.clear()
+    resetIdentifiedUser()
     logout()
     // Limpia toda la caché de queries: evita que datos del usuario anterior
     // (nutrición, progreso, social…) persistan tras logout / cambio de cuenta.

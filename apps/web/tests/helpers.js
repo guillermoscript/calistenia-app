@@ -174,11 +174,17 @@ export async function selectDay(page, name = /lun|mon/i) {
   await expect(btn).toBeVisible({ timeout: 8000 })
   // Con el día autoseleccionado, el tour de detalle (driver.js) salta a los
   // 500 ms del montaje y tapa la página: descartarlo justo antes de pulsar.
-  await page.waitForTimeout(700)
-  await dismissOverlays(page)
-  if ((await btn.getAttribute('aria-pressed')) !== 'true') {
-    await btn.click()
+  // driver.js se importa en diferido, así que el overlay puede aparecer DESPUÉS
+  // del primer dismiss: reintentar el clic descartando overlays entre intentos.
+  for (let i = 0; i < 8; i++) {
     await page.waitForTimeout(700)
     await dismissOverlays(page)
+    if ((await btn.getAttribute('aria-pressed')) === 'true') return
+    try {
+      await btn.click({ timeout: 3000 })
+    } catch {
+      // tapado por un overlay: siguiente vuelta
+    }
   }
+  await expect(btn).toHaveAttribute('aria-pressed', 'true')
 }
