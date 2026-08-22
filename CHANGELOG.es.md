@@ -9,6 +9,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.10.2] - 2026-08-22
+
+_Los programas oficiales vuelven a tener sus días de entrenamiento: la semana ya no aparece como solo descanso. Además, mejoras internas de estabilidad._
+
+### Corregido
+
+- **Los programas vuelven a tener semana** — Doce de los programas oficiales se mostraban con la semana vacía (solo sábado y domingo de descanso) y no había nada que entrenar. Ya tienen sus días de lunes a sábado con su tipo de entreno, y si alguno quedara por corregir, la app lo arregla sola al cargarlo.
+
 ## [1.10.1] - 2026-08-21
 
 _Widgets en la pantalla de inicio para la racha, las comidas, el agua y tu próxima sesión; cuentas privadas con aprobación de seguidores; resultados de batalla con revancha y tarjeta para compartir; y un buen puñado de arreglos en cardio y en el guardado sin conexión._
@@ -311,7 +319,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...HEAD
+[1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2
 [1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
