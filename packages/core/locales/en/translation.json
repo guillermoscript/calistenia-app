@@ -288,6 +288,7 @@
   "profile.rowPreferencesDesc": "Language, currency and time zone",
   "profile.rowAccountPrivacy": "Account & privacy",
   "profile.goalWeight": "Goal weight (kg)",
+  "profile.goalWeightShort": "Target weight",
   "profile.goalWeightPlaceholder": "E.g.: 72",
   "profile.name": "Name",
   "profile.namePlaceholder": "Your name",

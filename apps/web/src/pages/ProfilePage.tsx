@@ -5,9 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Kicker } from '../components/ui/kicker'
-import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
@@ -26,6 +24,9 @@ import {
 } from '@calistenia/core/hooks/useProfileForm'
 import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
 import { PrivateAccountCard } from '../components/profile/PrivateAccountCard'
+import {
+  SettingsRow, Field, UnitInput, Segmented, ChipToggle, DayToggle,
+} from '../components/profile/SettingsPanel'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
@@ -35,44 +36,26 @@ interface ProfilePageProps {
 /** Temas de ajuste que se despliegan en la lista del final. */
 type SettingsSection = 'body' | 'training' | 'health' | 'prefs' | 'account'
 
-/**
- * Fila de ajuste: una por tema, con su valor a la derecha.
- *
- * Vive a nivel de módulo, no dentro de `ProfilePage`: definirla en el render
- * la recrearía en cada pulsación y React desmontaría el panel abierto — los
- * `Input` de dentro perderían el foco a cada letra.
- */
-function SettingsRow({ label, value, open = false, onClick, children }: {
-  label: string
-  value?: string
-  /** Solo para las filas que despliegan; las que navegan no la pasan. */
-  open?: boolean
-  onClick: () => void
-  children?: React.ReactNode
-}) {
-  return (
-    <div className="border-b border-border last:border-b-0">
-      <button
-        type="button"
-        onClick={onClick}
-        aria-expanded={children ? open : undefined}
-        className="flex w-full items-center justify-between gap-3 py-3.5 text-left transition-colors hover:text-lime"
-      >
-        <span className="text-[15px]">{label}</span>
-        <span className="flex items-center gap-2">
-          {value ? <span className="font-mono text-[11px] text-muted-foreground">{value}</span> : null}
-          <svg
-            className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')}
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </span>
-      </button>
-      {open && children ? <div className="pb-5 pt-1">{children}</div> : null}
-    </div>
-  )
-}
+// Pares `valor → clave de traducción` de los campos de una sola opción. Fuera
+// del componente: no dependen de nada del render y así el JSX queda plano.
+const ACTIVITY_OPTIONS = [
+  ['sedentary', 'activitySedentary'],
+  ['light', 'activityLight'],
+  ['active', 'activityActive'],
+  ['very_active', 'activityVeryActive'],
+] as const satisfies readonly (readonly [ActivityLevel, string])[]
+
+const PACE_OPTIONS = [
+  ['gradual', 'paceGradual'],
+  ['balanced', 'paceBalanced'],
+  ['aggressive', 'paceAggressive'],
+] as const satisfies readonly (readonly [Pace, string])[]
+
+const INTENSITY_OPTIONS = [
+  ['light', 'intensityLight'],
+  ['moderate', 'intensityModerate'],
+  ['intense', 'intensityIntense'],
+] as const satisfies readonly (readonly [Intensity, string])[]
 
 export default function ProfilePage({ user }: ProfilePageProps) {
   const { t, i18n } = useTranslation()
@@ -326,14 +309,16 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     setOpenSection(prev => (prev === id ? null : id))
 
   const saveBar = (
-    <Button
-      onClick={handleSave}
-      disabled={saving}
-      variant="limeSolid"
-      className="mt-4 h-11 w-full font-bebas text-lg tracking-wide"
-    >
-      {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
-    </Button>
+    <div className="border-t border-border pt-4">
+      <Button
+        onClick={handleSave}
+        disabled={saving}
+        variant="limeSolid"
+        className="h-11 w-full font-bebas text-lg tracking-wide"
+      >
+        {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
+      </Button>
+    </div>
   )
 
   return (
@@ -497,127 +482,70 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       {/* Ajustes: una fila por tema, al final. Lo que se edita se despliega
           aquí mismo; lo que es otra pantalla, navega. */}
       <Kicker className="mb-1 mt-6">{t('profile.settings')}</Kicker>
-      <div className="rounded-lg border border-border px-4 md:px-5">
+      <div className="overflow-hidden rounded-lg border border-border px-4 md:px-5">
         <SettingsRow
           label={t('profile.rowBodyGoals')}
           value={weight && height ? `${weight} kg · ${height} cm` : undefined}
           open={openSection === 'body'}
           onClick={() => toggleSection('body')}
         >
-          <div className="flex flex-col gap-4">
-            <div>
-              <Label htmlFor="profile-name" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.name')}</Label>
-              <Input
-                id="profile-name"
-                value={displayName}
-                onChange={(e) => set('displayName', e.target.value)}
-                placeholder={t('profile.namePlaceholder')}
-                className="h-10"
-              />
-            </div>
+          <Field label={t('profile.name')} htmlFor="profile-name">
+            <UnitInput
+              id="profile-name"
+              value={displayName}
+              onChange={(e) => set('displayName', e.target.value)}
+              placeholder={t('profile.namePlaceholder')}
+            />
+          </Field>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label htmlFor="profile-weight" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.weight')}</Label>
-                <Input id="profile-weight" type="number" step="0.1" min="0" value={weight} onChange={(e) => set('weight', e.target.value)} placeholder={t('profile.weightPlaceholder')} className="h-10" />
-              </div>
-              <div>
-                <Label htmlFor="profile-height" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.height')}</Label>
-                <Input id="profile-height" type="number" min="0" value={height} onChange={(e) => set('height', e.target.value)} placeholder={t('profile.heightPlaceholder')} className="h-10" />
-              </div>
-              <div>
-                <Label htmlFor="profile-age" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.age')}</Label>
-                <Input id="profile-age" type="number" min="13" max="120" value={age} onChange={(e) => set('age', e.target.value)} placeholder={t('profile.agePlaceholder')} className="h-10" />
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.sex')}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: 'male', label: t('profile.male') },
-                  { value: 'female', label: t('profile.female') },
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => set('sex', sex === opt.value ? '' : opt.value)}
-                    aria-pressed={sex === opt.value}
-                    className={cn(
-                      'h-10 rounded-md border text-sm transition-colors',
-                      sex === opt.value
-                        ? 'border-lime bg-lime/10 text-lime'
-                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="profile-goal-weight" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.goalWeight')}</Label>
-              <Input id="profile-goal-weight" type="number" step="0.1" min="0" value={goalWeight} onChange={(e) => set('goalWeight', e.target.value)} placeholder={t('profile.goalWeightPlaceholder')} className="h-10" />
-              {goalBmi && (
-                <div className="mt-1 text-[10px] text-muted-foreground">{t('onboarding.bmiGoal', { bmi: goalBmi })}</div>
-              )}
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.activityLevel')}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  ['sedentary', 'activitySedentary'],
-                  ['light', 'activityLight'],
-                  ['active', 'activityActive'],
-                  ['very_active', 'activityVeryActive'],
-                ] as const).map(([val, key]) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => set('activityLevel', activityLevel === val ? '' : val)}
-                    aria-pressed={activityLevel === val}
-                    className={cn(
-                      'h-10 rounded-md border text-sm transition-colors',
-                      activityLevel === val
-                        ? 'border-lime bg-lime/10 text-lime'
-                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                    )}
-                  >
-                    {t(`onboarding.${key}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.pace')}</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  ['gradual', 'paceGradual'],
-                  ['balanced', 'paceBalanced'],
-                  ['aggressive', 'paceAggressive'],
-                ] as const).map(([val, key]) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => set('pace', pace === val ? '' : val)}
-                    aria-pressed={pace === val}
-                    className={cn(
-                      'h-10 rounded-md border text-sm transition-colors',
-                      pace === val
-                        ? 'border-lime bg-lime/10 text-lime'
-                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                    )}
-                  >
-                    {t(`onboarding.${key}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {saveBar}
+          <div className="grid grid-cols-3 gap-3">
+            <Field label={t('profile.weightShort')} htmlFor="profile-weight">
+              <UnitInput id="profile-weight" type="number" step="0.1" min="0" unit="kg" value={weight} onChange={(e) => set('weight', e.target.value)} placeholder={t('profile.weightPlaceholder')} />
+            </Field>
+            <Field label={t('profile.heightShort')} htmlFor="profile-height">
+              <UnitInput id="profile-height" type="number" min="0" unit="cm" value={height} onChange={(e) => set('height', e.target.value)} placeholder={t('profile.heightPlaceholder')} />
+            </Field>
+            <Field label={t('profile.age')} htmlFor="profile-age">
+              <UnitInput id="profile-age" type="number" min="13" max="120" value={age} onChange={(e) => set('age', e.target.value)} placeholder={t('profile.agePlaceholder')} />
+            </Field>
           </div>
+
+          <Field label={t('profile.sex')}>
+            <Segmented
+              options={[
+                { value: 'male', label: t('profile.male') },
+                { value: 'female', label: t('profile.female') },
+              ]}
+              value={sex}
+              onChange={(next) => set('sex', next)}
+            />
+          </Field>
+
+          <Field
+            label={t('profile.goalWeightShort')}
+            htmlFor="profile-goal-weight"
+            hint={goalBmi ? t('onboarding.bmiGoal', { bmi: goalBmi }) : undefined}
+          >
+            <UnitInput id="profile-goal-weight" type="number" step="0.1" min="0" unit="kg" value={goalWeight} onChange={(e) => set('goalWeight', e.target.value)} placeholder={t('profile.goalWeightPlaceholder')} />
+          </Field>
+
+          <Field label={t('onboarding.activityLevel')}>
+            <Segmented
+              columns={2}
+              options={ACTIVITY_OPTIONS.map(([value, key]) => ({ value, label: t(`onboarding.${key}`) }))}
+              value={activityLevel}
+              onChange={(next) => set('activityLevel', next)}
+            />
+          </Field>
+
+          <Field label={t('onboarding.pace')}>
+            <Segmented
+              options={PACE_OPTIONS.map(([value, key]) => ({ value, label: t(`onboarding.${key}`) }))}
+              value={pace}
+              onChange={(next) => set('pace', next)}
+            />
+          </Field>
+          {saveBar}
         </SettingsRow>
 
         <SettingsRow
@@ -626,114 +554,62 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           open={openSection === 'training'}
           onClick={() => toggleSection('training')}
         >
-          <div className="flex flex-col gap-4">
-            <div id="tour-level-selector">
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.level')}</Label>
-              <div className="flex gap-2">
-                {LEVELS.map(l => (
-                  <Button
-                    key={l.value}
-                    variant={level === l.value ? 'limeSolid' : 'outline'}
-                    size="sm"
-                    aria-pressed={level === l.value}
-                    onClick={() => set('level', l.value)}
-                    className="h-8 px-4 text-[11px]"
-                  >
-                    {l.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.focusAreas')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {FOCUS_AREA_IDS.map(id => {
-                  const active = focusAreas.includes(id)
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggle('focusAreas', id)}
-                      aria-pressed={active}
-                      className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                        active
-                          ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                      )}
-                    >
-                      {t(`onboarding.focus.${id}`)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.trainingDays')}</Label>
-              <div className="grid grid-cols-7 gap-1.5">
-                {DAY_IDS.map(d => {
-                  const active = trainingDays.includes(d)
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => toggle('trainingDays', d)}
-                      aria-pressed={active}
-                      className={cn(
-                        'h-10 rounded-md border text-xs font-medium transition-colors',
-                        active
-                          ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                      )}
-                    >
-                      {t(`onboarding.days.${d}`)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.intensity')}</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  ['light', 'intensityLight'],
-                  ['moderate', 'intensityModerate'],
-                  ['intense', 'intensityIntense'],
-                ] as const).map(([val, key]) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => set('intensity', intensity === val ? '' : val)}
-                    aria-pressed={intensity === val}
-                    className={cn(
-                      'h-10 rounded-md border text-sm transition-colors',
-                      intensity === val
-                        ? 'border-lime bg-lime/10 text-lime'
-                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                    )}
-                  >
-                    {t(`onboarding.${key}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="profile-goal" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.goal')}</Label>
-              <textarea
-                id="profile-goal"
-                value={goal}
-                onChange={(e) => set('goal', e.target.value)}
-                placeholder={t('profile.goalPlaceholder')}
-                rows={3}
-                className="flex w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          <div id="tour-level-selector">
+            <Field label={t('profile.level')}>
+              <Segmented
+                allowClear={false}
+                options={LEVELS.map(l => ({ value: l.value, label: l.label }))}
+                value={level}
+                onChange={(next) => set('level', next)}
               />
-            </div>
-            {saveBar}
+            </Field>
           </div>
+
+          <Field label={t('onboarding.focusAreas')}>
+            <div className="flex flex-wrap gap-2">
+              {FOCUS_AREA_IDS.map(id => (
+                <ChipToggle
+                  key={id}
+                  label={t(`onboarding.focus.${id}`)}
+                  active={focusAreas.includes(id)}
+                  onClick={() => toggle('focusAreas', id)}
+                />
+              ))}
+            </div>
+          </Field>
+
+          <Field label={t('onboarding.trainingDays')}>
+            <div className="grid grid-cols-7 gap-1.5">
+              {DAY_IDS.map(d => (
+                <DayToggle
+                  key={d}
+                  label={t(`onboarding.days.${d}`)}
+                  active={trainingDays.includes(d)}
+                  onClick={() => toggle('trainingDays', d)}
+                />
+              ))}
+            </div>
+          </Field>
+
+          <Field label={t('onboarding.intensity')}>
+            <Segmented
+              options={INTENSITY_OPTIONS.map(([value, key]) => ({ value, label: t(`onboarding.${key}`) }))}
+              value={intensity}
+              onChange={(next) => set('intensity', next)}
+            />
+          </Field>
+
+          <Field label={t('profile.goal')} htmlFor="profile-goal">
+            <textarea
+              id="profile-goal"
+              value={goal}
+              onChange={(e) => set('goal', e.target.value)}
+              placeholder={t('profile.goalPlaceholder')}
+              rows={3}
+              className="flex w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </Field>
+          {saveBar}
         </SettingsRow>
 
         <SettingsRow
@@ -742,58 +618,32 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           open={openSection === 'health'}
           onClick={() => toggleSection('health')}
         >
-          <div className="flex flex-col gap-4">
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.medicalConditions')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {CONDITION_IDS.map(id => {
-                  const active = medicalConditions.includes(id)
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggle('medicalConditions', id)}
-                      aria-pressed={active}
-                      className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                        active
-                          ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                      )}
-                    >
-                      {t(`onboarding.conditions.${id}`)}
-                    </button>
-                  )
-                })}
-              </div>
+          <Field label={t('onboarding.medicalConditions')}>
+            <div className="flex flex-wrap gap-2">
+              {CONDITION_IDS.map(id => (
+                <ChipToggle
+                  key={id}
+                  label={t(`onboarding.conditions.${id}`)}
+                  active={medicalConditions.includes(id)}
+                  onClick={() => toggle('medicalConditions', id)}
+                />
+              ))}
             </div>
+          </Field>
 
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.injuriesLabel')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {INJURY_IDS.map(id => {
-                  const active = injuries.includes(id)
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggle('injuries', id)}
-                      aria-pressed={active}
-                      className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                        active
-                          ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                      )}
-                    >
-                      {t(`onboarding.injuries.${id}`)}
-                    </button>
-                  )
-                })}
-              </div>
+          <Field label={t('onboarding.injuriesLabel')}>
+            <div className="flex flex-wrap gap-2">
+              {INJURY_IDS.map(id => (
+                <ChipToggle
+                  key={id}
+                  label={t(`onboarding.injuries.${id}`)}
+                  active={injuries.includes(id)}
+                  onClick={() => toggle('injuries', id)}
+                />
+              ))}
             </div>
-            {saveBar}
-          </div>
+          </Field>
+          {saveBar}
         </SettingsRow>
 
         <SettingsRow
@@ -802,72 +652,51 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           open={openSection === 'prefs'}
           onClick={() => toggleSection('prefs')}
         >
-          <div className="flex flex-col gap-4">
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.language')}</Label>
-              <select
-                value={currentLang}
-                onChange={(e) => i18n.changeLanguage(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            </div>
+          <Field label={t('profile.language')}>
+            <Segmented
+              allowClear={false}
+              options={[
+                { value: 'es', label: 'Español' },
+                { value: 'en', label: 'English' },
+              ]}
+              value={currentLang}
+              onChange={(next) => { if (next) i18n.changeLanguage(next) }}
+            />
+          </Field>
 
-            <div>
-              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.currency')}</Label>
-              <div className="flex gap-2">
-                {SUPPORTED_CURRENCIES.map(code => {
-                  const active = currencyPrefs.defaultCurrency === code
-                  return (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => setDefaultCurrency(code)}
-                      aria-pressed={active}
-                      className={cn(
-                        'flex h-11 flex-1 items-center justify-center rounded-md border font-mono text-xs tracking-wide transition-colors',
-                        active
-                          ? 'border-lime/40 bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
-                      )}
-                    >
-                      {currencySymbol(code)} {code}
-                    </button>
-                  )
-                })}
-              </div>
-              <div className="mt-2 font-mono text-[9px] tracking-wide text-muted-foreground/70">
-                {t('profile.currencyDesc')}
-              </div>
-            </div>
+          <Field label={t('profile.currency')} hint={t('profile.currencyDesc')}>
+            <Segmented
+              allowClear={false}
+              options={SUPPORTED_CURRENCIES.map(code => ({ value: code, label: `${currencySymbol(code)} ${code}` }))}
+              value={currencyPrefs.defaultCurrency}
+              onChange={(next) => { if (next) setDefaultCurrency(next) }}
+            />
+          </Field>
 
-            <div>
-              <Label htmlFor="profile-timezone" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.timezone')}</Label>
-              <Input
-                id="profile-tz-search"
-                value={tzSearch}
-                onChange={(e) => setTzSearch(e.target.value)}
-                placeholder={t('profile.searchTimezone')}
-                className="mb-2 h-8 text-xs"
-              />
-              <select
-                id="profile-timezone"
-                value={timezone}
-                onChange={(e) => set('timezone', e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {timezoneOptions.map(tz => (
-                  <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
-                ))}
-              </select>
-              <div className="mt-1 text-[10px] text-muted-foreground">
-                {t('profile.currentTimezone')}: {timezone.replace(/_/g, ' ')}
-              </div>
-            </div>
-            {saveBar}
-          </div>
+          <Field
+            label={t('profile.timezone')}
+            htmlFor="profile-timezone"
+            hint={`${t('profile.currentTimezone')}: ${timezone.replace(/_/g, ' ')}`}
+          >
+            <UnitInput
+              id="profile-tz-search"
+              value={tzSearch}
+              onChange={(e) => setTzSearch(e.target.value)}
+              placeholder={t('profile.searchTimezone')}
+              className="h-9 text-xs"
+            />
+            <select
+              id="profile-timezone"
+              value={timezone}
+              onChange={(e) => set('timezone', e.target.value)}
+              className="mt-2 flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {timezoneOptions.map(tz => (
+                <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </Field>
+          {saveBar}
         </SettingsRow>
 
         <SettingsRow label={t('profile.reminders')} onClick={() => navigate('/reminders')} />
@@ -879,34 +708,32 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           open={openSection === 'account'}
           onClick={() => toggleSection('account')}
         >
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">{t('profile.email')}</span>
-                <span className="text-sm text-foreground">{user?.email || '—'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">{t('profile.memberSince')}</span>
-                <span className="text-sm text-foreground">{user?.created ? utcToLocalDateStr(user.created) : '—'}</span>
-              </div>
+          <dl className="flex flex-col gap-2.5">
+            <div className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-2.5">
+              <Kicker as="span" size="xs" className="shrink-0">{t('profile.email')}</Kicker>
+              <dd className="truncate text-sm">{user?.email || '—'}</dd>
             </div>
-
-            {/* Cuenta privada (#422): interruptor que se queda aquí, no navega. */}
-            <PrivateAccountCard userId={user?.id ?? null} />
-
-            {/* Zona de peligro (#300): dentro de «cuenta», al final del todo, para
-                que no se pulse de paso mientras se editan otros campos. */}
-            <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 p-4">
-              <Kicker className="text-destructive">{t('account.dangerZone')}</Kicker>
-              <p className="text-sm text-muted-foreground">{t('account.deleteDesc')}</p>
-              <Button
-                variant="outline"
-                className="self-start border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => setDeleteOpen(true)}
-              >
-                {t('account.deleteCta')}
-              </Button>
+            <div className="flex items-baseline justify-between gap-3">
+              <Kicker as="span" size="xs" className="shrink-0">{t('profile.memberSince')}</Kicker>
+              <dd className="font-mono text-xs">{user?.created ? utcToLocalDateStr(user.created) : '—'}</dd>
             </div>
+          </dl>
+
+          {/* Cuenta privada (#422): interruptor que se queda aquí, no navega. */}
+          <PrivateAccountCard userId={user?.id ?? null} />
+
+          {/* Zona de peligro (#300): dentro de «cuenta», al final del todo, para
+              que no se pulse de paso mientras se editan otros campos. */}
+          <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/[0.04] p-4">
+            <Kicker className="text-destructive">{t('account.dangerZone')}</Kicker>
+            <p className="text-sm text-muted-foreground">{t('account.deleteDesc')}</p>
+            <Button
+              variant="outline"
+              className="self-start border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
+              {t('account.deleteCta')}
+            </Button>
           </div>
         </SettingsRow>
       </div>

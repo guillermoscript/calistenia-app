@@ -2,20 +2,19 @@
 // ajustes al final, una sola fila por tema. Misma estructura que el perfil web:
 // lo que se edita se despliega aquí mismo, lo que es otra pantalla navega.
 import { useEffect, useState } from 'react'
-import { View, ScrollView, Pressable, Linking, Switch, Alert } from 'react-native'
+import { View, ScrollView, Linking, Switch, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
 import { useQueryClient } from '@tanstack/react-query'
-import { LogOut, ChevronRight, Sun, Moon, Smartphone, Trash2 } from 'lucide-react-native'
+import { LogOut, Trash2 } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
@@ -23,6 +22,7 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
 import { AvatarPicker } from '@/components/profile/AvatarPicker'
+import { SettingsRow, Field, UnitInput, Segmented } from '@/components/profile/SettingsPanel'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
@@ -42,56 +42,23 @@ type SaveState = 'idle' | 'saving' | 'saved'
 /** Temas de ajuste que se despliegan en la lista del final. */
 type SettingsSection = 'body' | 'prefs' | 'account'
 
-const ACTIVITY_LEVEL_IDS: ActivityLevel[] = ['sedentary', 'light', 'active', 'very_active']
-const ACTIVITY_LEVEL_LABEL_KEYS: Record<ActivityLevel, string> = {
-  sedentary: 'onboarding.activitySedentary',
-  light: 'onboarding.activityLight',
-  active: 'onboarding.activityActive',
-  very_active: 'onboarding.activityVeryActive',
-}
+// Pares `valor → clave de traducción` de los campos de una sola opción.
+const ACTIVITY_OPTIONS = [
+  ['sedentary', 'onboarding.activitySedentary'],
+  ['light', 'onboarding.activityLight'],
+  ['active', 'onboarding.activityActive'],
+  ['very_active', 'onboarding.activityVeryActive'],
+] as const satisfies readonly (readonly [ActivityLevel, string])[]
+
+const THEME_OPTIONS = [
+  ['system', 'profile.themeSystem'],
+  ['light', 'profile.themeLight'],
+  ['dark', 'profile.themeDark'],
+] as const satisfies readonly (readonly [ThemeMode, string])[]
 const LEVEL_LABEL_KEYS: Record<string, string> = {
   principiante: 'difficulty.beginner',
   intermedio: 'difficulty.intermediate',
   avanzado: 'difficulty.advanced',
-}
-
-/**
- * Fila de ajuste: una por tema, con su valor a la derecha. Despliega su panel
- * o navega, nunca las dos cosas.
- *
- * Vive a nivel de módulo, no dentro de la pantalla: definirla en el render la
- * recrearía en cada pulsación y React desmontaría el panel abierto — los
- * `Input` de dentro perderían el foco a cada letra.
- */
-function SettingsRow({ label, value, open, onPress, bordered, muted, children }: {
-  label: string
-  value?: string
-  /** Solo para las filas que despliegan; las que navegan no la pasan. */
-  open?: boolean
-  onPress: () => void
-  bordered: boolean
-  muted: string
-  children?: React.ReactNode
-}) {
-  return (
-    <View className={cn(bordered && 'border-t border-border/70')}>
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityState={children ? { expanded: !!open } : undefined}
-        className="flex-row items-center gap-3 px-5 py-3.5 active:bg-muted/70"
-      >
-        <Text className="flex-1 text-[15px] text-foreground">{label}</Text>
-        {value ? (
-          <Text className="shrink font-mono text-[11px] text-muted-foreground" numberOfLines={1}>{value}</Text>
-        ) : null}
-        <View className="shrink-0" style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
-          <ChevronRight size={16} color={muted} />
-        </View>
-      </Pressable>
-      {open && children ? <View className="px-5 pb-5 pt-1">{children}</View> : null}
-    </View>
-  )
 }
 
 /** Cifra grande + etiqueta mono: las tres del carné. */
@@ -349,80 +316,63 @@ export default function ProfileScreen() {
             lo que es otra pantalla, navega. */}
         <View className="mt-3 gap-2">
           <Kicker>{t('profile.settings')}</Kicker>
-          <Card className="gap-0 py-1">
+          <Card className="gap-0 overflow-hidden py-1">
             <SettingsRow
               label={t('profile.rowBodyGoals')}
               value={weight && height ? `${weight} kg · ${height} cm` : undefined}
               open={openSection === 'body'}
               onPress={() => toggleSection('body')}
               bordered={false}
-              muted={muted}
+              muted={muted} lime={lime}
             >
-              <View className="gap-4">
-                <View className="gap-1.5">
-                  <Text className="text-[11px] text-muted-foreground">{t('profile.name')}</Text>
-                  <Input
-                    value={name}
-                    onChangeText={setName}
-                    placeholder={t('profile.namePlaceholder')}
-                    className="h-11"
-                    maxLength={60}
-                  />
-                </View>
+              <Field label={t('profile.name')}>
+                <UnitInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder={t('profile.namePlaceholder')}
+                  maxLength={60}
+                />
+              </Field>
 
-                <View className="flex-row gap-3">
-                  <View className="flex-1 gap-1.5">
-                    <Text className="text-[11px] text-muted-foreground">{t('profile.weight')}</Text>
-                    <Input value={weight} onChangeText={setWeight} placeholder={t('profile.weightPlaceholder')} keyboardType="decimal-pad" className="h-11" />
-                  </View>
-                  <View className="flex-1 gap-1.5">
-                    <Text className="text-[11px] text-muted-foreground">{t('profile.height')}</Text>
-                    <Input value={height} onChangeText={setHeight} placeholder={t('profile.heightPlaceholder')} keyboardType="decimal-pad" className="h-11" />
-                  </View>
-                  <View className="flex-1 gap-1.5">
-                    <Text className="text-[11px] text-muted-foreground">{t('profile.age')}</Text>
-                    <Input value={age} onChangeText={setAge} placeholder={t('profile.agePlaceholder')} keyboardType="number-pad" className="h-11" />
-                  </View>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Field label={t('profile.weightShort')}>
+                    <UnitInput value={weight} onChangeText={setWeight} placeholder={t('profile.weightPlaceholder')} keyboardType="decimal-pad" unit="kg" />
+                  </Field>
                 </View>
-
-                <View className="gap-1.5">
-                  <Text className="text-[11px] text-muted-foreground">{t('profile.sex')}</Text>
-                  <View className="flex-row gap-2">
-                    {([['male', t('profile.male')], ['female', t('profile.female')]] as const).map(([value, label]) => (
-                      <Pressable
-                        key={value}
-                        onPress={() => setSex(sex === value ? '' : value)}
-                        className={cn(
-                          'h-11 flex-1 items-center justify-center rounded-md border',
-                          sex === value ? 'border-lime/40 bg-lime/10' : 'border-border',
-                        )}
-                      >
-                        <Text className={cn('text-sm', sex === value ? 'text-lime' : 'text-muted-foreground')}>{label}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                <View className="flex-1">
+                  <Field label={t('profile.heightShort')}>
+                    <UnitInput value={height} onChangeText={setHeight} placeholder={t('profile.heightPlaceholder')} keyboardType="decimal-pad" unit="cm" />
+                  </Field>
                 </View>
-
-                <View className="gap-1.5">
-                  <Text className="text-[11px] text-muted-foreground">{t('onboarding.activityLevel')}</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {ACTIVITY_LEVEL_IDS.map(id => (
-                      <Pressable
-                        key={id}
-                        onPress={() => setActivityLevel(activityLevel === id ? '' : id)}
-                        className={cn(
-                          'h-11 min-w-[45%] flex-1 items-center justify-center rounded-md border',
-                          activityLevel === id ? 'border-lime/40 bg-lime/10' : 'border-border',
-                        )}
-                      >
-                        <Text className={cn('text-xs', activityLevel === id ? 'text-lime' : 'text-muted-foreground')}>
-                          {t(ACTIVITY_LEVEL_LABEL_KEYS[id])}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                <View className="flex-1">
+                  <Field label={t('profile.age')}>
+                    <UnitInput value={age} onChangeText={setAge} placeholder={t('profile.agePlaceholder')} keyboardType="number-pad" />
+                  </Field>
                 </View>
+              </View>
 
+              <Field label={t('profile.sex')}>
+                <Segmented
+                  options={[
+                    { value: 'male', label: t('profile.male') },
+                    { value: 'female', label: t('profile.female') },
+                  ]}
+                  value={sex}
+                  onChange={setSex}
+                />
+              </Field>
+
+              <Field label={t('onboarding.activityLevel')}>
+                <Segmented
+                  columns={2}
+                  options={ACTIVITY_OPTIONS.map(([value, key]) => ({ value, label: t(key) }))}
+                  value={activityLevel}
+                  onChange={setActivityLevel}
+                />
+              </Field>
+
+              <View className="border-t border-border/70 pt-4">
                 <Button
                   className="h-11 bg-lime active:bg-lime/90"
                   onPress={handleSaveBody}
@@ -441,90 +391,44 @@ export default function ProfileScreen() {
               open={openSection === 'prefs'}
               onPress={() => toggleSection('prefs')}
               bordered
-              muted={muted}
+              muted={muted} lime={lime}
             >
-              <View className="gap-4">
-                <View className="gap-1.5">
-                  <Text className="text-[11px] text-muted-foreground">{t('profile.language')}</Text>
-                  <View className="flex-row gap-2">
-                    {([['es', 'Español'], ['en', 'English']] as const).map(([code, label]) => (
-                      <Pressable
-                        key={code}
-                        onPress={() => i18n.changeLanguage(code)}
-                        className={cn(
-                          'h-11 flex-1 items-center justify-center rounded-md border',
-                          currentLang === code ? 'border-lime/40 bg-lime/10' : 'border-border',
-                        )}
-                      >
-                        <Text className={cn('font-mono text-xs tracking-wide', currentLang === code ? 'text-lime' : 'text-muted-foreground')}>
-                          {label}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
+              <Field label={t('profile.language')}>
+                <Segmented
+                  allowClear={false}
+                  options={[
+                    { value: 'es', label: 'Español' },
+                    { value: 'en', label: 'English' },
+                  ]}
+                  value={currentLang}
+                  onChange={(next) => { if (next) i18n.changeLanguage(next) }}
+                />
+              </Field>
 
-                <View className="gap-1.5">
-                  <Text className="text-[11px] text-muted-foreground">{t('profile.currency')}</Text>
-                  <View className="flex-row gap-2">
-                    {SUPPORTED_CURRENCIES.map(code => {
-                      const active = currencyPrefs.defaultCurrency === code
-                      return (
-                        <Pressable
-                          key={code}
-                          onPress={() => setDefaultCurrency(code)}
-                          className={cn(
-                            'h-11 flex-1 items-center justify-center rounded-md border',
-                            active ? 'border-lime/40 bg-lime/10' : 'border-border',
-                          )}
-                        >
-                          <Text className={cn('font-mono text-xs tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
-                            {currencySymbol(code)} {code}
-                          </Text>
-                        </Pressable>
-                      )
-                    })}
-                  </View>
-                  <Text className="font-mono text-[9px] tracking-wide text-muted-foreground/70">
-                    {t('profile.currencyDesc')}
-                  </Text>
-                </View>
+              <Field label={t('profile.currency')} hint={t('profile.currencyDesc')}>
+                <Segmented
+                  allowClear={false}
+                  options={SUPPORTED_CURRENCIES.map(code => ({ value: code, label: `${currencySymbol(code)} ${code}` }))}
+                  value={currencyPrefs.defaultCurrency}
+                  onChange={(next) => { if (next) setDefaultCurrency(next) }}
+                />
+              </Field>
 
-                <View className="gap-1.5">
-                  <Text className="text-[11px] text-muted-foreground">{t('profile.theme')}</Text>
-                  <View className="flex-row gap-2">
-                    {([
-                      ['system', t('profile.themeSystem'), Smartphone],
-                      ['light', t('profile.themeLight'), Sun],
-                      ['dark', t('profile.themeDark'), Moon],
-                    ] as const).map(([mode, label, Icon]) => {
-                      const active = themeMode === mode
-                      return (
-                        <Pressable
-                          key={mode}
-                          onPress={() => changeTheme(mode)}
-                          className={cn(
-                            'flex-1 items-center justify-center gap-1.5 rounded-md border py-3',
-                            active ? 'border-lime/40 bg-lime/10' : 'border-border',
-                          )}
-                        >
-                          <Icon size={18} color={active ? lime : muted} />
-                          <Text className={cn('font-mono text-xs tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
-                            {label}
-                          </Text>
-                        </Pressable>
-                      )
-                    })}
-                  </View>
-                </View>
-              </View>
+              <Field label={t('profile.theme')}>
+                <Segmented
+                  allowClear={false}
+                  options={THEME_OPTIONS.map(([value, key]) => ({ value, label: t(key) }))}
+                  value={themeMode}
+                  onChange={(next) => { if (next) changeTheme(next) }}
+                />
+              </Field>
             </SettingsRow>
 
             <SettingsRow
               label={t('profile.reminders')}
               onPress={() => router.push('/reminders')}
               bordered
-              muted={muted}
+              muted={muted} lime={lime}
             />
 
             <SettingsRow
@@ -533,64 +437,62 @@ export default function ProfileScreen() {
               open={openSection === 'account'}
               onPress={() => toggleSection('account')}
               bordered
-              muted={muted}
+              muted={muted} lime={lime}
             >
-              <View className="gap-4">
-                <View className="gap-2.5">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-[11px] text-muted-foreground">{t('profile.email')}</Text>
-                    <Text className="text-sm text-foreground" numberOfLines={1}>{(user?.email as string) || '—'}</Text>
-                  </View>
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-[11px] text-muted-foreground">{t('profile.memberSince')}</Text>
-                    <Text className="font-mono text-xs text-foreground">
-                      {user?.created ? utcToLocalDateStr(user.created as string) : '—'}
+              <View className="gap-2.5">
+                <View className="flex-row items-center justify-between gap-3 border-b border-border/60 pb-2.5">
+                  <Kicker size="xs" className="shrink-0">{t('profile.email')}</Kicker>
+                  <Text className="shrink text-sm text-foreground" numberOfLines={1}>{(user?.email as string) || '—'}</Text>
+                </View>
+                <View className="flex-row items-center justify-between gap-3">
+                  <Kicker size="xs" className="shrink-0">{t('profile.memberSince')}</Kicker>
+                  <Text className="font-mono text-xs text-foreground">
+                    {user?.created ? utcToLocalDateStr(user.created as string) : '—'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Cuenta privada (#422): interruptor que se queda aquí, no navega. */}
+              <View className="flex-row items-center gap-3 rounded-lg border border-border bg-background p-4">
+                <View className="flex-1">
+                  <Text className="font-sans-medium text-foreground">{t('privacy.privateAccount')}</Text>
+                  <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                    {isPrivate ? t('privacy.privateAccountDesc') : t('privacy.publicAccountDesc')}
+                  </Text>
+                  {isPrivate ? (
+                    <Text className="mt-1.5 font-mono text-[10px] leading-4 tracking-wide text-muted-foreground">
+                      {t('privacy.privateNote')}
+                    </Text>
+                  ) : null}
+                </View>
+                <Switch
+                  value={isPrivate}
+                  onValueChange={(v) => { void togglePrivate(v) }}
+                  disabled={privacySaving}
+                  trackColor={{ false: 'rgba(255,255,255,0.15)', true: lime }}
+                  thumbColor="#ffffff"
+                  ios_backgroundColor="rgba(255,255,255,0.15)"
+                  accessibilityLabel={t('privacy.privateAccount')}
+                />
+              </View>
+
+              {/* Zona de peligro: baja de cuenta (#300). Al final del todo y
+                  separada del cierre de sesión para que no se confundan. */}
+              <View className="gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                <Kicker className="text-destructive">{t('account.dangerZone')}</Kicker>
+                <Text className="text-[13px] text-muted-foreground">{t('account.deleteDesc')}</Text>
+                <Button
+                  variant="outline"
+                  className="mt-1 h-11 self-start border-destructive/40 px-4 active:bg-destructive/10"
+                  onPress={() => setDeleteOpen(true)}
+                >
+                  <View className="flex-row items-center gap-2">
+                    <Trash2 size={15} color="hsl(0 72% 55%)" />
+                    <Text className="font-mono text-xs tracking-[2px] text-destructive">
+                      {t('account.deleteCta').toUpperCase()}
                     </Text>
                   </View>
-                </View>
-
-                {/* Cuenta privada (#422): interruptor que se queda aquí, no navega. */}
-                <View className="flex-row items-center gap-3 rounded-lg border border-border p-4">
-                  <View className="flex-1">
-                    <Text className="font-sans-medium text-foreground">{t('privacy.privateAccount')}</Text>
-                    <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                      {isPrivate ? t('privacy.privateAccountDesc') : t('privacy.publicAccountDesc')}
-                    </Text>
-                    {isPrivate ? (
-                      <Text className="mt-1.5 font-mono text-[10px] leading-4 tracking-wide text-muted-foreground">
-                        {t('privacy.privateNote')}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <Switch
-                    value={isPrivate}
-                    onValueChange={(v) => { void togglePrivate(v) }}
-                    disabled={privacySaving}
-                    trackColor={{ false: 'rgba(255,255,255,0.15)', true: lime }}
-                    thumbColor="#ffffff"
-                    ios_backgroundColor="rgba(255,255,255,0.15)"
-                    accessibilityLabel={t('privacy.privateAccount')}
-                  />
-                </View>
-
-                {/* Zona de peligro: baja de cuenta (#300). Al final del todo y
-                    separada del cierre de sesión para que no se confundan. */}
-                <View className="gap-2.5 rounded-lg border border-destructive/30 p-4">
-                  <Kicker className="text-destructive">{t('account.dangerZone')}</Kicker>
-                  <Text className="text-[13px] text-muted-foreground">{t('account.deleteDesc')}</Text>
-                  <Button
-                    variant="outline"
-                    className="mt-1 h-11 self-start border-destructive/40 px-4 active:bg-destructive/10"
-                    onPress={() => setDeleteOpen(true)}
-                  >
-                    <View className="flex-row items-center gap-2">
-                      <Trash2 size={15} color="hsl(0 72% 55%)" />
-                      <Text className="font-mono text-xs tracking-[2px] text-destructive">
-                        {t('account.deleteCta').toUpperCase()}
-                      </Text>
-                    </View>
-                  </Button>
-                </View>
+                </Button>
               </View>
             </SettingsRow>
           </Card>
@@ -599,26 +501,26 @@ export default function ProfileScreen() {
         {/* Bienestar y progreso: todas navegan. */}
         <View className="mt-3 gap-2">
           <Kicker>{t('profile.wellbeing')}</Kicker>
-          <Card className="gap-0 py-1">
-            <SettingsRow label={t('profile.health')} onPress={() => router.push('/health')} bordered={false} muted={muted} />
-            <SettingsRow label={t('progress.bodyPhotos.title')} onPress={() => router.push('/progress-photos')} bordered muted={muted} />
-            <SettingsRow label={t('progress.bodyMeasurements.title')} onPress={() => router.push('/body-measurements' as never)} bordered muted={muted} />
+          <Card className="gap-0 overflow-hidden py-1">
+            <SettingsRow label={t('profile.health')} onPress={() => router.push('/health')} bordered={false} muted={muted} lime={lime} />
+            <SettingsRow label={t('progress.bodyPhotos.title')} onPress={() => router.push('/progress-photos')} bordered muted={muted} lime={lime} />
+            <SettingsRow label={t('progress.bodyMeasurements.title')} onPress={() => router.push('/body-measurements' as never)} bordered muted={muted} lime={lime} />
           </Card>
         </View>
 
         {/* Cuenta y comunidad: todas navegan o abren una hoja. */}
         <View className="mt-3 gap-2">
           <Kicker>{t('profile.accountTools')}</Kicker>
-          <Card className="gap-0 py-1">
-            <SettingsRow label={t('referrals.navLabel')} onPress={() => router.push('/referrals')} bordered={false} muted={muted} />
-            <SettingsRow label={t('profile.discover')} onPress={() => setDiscoverOpen(true)} bordered muted={muted} />
-            <SettingsRow label={t('profile.whatsNew')} onPress={() => setHistoryOpen(true)} bordered muted={muted} />
-            <SettingsRow label={t('blocks.manageEntry')} onPress={() => router.push('/blocked-users' as never)} bordered muted={muted} />
+          <Card className="gap-0 overflow-hidden py-1">
+            <SettingsRow label={t('referrals.navLabel')} onPress={() => router.push('/referrals')} bordered={false} muted={muted} lime={lime} />
+            <SettingsRow label={t('profile.discover')} onPress={() => setDiscoverOpen(true)} bordered muted={muted} lime={lime} />
+            <SettingsRow label={t('profile.whatsNew')} onPress={() => setHistoryOpen(true)} bordered muted={muted} lime={lime} />
+            <SettingsRow label={t('blocks.manageEntry')} onPress={() => router.push('/blocked-users' as never)} bordered muted={muted} lime={lime} />
             <SettingsRow
               label={t('account.privacyEntry')}
               onPress={() => { Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {}) }}
               bordered
-              muted={muted}
+              muted={muted} lime={lime}
             />
           </Card>
         </View>
