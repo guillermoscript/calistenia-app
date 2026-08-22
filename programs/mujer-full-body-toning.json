@@ -105,7 +105,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Brazos extendidos al frente. Relaja la espalda."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "mar",
@@ -203,7 +204,8 @@
               "muscles": "Aductores, cadera, movilidad",
               "note": "Sentadilla lateral profunda. Movilidad de cadera."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "jue",
@@ -301,7 +303,8 @@
               "muscles": "Oblicuos, cuadrado lumbar",
               "note": "Cuerpo recto como tabla."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "vie",
@@ -399,7 +402,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Relaja y descomprime."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -505,7 +509,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Relaja tras esfuerzo de tracción."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "mar",
@@ -603,7 +608,8 @@
               "muscles": "Aductores, cadera, movilidad",
               "note": "Movilidad de cadera."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "jue",
@@ -701,7 +707,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Descompresión y relajo."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "vie",
@@ -799,7 +806,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Cierre relajante."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -905,7 +913,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Cierre y relajo."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mar",
@@ -1003,7 +1012,8 @@
               "muscles": "Aductores, cadera, movilidad",
               "note": "Sentadilla lateral. Movilidad de cadera."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "jue",
@@ -1101,7 +1111,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Cierre relajante y profundo."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "vie",
@@ -1199,7 +1210,8 @@
               "muscles": "Lumbar, dorsal, caderas",
               "note": "Cierre final y recuperación."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

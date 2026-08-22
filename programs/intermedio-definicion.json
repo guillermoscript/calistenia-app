@@ -13,8 +13,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje",
           "workout_title": "Empuje · Pecho, hombros y tríceps",
           "exercises": [
@@ -156,11 +156,12 @@
               "timer_seconds": 45,
               "note": "Inhalar 4s, sostener 4s, exhalar 6s"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón",
           "workout_title": "Jalón · Espalda y bíceps",
           "exercises": [
@@ -302,11 +303,12 @@
               "timer_seconds": 45,
               "note": "Respiración diafragmática profunda"
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas",
           "workout_title": "Piernas · Fuerza y explosividad",
           "exercises": [
@@ -448,11 +450,12 @@
               "timer_seconds": 30,
               "note": "Rodilla en suelo, empujar cadera al frente"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tren superior",
           "workout_title": "Tren superior · Empuje y jalón combinado",
           "exercises": [
@@ -594,11 +597,12 @@
               "timer_seconds": 45,
               "note": "Bajar ritmo cardíaco, respiración lenta"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Full body + Cardio",
           "workout_title": "Full body · Circuito metabólico",
           "exercises": [
@@ -740,7 +744,8 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma, 5 respiraciones profundas"
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -751,8 +756,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje",
           "workout_title": "Empuje · Supersets de empuje",
           "exercises": [
@@ -905,11 +910,12 @@
               "timer_seconds": 45,
               "note": "Recuperar frecuencia cardíaca"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón",
           "workout_title": "Jalón · Supersets de jalón",
           "exercises": [
@@ -1051,11 +1057,12 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma"
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas",
           "workout_title": "Piernas · Supersets y explosividad",
           "exercises": [
@@ -1208,11 +1215,12 @@
               "timer_seconds": 30,
               "note": "Contra pared, cada pierna"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tren superior",
           "workout_title": "Tren superior · Supersets push/pull",
           "exercises": [
@@ -1365,11 +1373,12 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Full body + Cardio",
           "workout_title": "Full body · HIIT metabólico",
           "exercises": [
@@ -1522,7 +1531,8 @@
               "timer_seconds": 45,
               "note": "5 respiraciones profundas, relajar todo"
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1533,8 +1543,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje",
           "workout_title": "Empuje · Intensidad máxima",
           "exercises": [
@@ -1687,11 +1697,12 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma total"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón",
           "workout_title": "Jalón · Intensidad máxima",
           "exercises": [
@@ -1844,11 +1855,12 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma"
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas",
           "workout_title": "Piernas · Pico de intensidad",
           "exercises": [
@@ -2012,11 +2024,12 @@
               "timer_seconds": 30,
               "note": "Cada pierna contra pared"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tren superior",
           "workout_title": "Tren superior · Intensidad pico",
           "exercises": [
@@ -2169,11 +2182,12 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma final"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Full body + Cardio",
           "workout_title": "Full body · Destrucción metabólica",
           "exercises": [
@@ -2337,7 +2351,8 @@
               "timer_seconds": 45,
               "note": "Vuelta a la calma. Programa completado"
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

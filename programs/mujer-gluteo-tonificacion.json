@@ -145,7 +145,8 @@
               "muscles": "Glúteos, cadera",
               "note": "Estiramiento profundo de glúteos"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "mar",
@@ -268,7 +269,8 @@
               "muscles": "Tríceps",
               "note": "Codo atrás de cabeza"
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "jue",
@@ -405,7 +407,8 @@
               "muscles": "Pantorrillas",
               "note": "Contra la pared, talón abajo"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "vie",
@@ -529,7 +532,8 @@
               "muscles": "Espalda, hombros",
               "note": "Respiración profunda"
             }
-          ]
+          ],
+          "day_type": "legs"
         }
       ]
     },
@@ -674,7 +678,8 @@
               "muscles": "Glúteos profundos",
               "note": "Intenso estiramiento"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "mar",
@@ -798,7 +803,8 @@
               "muscles": "Dorsal",
               "note": "Brazos al cielo, inclínate al lado"
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "jue",
@@ -935,7 +941,8 @@
               "muscles": "Isquios, espalda",
               "note": "Estiramiento profundo sentado"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "vie",
@@ -1060,7 +1067,8 @@
               "muscles": "Pantorrillas",
               "note": "Recuperación completa"
             }
-          ]
+          ],
+          "day_type": "legs"
         }
       ]
     },
@@ -1205,7 +1213,8 @@
               "muscles": "Glúteos profundos",
               "note": "Máximo estiramiento"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "mar",
@@ -1328,7 +1337,8 @@
               "muscles": "Espalda, hombros",
               "note": "Recuperación total"
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "jue",
@@ -1465,7 +1475,8 @@
               "muscles": "Isquios, espalda",
               "note": "Máximo estiramiento"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "vie",
@@ -1589,7 +1600,8 @@
               "muscles": "Pantorrillas",
               "note": "Recuperación final"
             }
-          ]
+          ],
+          "day_type": "legs"
         }
       ]
     }

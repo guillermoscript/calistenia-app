@@ -13,8 +13,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Tren superior (empuje)",
           "workout_title": "Empuje básico + core",
           "exercises": [
@@ -157,11 +157,12 @@
               "timer_seconds": 40,
               "note": "Siéntate sobre los talones y estira los brazos hacia adelante. Respira profundo y relaja."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tren inferior",
           "workout_title": "Piernas y glúteos básicos",
           "exercises": [
@@ -303,11 +304,12 @@
               "timer_seconds": 30,
               "note": "En posición de zancada baja, empuja la cadera hacia adelante. Mantén el torso recto."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tracción y core",
           "workout_title": "Espalda, bíceps y abdomen",
           "exercises": [
@@ -450,11 +452,12 @@
               "timer_seconds": 40,
               "note": "Relaja todo el cuerpo en esta postura. Respira profundo y suelta la tensión."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Cuerpo completo",
           "workout_title": "Circuito quema grasa total",
           "exercises": [
@@ -597,7 +600,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4 segundos, mantén 4 segundos, exhala 6 segundos. Relaja todo el cuerpo."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -608,8 +612,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Tren superior (empuje)",
           "workout_title": "Empuje con volumen",
           "exercises": [
@@ -763,11 +767,12 @@
               "timer_seconds": 40,
               "note": "Relájate completamente y deja que la respiración vuelva a la normalidad."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tren inferior",
           "workout_title": "Piernas con más volumen",
           "exercises": [
@@ -922,11 +927,12 @@
               "timer_seconds": 30,
               "note": "Piernas juntas y extendidas, trata de tocar los pies con las manos."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tracción y core",
           "workout_title": "Espalda y abdomen con volumen",
           "exercises": [
@@ -1082,11 +1088,12 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Relaja completamente."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Cuerpo completo",
           "workout_title": "Circuito quema grasa intenso",
           "exercises": [
@@ -1240,7 +1247,8 @@
               "timer_seconds": 45,
               "note": "Cierra los ojos. Inhala 4s, mantén 4s, exhala 6s. Recupera el ritmo cardíaco."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1251,8 +1259,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Tren superior (empuje)",
           "workout_title": "Empuje de alta intensidad",
           "exercises": [
@@ -1406,11 +1414,12 @@
               "timer_seconds": 45,
               "note": "Relájate completamente. Respira profundo y celebra el esfuerzo."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tren inferior",
           "workout_title": "Piernas explosivas",
           "exercises": [
@@ -1565,11 +1574,12 @@
               "timer_seconds": 35,
               "note": "Zancada profunda, empuja la cadera adelante. Ambos lados."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tracción y core",
           "workout_title": "Espalda y abdomen intensos",
           "exercises": [
@@ -1724,11 +1734,12 @@
               "timer_seconds": 45,
               "note": "Relajación total. Cierra los ojos y respira profundo."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Cuerpo completo",
           "workout_title": "Circuito final quema grasa",
           "exercises": [
@@ -1882,7 +1893,8 @@
               "timer_seconds": 60,
               "note": "Sesión final. Inhala 4s, mantén 4s, exhala 8s. Felicidades por completar el programa."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

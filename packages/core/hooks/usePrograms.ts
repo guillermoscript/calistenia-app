@@ -23,6 +23,8 @@ import {
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
 import { fetchProgramDetailRows } from '../lib/programDetailQuery'
+import { normalizeProgramDayIds, type DayRowLike } from '../lib/program-day-ids'
+import { getPlatform } from '../platform'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
@@ -101,6 +103,10 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
   for (const id of ['sab', 'dom']) {
     if (!seen[id]) seen[id] = defaults[id]
   }
+  // Nunca descartar días en silencio: si llega un id fuera de `lun..dom` es un
+  // dato roto (#575) y `fetchProgramDetail` ya lo ha saneado antes de llegar aquí.
+  const unknown = Object.keys(seen).filter(id => !ORDER.includes(id))
+  if (unknown.length) console.error(`[programs] buildWeekDays: day_id desconocidos ignorados: ${unknown.join(', ')}`)
   return ORDER.map(id => seen[id]).filter(Boolean)
 }
 
@@ -224,7 +230,21 @@ export interface ProgramDetail {
  * `lib/programDetailQuery.ts` y la comparten las dos.
  */
 export async function fetchProgramDetail(programId: string): Promise<ProgramDetail> {
-  const { phases, exercises, dayConfigs } = await fetchProgramDetailRows(programId)
+  const rows = await fetchProgramDetailRows(programId)
+  // RecordModel solo tiene índice genérico; day_id/phase_number existen en estas colecciones.
+  const { exercises, dayConfigs, remapped } = normalizeProgramDayIds(
+    rows.exercises as (RecordModel & DayRowLike)[],
+    rows.dayConfigs as (RecordModel & DayRowLike)[],
+  )
+  if (Object.keys(remapped).length) {
+    // #575: el programa sigue con day_id legacy en BD. Se corrige en lectura para
+    // que el usuario tenga semana, pero el dato hay que arreglarlo en origen
+    // (`node scripts/update-program-content.mjs`).
+    const detail = JSON.stringify(remapped)
+    console.warn(`[programs] ${programId}: day_id legacy remapeados ${detail}`)
+    getPlatform().reportError?.(new Error(`program ${programId} con day_id legacy: ${detail}`))
+  }
+  const { phases } = rows
   return {
     phases: buildPhases(phases),
     weekDays: buildWeekDays(exercises, dayConfigs),

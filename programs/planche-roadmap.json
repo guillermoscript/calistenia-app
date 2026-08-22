@@ -5,8 +5,14 @@
     "difficulty": "advanced",
     "duration_weeks": 16,
     "days_per_week": 4,
-    "equipment": ["Paralelas"],
-    "contraindications": ["Muñeca", "Hombro", "Codo"],
+    "equipment": [
+      "Paralelas"
+    ],
+    "contraindications": [
+      "Muñeca",
+      "Hombro",
+      "Codo"
+    ],
     "notes": "Programa de skill avanzado. Desarrollo de fuerza de brazo recto con progresión escalonada en 4 fases. Requiere base sólida de empuje (dips, flexiones, HSPU)."
   },
   "phases": [
@@ -17,8 +23,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Planche específico",
           "workout_title": "Planche lean y pseudo planche",
           "exercises": [
@@ -164,11 +170,12 @@
               "timer_seconds": 30,
               "note": "Estiramiento suave de muñecas post-entrenamiento. Extensiones pasivas."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Fuerza de empuje",
           "workout_title": "Push strength – Hombros y pecho",
           "exercises": [
@@ -310,11 +317,12 @@
               "timer_seconds": 30,
               "note": "Estira ambos lados. Mantén respiración profunda."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Planche + balance de tirón",
           "workout_title": "Planche lean + Pull balance",
           "exercises": [
@@ -470,11 +478,12 @@
               "timer_seconds": 30,
               "note": "4s inhala, 4s sostén, 6s exhala. Activa el parasimpático."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Variedad de skills",
           "workout_title": "Skill day – Handstand, L-sit y levers",
           "exercises": [
@@ -631,7 +640,8 @@
               "timer_seconds": 30,
               "note": "Vuelta a la calma. Respiración diafragmática lenta."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -642,8 +652,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Planche específico",
           "workout_title": "Tuck planche holds",
           "exercises": [
@@ -789,11 +799,12 @@
               "timer_seconds": 30,
               "note": "Extensiones pasivas de muñeca. Cuidado post-planche."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Fuerza de empuje",
           "workout_title": "Push pesado – HSPU prep y dips",
           "exercises": [
@@ -935,11 +946,12 @@
               "timer_seconds": 30,
               "note": "Ambos lados. Respiración profunda durante el estiramiento."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Planche + balance de tirón",
           "workout_title": "Tuck planche + Front lever balance",
           "exercises": [
@@ -1095,11 +1107,12 @@
               "timer_seconds": 30,
               "note": "Vuelta a la calma completa. 4s inhala, 4s sostén, 6s exhala."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Variedad de skills",
           "workout_title": "Skill day – Handstand y levers",
           "exercises": [
@@ -1257,7 +1270,8 @@
               "timer_seconds": 30,
               "note": "Cierra los ojos. Respiración lenta y profunda."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1268,8 +1282,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Planche específico",
           "workout_title": "Advanced tuck → Straddle attempts",
           "exercises": [
@@ -1414,11 +1428,12 @@
               "timer_seconds": 30,
               "note": "Extensiones pasivas suaves. Cuidado de muñecas post-planche."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Fuerza de empuje",
           "workout_title": "Push máximo – HSPU y fuerza unilateral",
           "exercises": [
@@ -1573,11 +1588,12 @@
               "timer_seconds": 30,
               "note": "Recuperación del sistema nervioso. Sesión intensa."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Planche + balance de tirón",
           "workout_title": "Advanced tuck + Front lever progression",
           "exercises": [
@@ -1733,11 +1749,12 @@
               "timer_seconds": 30,
               "note": "Recuperación del SNC. Sesión muy demandante."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Variedad de skills",
           "workout_title": "Skill day – Handstand free y balance",
           "exercises": [
@@ -1894,7 +1911,8 @@
               "timer_seconds": 30,
               "note": "Vuelta a la calma. Respiración 4-4-6."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1905,8 +1923,8 @@
       "color": "#8B5CF6",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Planche específico",
           "workout_title": "Straddle planche y full planche attempts",
           "exercises": [
@@ -2051,11 +2069,12 @@
               "timer_seconds": 30,
               "note": "Extensiones pasivas. Cuidado de muñecas es obligatorio."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Fuerza de empuje",
           "workout_title": "Push élite – Fuerza máxima",
           "exercises": [
@@ -2210,11 +2229,12 @@
               "timer_seconds": 30,
               "note": "Vuelta a la calma. Sesión de fuerza máxima completada."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Planche + balance de tirón",
           "workout_title": "Straddle planche + Front lever avanzado",
           "exercises": [
@@ -2370,11 +2390,12 @@
               "timer_seconds": 30,
               "note": "Recuperación completa del SNC."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Variedad de skills",
           "workout_title": "Skill mastery – Skills completas",
           "exercises": [
@@ -2532,7 +2553,8 @@
               "timer_seconds": 30,
               "note": "Cierre del programa. Respiración profunda y relajación total."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

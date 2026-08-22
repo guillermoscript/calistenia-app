@@ -9,7 +9,10 @@
     "skill": "handstand",
     "intensity": "moderate",
     "equipment": [],
-    "contraindications": ["wrist", "shoulder"],
+    "contraindications": [
+      "wrist",
+      "shoulder"
+    ],
     "notes": "Programa de 12 semanas para lograr el pino libre (handstand). Progresión: pared → kick-ups → equilibrio libre. Se necesita una pared."
   },
   "phases": [
@@ -20,8 +23,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Fuerza de empuje + wall holds",
           "workout_title": "Empuje vertical y pared",
           "exercises": [
@@ -155,11 +158,12 @@
               "timer_seconds": 30,
               "note": "Lleva el codo detrás de la cabeza con la mano contraria. Mantén la posición sin forzar."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Core invertido + estabilidad escapular",
           "workout_title": "Core y control escapular",
           "exercises": [
@@ -293,11 +297,12 @@
               "timer_seconds": 45,
               "note": "Inhala 4s por nariz, exhala 6s por boca. Calma el sistema nervioso después del trabajo invertido."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Pared + fuerza de empuje",
           "workout_title": "Handstand en pared y empuje",
           "exercises": [
@@ -444,7 +449,8 @@
               "timer_seconds": 30,
               "note": "Brazo en marco de puerta a 90°. Paso adelante y siente la apertura del pecho."
             }
-          ]
+          ],
+          "day_type": "push"
         }
       ]
     },
@@ -455,8 +461,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Holds en pared + kick-up",
           "workout_title": "Pared y patada al pino",
           "exercises": [
@@ -590,11 +596,12 @@
               "timer_seconds": 45,
               "note": "Acostado boca arriba. Inhala 4s, exhala 6s. Restaura el sistema después del esfuerzo invertido."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Equilibrio + core avanzado",
           "workout_title": "Balance y core invertido",
           "exercises": [
@@ -741,11 +748,12 @@
               "timer_seconds": 30,
               "note": "Apertura de pecho en marco de puerta. Pectorales acortados limitan la apertura de hombro necesaria para el pino."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Fuerza vertical + hold máximo",
           "workout_title": "Empuje y tiempo en pared",
           "exercises": [
@@ -892,7 +900,8 @@
               "timer_seconds": 45,
               "note": "5-6 ciclos completos. Inhala 4s, aguanta 2s, exhala 6s. Cierra la sesión con calma."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -903,8 +912,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Handstand libre + fuerza",
           "workout_title": "Freestanding y empuje pesado",
           "exercises": [
@@ -1038,11 +1047,12 @@
               "timer_seconds": 45,
               "note": "Boca arriba, ojos cerrados. Inhala 4s, aguanta 2s, exhala 6s. Celebra cada segundo que aguantaste invertido hoy."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Equilibrio avanzado + skill work",
           "workout_title": "Balance y skills",
           "exercises": [
@@ -1189,11 +1199,12 @@
               "timer_seconds": 45,
               "note": "Cierra los ojos. Inhala 4s, pausa 2s, exhala 6s. Visualiza tu handstand perfecto mientras respiras."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "HSPU progresión + pino libre",
           "workout_title": "Fuerza vertical y freestanding",
           "exercises": [
@@ -1340,7 +1351,8 @@
               "timer_seconds": 45,
               "note": "Sesión final de la semana. Inhala 4s, pausa 2s, exhala 6s. Visualiza tu progreso: de la pared al pino libre. Cada semana estás más cerca."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

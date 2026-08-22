@@ -6,7 +6,11 @@
     "difficulty": "intermediate",
     "duration_weeks": 12,
     "days_per_week": 4,
-    "target_equipment": ["pull_bar", "resistance_bands", "parallel_bars_optional"],
+    "target_equipment": [
+      "pull_bar",
+      "resistance_bands",
+      "parallel_bars_optional"
+    ],
     "color": "#F472B6"
   },
   "phases": [
@@ -143,7 +147,8 @@
               "note": "Enfoque en movilidad",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mar",
@@ -270,7 +275,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "jue",
@@ -397,7 +403,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "vie",
@@ -524,7 +531,8 @@
               "note": "Movilidad integral",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -661,7 +669,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mar",
@@ -788,7 +797,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "jue",
@@ -915,7 +925,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "vie",
@@ -1042,7 +1053,8 @@
               "note": "Recuperación y relajación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1179,7 +1191,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mar",
@@ -1306,7 +1319,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
           "day_id": "jue",
@@ -1433,7 +1447,8 @@
               "note": "Recuperación",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "vie",
@@ -1560,7 +1575,8 @@
               "note": "Estiramiento final",
               "youtube": ""
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }
