@@ -22,7 +22,6 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
 import { AvatarPicker } from '@/components/profile/AvatarPicker'
-import { ProfileLinkRow } from '@/components/profile/ProfileLinkRow'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
@@ -38,6 +37,14 @@ import type { ActivityLevel } from '@/components/onboarding/StepGoals'
 import { Sentry } from '@/lib/instrument'
 
 type SaveState = 'idle' | 'saving' | 'saved'
+type ProfileIcon = typeof Bell
+
+type ProfileAction = {
+  icon: ProfileIcon
+  label: string
+  description?: string
+  onPress: () => void
+}
 
 const ACTIVITY_LEVEL_IDS: ActivityLevel[] = ['sedentary', 'light', 'active', 'very_active']
 const ACTIVITY_LEVEL_LABEL_KEYS: Record<ActivityLevel, string> = {
@@ -45,6 +52,33 @@ const ACTIVITY_LEVEL_LABEL_KEYS: Record<ActivityLevel, string> = {
   light: 'onboarding.activityLight',
   active: 'onboarding.activityActive',
   very_active: 'onboarding.activityVeryActive',
+}
+
+function ProgressShortcut({ action, lime }: { action: ProfileAction; lime: string }) {
+  const Icon = action.icon
+  return (
+    <Pressable onPress={action.onPress} className="flex-1">
+      <Card className="min-h-[120px] justify-between border-border/80 active:border-lime/50 active:bg-lime/5">
+        <CardContent className="gap-3 py-4">
+          <View className="size-9 items-center justify-center rounded-full bg-lime/10"><Icon size={17} color={lime} /></View>
+          <Text className="font-sans-medium text-xs leading-4 text-foreground" numberOfLines={2}>{action.label}</Text>
+        </CardContent>
+      </Card>
+    </Pressable>
+  )
+}
+
+function AccountShortcut({ action, bordered, muted }: { action: ProfileAction; bordered: boolean; muted: string }) {
+  const Icon = action.icon
+  return (
+    <Pressable onPress={action.onPress} className={cn('px-5 py-3.5 active:bg-muted/70', bordered && 'border-t border-border/70')}>
+      <View className="flex-row items-center gap-3">
+        <View className="size-9 items-center justify-center rounded-full bg-muted"><Icon size={16} color={muted} /></View>
+        <View className="flex-1"><Text className="font-sans-medium text-sm text-foreground">{action.label}</Text>{action.description ? <Text className="mt-0.5 font-mono text-[9px] tracking-wide text-muted-foreground" numberOfLines={1}>{action.description}</Text> : null}</View>
+        <ChevronRight size={16} color={muted} />
+      </View>
+    </Pressable>
+  )
 }
 
 export default function ProfileScreen() {
@@ -95,6 +129,18 @@ export default function ProfileScreen() {
 
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
   const initial = (name || (user?.email as string) || '?').trim().charAt(0).toUpperCase()
+  const progressActions: ProfileAction[] = [
+    { icon: Watch, label: t('profile.health'), onPress: () => router.push('/health') },
+    { icon: Camera, label: t('progress.bodyPhotos.title'), onPress: () => router.push('/progress-photos') },
+    { icon: Ruler, label: t('progress.bodyMeasurements.title'), onPress: () => router.push('/body-measurements' as never) },
+  ]
+  const accountActions: ProfileAction[] = [
+    { icon: Users, label: t('referrals.navLabel'), description: t('referrals.subtitle'), onPress: () => router.push('/referrals') },
+    { icon: Compass, label: t('profile.discover'), description: t('profile.discoverDesc'), onPress: () => setDiscoverOpen(true) },
+    { icon: Sparkles, label: t('profile.whatsNew'), description: t('profile.whatsNewDesc'), onPress: () => setHistoryOpen(true) },
+    { icon: UserX, label: t('blocks.manageEntry'), onPress: () => router.push('/blocked-users' as never) },
+    { icon: ShieldCheck, label: t('account.privacyEntry'), description: t('account.privacyEntryDesc'), onPress: () => Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {}) },
+  ]
 
   const handleSaveName = async () => {
     if (!user || saveState === 'saving') return
@@ -319,78 +365,33 @@ export default function ProfileScreen() {
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
         </View>
 
-        {/* Recordatorios */}
-        <ProfileLinkRow
-          icon={Bell}
-          title={t('profile.reminders')}
-          description={t('profile.remindersDesc')}
-          onPress={() => router.push('/reminders')}
-        />
+        {/* Atajos: la acción cotidiana destaca; el resto se agrupa por intención. */}
+        <View className="gap-2">
+          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('profile.quickActions')}</Text>
+          <Pressable onPress={() => router.push('/reminders')}>
+            <Card className="border-lime bg-lime">
+              <CardContent className="flex-row items-center gap-3 py-4">
+                <View className="size-11 items-center justify-center rounded-full bg-black/10"><Bell size={19} color="hsl(0 0% 8%)" /></View>
+                <View className="flex-1"><Text className="font-sans-medium text-lime-foreground">{t('profile.reminders')}</Text><Text className="mt-0.5 font-mono text-[10px] tracking-wide text-lime-foreground/70">{t('profile.remindersDesc')}</Text></View>
+                <ChevronRight size={18} color="hsl(0 0% 8%)" />
+              </CardContent>
+            </Card>
+          </Pressable>
+        </View>
 
-        {/* Referidos */}
-        <ProfileLinkRow
-          icon={Users}
-          title={t('referrals.navLabel')}
-          description={t('referrals.subtitle')}
-          onPress={() => router.push('/referrals')}
-        />
+        <View className="gap-2">
+          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('profile.wellbeing')}</Text>
+          <View className="flex-row gap-3">
+            {progressActions.map(action => <ProgressShortcut key={action.label} action={action} lime={lime} />)}
+          </View>
+        </View>
 
-        {/* Reloj y salud */}
-        <ProfileLinkRow
-          icon={Watch}
-          title={t('profile.health')}
-          description={t('profile.healthDesc')}
-          onPress={() => router.push('/health')}
-        />
-
-        {/* Fotos de progreso */}
-        <ProfileLinkRow
-          icon={Camera}
-          title={t('progress.bodyPhotos.title')}
-          description={t('progress.bodyPhotos.rowDesc')}
-          onPress={() => router.push('/progress-photos')}
-        />
-
-        {/* Medidas corporales + % grasa (#227) */}
-        <ProfileLinkRow
-          icon={Ruler}
-          title={t('progress.bodyMeasurements.title')}
-          description={t('progress.bodyMeasurements.rowDesc')}
-          onPress={() => router.push('/body-measurements' as never)}
-        />
-
-        {/* Usuarios bloqueados */}
-        <ProfileLinkRow
-          icon={UserX}
-          title={t('blocks.manageEntry')}
-          onPress={() => router.push('/blocked-users' as never)}
-        />
-
-        {/* Descubre — directorio de todas las features (issue #236) */}
-        <ProfileLinkRow
-          icon={Compass}
-          title={t('profile.discover')}
-          description={t('profile.discoverDesc')}
-          onPress={() => setDiscoverOpen(true)}
-        />
-
-        {/* Novedades / historial de cambios */}
-        <ProfileLinkRow
-          icon={Sparkles}
-          title={t('profile.whatsNew')}
-          description={t('profile.whatsNewDesc')}
-          onPress={() => setHistoryOpen(true)}
-        />
-
-        {/* Privacidad y condiciones (#300): las tiendas exigen que la política
-            sea accesible desde dentro de la app, no solo desde la ficha. Vive
-            en la web, así que se abre en el navegador. */}
-        <ProfileLinkRow
-          icon={ShieldCheck}
-          title={t('account.privacyEntry')}
-          description={t('account.privacyEntryDesc')}
-          onPress={() => { Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {}) }}
-        />
+        <View className="gap-2">
+          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('profile.accountTools')}</Text>
+          <Card className="gap-0 py-1">
+            {accountActions.map((action, index) => <AccountShortcut key={action.label} action={action} bordered={index > 0} muted={muted} />)}
+          </Card>
+        </View>
 
         {/* Idioma */}
         <Card>
