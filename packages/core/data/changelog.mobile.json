@@ -1,6 +1,49 @@
 {
-  "generated": "2026-08-20T21:52:25.089Z",
+  "generated": "2026-08-22T02:12:03.678Z",
   "versions": [
+    {
+      "version": "1.10.2",
+      "date": "2026-08-22",
+      "summary": {
+        "es": "Los programas oficiales vuelven a tener sus días de entrenamiento: la semana ya no aparece como solo descanso. Además, mejoras internas de estabilidad.",
+        "en": "Official programs show their training days again: the week no longer looks like rest only. Plus internal stability improvements."
+      },
+      "highlights": [
+        {
+          "icon": "📅",
+          "type": "fix",
+          "title": {
+            "es": "Los programas vuelven a tener semana",
+            "en": "Programs have their week back"
+          },
+          "body": {
+            "es": "Doce de los programas oficiales se mostraban con la semana vacía (solo sábado y domingo de descanso) y no había nada que entrenar. Ya tienen sus días de lunes a sábado con su tipo de entreno, y si alguno quedara por corregir, la app lo arregla sola al cargarlo.",
+            "en": "Twelve official programs showed an empty week (only Saturday and Sunday as rest) with nothing to train. They now have their Monday-to-Saturday days with the right workout type, and if any is still off, the app fixes it on load."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Los programas oficiales muestran sus días de entrenamiento (#575)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "a18f337"
+            },
+            {
+              "description": "Mejoras internas de estabilidad y diagnóstico (#580)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "b2e547e"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.10.1",
       "date": "2026-08-21",
