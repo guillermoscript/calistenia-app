@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { ProgressMap, ExerciseLog, SessionDone } from '../types'
+import type { ProgressMap, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 import type { TranslatableField } from '../lib/i18n-db'
 
 export interface SessionSet {
@@ -36,6 +36,13 @@ export interface SessionDetailResult {
     cooldownSkipped?: boolean
     cooldownDurationSeconds?: number
     durationSeconds?: number
+    /**
+     * Cronometraje por ejercicio. Se propaga porque es lo ÚNICO que cuenta qué
+     * se entrenó en una sesión que no registró ni una serie —el caso normal de
+     * una sesión libre isométrica—, y sin ello el detalle solo podía decir
+     * "sin series registradas".
+     */
+    exerciseTimings?: ExerciseTiming[]
   } | null
   exercises: SessionExercise[]
 }
@@ -71,6 +78,7 @@ export function buildSessionDetail(
     cooldownSkipped: sessionEntry.cooldownSkipped,
     cooldownDurationSeconds: sessionEntry.cooldownDurationSeconds,
     durationSeconds: sessionEntry.durationSeconds,
+    exerciseTimings: sessionEntry.exerciseTimings,
   }
 
   const timingByExercise = new Map(

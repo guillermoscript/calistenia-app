@@ -163,9 +163,11 @@ export function mapRecentSessions(
       return {
         id: s.id,
         workoutKey,
-        // Sin el fallback, una sesión libre se pintaría con su clave cruda
-        // (`free_1783000000`) como título (#376).
-        workoutTitle: workout?.title || sessionKeyLabel(workoutKey) || 'Sesión',
+        // Sin el respaldo, una sesión libre se pintaría con su clave cruda
+        // (`free_1783000000`) como título (#376). El `|| 'Sesión'` que había aquí
+        // tapaba el `undefined` que devolvía `i18n.t()` sobre la copia sin
+        // inicializar de i18next; ahora eso lo garantiza `sessionKeyLabel`.
+        workoutTitle: workout?.title || sessionKeyLabel(workoutKey),
         // `?? 1` y no `|| 1`: el 0 de una sesión libre es legítimo y no debe
         // degradarse a "Fase 1".
         phase: isFree ? NO_PHASE : (s.phase ?? 1),

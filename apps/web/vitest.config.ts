@@ -12,6 +12,11 @@ const pbPath = path.resolve(__dirname, 'node_modules/pocketbase/dist/pocketbase.
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // Igual que en vite.config.js, y por el mismo motivo: sin esto los tests
+    // corren contra DOS copias de i18next (una por versión de TypeScript de
+    // pnpm) y no reproducen lo que hace el bundle. Es justo lo que dejó pasar
+    // que el muro pintara vacío el título de las sesiones libres.
+    dedupe: ['i18next', 'react-i18next'],
     alias: {
       pocketbase: pbPath,
       '@': path.resolve(__dirname, 'src'),

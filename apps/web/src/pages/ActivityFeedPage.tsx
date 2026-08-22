@@ -1,23 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import i18n from '../lib/i18n'
-import { timeAgo } from '@calistenia/core/lib/dateUtils'
-import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
-import { useActivityFeed, type FeedItem } from '@calistenia/core/hooks/useActivityFeed'
+import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
 import { useReactions } from '@calistenia/core/hooks/useReactions'
 import { useComments } from '@calistenia/core/hooks/useComments'
 import { useCommentReactions } from '@calistenia/core/hooks/useCommentReactions'
-import { EmojiPicker } from '../components/social/EmojiPicker'
 import { CommentsSheet } from '../components/social/CommentsSheet'
-import { cn } from '../lib/utils'
+import FeedCard from '../components/social/FeedCard'
 import { Loader } from '../components/ui/loader'
 import { EmptyState } from '../components/ui/empty-state'
 import { Button } from '../components/ui/button'
-import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { shareWorkoutSession, shareContent } from '../lib/share'
-
-// relativeTime replaced by shared timeAgo from dateUtils
+import { feedItemHref, shareFeedItem } from '../lib/feed-routes'
 
 interface ActivityFeedPageProps {
   userId: string
@@ -127,8 +120,10 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       {!loading && items.length > 0 && (
         <div id="tour-feed-list" className="flex flex-col gap-3">
           {items.map((item, i) => {
-            const reactions = getReactions(item.id)
-            const commentCount = getCommentCount(item.id)
+            const isOwnPost = item.userId === userId
+            // `null` = esta actividad no tiene destino abrible para quien mira
+            // (circuito ajeno, batalla que no jugó). La tarjeta lo respeta.
+            const href = feedItemHref(item, isOwnPost)
             return (
               <div
                 key={item.id}
@@ -138,15 +133,15 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
               >
                 <FeedCard
                   item={item}
-                  isOwnPost={item.userId === userId}
+                  isOwnPost={isOwnPost}
                   highlight={item.id === highlightId}
-                  onTap={() => navigate(`/s/${item.id}`)}
+                  onOpen={href ? () => navigate(href) : null}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
-                  reactions={reactions}
+                  reactions={getReactions(item.id)}
                   onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
-                  commentCount={commentCount}
+                  commentCount={getCommentCount(item.id)}
                   onComment={() => { setHighlightCommentId(null); setCommentsSessionId(item.id) }}
-                  onOpenCardio={(id) => navigate(`/cardio/session/${id}`)}
+                  onShare={() => { void shareFeedItem(item) }}
                 />
               </div>
             )
@@ -178,164 +173,6 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
           commentReactions={commentReactions}
         />
       )}
-    </div>
-  )
-}
-
-// ── Feed Card ────────────────────────────────────────────────────────────────
-
-interface FeedCardProps {
-  item: FeedItem
-  isOwnPost?: boolean
-  highlight?: boolean
-  onTap: () => void
-  onTapUser: () => void
-  reactions: Record<string, { count: number; hasReacted: boolean }>
-  onReact: (emoji: string) => void
-  commentCount: number
-  onComment: () => void
-  onOpenCardio?: (id: string) => void
-}
-
-function FeedCard({ item, isOwnPost, highlight, onTap, onTapUser, reactions, onReact, commentCount, onComment, onOpenCardio }: FeedCardProps) {
-  const { t, i18n } = useTranslation()
-  const phaseColor = PHASE_COLORS[item.phase]
-  const isCardio = item.type === 'cardio'
-
-  let normalizedDate = item.completedAt.replace(' ', 'T')
-  if (!normalizedDate.endsWith('Z') && !normalizedDate.includes('+')) normalizedDate += 'Z'
-  const formattedDate = new Date(normalizedDate).toLocaleDateString(i18n.language, {
-    weekday: 'short', day: 'numeric', month: 'short',
-  })
-
-  // Build cardio metrics string (distance · duration · pace)
-  const cardioMetrics = (() => {
-    if (!isCardio || !item.cardio) return null
-    const { distanceKm, durationSeconds, avgPace } = item.cardio
-    const parts: string[] = []
-    if (distanceKm != null) parts.push(`${distanceKm.toFixed(2)} km`)
-    if (durationSeconds != null) parts.push(formatDuration(durationSeconds))
-    if (avgPace != null && avgPace > 0) parts.push(`${formatPace(avgPace)} /km`)
-    return parts.length > 0 ? parts.join(' · ') : null
-  })()
-
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (isCardio) {
-      const distPart = item.cardio?.distanceKm != null ? ` · ${item.cardio.distanceKm.toFixed(2)} km 🏃` : ''
-      shareContent({
-        title: `${item.displayName} hizo ${item.workoutTitle}`,
-        text: `${item.displayName} hizo ${item.workoutTitle}${distPart}`,
-        url: '',
-      })
-    } else {
-      shareWorkoutSession(item.displayName, item.workoutTitle, item.date, item.workoutKey)
-    }
-  }
-
-  return (
-    <div className={cn(
-      'px-4 py-3.5 bg-card border border-border rounded-xl hover:border-lime/20 transition-colors shadow-sm',
-      highlight && 'feed-flash',
-    )}>
-      {/* User + time */}
-      <div className="flex items-center gap-2.5 mb-2.5">
-        <button
-          onClick={(e) => { e.stopPropagation(); onTapUser() }}
-          className="size-9 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-foreground shrink-0 hover:ring-2 hover:ring-lime/30 transition-all overflow-hidden"
-        >
-          {item.avatarUrl ? (
-            <img src={item.avatarUrl} alt={item.displayName} className="size-full object-cover" />
-          ) : (
-            item.displayName[0]?.toUpperCase() || '?'
-          )}
-        </button>
-        <div className="flex-1 min-w-0">
-          <button
-            onClick={(e) => { e.stopPropagation(); onTapUser() }}
-            className="text-sm font-medium truncate hover:text-lime transition-colors block"
-          >
-            {item.displayName}
-            {isOwnPost && <span className="ml-1.5 text-[10px] text-lime font-normal">({t('feed.you')})</span>}
-          </button>
-          <span className="text-[10px] text-muted-foreground">{formattedDate} · {timeAgo(item.completedAt)}</span>
-        </div>
-      </div>
-
-      {/* Action line */}
-      <p className="text-xs text-muted-foreground mb-2">
-        {isCardio ? 'Hizo cardio' : t('feed.completedWorkout')}
-      </p>
-
-      {/* Cardio variant */}
-      {isCardio ? (
-        <button
-          onClick={(e) => { e.stopPropagation(); onOpenCardio?.(item.id) }}
-          className="w-full text-left px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px] border-l-sky-500 hover:bg-muted/50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-medium text-sky-400">{item.workoutTitle}</div>
-            <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
-          </div>
-          {cardioMetrics && (
-            <div className="text-[11px] text-muted-foreground font-mono tracking-wider mt-0.5">{cardioMetrics}</div>
-          )}
-          {item.note && (
-            <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
-          )}
-        </button>
-      ) : (
-        /* Workout variant */
-        <button
-          onClick={onTap}
-          className={cn(
-            'w-full text-left px-3 py-2.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors',
-            phaseColor?.border ? `border-l-[3px] ${phaseColor.border}` : 'border-l-[3px] border-l-lime',
-          )}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{item.workoutTitle}</div>
-              {item.phase > 0 && (
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">{t('feed.phase')} {item.phase}</span>
-                </div>
-              )}
-            </div>
-            <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
-          </div>
-          {item.note && (
-            <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
-          )}
-        </button>
-      )}
-
-      {/* Reactions + Comment */}
-      <div id="tour-feed-reaction" className="mt-2.5 flex flex-wrap items-center gap-2">
-        <EmojiPicker reactions={reactions} onToggle={onReact} />
-        <button
-          onClick={(e) => { e.stopPropagation(); onComment() }}
-          className="inline-flex min-h-8 items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all duration-200 active:scale-95 text-muted-foreground hover:text-sky-400 hover:bg-sky-500/10 border border-border/60"
-        >
-          <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 3V3Z" />
-          </svg>
-          <span>{t('social.comments')}</span>
-          <span className="font-medium tabular-nums">{commentCount}</span>
-        </button>
-        <button
-          onClick={handleShare}
-          className="inline-flex min-h-8 items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-95 text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 border border-transparent"
-        >
-          <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="12" cy="3" r="2" />
-            <circle cx="12" cy="13" r="2" />
-            <circle cx="4" cy="8" r="2" />
-            <line x1="5.8" y1="7" x2="10.2" y2="4" />
-            <line x1="5.8" y1="9" x2="10.2" y2="12" />
-          </svg>
-        </button>
-      </div>
     </div>
   )
 }

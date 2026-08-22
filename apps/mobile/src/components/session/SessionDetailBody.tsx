@@ -114,10 +114,7 @@ export default function SessionDetailBody({
 
       {/* Exercises */}
       {exercises.length === 0 ? (
-        <View className="items-center gap-1 py-12">
-          <Text className="text-2xl">🧘</Text>
-          <Text className="text-center text-sm text-muted-foreground">{t('session.noSetsRecorded')}</Text>
-        </View>
+        <TimedOnlySession session={session} t={t} />
       ) : (
         <View className="gap-3">
           {exercises.map((ex, i) => (
@@ -259,6 +256,60 @@ function ExerciseCard({
           </View>
         )
       })}
+    </View>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Sesión sin series registradas.
+//
+// Decía solo "Sesión completada sin series registradas", que es justo lo que le
+// pasa a una sesión libre de trabajo isométrico: cronometra los ejercicios pero
+// no registra repeticiones, así que el detalle no contaba NADA de lo que se
+// entrenó. `exercise_timings` sí lo sabe. Espeja `SessionDetailView` de la web.
+// ---------------------------------------------------------------------------
+function TimedOnlySession({
+  session,
+  t,
+}: {
+  session: SessionDetailBodyProps['session']
+  t: TFunction
+}) {
+  const timings = session.exerciseTimings ?? []
+
+  if (timings.length === 0) {
+    return (
+      <View className="items-center gap-1 py-12">
+        <Text className="text-2xl">🧘</Text>
+        <Text className="text-center text-sm text-muted-foreground">{t('session.noSetsRecorded')}</Text>
+      </View>
+    )
+  }
+
+  return (
+    <View className="gap-1">
+      <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+        {t('session.timedExercises')}
+      </Text>
+      {timings.map((timing, i) => (
+        <View
+          key={`${timing.exerciseId}-${i}`}
+          className="flex-row items-center justify-between gap-4 border-b border-border/50 py-3"
+        >
+          <Text className="min-w-0 flex-1 text-sm text-foreground" numberOfLines={1}>
+            {timing.exerciseName || timing.exerciseId}
+          </Text>
+          {timing.seconds > 0 && (
+            <View className="shrink-0 flex-row items-center gap-1">
+              <Clock size={12} color={MUTED} />
+              <Text className="font-mono text-[11px] text-muted-foreground">
+                {formatTimingClock(timing.seconds)}
+              </Text>
+            </View>
+          )}
+        </View>
+      ))}
+      <Text className="mt-3 text-xs text-muted-foreground">{t('session.noSetsRecorded')}</Text>
     </View>
   )
 }
