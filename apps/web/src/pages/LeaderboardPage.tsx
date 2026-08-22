@@ -35,7 +35,9 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
   const [category, setCategory] = useState<LeaderboardCategory>('sessions_week')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week')
 
-  useEffect(() => { load(); op.track('leaderboard_viewed') }, [load])
+  useEffect(() => { void load() }, [load])
+  // Desacoplado de `load` (#578): un `leaderboard_viewed` por visita, no por render.
+  useEffect(() => { op.track('leaderboard_viewed') }, [])
 
   // Map time filter to actual category for sessions
   const activeCategory: LeaderboardCategory =

@@ -24,6 +24,7 @@ import {
 import { nowLocalForPB } from '../lib/dateUtils'
 import { fetchProgramDetailRows } from '../lib/programDetailQuery'
 import { normalizeProgramDayIds, type DayRowLike } from '../lib/program-day-ids'
+import { programSelectionEvents } from '../lib/program-selection-events'
 import { getPlatform } from '../platform'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
@@ -351,7 +352,9 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           { requestKey: null },
         )
       } catch { /* not found */ }
-      const wasAlreadyCurrent = existing?.is_current === true
+      // #579: `selected` solo si el activo cambia de verdad; `joined` solo al
+      // crear el enrollment. Se decide ANTES de escribir en PB.
+      const events = programSelectionEvents(existing ? { is_current: existing.is_current === true } : null)
 
       if (existing) {
         await pb.collection('user_programs').update(existing.id, { is_current: true, status: 'active', ended_at: '' })
@@ -381,8 +384,10 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       qc.setQueryData(qk.programs.activeEnrollment(userId), programId)
 
       const newActive = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).find(p => p.id === programId) || null
-      op.track('program_selected', { program_id: programId, program_name: newActive?.name || '' })
-      if (!wasAlreadyCurrent) {
+      if (events.selected) {
+        op.track('program_selected', { program_id: programId, program_name: newActive?.name || '' })
+      }
+      if (events.joined) {
         trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programJoined, {
           surface: 'programs',
           source: 'program_picker',
