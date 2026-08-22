@@ -55,6 +55,9 @@ const SHARED_WORDS = new Set([
   // préstamos y disciplinas
   'cardio', 'core', 'yoga', 'tabata', 'emom', 'planche', 'muscle', 'up', 'ups', 'l', 'sit',
   'fitball', 'trx', 'kettlebell', 'snack', 'blog', 'coach', 'feedback', 'spam', 'whatsapp',
+  // «skills» es como se llaman en calistenia los movimientos que se desbloquean
+  // (front lever, muscle up): nadie dice «habilidades» en el gimnasio.
+  'skill', 'skills',
   'ranking', 'tutorial', 'online', 'offline', 'app', 'premium', 'pro', 'ok',
   // palabras que existen en español tal cual
   'error', 'no', 'total', 'normal', 'general', 'social', 'legal', 'lumbar', 'admin', 'editor',

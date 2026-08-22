@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import type { AuthUser } from '@calistenia/core/types'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Kicker } from '../components/ui/kicker'
 import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
-import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
+import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId } from '../components/onboarding/StepHealth'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
@@ -27,6 +30,48 @@ import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
   user: AuthUser
+}
+
+/** Temas de ajuste que se despliegan en la lista del final. */
+type SettingsSection = 'body' | 'training' | 'health' | 'prefs' | 'account'
+
+/**
+ * Fila de ajuste: una por tema, con su valor a la derecha.
+ *
+ * Vive a nivel de módulo, no dentro de `ProfilePage`: definirla en el render
+ * la recrearía en cada pulsación y React desmontaría el panel abierto — los
+ * `Input` de dentro perderían el foco a cada letra.
+ */
+function SettingsRow({ label, value, open = false, onClick, children }: {
+  label: string
+  value?: string
+  /** Solo para las filas que despliegan; las que navegan no la pasan. */
+  open?: boolean
+  onClick: () => void
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-expanded={children ? open : undefined}
+        className="flex w-full items-center justify-between gap-3 py-3.5 text-left transition-colors hover:text-lime"
+      >
+        <span className="text-[15px]">{label}</span>
+        <span className="flex items-center gap-2">
+          {value ? <span className="font-mono text-[11px] text-muted-foreground">{value}</span> : null}
+          <svg
+            className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')}
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
+      </button>
+      {open && children ? <div className="pb-5 pt-1">{children}</div> : null}
+    </div>
+  )
 }
 
 export default function ProfilePage({ user }: ProfilePageProps) {
@@ -61,9 +106,17 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [copied, setCopied] = useState(false)
   const [tzSearch, setTzSearch] = useState('')
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [openSection, setOpenSection] = useState<SettingsSection | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // Moneda de despensa (F5 #174): en qué moneda habla el user; el gasto siempre en $ USD
   const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency(user?.id ?? null)
+  // Cifras del carné: las mismas que el dashboard, leídas del contexto de
+  // entreno para que no puedan discrepar de lo que ve el usuario en portada.
+  const { settings, activeProgram } = useWorkoutState()
+  const { getTotalSessions, getLongestStreak, getWeeklyDoneCount } = useWorkoutActions()
+  const totalSessions = getTotalSessions()
+  const streak = getLongestStreak()
+  const weeklyDone = getWeeklyDoneCount()
 
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
 
@@ -153,6 +206,48 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     return { label: t(`profile.${key}`), color: bmiColorClass(bmi) }
   }, [bmi, t])
 
+  // Skills = las cinco marcas del perfil público. Las `pr_*` de `settings` se
+  // mantienen sincronizadas con el mapa `prs`, así que son la fuente barata.
+  const skills = useMemo(
+    () => buildSkills(settings as unknown as Record<string, number>),
+    [settings],
+  )
+
+  // «Intermedio · Semana 12 de 12»: nivel y, si el programa tiene fecha de
+  // inicio, en qué punto va. Sin fecha no se inventa la semana.
+  const levelLabel = LEVELS.find(l => l.value === level)?.label ?? ''
+  const week = useMemo(
+    () => programWeek(settings.startDate, activeProgram?.duration_weeks, todayStr()),
+    [settings.startDate, activeProgram?.duration_weeks],
+  )
+  const identityLine = [
+    levelLabel,
+    week ? t('profile.weekOfTotal', { current: week.current, total: week.total }) : null,
+  ].filter(Boolean).join(' · ')
+
+  const healthCount = medicalConditions.length + injuries.length
+
+  // La lista de zonas horarias no depende de nada del formulario salvo el
+  // filtro, así que se calcula una vez por búsqueda y no en cada render.
+  const timezoneOptions = useMemo(() => {
+    let all: string[]
+    try {
+      // `supportedValuesOf` es ES2022 y el `lib` de web sigue en ES2020.
+      all = (Intl as typeof Intl & { supportedValuesOf(key: string): string[] }).supportedValuesOf('timeZone')
+    } catch {
+      all = [
+        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+        'America/Bogota', 'America/Lima', 'America/Santiago', 'America/Buenos_Aires',
+        'America/Mexico_City', 'America/Sao_Paulo',
+        'Europe/Madrid', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
+        'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Asia/Dubai',
+        'Australia/Sydney', 'Pacific/Auckland',
+      ]
+    }
+    const q = tzSearch.trim().toLowerCase()
+    return q ? all.filter(tz => tz.toLowerCase().includes(q)) : all
+  }, [tzSearch])
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user?.id) return
@@ -225,92 +320,193 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     setSaving(false)
   }
 
+  // Una sola sección abierta a la vez: los ajustes son una lista de filas y lo
+  // que se despliega es el formulario de siempre, no una pantalla nueva.
+  const toggleSection = (id: SettingsSection) =>
+    setOpenSection(prev => (prev === id ? null : id))
+
+  const saveBar = (
+    <Button
+      onClick={handleSave}
+      disabled={saving}
+      variant="limeSolid"
+      className="mt-4 h-11 w-full font-bebas text-lg tracking-wide"
+    >
+      {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
+    </Button>
+  )
+
   return (
-    <div className="max-w-[1080px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="h-1 bg-lime" />
-        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between md:p-7">
-          <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadingAvatar}
-          className="relative group size-20 shrink-0 rounded-full overflow-hidden bg-accent border-2 border-border hover:border-lime transition-colors focus:outline-none focus:ring-2 focus:ring-lime"
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
-          ) : (
-            <span className="flex items-center justify-center size-full text-3xl font-bebas text-foreground">
-              {(displayName || user?.email || '?')[0]?.toUpperCase()}
-            </span>
-          )}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <svg className="size-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-          </div>
-          {uploadingAvatar && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <div className="size-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+    <div className="mx-auto max-w-[900px] px-4 py-6 md:px-6 md:py-8">
+      <Kicker>{t('profile.accountLabel')}</Kicker>
+      <h1 className="mb-6 mt-1 font-bebas text-[36px] leading-none md:text-[52px]">{t('profile.title')}</h1>
+
+      {/* Carné de atleta: quién eres antes que qué puedes configurar. */}
+      <section className="rounded-lg border border-border p-5 md:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            aria-label={t('profile.changePhoto')}
+            className="group relative size-16 shrink-0 overflow-hidden rounded-full border border-lime/40 bg-lime/10 transition-colors hover:border-lime focus:outline-none focus:ring-2 focus:ring-lime"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="flex size-full items-center justify-center font-bebas text-3xl text-lime">
+                {(displayName || user?.name || user?.email || '?')[0]?.toUpperCase()}
+              </span>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <svg className="size-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
             </div>
-          )}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleAvatarChange}
-          className="hidden"
-        />
-            <div className="min-w-0">
-              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('profile.accountLabel')}</div>
-              <h1 className="mt-1 truncate font-bebas text-[40px] leading-none md:text-[52px]">{displayName || t('profile.title')}</h1>
-              <div className="mt-2 text-xs text-muted-foreground">{user?.email || '—'} · {t('profile.changePhoto')}</div>
+            {uploadingAvatar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              </div>
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-bebas text-[28px] leading-none md:text-[34px]">
+              {displayName || user?.name || t('profile.title')}
             </div>
+            <Kicker className="mt-1.5">{identityLine}</Kicker>
           </div>
-          <div className="shrink-0">
-            <div className="mb-3 text-[10px] font-mono tracking-[2px] text-muted-foreground uppercase">{t('profile.shareProfile')}</div>
-            <div className="flex flex-wrap gap-2">
+
+          <Badge className="shrink-0 self-start rounded-full border-transparent bg-lime px-3 font-mono text-[10px] font-normal uppercase tracking-widest text-lime-foreground hover:bg-lime sm:self-center">
+            {t('profile.phase', { phase: settings.phase || 1 })}
+          </Badge>
+        </div>
+
+        {/* Compartir: es la única acción del carné, así que vive dentro de él. */}
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <Kicker size="xs" className="mr-1">{t('profile.shareProfile')}</Kicker>
           <Button
             onClick={shareWhatsApp}
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] tracking-widest h-9 px-4"
+            className="h-8 bg-emerald-600 px-3 text-[10px] tracking-widest text-white hover:bg-emerald-700"
           >
-            <WhatsAppIcon className="size-4 mr-1.5" />
+            <WhatsAppIcon className="mr-1.5 size-3.5" />
             WHATSAPP
           </Button>
-          <Button
-            onClick={copyProfileLink}
-            variant="outline"
-            size="sm"
-            className="text-[10px] tracking-widest h-9 px-4"
-          >
+          <Button onClick={copyProfileLink} variant="outline" size="sm" className="h-8 px-3 text-[10px] tracking-widest">
             {copied ? (
               <>
-                <svg className="size-3.5 mr-1.5 text-lime" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                <svg className="mr-1.5 size-3.5 text-lime" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                 {t('profile.copied')}
               </>
             ) : (
               <>
-                <svg className="size-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                <svg className="mr-1.5 size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
                 {t('profile.copyLink')}
               </>
             )}
           </Button>
-            </div>
-          </div>
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        {/* Body & demographics */}
-        <Card id="tour-personal-info">
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionBody')}</div>
+      {/* Cifras: tres, grandes, y la racha en lima porque es la que se cuida. */}
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        <div className="rounded-lg border border-border p-3 md:p-4">
+          <div className="font-bebas text-[34px] leading-none">{totalSessions}</div>
+          <Kicker className="mt-1">{t('profile.sessions')}</Kicker>
+        </div>
+        <div className="rounded-lg border border-border p-3 md:p-4">
+          <div className="font-bebas text-[34px] leading-none text-lime">{streak}</div>
+          <Kicker className="mt-1">{t('profile.streak')}</Kicker>
+        </div>
+        <div className="rounded-lg border border-border p-3 md:p-4">
+          <div className="font-bebas text-[34px] leading-none">{weeklyDone}/{settings.weeklyGoal || 5}</div>
+          <Kicker className="mt-1">{t('common.week')}</Kicker>
+        </div>
+      </div>
 
+      {/* Skills: lo desbloqueado en lima, lo que está en camino con su avance. */}
+      <Kicker className="mb-2 mt-6">{t('profile.skills')}</Kicker>
+      {skills.some(s => s.value > 0) ? (
+        <div className="flex flex-wrap gap-2">
+          {skills.map(s => (
+            <span
+              key={s.key}
+              className={cn(
+                'rounded-full border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest',
+                s.achieved
+                  ? 'border-lime/40 bg-lime/10 text-lime'
+                  : 'border-border text-muted-foreground',
+              )}
+            >
+              {s.achieved
+                ? t('profile.skillAchieved', { label: s.label, value: `${s.value}${s.unit === 's' ? 's' : ''}` })
+                : t('profile.skillLocked', { label: s.label, pct: s.pct })}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">{t('profile.skillsEmpty')}</p>
+      )}
+
+      {/* Cuerpo: resumen legible; editar abre el formulario de abajo. */}
+      <Kicker className="mb-2 mt-6">{t('profile.sectionBody')}</Kicker>
+      <div id="tour-personal-info" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4 md:px-5">
+        <div className="flex gap-6 md:gap-8">
+          <div>
+            <div className="font-bebas text-[28px] leading-none">
+              {weight || '—'}<span className="text-[13px] text-muted-foreground"> kg</span>
+            </div>
+            <Kicker className="mt-1">{t('profile.weightShort')}</Kicker>
+          </div>
+          <div>
+            <div className="font-bebas text-[28px] leading-none">
+              {height || '—'}<span className="text-[13px] text-muted-foreground"> cm</span>
+            </div>
+            <Kicker className="mt-1">{t('profile.heightShort')}</Kicker>
+          </div>
+          <div>
+            <div className="font-bebas text-[28px] leading-none">{age || '—'}</div>
+            <Kicker className="mt-1">{t('profile.age')}</Kicker>
+          </div>
+          {bmi && bmiCategory && (
             <div>
-              <Label htmlFor="profile-name" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.name')}</Label>
+              <div className={cn('font-bebas text-[28px] leading-none', bmiCategory.color)}>{bmi}</div>
+              <Kicker className="mt-1">{t('profile.bmiLabel')}</Kicker>
+            </div>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setOpenSection('body')}
+          className="font-mono text-[10px] uppercase tracking-widest"
+        >
+          {t('common.edit')}
+        </Button>
+      </div>
+
+      {/* Ajustes: una fila por tema, al final. Lo que se edita se despliega
+          aquí mismo; lo que es otra pantalla, navega. */}
+      <Kicker className="mb-1 mt-6">{t('profile.settings')}</Kicker>
+      <div className="rounded-lg border border-border px-4 md:px-5">
+        <SettingsRow
+          label={t('profile.rowBodyGoals')}
+          value={weight && height ? `${weight} kg · ${height} cm` : undefined}
+          open={openSection === 'body'}
+          onClick={() => toggleSection('body')}
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <Label htmlFor="profile-name" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.name')}</Label>
               <Input
                 id="profile-name"
                 value={displayName}
@@ -322,47 +518,21 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label htmlFor="profile-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.weight')}</Label>
-                <Input
-                  id="profile-weight"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={weight}
-                  onChange={(e) => set('weight', e.target.value)}
-                  placeholder={t('profile.weightPlaceholder')}
-                  className="h-10"
-                />
+                <Label htmlFor="profile-weight" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.weight')}</Label>
+                <Input id="profile-weight" type="number" step="0.1" min="0" value={weight} onChange={(e) => set('weight', e.target.value)} placeholder={t('profile.weightPlaceholder')} className="h-10" />
               </div>
               <div>
-                <Label htmlFor="profile-height" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.height')}</Label>
-                <Input
-                  id="profile-height"
-                  type="number"
-                  min="0"
-                  value={height}
-                  onChange={(e) => set('height', e.target.value)}
-                  placeholder={t('profile.heightPlaceholder')}
-                  className="h-10"
-                />
+                <Label htmlFor="profile-height" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.height')}</Label>
+                <Input id="profile-height" type="number" min="0" value={height} onChange={(e) => set('height', e.target.value)} placeholder={t('profile.heightPlaceholder')} className="h-10" />
               </div>
               <div>
-                <Label htmlFor="profile-age" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.age')}</Label>
-                <Input
-                  id="profile-age"
-                  type="number"
-                  min="13"
-                  max="120"
-                  value={age}
-                  onChange={(e) => set('age', e.target.value)}
-                  placeholder={t('profile.agePlaceholder')}
-                  className="h-10"
-                />
+                <Label htmlFor="profile-age" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.age')}</Label>
+                <Input id="profile-age" type="number" min="13" max="120" value={age} onChange={(e) => set('age', e.target.value)} placeholder={t('profile.agePlaceholder')} className="h-10" />
               </div>
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.sex')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.sex')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { value: 'male', label: t('profile.male') },
@@ -386,44 +556,16 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               </div>
             </div>
 
-            {bmi && bmiCategory && (
-              <div className="bg-muted/30 rounded-lg p-3 border border-border/60">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-bebas text-3xl leading-none text-foreground">{bmi}</span>
-                  <span className="text-[10px] text-muted-foreground tracking-wide uppercase">{t('profile.bmiLabel')}</span>
-                </div>
-                <div className={cn('text-xs mt-0.5', bmiCategory.color)}>{bmiCategory.label}</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Goals */}
-        <Card>
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionGoals')}</div>
-
             <div>
-              <Label htmlFor="profile-goal-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goalWeight')}</Label>
-              <Input
-                id="profile-goal-weight"
-                type="number"
-                step="0.1"
-                min="0"
-                value={goalWeight}
-                onChange={(e) => set('goalWeight', e.target.value)}
-                placeholder={t('profile.goalWeightPlaceholder')}
-                className="h-10"
-              />
+              <Label htmlFor="profile-goal-weight" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.goalWeight')}</Label>
+              <Input id="profile-goal-weight" type="number" step="0.1" min="0" value={goalWeight} onChange={(e) => set('goalWeight', e.target.value)} placeholder={t('profile.goalWeightPlaceholder')} className="h-10" />
               {goalBmi && (
-                <div className="text-[10px] text-muted-foreground mt-1">
-                  {t('onboarding.bmiGoal', { bmi: goalBmi })}
-                </div>
+                <div className="mt-1 text-[10px] text-muted-foreground">{t('onboarding.bmiGoal', { bmi: goalBmi })}</div>
               )}
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.activityLevel')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.activityLevel')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {([
                   ['sedentary', 'activitySedentary'],
@@ -450,7 +592,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.pace')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.pace')}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {([
                   ['gradual', 'paceGradual'],
@@ -474,106 +616,19 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {saveBar}
+          </div>
+        </SettingsRow>
 
-        {/* Health */}
-        <Card>
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionHealth')}</div>
-
-            <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.medicalConditions')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {CONDITION_IDS.map(id => {
-                  const active = medicalConditions.includes(id)
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggle('medicalConditions', id)}
-                      aria-pressed={active}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
-                        active
-                          ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                      )}
-                    >
-                      {t(`onboarding.conditions.${id}`)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.injuriesLabel')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {INJURY_IDS.map(id => {
-                  const active = injuries.includes(id)
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggle('injuries', id)}
-                      aria-pressed={active}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
-                        active
-                          ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-                      )}
-                    >
-                      {t(`onboarding.injuries.${id}`)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Moneda (despensa F5: en qué moneda hablas; el gasto siempre se muestra en $) */}
-        <Card>
-          <CardContent className="p-5 flex flex-col gap-3">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">
-              {t('profile.currency', { defaultValue: 'Moneda' })}
-            </div>
-            <div className="flex gap-2">
-              {SUPPORTED_CURRENCIES.map(code => {
-                const active = currencyPrefs.defaultCurrency === code
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => setDefaultCurrency(code)}
-                    aria-pressed={active}
-                    className={cn(
-                      'h-11 flex-1 flex items-center justify-center rounded-md border font-mono text-xs tracking-wide transition-colors',
-                      active
-                        ? 'border-lime/40 bg-lime/10 text-lime'
-                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
-                    )}
-                  >
-                    {currencySymbol(code)} {code}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="font-mono text-[9px] tracking-wide text-muted-foreground/70">
-              {t('profile.currencyDesc', { defaultValue: 'El gasto se muestra siempre en $ (USD de referencia).' })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Training */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionTraining')}</div>
-
+        <SettingsRow
+          label={t('profile.sectionTraining')}
+          value={levelLabel}
+          open={openSection === 'training'}
+          onClick={() => toggleSection('training')}
+        >
+          <div className="flex flex-col gap-4">
             <div id="tour-level-selector">
-              <Label htmlFor="profile-level" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.level')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.level')}</Label>
               <div className="flex gap-2">
                 {LEVELS.map(l => (
                   <Button
@@ -591,7 +646,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.focusAreas')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.focusAreas')}</Label>
               <div className="flex flex-wrap gap-2">
                 {FOCUS_AREA_IDS.map(id => {
                   const active = focusAreas.includes(id)
@@ -602,7 +657,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                       onClick={() => toggle('focusAreas', id)}
                       aria-pressed={active}
                       className={cn(
-                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
                         active
                           ? 'border-lime bg-lime/10 text-lime'
                           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
@@ -616,7 +671,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.trainingDays')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.trainingDays')}</Label>
               <div className="grid grid-cols-7 gap-1.5">
                 {DAY_IDS.map(d => {
                   const active = trainingDays.includes(d)
@@ -641,7 +696,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.intensity')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.intensity')}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {([
                   ['light', 'intensityLight'],
@@ -667,30 +722,135 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label htmlFor="profile-goal" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goal')}</Label>
+              <Label htmlFor="profile-goal" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.goal')}</Label>
               <textarea
                 id="profile-goal"
                 value={goal}
                 onChange={(e) => set('goal', e.target.value)}
                 placeholder={t('profile.goalPlaceholder')}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                className="flex w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
-          </CardContent>
-        </Card>
+            {saveBar}
+          </div>
+        </SettingsRow>
 
-        {/* Preferences: timezone */}
-        <Card>
-          <CardContent className="p-5">
+        <SettingsRow
+          label={t('profile.sectionHealth')}
+          value={healthCount ? String(healthCount) : undefined}
+          open={openSection === 'health'}
+          onClick={() => toggleSection('health')}
+        >
+          <div className="flex flex-col gap-4">
             <div>
-              <Label htmlFor="profile-timezone" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.timezone')}</Label>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.medicalConditions')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {CONDITION_IDS.map(id => {
+                  const active = medicalConditions.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggle('medicalConditions', id)}
+                      aria-pressed={active}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.conditions.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('onboarding.injuriesLabel')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {INJURY_IDS.map(id => {
+                  const active = injuries.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggle('injuries', id)}
+                      aria-pressed={active}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.injuries.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {saveBar}
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
+          label={t('profile.rowPreferences')}
+          value={`${currentLang.toUpperCase()} · ${currencyPrefs.defaultCurrency}`}
+          open={openSection === 'prefs'}
+          onClick={() => toggleSection('prefs')}
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.language')}</Label>
+              <select
+                value={currentLang}
+                onChange={(e) => i18n.changeLanguage(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="es">Español</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            <div>
+              <Label className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.currency')}</Label>
+              <div className="flex gap-2">
+                {SUPPORTED_CURRENCIES.map(code => {
+                  const active = currencyPrefs.defaultCurrency === code
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setDefaultCurrency(code)}
+                      aria-pressed={active}
+                      className={cn(
+                        'flex h-11 flex-1 items-center justify-center rounded-md border font-mono text-xs tracking-wide transition-colors',
+                        active
+                          ? 'border-lime/40 bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
+                      )}
+                    >
+                      {currencySymbol(code)} {code}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="mt-2 font-mono text-[9px] tracking-wide text-muted-foreground/70">
+                {t('profile.currencyDesc')}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="profile-timezone" className="mb-1.5 block text-[11px] text-muted-foreground">{t('profile.timezone')}</Label>
               <Input
                 id="profile-tz-search"
                 value={tzSearch}
                 onChange={(e) => setTzSearch(e.target.value)}
                 placeholder={t('profile.searchTimezone')}
-                className="h-8 text-xs mb-2"
+                className="mb-2 h-8 text-xs"
               />
               <select
                 id="profile-timezone"
@@ -698,130 +858,57 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 onChange={(e) => set('timezone', e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                {(() => {
-                  try {
-                    // `supportedValuesOf` es ES2022 y el `lib` de web sigue en ES2020.
-                    const allTz = (Intl as typeof Intl & {
-                      supportedValuesOf(key: string): string[]
-                    }).supportedValuesOf('timeZone')
-                    const filtered = tzSearch
-                      ? allTz.filter(tz => tz.toLowerCase().includes(tzSearch.toLowerCase()))
-                      : allTz
-                    return filtered.map(tz => (
-                      <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
-                    ))
-                  } catch {
-                    // Fallback for older browsers
-                    const common = [
-                      'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
-                      'America/Bogota', 'America/Lima', 'America/Santiago', 'America/Buenos_Aires',
-                      'America/Mexico_City', 'America/Sao_Paulo',
-                      'Europe/Madrid', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
-                      'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Asia/Dubai',
-                      'Australia/Sydney', 'Pacific/Auckland',
-                    ]
-                    return common.map(tz => (
-                      <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
-                    ))
-                  }
-                })()}
+                {timezoneOptions.map(tz => (
+                  <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                ))}
               </select>
-              <div className="text-[10px] text-muted-foreground mt-1">
+              <div className="mt-1 text-[10px] text-muted-foreground">
                 {t('profile.currentTimezone')}: {timezone.replace(/_/g, ' ')}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {saveBar}
+          </div>
+        </SettingsRow>
 
-        {/* Language */}
-        <Card>
-          <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('profile.language')}</div>
-            <select
-              value={currentLang}
-              onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="es">Español</option>
-              <option value="en">English</option>
-            </select>
-          </CardContent>
-        </Card>
+        <SettingsRow label={t('profile.reminders')} onClick={() => navigate('/reminders')} />
+        <SettingsRow label={t('blocks.manageEntry')} onClick={() => navigate('/settings/blocked')} />
 
-        {/* Account info (read-only) */}
-        <Card>
-          <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('profile.accountSection')}</div>
+        <SettingsRow
+          label={t('profile.rowAccountPrivacy')}
+          value={user?.email || undefined}
+          open={openSection === 'account'}
+          onClick={() => toggleSection('account')}
+        >
+          <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground">{t('profile.email')}</span>
                 <span className="text-sm text-foreground">{user?.email || '—'}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground">{t('profile.memberSince')}</span>
                 <span className="text-sm text-foreground">{user?.created ? utcToLocalDateStr(user.created) : '—'}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Herramientas con jerarquía: el hábito diario tiene más peso visual. */}
-        <section className="space-y-3 lg:col-span-2" aria-label={t('profile.quickActions')}>
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('profile.quickActions')}</div>
-          <div className="grid gap-3 sm:grid-cols-[1.45fr_1fr]">
-            <Card
-              className="cursor-pointer border-lime bg-lime text-lime-foreground transition-transform hover:-translate-y-0.5"
-              onClick={() => navigate('/reminders')}
-            >
-              <CardContent className="p-5 flex h-full items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-full bg-black/10 text-xl">🔔</span>
-                  <div><div className="text-sm font-medium">{t('profile.reminders')}</div><div className="mt-0.5 text-[10px] text-lime-foreground/70">{t('profile.remindersDesc')}</div></div>
-                </div>
-                <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-              </CardContent>
-            </Card>
-            <Card
-              className="cursor-pointer border-border/80 transition-colors hover:border-lime/50 hover:bg-muted/40"
-              onClick={() => navigate('/settings/blocked')}
-            >
-              <CardContent className="p-5 flex h-full items-center justify-between gap-3">
-                <div><span className="mb-3 flex size-9 items-center justify-center rounded-full bg-muted text-lg">🚫</span><div className="text-sm font-medium">{t('blocks.manageEntry')}</div></div>
-                <svg className="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-              </CardContent>
-            </Card>
+            {/* Cuenta privada (#422): interruptor que se queda aquí, no navega. */}
+            <PrivateAccountCard userId={user?.id ?? null} />
+
+            {/* Zona de peligro (#300): dentro de «cuenta», al final del todo, para
+                que no se pulse de paso mientras se editan otros campos. */}
+            <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 p-4">
+              <Kicker className="text-destructive">{t('account.dangerZone')}</Kicker>
+              <p className="text-sm text-muted-foreground">{t('account.deleteDesc')}</p>
+              <Button
+                variant="outline"
+                className="self-start border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                {t('account.deleteCta')}
+              </Button>
+            </div>
           </div>
-        </section>
-
-        {/* Cuenta privada (#422). Fuera de «acciones rápidas» a propósito: esas
-            navegan a otra pantalla y ésta es un interruptor que se queda aquí. */}
-        <PrivateAccountCard userId={user?.id ?? null} className="lg:col-span-2" />
-
-        {/* Save button */}
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          variant="limeSolid"
-          className="h-11 font-bebas text-lg tracking-wide lg:col-span-2"
-        >
-          {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
-        </Button>
-
-        {/* Zona de peligro: baja de cuenta (#300). Al final y separada del
-            resto para que no se pulse de paso mientras se editan campos. */}
-        <Card className="border-destructive/30 lg:col-span-2">
-          <CardContent className="p-5 flex flex-col gap-3">
-            <div className="text-[10px] text-destructive tracking-[3px] uppercase">{t('account.dangerZone')}</div>
-            <p className="text-sm text-muted-foreground">{t('account.deleteDesc')}</p>
-            <Button
-              variant="outline"
-              className="self-start border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
-              {t('account.deleteCta')}
-            </Button>
-          </CardContent>
-        </Card>
+        </SettingsRow>
       </div>
 
       <DeleteAccountDialog
