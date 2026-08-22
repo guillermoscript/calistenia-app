@@ -58,7 +58,7 @@
     "apps/web/src/pages/ChallengeDetailPage.tsx": 2,
     "apps/web/src/pages/DownloadPage.tsx": 17,
     "apps/web/src/pages/MealLoggerPage.tsx": 4,
-    "apps/web/src/pages/ProfilePage.tsx": 1,
+    "apps/web/src/pages/ProfilePage.tsx": 0,
     "apps/web/src/pages/ReferralsPage.tsx": 1,
     "apps/web/src/pages/RemindersPage.tsx": 21,
     "apps/web/src/pages/RoutineViewPage.tsx": 4
