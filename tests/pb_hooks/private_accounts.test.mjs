@@ -205,6 +205,51 @@ test("aceptar dos veces es idempotente y no duplica el aviso", async () => {
   )
 })
 
+test("aceptar desde dos dispositivos A LA VEZ no duplica el aviso", async () => {
+  // El caso secuencial de arriba ya pasaba antes del arreglo: el fallo sólo
+  // aparecía en concurrencia real, cuando las dos peticiones leían `pending`
+  // antes de que ninguna guardase y ambas notificaban. El handler mete ahora la
+  // relectura+save en `$app.runInTransaction`, así que sólo una gana.
+  const atleta = await createUser("Carrera Atleta")
+  const solicitante = await createUser("Carrera Solicitante")
+  await makePrivate(atleta)
+
+  const rec = await createAs(solicitante, "follows", {
+    follower: solicitante.id, following: atleta.id,
+  })
+  const token = await authAs(atleta)
+
+  // AVISO honesto: este test NO reproduce el fallo que describía el handoff. Se
+  // midió contra el hook VIEJO (sin transacción) con 2, 4, 8 y 16 aceptaciones
+  // concurrentes, tanto en el PB efímero como contra el PB local con datos
+  // reales, y siempre salió UNA ganadora y UN aviso. El harness es válido: las
+  // peticiones se solapan de verdad (8 en 6 ms de reloj contra 34 ms de suma) y
+  // los handlers del JSVM también. Simplemente la ventana entre leer y guardar
+  // no llega a abrirse en un PocketBase de una sola instancia.
+  //
+  // Se queda como test de INVARIANTE, no de regresión: deja por escrito que sólo
+  // una aceptación puede escribir, que es lo que la transacción del handler
+  // garantiza por construcción en vez de por casualidad.
+  const N = 6
+  const res = await Promise.all(
+    Array.from({ length: N }, () =>
+      api(`/api/follows/${rec.id}/accept`, { method: "POST", token })),
+  )
+
+  // Todas responden 200 y `accepted`; lo que no puede pasar es que más de una
+  // se crea la ganadora, porque cada ganadora manda un aviso.
+  for (const r of res) assert.equal(r.status, "accepted")
+  assert.equal(
+    res.filter((r) => !r.already).length, 1,
+    "exactamente una de las " + N + " debe ser la que escribe (el resto, `already: true`)",
+  )
+
+  await expectNotifications(
+    solicitante.id, "follow_accepted", 1,
+    "dos aceptaciones concurrentes mandan UN solo aviso",
+  )
+})
+
 test("rechazar borra la fila y deja volver a solicitar", async () => {
   const atleta = await createUser("Rechazo Atleta")
   const solicitante = await createUser("Rechazo Solicitante")

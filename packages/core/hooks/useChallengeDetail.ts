@@ -90,7 +90,8 @@ export async function fetchLeaderboard(
     visible.map(async (p: any) => {
       const user = p.expand?.user
       const uid = p.user as string
-      const displayName = user?.display_name || user?.email?.split('@')[0] || '?'
+      // `name` antes del email: el email lo esconde users_field_privacy.pb.js (#411).
+      const displayName = user?.display_name || user?.name || user?.email?.split('@')[0] || '?'
 
       let value = 0
       try {

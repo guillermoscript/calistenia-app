@@ -150,7 +150,7 @@ export default function ChallengeDetailScreen() {
         surface: 'challenge_detail',
         source: 'challenge_detail',
         challenge_id: id,
-        participant_count: leaderboard.length + 1,
+        participant_count: leaderboard.length + hiddenPrivateCount + 1,
         result: 'joined',
       })
       load()
@@ -282,7 +282,7 @@ export default function ChallengeDetailScreen() {
                   : t('challenge.preset.expired')}
             </Text>
             <Text className="font-mono text-[10px] text-muted-foreground">
-              · {t('challenges.participants', { count: leaderboard.length })}
+              · {t('challenges.participants', { count: leaderboard.length + hiddenPrivateCount })}
             </Text>
           </View>
 
@@ -323,7 +323,7 @@ export default function ChallengeDetailScreen() {
               accessibilityLabel={t('challenge.leaderboard')}
             >
               <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length })}
+                {t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length + hiddenPrivateCount })}
               </Text>
               {/* El giro va en la View, no en el icono: react-native-svg se queda
                   el `transform` del style y lo aplica como transformación SVG con

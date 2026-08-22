@@ -291,7 +291,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
             aria-expanded={leaderboardOpen}
             className="w-full flex items-center justify-between border-t border-border py-3 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
           >
-            <span>{t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length })}</span>
+            <span>{t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length + hiddenPrivateCount })}</span>
             <svg
               className={cn('size-4 transition-transform', leaderboardOpen && 'rotate-180')}
               viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"
