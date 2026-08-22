@@ -172,5 +172,13 @@ export async function navigateTo(page, path) {
 export async function selectDay(page, name = /lun|mon/i) {
   const btn = page.getByRole('button', { name }).first()
   await expect(btn).toBeVisible({ timeout: 8000 })
-  if ((await btn.getAttribute('aria-pressed')) !== 'true') await btn.click()
+  // Con el día autoseleccionado, el tour de detalle (driver.js) salta a los
+  // 500 ms del montaje y tapa la página: descartarlo justo antes de pulsar.
+  await page.waitForTimeout(700)
+  await dismissOverlays(page)
+  if ((await btn.getAttribute('aria-pressed')) !== 'true') {
+    await btn.click()
+    await page.waitForTimeout(700)
+    await dismissOverlays(page)
+  }
 }
