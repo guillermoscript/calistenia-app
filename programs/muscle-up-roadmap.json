@@ -13,8 +13,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Jalón explosivo",
           "workout_title": "Pull explosivo y potencia",
           "exercises": [
@@ -143,11 +143,12 @@
               "timer_seconds": 30,
               "note": "Brazo extendido contra la pared, palma hacia fuera. 15s por lado."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Transición y habilidad",
           "workout_title": "Skill – Preparación de transición",
           "exercises": [
@@ -276,11 +277,12 @@
               "timer_seconds": 30,
               "note": "Brazo detrás de la cabeza, empuja el codo con la otra mano. 15s por lado."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Volumen de jalón y empuje",
           "workout_title": "Volumen – Pull y push",
           "exercises": [
@@ -408,11 +410,12 @@
               "timer_seconds": 30,
               "note": "Contra la pared o marco de puerta. Abre bien el pecho."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Habilidad y core",
           "workout_title": "Skill y estabilidad",
           "exercises": [
@@ -541,7 +544,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s. Baja el sistema nervioso post-entrenamiento."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -552,8 +556,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Jalón explosivo",
           "workout_title": "Pull explosivo avanzado",
           "exercises": [
@@ -681,11 +685,12 @@
               "timer_seconds": 30,
               "note": "Brazo extendido, palma hacia fuera. 15s por lado."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Transición y habilidad",
           "workout_title": "Muscle-up negativas y false grip",
           "exercises": [
@@ -814,11 +819,12 @@
               "timer_seconds": 30,
               "note": "Relaja los tríceps. 15s por lado."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Volumen de jalón y empuje",
           "workout_title": "Volumen – Fuerza estructural",
           "exercises": [
@@ -946,11 +952,12 @@
               "timer_seconds": 30,
               "note": "Abre bien el pecho contra la pared."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Habilidad y core",
           "workout_title": "Skill avanzado y core",
           "exercises": [
@@ -1078,7 +1085,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s. Recuperación del sistema nervioso."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1089,8 +1097,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Jalón explosivo",
           "workout_title": "Pull máximo – Preparación muscle-up",
           "exercises": [
@@ -1219,11 +1227,12 @@
               "timer_seconds": 30,
               "note": "Relaja los bíceps. Previene tendinitis. 15s por lado."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Transición y habilidad",
           "workout_title": "Muscle-up – Intentos y técnica",
           "exercises": [
@@ -1352,11 +1361,12 @@
               "timer_seconds": 30,
               "note": "Relaja los tríceps. 15s por lado. Previene inflamación."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Volumen de jalón y empuje",
           "workout_title": "Volumen – Construir capacidad de trabajo",
           "exercises": [
@@ -1485,11 +1495,12 @@
               "timer_seconds": 30,
               "note": "Abre el pecho. Previene acortamiento por el volumen de empuje."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Habilidad y core",
           "workout_title": "Skill final y core avanzado",
           "exercises": [
@@ -1617,7 +1628,8 @@
               "timer_seconds": 45,
               "note": "Cierra el programa con calma. Inhala 4s, retén 4s, exhala 8s. Recuperación total."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

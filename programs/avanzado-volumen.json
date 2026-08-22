@@ -6,7 +6,11 @@
     "duration_weeks": 12,
     "days_per_week": 6,
     "rest_day": "Domingo",
-    "equipment": ["Barra de dominadas", "Paralelas", "Ligas de resistencia"],
+    "equipment": [
+      "Barra de dominadas",
+      "Paralelas",
+      "Ligas de resistencia"
+    ],
     "notes": "Push-Pull-Legs × 2 por semana. Enfoque en tiempo bajo tensión, progresiones avanzadas y volumen alto para hipertrofia máxima."
   },
   "phases": [
@@ -17,8 +21,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje · Pecho, hombros, tríceps",
           "workout_title": "Push A – Volumen horizontal + vertical",
           "exercises": [
@@ -185,11 +189,12 @@
               "timer_seconds": 30,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Activa sistema parasimpático para recuperación."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón · Espalda, bíceps, rear delt",
           "workout_title": "Pull A – Volumen vertical + front lever",
           "exercises": [
@@ -356,11 +361,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Baja el cortisol post-entrenamiento."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas · Cuádriceps, isquiotibiales, glúteos + core",
           "workout_title": "Legs A – Fuerza unilateral + core",
           "exercises": [
@@ -526,11 +532,12 @@
               "timer_seconds": 30,
               "note": "De pie, talón al glúteo. 15s cada pierna. Mantén rodillas juntas."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Empuje · Hombros, tríceps, pecho + skill",
           "workout_title": "Push B – Volumen vertical + planche",
           "exercises": [
@@ -698,11 +705,12 @@
               "timer_seconds": 30,
               "note": "Sentado, piernas extendidas. Inclínate desde la cadera. Elongación post-empuje vertical."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Jalón · Espalda, bíceps + front lever",
           "workout_title": "Pull B – Fuerza + movimientos avanzados",
           "exercises": [
@@ -868,11 +876,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Recuperación parasimpática."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d6",
-          "day_name": "Día 6",
+          "day_id": "sab",
+          "day_name": "Sábado",
           "day_focus": "Piernas · Potencia, posterior + skills de core",
           "workout_title": "Legs B – Posterior + core avanzado + skill",
           "exercises": [
@@ -1051,7 +1060,8 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Fin de semana de entrenamiento."
             }
-          ]
+          ],
+          "day_type": "legs"
         }
       ]
     },
@@ -1062,8 +1072,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje · Pecho, hombros, tríceps (intensidad)",
           "workout_title": "Push A – Intensidad horizontal + planche",
           "exercises": [
@@ -1230,11 +1240,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Recuperación activa."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón · Espalda, bíceps (intensidad)",
           "workout_title": "Pull A – Intensidad + front lever progresión",
           "exercises": [
@@ -1401,11 +1412,12 @@
               "timer_seconds": 30,
               "note": "4-4-6. Activa parasimpático."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas · Cuádriceps, isquiotibiales, glúteos + core",
           "workout_title": "Legs A – Fuerza unilateral avanzada + core",
           "exercises": [
@@ -1571,11 +1583,12 @@
               "timer_seconds": 30,
               "note": "Talón al glúteo. 15s cada pierna."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Empuje · Vertical + skill avanzado",
           "workout_title": "Push B – HSPU + planche dinámico",
           "exercises": [
@@ -1743,11 +1756,12 @@
               "timer_seconds": 30,
               "note": "Sentado, piernas extendidas. Elongación post-empuje vertical."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Jalón · Espalda, bíceps, front lever",
           "workout_title": "Pull B – Fuerza máxima + front lever",
           "exercises": [
@@ -1915,11 +1929,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d6",
-          "day_name": "Día 6",
+          "day_id": "sab",
+          "day_name": "Sábado",
           "day_focus": "Piernas · Posterior, potencia + core avanzado + skill",
           "workout_title": "Legs B – Posterior + skill avanzado",
           "exercises": [
@@ -2099,7 +2114,8 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Fin de semana."
             }
-          ]
+          ],
+          "day_type": "legs"
         }
       ]
     },
@@ -2110,8 +2126,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje · Pecho, hombros, tríceps (pico)",
           "workout_title": "Push A – Fuerza máxima + planche avanzado",
           "exercises": [
@@ -2278,11 +2294,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón · Espalda, bíceps (pico)",
           "workout_title": "Pull A – Fuerza máxima + front lever completo",
           "exercises": [
@@ -2450,11 +2467,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas · Cuádriceps, isquiotibiales, glúteos + core (pico)",
           "workout_title": "Legs A – Unilateral avanzado + core",
           "exercises": [
@@ -2620,11 +2638,12 @@
               "timer_seconds": 30,
               "note": "15s cada pierna."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Empuje · Vertical + planche (pico)",
           "workout_title": "Push B – HSPU completo + planche avanzado",
           "exercises": [
@@ -2792,11 +2811,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Jalón · Espalda, bíceps (pico)",
           "workout_title": "Pull B – Fuerza máxima + skills avanzados",
           "exercises": [
@@ -2964,11 +2984,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d6",
-          "day_name": "Día 6",
+          "day_id": "sab",
+          "day_name": "Sábado",
           "day_focus": "Piernas · Posterior, potencia + core avanzado + skill",
           "workout_title": "Legs B – Posterior élite + core + skill mastery",
           "exercises": [
@@ -3148,7 +3169,8 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Fin del programa semanal."
             }
-          ]
+          ],
+          "day_type": "legs"
         }
       ]
     }

@@ -13,8 +13,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje (Pecho, Hombro, Tríceps)",
           "workout_title": "Tren Superior – Empuje",
           "exercises": [
@@ -157,11 +157,12 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s. Recupera la calma."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tirón (Espalda, Bíceps)",
           "workout_title": "Tren Superior – Tirón",
           "exercises": [
@@ -303,11 +304,12 @@
               "timer_seconds": 45,
               "note": "Relaja toda la espalda. Respira profundo y suelta tensión."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Piernas y Glúteos",
           "workout_title": "Tren Inferior – Fuerza y Volumen",
           "exercises": [
@@ -449,11 +451,12 @@
               "timer_seconds": 30,
               "note": "Pie atrás con talón al suelo. 15s por pierna."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Full Body + Core",
           "workout_title": "Cuerpo Completo y Core",
           "exercises": [
@@ -608,7 +611,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s. Cierra los ojos."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -619,8 +623,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje (Pecho, Hombro, Tríceps)",
           "workout_title": "Tren Superior – Empuje Progresivo",
           "exercises": [
@@ -762,11 +766,12 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tirón (Espalda, Bíceps)",
           "workout_title": "Tren Superior – Tirón con Chin-ups",
           "exercises": [
@@ -908,11 +913,12 @@
               "timer_seconds": 45,
               "note": "Respira profundo. Relaja hombros y espalda."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Piernas y Glúteos",
           "workout_title": "Tren Inferior – Más Volumen",
           "exercises": [
@@ -1054,11 +1060,12 @@
               "timer_seconds": 40,
               "note": "Zancada profunda. 20s por lado."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Full Body + Core",
           "workout_title": "Cuerpo Completo – Integración",
           "exercises": [
@@ -1213,7 +1220,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s. Recupera."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1224,8 +1232,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje (Pecho, Hombro, Tríceps)",
           "workout_title": "Tren Superior – Empuje Avanzado",
           "exercises": [
@@ -1367,11 +1375,12 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tirón (Espalda, Bíceps)",
           "workout_title": "Tren Superior – Dominadas Estrictas",
           "exercises": [
@@ -1513,11 +1522,12 @@
               "timer_seconds": 45,
               "note": "Relaja todo. Respira profundo."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Piernas y Glúteos",
           "workout_title": "Tren Inferior – Fuerza Máxima",
           "exercises": [
@@ -1671,11 +1681,12 @@
               "timer_seconds": 40,
               "note": "20s por lado. Empuja cadera al frente."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Full Body + Core",
           "workout_title": "Cuerpo Completo – Máximo Rendimiento",
           "exercises": [
@@ -1831,7 +1842,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, retén 4s, exhala 6s. Programa completado."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

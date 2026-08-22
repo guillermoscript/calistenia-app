@@ -13,8 +13,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje + explosividad",
           "workout_title": "Push Power",
           "exercises": [
@@ -181,11 +181,12 @@
               "timer_seconds": 30,
               "note": "Inhala 4s, sostén 4s, exhala 6s. Calma el sistema nervioso."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalar + espalda",
           "workout_title": "Pull Destroyer",
           "exercises": [
@@ -352,11 +353,12 @@
               "timer_seconds": 30,
               "note": "Inhala 4s, sostén 4s, exhala 6s. Recupera la calma."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas + cardio explosivo",
           "workout_title": "Legs & Burn",
           "exercises": [
@@ -523,11 +525,12 @@
               "timer_seconds": 30,
               "note": "Rodilla al suelo, empuja cadera al frente. 15s c/lado."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tren superior completo",
           "workout_title": "Upper Body Blitz",
           "exercises": [
@@ -694,11 +697,12 @@
               "timer_seconds": 30,
               "note": "Inhala 4s por nariz, exhala 6s por boca. Regula el cortisol."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Skills + core avanzado",
           "workout_title": "Skill & Core",
           "exercises": [
@@ -864,7 +868,8 @@
               "timer_seconds": 30,
               "note": "Box breathing: 4s inhala, 4s sostén, 4s exhala, 4s sostén."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -875,8 +880,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje avanzado + potencia",
           "workout_title": "Push Inferno",
           "exercises": [
@@ -1043,11 +1048,12 @@
               "timer_seconds": 30,
               "note": "4-4-6 respiración. Baja el ritmo cardíaco."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalar + volumen",
           "workout_title": "Pull Volume",
           "exercises": [
@@ -1214,11 +1220,12 @@
               "timer_seconds": 30,
               "note": "Box breathing para recuperación."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas + potencia avanzada",
           "workout_title": "Legs Inferno",
           "exercises": [
@@ -1385,11 +1392,12 @@
               "timer_seconds": 30,
               "note": "Recupera el aliento. Inhala 4s, exhala 8s."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tren superior + supersets",
           "workout_title": "Upper Body War",
           "exercises": [
@@ -1556,11 +1564,12 @@
               "timer_seconds": 30,
               "note": "Respiración 4-4-6. Calma post-entrenamiento."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Skills + core destructor",
           "workout_title": "Skill & Core Elite",
           "exercises": [
@@ -1726,7 +1735,8 @@
               "timer_seconds": 30,
               "note": "Box breathing 4-4-4-4. Cierre de sesión."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1737,8 +1747,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje máximo + explosividad",
           "workout_title": "Push Apex",
           "exercises": [
@@ -1905,11 +1915,12 @@
               "timer_seconds": 30,
               "note": "Inhala 4s, exhala 8s. Calma total."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalar + fuerza máxima",
           "workout_title": "Pull Apex",
           "exercises": [
@@ -2076,11 +2087,12 @@
               "timer_seconds": 30,
               "note": "Respiración profunda para cerrar la sesión."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas + potencia máxima",
           "workout_title": "Legs Apex",
           "exercises": [
@@ -2247,11 +2259,12 @@
               "timer_seconds": 30,
               "note": "Inhala profundo, exhala largo. Recuperación total."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Tren superior + fuerza cumbre",
           "workout_title": "Upper Body Apex",
           "exercises": [
@@ -2418,11 +2431,12 @@
               "timer_seconds": 30,
               "note": "Cierre con respiración 4-8. Recuperación completa."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Skills avanzados + core destructor",
           "workout_title": "Skill & Core Apex",
           "exercises": [
@@ -2588,7 +2602,8 @@
               "timer_seconds": 30,
               "note": "Último cierre. Inhala profundo, exhala largo. 12 semanas completadas."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

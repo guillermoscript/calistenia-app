@@ -13,8 +13,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje pesado",
           "workout_title": "Push Heavy – Pecho, hombros y tríceps",
           "exercises": [
@@ -156,11 +156,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Activa el parasimpático post-entreno."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón pesado",
           "workout_title": "Pull Heavy – Espalda y bíceps",
           "exercises": [
@@ -302,11 +303,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Recuperación activa."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Skills y estáticos",
           "workout_title": "Skills – Equilibrio, palancas y control",
           "exercises": [
@@ -452,11 +454,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Recupera el SNC tras los estáticos."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Piernas y cadena posterior",
           "workout_title": "Legs – Fuerza unilateral y explosividad",
           "exercises": [
@@ -598,11 +601,12 @@
               "timer_seconds": 30,
               "note": "Zancada profunda, empuja cadera adelante. 30s por lado."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Empuje volumen",
           "workout_title": "Push Volume – Pecho, hombros y tríceps",
           "exercises": [
@@ -744,11 +748,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d6",
-          "day_name": "Día 6",
+          "day_id": "sab",
+          "day_name": "Sábado",
           "day_focus": "Jalón volumen",
           "workout_title": "Pull Volume – Espalda y bíceps",
           "exercises": [
@@ -890,7 +895,8 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "pull"
         }
       ]
     },
@@ -901,8 +907,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje pesado",
           "workout_title": "Push Heavy – Máxima tensión",
           "exercises": [
@@ -1044,11 +1050,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón pesado",
           "workout_title": "Pull Heavy – Fuerza máxima",
           "exercises": [
@@ -1190,11 +1197,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Skills y estáticos",
           "workout_title": "Skills – Palancas y control avanzado",
           "exercises": [
@@ -1341,11 +1349,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Recuperación del SNC."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Piernas y cadena posterior",
           "workout_title": "Legs – Fuerza máxima unilateral",
           "exercises": [
@@ -1487,11 +1496,12 @@
               "timer_seconds": 30,
               "note": "Zancada profunda. 30s por lado."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Empuje volumen",
           "workout_title": "Push Volume – Resistencia de fuerza",
           "exercises": [
@@ -1633,11 +1643,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d6",
-          "day_name": "Día 6",
+          "day_id": "sab",
+          "day_name": "Sábado",
           "day_focus": "Jalón volumen",
           "workout_title": "Pull Volume – Hipertrofia de espalda",
           "exercises": [
@@ -1779,7 +1790,8 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "pull"
         }
       ]
     },
@@ -1790,8 +1802,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje pesado",
           "workout_title": "Push Heavy – Pico de fuerza",
           "exercises": [
@@ -1933,11 +1945,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón pesado",
           "workout_title": "Pull Heavy – Pico y consolidación",
           "exercises": [
@@ -2079,11 +2092,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Skills y estáticos",
           "workout_title": "Skills – Consolidación de palancas",
           "exercises": [
@@ -2243,11 +2257,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d4",
-          "day_name": "Día 4",
+          "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Piernas y cadena posterior",
           "workout_title": "Legs – Pico de fuerza unilateral",
           "exercises": [
@@ -2389,11 +2404,12 @@
               "timer_seconds": 30,
               "note": "30s por lado."
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
-          "day_id": "d5",
-          "day_name": "Día 5",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Empuje volumen",
           "workout_title": "Push Volume – Consolidación final",
           "exercises": [
@@ -2535,11 +2551,12 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s."
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
-          "day_id": "d6",
-          "day_name": "Día 6",
+          "day_id": "sab",
+          "day_name": "Sábado",
           "day_focus": "Jalón volumen",
           "workout_title": "Pull Volume – Consolidación final",
           "exercises": [
@@ -2681,7 +2698,8 @@
               "timer_seconds": 60,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Fin del ciclo."
             }
-          ]
+          ],
+          "day_type": "pull"
         }
       ]
     }

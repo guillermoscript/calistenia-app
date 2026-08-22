@@ -5,7 +5,10 @@
     "difficulty": "beginner",
     "duration_weeks": 12,
     "days_per_week": 3,
-    "equipment": ["Barra de dominadas", "Ligas de resistencia"],
+    "equipment": [
+      "Barra de dominadas",
+      "Ligas de resistencia"
+    ],
     "goal_type": "skill",
     "skill": "pull_up",
     "notes": "Programa de 12 semanas diseñado para construir la fuerza necesaria para tu primera dominada estricta. Cada sesión trabaja directamente hacia la dominada con ejercicios complementarios de empuje para equilibrio muscular."
@@ -18,8 +21,8 @@
       "color": "#10B981",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Retracción escapular + Dead hang",
           "workout_title": "Escápulas y agarre",
           "exercises": [
@@ -149,11 +152,12 @@
               "timer_seconds": 40,
               "note": "Brazo extendido contra la pared, palma arriba. Gira el cuerpo lentamente. 20s por lado."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Australianas + Core anti-extensión",
           "workout_title": "Jalar horizontal y core",
           "exercises": [
@@ -283,11 +287,12 @@
               "timer_seconds": 40,
               "note": "Brazo detrás de la cabeza, empuja con la otra mano. 20s por lado."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Negativas con liga + Dead hang",
           "workout_title": "Fuerza vertical y agarre",
           "exercises": [
@@ -416,7 +421,8 @@
               "timer_seconds": 45,
               "note": "Inhala 4s por nariz, mantén 4s, exhala 6s por boca. Recuperación del sistema nervioso."
             }
-          ]
+          ],
+          "day_type": "pull"
         }
       ]
     },
@@ -427,8 +433,8 @@
       "color": "#F59E0B",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Negativas lentas + Inverted row",
           "workout_title": "Negativas y jalón horizontal",
           "exercises": [
@@ -557,11 +563,12 @@
               "timer_seconds": 40,
               "note": "Brazo extendido contra pared, palma arriba, gira el torso. 20s por lado."
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Chin-up asistido + Core colgado",
           "workout_title": "Primeros chin-ups y agarre",
           "exercises": [
@@ -690,11 +697,12 @@
               "timer_seconds": 45,
               "note": "Inhala 4s, mantén 4s, exhala 6s. Activa parasimpático para recuperar."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Volumen de negativas + Grip",
           "workout_title": "Volumen y resistencia",
           "exercises": [
@@ -824,7 +832,8 @@
               "timer_seconds": 40,
               "note": "Brazo detrás de la cabeza. Presiona con la otra mano. 20s por lado."
             }
-          ]
+          ],
+          "day_type": "pull"
         }
       ]
     },
@@ -835,8 +844,8 @@
       "color": "#EF4444",
       "days": [
         {
-          "day_id": "d1",
-          "day_name": "Día 1",
+          "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Dominada estricta + Chin-up",
           "workout_title": "Día de dominada",
           "exercises": [
@@ -965,11 +974,12 @@
               "timer_seconds": 45,
               "note": "Respiración de caja: 4s inhala, 4s mantén, 6s exhala. Celebra tu progreso."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d2",
-          "day_name": "Día 2",
+          "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Volumen de chin-ups + Close grip",
           "workout_title": "Volumen vertical",
           "exercises": [
@@ -1098,11 +1108,12 @@
               "timer_seconds": 40,
               "note": "Brazo extendido, palma arriba contra pared. Gira torso. 20s por lado."
             }
-          ]
+          ],
+          "day_type": "full"
         },
         {
-          "day_id": "d3",
-          "day_name": "Día 3",
+          "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Dominada estricta + Skill",
           "workout_title": "Test y habilidad",
           "exercises": [
@@ -1232,7 +1243,8 @@
               "timer_seconds": 45,
               "note": "Cierra la sesión con respiración de caja. 4-4-6. Recuperación parasimpática."
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

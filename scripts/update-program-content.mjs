@@ -12,12 +12,17 @@
  *   1. Find the existing program record by matching the Spanish name
  *   2. Delete all existing program_exercises for that program
  *   3. Delete all existing program_phases for that program
- *   4. Re-create phases and exercises from the JSON
+ *   4. Delete all existing program_day_config for that program
+ *   5. Re-create phases, day configs (incl. rest days) and exercises from the JSON
+ *
+ * Aborta si algún `day_id` no es `lun..dom` (#575): buildWeekDays descarta en
+ * silencio los ids desconocidos. Corre antes `node scripts/normalize-program-days.mjs`.
  */
 
 import { readFileSync, readdirSync } from "fs"
 import { resolve, dirname, basename } from "path"
 import { fileURLToPath } from "url"
+import { normalizeProgram, DAY_IDS } from "./normalize-program-days.mjs"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROGRAMS_DIR = resolve(__dirname, "../programs")
@@ -31,6 +36,14 @@ if (!PB_URL || !SU_EMAIL || !SU_PASSWORD) {
   console.error("Usage: node scripts/update-program-content.mjs <PB_URL> <EMAIL> <PASSWORD> [slug]")
   process.exit(1)
 }
+
+const REST_DAY_NAME = {
+  lun: { es: "Lunes", en: "Monday" }, mar: { es: "Martes", en: "Tuesday" }, mie: { es: "Miércoles", en: "Wednesday" },
+  jue: { es: "Jueves", en: "Thursday" }, vie: { es: "Viernes", en: "Friday" }, sab: { es: "Sábado", en: "Saturday" },
+  dom: { es: "Domingo", en: "Sunday" },
+}
+const REST_FOCUS = { es: "Descanso", en: "Rest" }
+const REST_COLOR = "#888899"
 
 function i18n(value) {
   if (!value) return { es: "" }
@@ -87,6 +100,10 @@ async function main() {
 
   for (const file of files) {
     const data = JSON.parse(readFileSync(resolve(PROGRAMS_DIR, file), "utf-8"))
+    if (normalizeProgram(data, file)) {
+      console.error(`  ✗ ${file} no está normalizado (day_id/day_type). Corre: node scripts/normalize-program-days.mjs`)
+      process.exit(1)
+    }
     const programName = data.program.name
     console.log(`\n📋 Processing: ${programName} (${file})`)
 
@@ -131,7 +148,21 @@ async function main() {
       }
     }
 
-    // Create phases + exercises
+    // Delete existing day configs
+    const existingDayConfigs = await fetchAll(
+      `/api/collections/program_day_config/records?filter=(program='${programId}')`,
+      authH
+    )
+    if (existingDayConfigs.length > 0) {
+      console.log(`  🗑  Deleting ${existingDayConfigs.length} existing day configs...`)
+      for (const dc of existingDayConfigs) {
+        await api(`/api/collections/program_day_config/records/${dc.id}`, {
+          method: "DELETE", headers: authH,
+        })
+      }
+    }
+
+    // Create phases + day configs + exercises
     let totalExercises = 0
     for (const phase of data.phases) {
       console.log(`  📁 Phase ${phase.phase_number}: ${phase.name}`)
@@ -147,6 +178,25 @@ async function main() {
         }),
       })
 
+      // Semana completa: los días del JSON + descanso explícito en los que faltan.
+      const byId = new Map(phase.days.map(d => [d.day_id, d]))
+      for (const [i, dayId] of DAY_IDS.entries()) {
+        const day = byId.get(dayId)
+        await api("/api/collections/program_day_config/records", {
+          method: "POST", headers: authH,
+          body: JSON.stringify({
+            program: programId,
+            phase_number: phase.phase_number,
+            day_id: dayId,
+            day_name: i18n(day?.day_name || REST_DAY_NAME[dayId]),
+            day_focus: i18n(day?.day_focus || REST_FOCUS),
+            day_type: day ? day.day_type : "rest",
+            day_color: day?.day_color || (day ? phase.color || "" : REST_COLOR),
+            sort_order: i + 1,
+          }),
+        })
+      }
+
       for (const day of phase.days) {
         for (const ex of day.exercises) {
           await api("/api/collections/program_exercises/records", {
@@ -157,6 +207,7 @@ async function main() {
               day_id: day.day_id,
               day_name: i18n(day.day_name),
               day_focus: i18n(day.day_focus),
+              day_type: day.day_type,
               workout_title: i18n(day.workout_title),
               exercise_id: `${day.day_id}_${phase.phase_number}_${ex.sort_order}`,
               exercise_name: i18n(ex.name),
