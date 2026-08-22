@@ -9,7 +9,7 @@ import { cn } from '../../lib/utils'
  * seguirte requiere aprobación y tu actividad solo la ven los seguidores
  * aceptados. Mismo switch visual que `NotificationSettingsPage`.
  */
-export function PrivateAccountCard({ userId }: { userId: string | null }) {
+export function PrivateAccountCard({ userId, className }: { userId: string | null; className?: string }) {
   const { t } = useTranslation()
   const { isPrivate, saving, setPrivate } = usePrivateAccount(userId)
   const [error, setError] = useState(false)
@@ -21,7 +21,7 @@ export function PrivateAccountCard({ userId }: { userId: string | null }) {
   }
 
   return (
-    <Card>
+    <Card className={className}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
