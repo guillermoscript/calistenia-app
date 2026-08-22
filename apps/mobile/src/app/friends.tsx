@@ -76,20 +76,26 @@ function SkeletonRow() {
 interface UserRowProps {
   user: FollowUser | SearchResult
   isFollowing: boolean
+  /** Solicitud de seguimiento pendiente (cuenta privada, #422). */
+  isRequested?: boolean
   isMutual?: boolean
   onFollow: () => Promise<void>
   onUnfollow: () => Promise<void>
   onTap: () => void
 }
 
-function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: UserRowProps) {
+function UserRow({ user, isFollowing, isRequested = false, isMutual, onFollow, onUnfollow, onTap }: UserRowProps) {
+  const { t } = useTranslation()
   const [actionLoading, setActionLoading] = useState(false)
+  // SIGUIENDO y SOLICITADO comparten el estilo outline; pulsar SOLICITADO retira la solicitud.
+  const outline = isFollowing || isRequested
+  const label = isFollowing ? t('friends.followingBtn') : isRequested ? t('friends.requestedBtn') : t('friends.followBtn')
 
   const handleAction = async () => {
     if (actionLoading) return
     setActionLoading(true)
     try {
-      if (isFollowing) await onUnfollow()
+      if (outline) await onUnfollow()
       else await onFollow()
     } finally {
       setActionLoading(false)
@@ -132,25 +138,26 @@ function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: U
       </View>
 
       <Button
-        variant={isFollowing ? 'outline' : 'default'}
+        variant={outline ? 'outline' : 'default'}
         size="sm"
         onPress={handleAction}
         disabled={actionLoading}
+        accessibilityLabel={isRequested ? t('friends.cancelRequest') : label}
         className={cn(
           'shrink-0',
-          !isFollowing && 'bg-lime',
+          !outline && 'bg-lime',
         )}
       >
         {actionLoading ? (
-          <ActivityIndicator size="small" color={isFollowing ? '#888899' : '#000'} />
+          <ActivityIndicator size="small" color={outline ? '#888899' : '#000'} />
         ) : (
           <Text
             className={cn(
               'font-mono text-[11px] tracking-widest',
-              isFollowing ? 'text-foreground' : 'text-black',
+              outline ? 'text-foreground' : 'text-black',
             )}
           >
-            {isFollowing ? 'SIGUIENDO' : 'SEGUIR'}
+            {label}
           </Text>
         )}
       </Button>
@@ -166,7 +173,7 @@ export default function FriendsScreen() {
   const user = useAuthUser()
   const userId = user?.id ?? null
 
-  const { following, followers, followingIds, loading, follow, unfollow } = useFollows(userId)
+  const { following, followers, followingIds, pendingOutgoingIds, loading, follow, unfollow } = useFollows(userId)
   const { blockedIds } = useBlocks(userId)
 
   const [tab, setTab] = useState<Tab>('siguiendo')
@@ -258,6 +265,7 @@ export default function FriendsScreen() {
           <UserRow
             user={item}
             isFollowing={isF}
+            isRequested={pendingOutgoingIds.has(item.id)}
             isMutual={tab === 'seguidores' ? isF : followerIds.has(item.id)}
             onFollow={async () => { await follow(item.id) }}
             onUnfollow={async () => { await unfollow(item.id) }}
@@ -266,7 +274,7 @@ export default function FriendsScreen() {
         </View>
       )
     },
-    [followingIds, followerIds, tab, follow, unfollow, router],
+    [followingIds, pendingOutgoingIds, followerIds, tab, follow, unfollow, router],
   )
 
   const renderSearchResult = useCallback(
@@ -277,6 +285,7 @@ export default function FriendsScreen() {
           <UserRow
             user={item}
             isFollowing={isF}
+            isRequested={pendingOutgoingIds.has(item.id)}
             isMutual={isF && followerIds.has(item.id)}
             onFollow={async () => { await follow(item.id) }}
             onUnfollow={async () => { await unfollow(item.id) }}
@@ -285,7 +294,7 @@ export default function FriendsScreen() {
         </View>
       )
     },
-    [followingIds, followerIds, follow, unfollow, router],
+    [followingIds, pendingOutgoingIds, followerIds, follow, unfollow, router],
   )
 
   const currentList = tab === 'siguiendo' ? following : followers

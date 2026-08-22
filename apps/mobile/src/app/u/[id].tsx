@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { View, ScrollView, Image, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { X, MoreVertical, UserX, Flag, ChevronRight } from 'lucide-react-native'
+import { X, MoreVertical, UserX, Flag, ChevronRight, Lock } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
@@ -53,7 +53,7 @@ export default function UserProfileScreen() {
   const currentUserId = me?.id ?? null
   const isOwnProfile = currentUserId === userId
 
-  const { isFollowing, follow, unfollow } = useFollows(currentUserId)
+  const { isFollowing, isRequested, follow, unfollow } = useFollows(currentUserId)
   const { isBlocked, block, unblock } = useBlocks(currentUserId)
   const [followLoading, setFollowLoading] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
@@ -182,6 +182,18 @@ export default function UserProfileScreen() {
   const displayName = profile.displayName || '?'
   const initial = displayName[0]?.toUpperCase() ?? '?'
   const following = userId ? isFollowing(userId) : false
+  const requested = userId ? isRequested(userId) : false
+  // Cuenta privada (#422): el servidor ya filtra stats/sesiones; sin acceso
+  // mostraríamos ceros que parecen datos reales → estado «candado».
+  const locked = profile.isPrivate && !isOwnProfile && !following
+  const followLabel = following
+    ? t('friends.followingBtn')
+    : requested
+      ? t('friends.requestedBtn')
+      : profile.isPrivate
+        ? t('friends.requestBtn')
+        : t('friends.followBtn')
+  const followOutline = following || requested
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -209,25 +221,27 @@ export default function UserProfileScreen() {
         {canAct && !blocked ? (
           <View className="mb-6 self-start">
             <Button
-              variant={following ? 'outline' : 'default'}
+              variant={followOutline ? 'outline' : 'default'}
               size="sm"
               disabled={followLoading}
+              accessibilityLabel={requested ? t('friends.cancelRequest') : followLabel}
               onPress={async () => {
                 setFollowLoading(true)
                 try {
-                  if (following) await unfollow(userId!)
+                  // SOLICITADO también retira la solicitud pendiente (unfollow la borra).
+                  if (following || requested) await unfollow(userId!)
                   else await follow(userId!)
                 } finally {
                   setFollowLoading(false)
                 }
               }}
-              className={cn('self-start', !following && 'bg-lime')}
+              className={cn('self-start', !followOutline && 'bg-lime')}
             >
               {followLoading ? (
-                <ActivityIndicator size="small" color={following ? '#888899' : '#000'} />
+                <ActivityIndicator size="small" color={followOutline ? '#888899' : '#000'} />
               ) : (
-                <Text className={cn('font-mono text-[11px] tracking-widest', following ? 'text-foreground' : 'text-black')}>
-                  {following ? 'SIGUIENDO' : 'SEGUIR'}
+                <Text className={cn('font-mono text-[11px] tracking-widest', followOutline ? 'text-foreground' : 'text-black')}>
+                  {followLabel}
                 </Text>
               )}
             </Button>
@@ -260,10 +274,23 @@ export default function UserProfileScreen() {
           </View>
         ) : null}
 
-        {/* Con bloqueo activo el servidor filtra sessions/stats: mostraríamos
-            ceros que parecen datos reales. Se oculta el contenido (patrón
-            Instagram: shell del perfil + banner, sin grid). */}
-        {!blocked ? (<>
+        {/* Cuenta privada sin acceso: candado en vez de stats a ceros */}
+        {!blocked && locked ? (
+          <View className="mb-6 rounded-xl border border-border bg-card p-4">
+            <View className="flex-row items-center gap-2">
+              <Lock size={16} color="#888899" />
+              <Text className="font-bebas text-xl leading-none text-foreground">{t('privacy.lockedTitle')}</Text>
+            </View>
+            <Text className="mt-1.5 font-mono text-[11px] leading-4 text-muted-foreground">
+              {requested ? t('privacy.lockedPending') : t('privacy.lockedBody', { name: displayName })}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Con bloqueo activo (o cuenta privada sin acceso) el servidor filtra
+            sessions/stats: mostraríamos ceros que parecen datos reales. Se
+            oculta el contenido (patrón Instagram: shell del perfil + banner). */}
+        {!blocked && !locked ? (<>
 
         {/* Stats */}
         <View className="mb-6 flex-row gap-2">

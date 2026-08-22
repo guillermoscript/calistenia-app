@@ -22,6 +22,7 @@ import {
   useProfileForm, fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
 } from '@calistenia/core/hooks/useProfileForm'
 import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
+import { PrivateAccountCard } from '../components/profile/PrivateAccountCard'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
@@ -779,6 +780,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </svg>
           </CardContent>
         </Card>
+
+        {/* Cuenta privada (#422) */}
+        <PrivateAccountCard userId={user?.id ?? null} />
 
         {/* Blocked users link */}
         <Card

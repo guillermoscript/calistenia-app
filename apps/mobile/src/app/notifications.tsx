@@ -2,8 +2,8 @@
  * Notificaciones — pantalla apilada (stacked route).
  * Lista todas las notificaciones del usuario con marca de lectura.
  */
-import { useEffect, useCallback } from 'react'
-import { View, FlatList, Pressable, ActivityIndicator } from 'react-native'
+import { useEffect, useCallback, useState } from 'react'
+import { View, FlatList, Pressable, ActivityIndicator, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { X, BellOff, Settings } from 'lucide-react-native'
@@ -14,6 +14,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
+import { useFollows } from '@calistenia/core/hooks/useFollows'
+import type { FollowRequest } from '@calistenia/core/hooks/useFollows'
 import type { AppNotification, NotificationType } from '@calistenia/core/hooks/useNotifications'
 import { getNotifRoute } from '@/lib/notification-route'
 import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
@@ -31,6 +33,10 @@ function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record
   switch (n.type as NotificationType) {
     case 'follow':
       return `${name} te empezó a seguir`
+    case 'follow_request':
+      return t('notif.followRequest', { name })
+    case 'follow_accepted':
+      return t('notif.followAccepted', { name })
     case 'reaction': {
       const emoji = n.data?.emoji ? ` ${n.data.emoji}` : ''
       const target = n.data?.onComment ? 'tu comentario' : 'tu sesión'
@@ -94,12 +100,87 @@ function initial(name: string): string {
 // Sub-components
 // ---------------------------------------------------------------------------
 
+/**
+ * Botones Aceptar / Rechazar de una solicitud de seguimiento (#422). Dentro de
+ * una fila pulsable, en RN el Pressable más interno se queda con el tap, así
+ * que pulsar un botón no navega al perfil; el resto de la fila sigue pulsable.
+ */
+function RequestActions({
+  requestId, onAccept, onReject,
+}: { requestId: string; onAccept: (id: string) => Promise<boolean>; onReject: (id: string) => Promise<boolean> }) {
+  const { t } = useTranslation()
+  const [busy, setBusy] = useState<'accept' | 'reject' | null>(null)
+  const run = async (kind: 'accept' | 'reject') => {
+    setBusy(kind)
+    try { await (kind === 'accept' ? onAccept(requestId) : onReject(requestId)) } finally { setBusy(null) }
+  }
+  return (
+    <View className="mt-2 flex-row gap-2">
+      <Pressable
+        onPress={() => { void run('accept') }}
+        disabled={busy !== null}
+        className="rounded-lg bg-lime px-3 py-1.5 active:opacity-70"
+        accessibilityRole="button"
+        accessibilityLabel={t('privacy.accept')}
+      >
+        {busy === 'accept'
+          ? <ActivityIndicator size="small" color="#000" />
+          : <Text className="font-mono text-[10px] uppercase tracking-wide text-black">{t('privacy.accept')}</Text>}
+      </Pressable>
+      <Pressable
+        onPress={() => { void run('reject') }}
+        disabled={busy !== null}
+        className="rounded-lg border border-border px-3 py-1.5 active:opacity-70"
+        accessibilityRole="button"
+        accessibilityLabel={t('privacy.reject')}
+      >
+        {busy === 'reject'
+          ? <ActivityIndicator size="small" color="#888899" />
+          : <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">{t('privacy.reject')}</Text>}
+      </Pressable>
+    </View>
+  )
+}
+
+/** Fila de la bandeja de solicitudes pendientes (encabezado de la lista). */
+function FollowRequestRow({
+  req, onAccept, onReject, onOpen,
+}: { req: FollowRequest; onAccept: (id: string) => Promise<boolean>; onReject: (id: string) => Promise<boolean>; onOpen: (userId: string) => void }) {
+  const name = req.user.displayName || req.user.username || '?'
+  return (
+    <View className="flex-row items-start gap-3 px-4 py-3">
+      <Pressable onPress={() => onOpen(req.user.id)} className="flex-row items-center gap-3 active:opacity-70" accessibilityRole="button" accessibilityLabel={name}>
+        {req.user.avatarUrl ? (
+          <Image source={{ uri: req.user.avatarUrl }} className="size-9 rounded-full" />
+        ) : (
+          <View className="size-9 items-center justify-center rounded-full bg-muted">
+            <Text className="font-sans-medium text-sm text-foreground">{initial(name)}</Text>
+          </View>
+        )}
+      </Pressable>
+      <View className="flex-1 min-w-0">
+        <Pressable onPress={() => onOpen(req.user.id)} className="active:opacity-70">
+          <Text className="font-sans-medium text-sm text-foreground" numberOfLines={1}>{name}</Text>
+          {req.user.username ? (
+            <Text className="font-mono text-[10px] text-muted-foreground">@{req.user.username}</Text>
+          ) : null}
+        </Pressable>
+        <RequestActions requestId={req.id} onAccept={onAccept} onReject={onReject} />
+      </View>
+    </View>
+  )
+}
+
 interface NotificationRowProps {
   item: AppNotification
   onPress: (n: AppNotification) => void
+  /** Solo para `follow_request` aún sin resolver: id de la fila de `follows`. */
+  requestId?: string
+  onAccept?: (id: string) => Promise<boolean>
+  onReject?: (id: string) => Promise<boolean>
 }
 
-function NotificationRow({ item, onPress }: NotificationRowProps) {
+function NotificationRow({ item, onPress, requestId, onAccept, onReject }: NotificationRowProps) {
   const { t } = useTranslation()
   const isUnread = !item.read
 
@@ -136,6 +217,9 @@ function NotificationRow({ item, onPress }: NotificationRowProps) {
         <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground/60">
           {timeAgoShort(item.created)}
         </Text>
+        {requestId && onAccept && onReject ? (
+          <RequestActions requestId={requestId} onAccept={onAccept} onReject={onReject} />
+        ) : null}
       </View>
 
       {/* Unread dot */}
@@ -164,6 +248,11 @@ export default function NotificationsScreen() {
     markAsRead,
     markAllAsRead,
   } = useNotifications(userId)
+
+  // Solicitudes de seguimiento pendientes (#422): bandeja arriba + botones en
+  // la propia notificación `follow_request` mientras siga sin resolverse.
+  const { pendingIncoming, acceptRequest, rejectRequest } = useFollows(userId)
+  const requestIdByActor = new Map(pendingIncoming.map(r => [r.user.id, r.id] as const))
 
   useEffect(() => {
     loadNotifications()
@@ -243,9 +332,33 @@ export default function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerClassName="pb-8"
           renderItem={({ item }) => (
-            <NotificationRow item={item} onPress={handleTap} />
+            <NotificationRow
+              item={item}
+              onPress={handleTap}
+              requestId={item.type === 'follow_request' && item.actorId ? requestIdByActor.get(item.actorId) : undefined}
+              onAccept={acceptRequest}
+              onReject={rejectRequest}
+            />
           )}
           ItemSeparatorComponent={NotifSeparator}
+          ListHeaderComponent={
+            pendingIncoming.length > 0 ? (
+              <View className="border-b border-border pb-2">
+                <Text className="px-4 pb-1 pt-4 font-mono text-[10px] uppercase tracking-[3px] text-lime">
+                  {t('privacy.requestsTitle')}
+                </Text>
+                {pendingIncoming.map(req => (
+                  <FollowRequestRow
+                    key={req.id}
+                    req={req}
+                    onAccept={acceptRequest}
+                    onReject={rejectRequest}
+                    onOpen={(id) => router.push(`/u/${id}` as Parameters<typeof router.push>[0])}
+                  />
+                ))}
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View className="px-4 py-10">
               <EmptyState
