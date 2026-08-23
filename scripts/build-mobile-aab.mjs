@@ -111,12 +111,16 @@ function verify(aabPath) {
 
   // 3. Bundle JS: URLs de prod dentro, cero LAN. `grep -a -o` obligatorio: el
   //    bundle es una sola línea gigante y sin -a grep lo trata como binario.
+  //    `LC_ALL=C` también obligatorio: el bundle es bytecode Hermes y el `tr` de
+  //    macOS aborta con «Illegal byte sequence» en cuanto ve un byte que no es
+  //    UTF-8 válido. Dejaba el fichero a 0 y el script se saltaba EN SILENCIO
+  //    la comprobación de la URL de LAN, que es justo la que importa.
   // Directorio propio con permisos 0700 y borrado al salir: el bundle son ~20 MB
   // y en /tmp fijo quedaba legible por cualquier usuario de la máquina.
   const scratch = mkdtempSync(resolve(tmpdir(), 'calistenia-aab-'))
   const bundlePath = resolve(scratch, 'index.android.bundle')
   const jsBundle = execSync(
-    `unzip -p ${JSON.stringify(aabPath)} base/assets/index.android.bundle 2>/dev/null | tr -d '\\0' > ${JSON.stringify(bundlePath)}; wc -c < ${JSON.stringify(bundlePath)}`,
+    `unzip -p ${JSON.stringify(aabPath)} base/assets/index.android.bundle 2>/dev/null | LC_ALL=C tr -d '\\0' > ${JSON.stringify(bundlePath)}; wc -c < ${JSON.stringify(bundlePath)}`,
     { encoding: 'utf-8', shell: '/bin/bash' },
   ).trim()
   if (Number(jsBundle) > 0) {
@@ -134,7 +138,10 @@ function verify(aabPath) {
     const lan = count('http://192\\.168\\.[0-9.]*') + count('http://10\\.[0-9.]*')
     lan === 0 ? ok('0 URLs de LAN') : fail(`${lan} URL(s) de LAN en el bundle — .env.local se coló`)
   } else {
-    warn('no encontré base/assets/index.android.bundle (¿build sin Hermes?)')
+    fail(
+      'no pude extraer base/assets/index.android.bundle — la comprobación de ' +
+        'URLs de LAN NO se ha hecho, no subas este AAB a ciegas',
+    )
   }
   rmSync(scratch, { recursive: true, force: true })
 
