@@ -108,7 +108,44 @@ Grabar en un dispositivo con Health Connect y un reloj con datos reales:
 
 ---
 
-## 5. Si vuelven a rechazar
+## 5. Runbook de resubmisión
+
+Orden obligatorio. El paso 1 es una **dependencia dura**: los scripts de
+publicación (`build:aab`, `play:publish`, `play:status`) no existen en `main`,
+viven en el PR #591.
+
+1. **Mergear el PR #591** (`feat(release): publicar en Google Play desde local
+   con la API de Play`). Está en verde y ya se probó de punta a punta: publicó
+   la v1.11.0.
+2. **Mergear el PR #593** (este recorte de permisos).
+3. En `main` actualizado:
+   ```
+   git checkout main && git pull
+   pnpm release:mobile patch      # 1.11.0 → 1.11.1, vc34 → 35, changelog + tag
+   git push && git push origin mobile-v1.11.1
+   ```
+4. **Construir y subir**:
+   ```
+   pnpm build:aab
+   pnpm play:publish              # sube a internal
+   pnpm play:status               # verificar que el track quedó en vc35
+   ```
+   Requiere `~/keystores/calistenia-play-service-account.json` (presente) y el
+   keystore de firma. Recuerda que la ficha solo tiene el locale `es-419`: las
+   notas en inglés no se envían.
+5. **QA en dispositivo antes de mandar a revisión** — el punto crítico es
+   revocar los permisos viejos en Health Connect y volver a conectar, para
+   confirmar que **el diálogo del sistema lista exactamente 7 tipos de datos**.
+6. **Paso manual en Play Console (solo lo puede hacer Guillermo)**:
+   - App content → **Health Connect / Salud conectada** → actualizar la
+     declaración quitando los 5 permisos eliminados y pegando la justificación
+     por tipo de dato de la sección 2 de este documento.
+   - Responder al rechazo indicando qué permisos se eliminaron.
+   - **Enviar a revisión.** Sin este paso, subir el AAB no reabre la revisión.
+
+---
+
+## 6. Si vuelven a rechazar
 
 Solo entonces apelar, adjuntando el vídeo del punto 4 y esta correspondencia
 permiso → función. Los 7 restantes tienen todos una pantalla que los muestra;
