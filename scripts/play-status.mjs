@@ -32,8 +32,8 @@ console.log(`Service account: ${client.serviceAccountEmail}`)
 console.log(`Credenciales:    ${credentialsPath()}`)
 console.log(`Local (app.json): v${LOCAL_VERSION} / vc${LOCAL_CODE}\n`)
 
-await client.openEdit()
 try {
+  await client.openEdit()
   const [bundles, apks, tracks] = await Promise.all([
     client.listBundles(),
     client.listApks(),
@@ -74,6 +74,9 @@ try {
   } else {
     console.log(`✓ versionCode local ${LOCAL_CODE} está libre (el más alto en Play es ${highest}).\n`)
   }
+} catch (err) {
+  console.error(`\n✗ ${err.message}\n`)
+  process.exitCode = 1
 } finally {
   await client.deleteEdit()
 }

@@ -116,8 +116,21 @@ export class PlayClient {
     const text = await res.text()
     const parsed = text ? JSON.parse(text) : {}
     if (!res.ok) {
+      // El 403 aquí casi siempre es lo mismo: las credenciales son válidas (el
+      // token se emitió) pero al service account no le han dado acceso a la app
+      // en Play Console. Sin este mensaje se lee como un fallo de la clave.
+      const hint =
+        res.status === 403
+          ? `\n\n   La clave es válida (Google emitió el token), pero el service account\n` +
+            `   no tiene permiso sobre ${this.pkg}. En Play Console:\n` +
+            `     Usuarios y permisos → Invitar usuario\n` +
+            `     correo: ${this.serviceAccountEmail || '(el client_email del JSON)'}\n` +
+            `     Permisos de la app → Calistenia → «Ver información de la app»\n` +
+            `     + «Administrar versiones de pruebas»\n` +
+            `   Tarda unos minutos en propagar.`
+          : ''
       const err = new Error(
-        `Play API ${method} ${path} → ${res.status}: ${parsed?.error?.message || text}`,
+        `Play API ${method} ${path} → ${res.status}: ${parsed?.error?.message || text}${hint}`,
       )
       err.status = res.status
       err.body = parsed
