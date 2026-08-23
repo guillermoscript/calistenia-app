@@ -203,28 +203,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # El checkout va PRIMERO: actions/checkout limpia el workspace y se
+      # llevaría por delante el APK descargado.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
           name: calistenia-apk
+
+      # El body salía siempre como 'Automated build' mientras la copia curada
+      # (bilingüe, la misma que ven web y móvil en "Novedades") se quedaba en
+      # packages/core/data/changelog.mobile.json sin llegar a nadie.
+      # extract-changelog-entry.mjs no necesita dependencias: sólo node:fs.
+      - name: Compose release notes
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          # Por env, nunca interpolado en el script: en un repo público un
+          # ${{ ... }} dentro de `run` es una inyección de shell esperando.
+          DISPATCH_NOTES: ${{ github.event.inputs.release_notes }}
+          IS_DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          {
+            echo "## Calistenia $VERSION"
+            echo
+            if [ "$IS_DISPATCH" = "true" ]; then
+              echo "$DISPATCH_NOTES"
+            else
+              node scripts/extract-changelog-entry.mjs "$VERSION" \
+                || echo "_Sin entrada de changelog para $VERSION._"
+            fi
+            echo
+            echo "### Instalar"
+            echo "1. Descarga el archivo APK de abajo"
+            echo "2. En tu Android, activa \"Instalar apps de fuentes desconocidas\" en Ajustes"
+            echo "3. Abre el APK descargado para instalar"
+            echo
+            echo "---"
+            echo "Build desde el commit: $COMMIT_SHA"
+          } > release-notes.md
+          echo "--- release notes ---"
+          cat release-notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.build.outputs.tag_name }}
           name: Calistenia ${{ needs.build.outputs.tag_name }}
-          body: |
-            ## Calistenia ${{ needs.build.outputs.version }}
-
-            ${{ github.event.inputs.release_notes || 'Automated build' }}
-
-            ### Instalar
-            1. Descarga el archivo APK de abajo
-            2. En tu Android, activa "Instalar apps de fuentes desconocidas" en Ajustes
-            3. Abre el APK descargado para instalar
-
-            ---
-            Build desde el commit: ${{ github.sha }}
+          body_path: release-notes.md
           files: Calistenia-${{ needs.build.outputs.version }}.apk
           draft: false
           prerelease: ${{ github.event_name == 'workflow_dispatch' }}

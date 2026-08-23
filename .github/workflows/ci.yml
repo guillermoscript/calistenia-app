@@ -10,6 +10,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # commitlint necesita el historial del PR entero, no el último commit.
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -22,6 +25,18 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # El hook commit-msg de husky es LOCAL y se salta con --no-verify, y un
+      # merge desde la UI de GitHub no pasa por él. Sin esto, un subject que no
+      # sea Conventional Commits entra en main y desaparece del changelog: los
+      # scripts de generate-changelog-* parsean `type(scope): description` y lo
+      # que no case, no sale. Sólo en PRs; en push a main ya no hay nada que hacer.
+      - name: Commitlint (subjects del PR)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
       # "all workspaces" es literal desde #483: `pnpm -r` sólo ejecuta el script
       # en los paquetes que lo declaran, y `packages/core` no tenía ni script
