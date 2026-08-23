@@ -1,30 +1,33 @@
-import { lazy, Suspense, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatDuration, formatPace, formatSpeed } from '@calistenia/core/lib/geo'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
-import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
-const RouteMap = lazy(() => import('./RouteMap'))
-import CardioShareCard from './CardioShareCard'
-import ElevationProfile from './ElevationProfile'
-import SplitsTable from './SplitsTable'
-import { Input } from '../ui/input'
-import type { CardioSession } from '@calistenia/core/types'
+import { cn } from '../../lib/utils'
+import type { CardioActivityType, CardioSession } from '@calistenia/core/types'
+
+/** Pestañas del historial: «todas» + un filtro por cada tipo de actividad. */
+type HistoryFilter = 'all' | CardioActivityType
+const FILTERS: HistoryFilter[] = ['all', 'running', 'walking', 'cycling']
 
 interface CardioHistoryProps {
   sessions: CardioSession[]
   loading?: boolean
   onDelete?: (id: string) => Promise<void>
-  referralCode?: string | null
-  userName?: string
 }
 
-export default function CardioHistory({ sessions, loading, onDelete, referralCode, userName }: CardioHistoryProps) {
+export default function CardioHistory({ sessions, loading, onDelete }: CardioHistoryProps) {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const [filter, setFilter] = useState<HistoryFilter>('all')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [raceName, setRaceName] = useState('')
+
+  const visible = useMemo(
+    () => (filter === 'all' ? sessions : sessions.filter(s => s.activity_type === filter)),
+    [sessions, filter],
+  )
 
   if (loading) {
     return (
@@ -47,189 +50,109 @@ export default function CardioHistory({ sessions, loading, onDelete, referralCod
   }
 
   return (
-    <div className="space-y-2">
-      {sessions.map(session => {
-        const sessionKey = session.id ?? session.started_at
-        const isExpanded = expanded === sessionKey
-        const isCycling = session.activity_type === 'cycling'
-        const activity = CARDIO_ACTIVITY[session.activity_type]
-        return (
-          <div key={sessionKey} className="rounded-xl border border-border bg-muted/30 overflow-hidden">
-            {/* Collapsed row */}
+    <div className="space-y-3">
+      {/* Pestañas de filtro */}
+      <div className="flex gap-1 rounded-xl bg-muted/50 p-1" role="radiogroup" aria-label={t('cardio.history')}>
+        {FILTERS.map(f => {
+          const active = filter === f
+          const label = f === 'all' ? t('cardio.filterAll') : t(`cardio.${f}`)
+          return (
             <button
-              onClick={() => { setExpanded(isExpanded ? null : sessionKey); setRaceName('') }}
-              className="w-full text-left p-4 hover:bg-muted/50 transition-colors"
+              key={f}
+              role="radio"
+              aria-checked={active}
+              onClick={() => setFilter(f)}
+              className={cn(
+                'flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[10px] font-mono uppercase tracking-widest transition-colors',
+                active ? 'bg-background border border-lime/30 text-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{activity?.icon || '🏃'}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">
-                    {t(`cardio.${session.activity_type}`)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground tabular-nums">
-                    {new Date(session.started_at).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
-                  </div>
-                </div>
-                <div className="flex gap-3 sm:gap-4 text-right shrink-0">
-                  <div>
-                    <div className="text-sm font-bebas text-lime tabular-nums">{session.distance_km.toFixed(2)} km</div>
-                    <div className="text-[9px] text-muted-foreground">{t('cardio.distance')}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bebas text-foreground tabular-nums">{formatDuration(session.duration_seconds)}</div>
-                    <div className="text-[9px] text-muted-foreground">{t('cardio.duration')}</div>
-                  </div>
-                  <div>
-                    {isCycling ? (
-                      <>
-                        <div className="text-sm font-bebas text-sky-500 tabular-nums">{formatSpeed(session.avg_speed_kmh || 0)}</div>
-                        <div className="text-[9px] text-muted-foreground">km/h</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-sm font-bebas text-sky-500 tabular-nums">{formatPace(session.avg_pace)}</div>
-                        <div className="text-[9px] text-muted-foreground">{t('cardio.pace')}</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {/* Expand chevron */}
-                <svg
-                  className={`size-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
+              {f !== 'all' && <span aria-hidden="true">{CARDIO_ACTIVITY[f]?.icon}</span>}
+              <span className="truncate">{label}</span>
             </button>
+          )
+        })}
+      </div>
 
-            {/* Expanded detail */}
-            {isExpanded && (
-              <div className="px-4 pb-4 space-y-4 border-t border-border/50 pt-4">
-                {/* Route map */}
-                {session.gps_points.length > 0 && (
-                  <Suspense fallback={<div className="rounded-xl bg-muted/50 animate-pulse" style={{ height: '220px' }} />}>
-                    <RouteMap points={session.gps_points} height="220px" activityType={session.activity_type} />
-                  </Suspense>
-                )}
-
-                {/* Elevation profile */}
-                {session.gps_points.length > 2 && (
-                  <ElevationProfile points={session.gps_points} height={72} />
-                )}
-
-                {/* Primary stats */}
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="p-3 bg-muted/40 rounded-lg">
-                    <div className="font-bebas text-2xl text-lime tabular-nums">{session.distance_km.toFixed(2)}</div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">KM</div>
-                  </div>
-                  <div className="p-3 bg-muted/40 rounded-lg">
-                    <div className="font-bebas text-2xl tabular-nums">{formatDuration(session.duration_seconds)}</div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.duration').toUpperCase()}</div>
-                  </div>
-                  <div className="p-3 bg-muted/40 rounded-lg">
-                    {isCycling ? (
-                      <>
-                        <div className="font-bebas text-2xl text-sky-500 tabular-nums">{formatSpeed(session.avg_speed_kmh || 0)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">KM/H</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="font-bebas text-2xl text-sky-500 tabular-nums">{formatPace(session.avg_pace)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.pace').toUpperCase()}</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Secondary stats */}
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="p-2.5 bg-muted/40 rounded-lg">
-                    <div className="font-bebas text-lg text-amber-400 tabular-nums">{session.calories_burned || 0}</div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">KCAL</div>
-                  </div>
-                  <div className="p-2.5 bg-muted/40 rounded-lg">
-                    <div className="font-bebas text-lg text-amber-400 tabular-nums">{session.elevation_gain}m</div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.elevation').toUpperCase()}</div>
-                  </div>
-                  <div className="p-2.5 bg-muted/40 rounded-lg">
-                    {isCycling ? (
-                      <>
-                        <div className="font-bebas text-lg text-pink-500 tabular-nums">{formatSpeed(session.max_speed_kmh || 0)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.maxSpeed').toUpperCase()}</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="font-bebas text-lg text-pink-500 tabular-nums">{formatPace(session.max_pace || 0)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.maxPace').toUpperCase()}</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Splits table */}
-                {session.splits && session.splits.length > 0 && (
-                  <div>
-                    <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('cardio.splitsPerKm')}</div>
-                    <SplitsTable splits={session.splits} />
-                  </div>
-                )}
-
-                {/* Note */}
-                {session.note && (
-                  <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
-                    {session.note}
-                  </div>
-                )}
-
-                {/* Timestamp detail */}
-                <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-                  <span>
-                    {t('cardio.sessionStart') + ':'} {new Date(session.started_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  {session.finished_at && (
-                    <span>
-                      {t('cardio.sessionEnd') + ':'} {new Date(session.finished_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  )}
-                  {session.gps_points.length > 0 && (
-                    <span>{t('cardio.gpsPoints', { count: session.gps_points.length })}</span>
-                  )}
-                </div>
-
-                {/* Race name + Actions */}
-                <Input
-                  value={raceName}
-                  onChange={e => setRaceName(e.target.value)}
-                  placeholder={t('cardio.raceNamePlaceholder')}
-                  maxLength={60}
-                  className="h-9 text-sm"
-                />
-                <div className="flex items-center justify-between">
-                  {onDelete && session.id && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteConfirmId(session.id!)}
-                      className="h-8 px-2.5 text-xs text-muted-foreground hover:text-red-400 hover:bg-red-500/10 gap-1.5"
+      {visible.length === 0 ? (
+        <div className="text-center py-10">
+          <p className="text-sm text-muted-foreground">{t('cardio.noSessionsOfType')}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {visible.map(session => {
+            const sessionKey = session.id ?? session.started_at
+            const isCycling = session.activity_type === 'cycling'
+            const activity = CARDIO_ACTIVITY[session.activity_type]
+            return (
+              <div key={sessionKey} className="flex items-stretch rounded-xl border border-border bg-muted/30 overflow-hidden">
+                {/* La fila abre el detalle (/cardio/session/:id): mapa, elevación,
+                    splits y compartir viven allí y no se duplican aquí. */}
+                <button
+                  onClick={() => { if (session.id) navigate(`/cardio/session/${session.id}`) }}
+                  disabled={!session.id}
+                  className="flex-1 min-w-0 text-left p-4 hover:bg-muted/50 transition-colors disabled:cursor-default"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{activity?.icon || '🏃'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">
+                        {t(`cardio.${session.activity_type}`)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground tabular-nums">
+                        {new Date(session.started_at).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </div>
+                    </div>
+                    <div className="flex gap-3 sm:gap-4 text-right shrink-0">
+                      <div>
+                        <div className="text-sm font-bebas text-lime tabular-nums">{session.distance_km.toFixed(2)} km</div>
+                        <div className="text-[9px] text-muted-foreground">{t('cardio.distance')}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bebas text-foreground tabular-nums">{formatDuration(session.duration_seconds)}</div>
+                        <div className="text-[9px] text-muted-foreground">{t('cardio.duration')}</div>
+                      </div>
+                      <div>
+                        {isCycling ? (
+                          <>
+                            <div className="text-sm font-bebas text-sky-500 tabular-nums">{formatSpeed(session.avg_speed_kmh || 0)}</div>
+                            <div className="text-[9px] text-muted-foreground">km/h</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-sm font-bebas text-sky-500 tabular-nums">{formatPace(session.avg_pace)}</div>
+                            <div className="text-[9px] text-muted-foreground">{t('cardio.pace')}</div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <svg
+                      className="size-4 text-muted-foreground shrink-0"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                     >
-                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4M6.67 7.33v4M9.33 7.33v4" />
-                        <path d="M3.33 4h9.34l-.67 9.33a1.33 1.33 0 01-1.33 1.34H5.33A1.33 1.33 0 014 13.33L3.33 4z" />
-                      </svg>
-                      {t('common.delete')}
-                    </Button>
-                  )}
-                  <div className="ml-auto">
-                    <CardioShareCard session={session} referralCode={referralCode} raceName={raceName || undefined} userName={userName} />
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   </div>
-                </div>
+                </button>
+
+                {onDelete && session.id && (
+                  <button
+                    onClick={() => setDeleteConfirmId(session.id!)}
+                    aria-label={t('cardio.deleteSession')}
+                    title={t('cardio.deleteSession')}
+                    className="px-3 border-l border-border/50 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4M6.67 7.33v4M9.33 7.33v4" />
+                      <path d="M3.33 4h9.34l-.67 9.33a1.33 1.33 0 01-1.33 1.34H5.33A1.33 1.33 0 014 13.33L3.33 4z" />
+                    </svg>
+                  </button>
+                )}
               </div>
-            )}
-          </div>
-        )
-      })}
+            )
+          })}
+        </div>
+      )}
 
       {onDelete && (
         <ConfirmDialog
@@ -244,7 +167,6 @@ export default function CardioHistory({ sessions, loading, onDelete, referralCod
             if (deleteConfirmId) {
               await onDelete(deleteConfirmId)
               setDeleteConfirmId(null)
-              setExpanded(null)
             }
           }}
         />

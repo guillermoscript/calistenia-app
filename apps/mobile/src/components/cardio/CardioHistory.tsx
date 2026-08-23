@@ -1,15 +1,19 @@
 /** Historial de sesiones de cardio — port móvil del CardioHistory web. */
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { View, Pressable, Alert } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, ChevronUp, MapPin } from 'lucide-react-native'
+import { Trash2, ChevronRight, MapPin } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { EmptyState } from '@/components/ui/empty-state'
+import { cn } from '@/lib/utils'
 import { formatPace, formatSpeed, formatDuration } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
-import RouteMap from './RouteMap'
-import SplitsTable from './SplitsTable'
-import type { CardioSession } from '@calistenia/core/types'
+import type { CardioActivityType, CardioSession } from '@calistenia/core/types'
+
+/** Pestañas del historial: «todas» + un filtro por cada tipo de actividad. */
+type HistoryFilter = 'all' | CardioActivityType
+const FILTERS: HistoryFilter[] = ['all', 'running', 'walking', 'cycling']
 
 interface Props {
   sessions: CardioSession[]
@@ -21,7 +25,13 @@ interface Props {
 
 export default function CardioHistory({ sessions, loading, onDelete, onStart }: Props) {
   const { t, i18n } = useTranslation()
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const router = useRouter()
+  const [filter, setFilter] = useState<HistoryFilter>('all')
+
+  const visible = useMemo(
+    () => (filter === 'all' ? sessions : sessions.filter((s) => s.activity_type === filter)),
+    [sessions, filter],
+  )
 
   if (loading) {
     return (
@@ -55,79 +65,90 @@ export default function CardioHistory({ sessions, loading, onDelete, onStart }: 
   }
 
   return (
-    <View className="gap-2">
-      {sessions.map((s) => {
-        const expanded = expandedId === s.id
-        const isCycling = s.activity_type === 'cycling'
-        const date = new Date(s.started_at)
-        return (
-          <View key={s.id} className="overflow-hidden rounded-xl border border-border bg-card">
+    <View className="gap-3">
+      {/* Pestañas de filtro */}
+      <View className="flex-row gap-1 rounded-xl bg-muted/50 p-1">
+        {FILTERS.map((f) => {
+          const active = filter === f
+          return (
             <Pressable
-              onPress={() => setExpandedId(expanded ? null : (s.id ?? null))}
-              className="flex-row items-center gap-3 px-3.5 py-3 active:opacity-70"
+              key={f}
+              onPress={() => setFilter(f)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={f === 'all' ? t('cardio.filterAll') : t(`cardio.${f}`)}
+              className={cn(
+                'flex-1 shrink flex-row items-center justify-center gap-1 rounded-lg py-2',
+                active && 'border border-lime/30 bg-background',
+              )}
             >
-              <Text className="text-xl">{CARDIO_ACTIVITY[s.activity_type]?.icon ?? '🏃'}</Text>
-              <View className="flex-1">
-                <View className="flex-row items-baseline gap-2">
-                  <Text className="font-bebas text-lg leading-none text-foreground">
-                    {s.distance_km.toFixed(2)} km
-                  </Text>
-                  <Text className="font-mono text-[11px] text-muted-foreground">
-                    {formatDuration(s.duration_seconds)}
-                  </Text>
-                  <Text className="font-mono text-[11px] text-sky-500">
-                    {isCycling ? `${formatSpeed(s.avg_speed_kmh ?? 0)} km/h` : `${formatPace(s.avg_pace)} /km`}
-                  </Text>
-                </View>
-                <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {date.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
-                  {' · '}
-                  {date.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </View>
-              {expanded ? <ChevronUp size={16} color="#888899" /> : <ChevronDown size={16} color="#888899" />}
+              {/* Solo el icono para las actividades: cuatro etiquetas completas no
+                  caben en una pantalla estrecha (el nombre va en accessibilityLabel). */}
+              <Text
+                className={cn('font-mono text-[10px] uppercase tracking-widest', active ? 'text-foreground' : 'text-muted-foreground')}
+                numberOfLines={1}
+              >
+                {f === 'all' ? t('cardio.filterAll') : CARDIO_ACTIVITY[f]?.icon}
+              </Text>
             </Pressable>
+          )
+        })}
+      </View>
 
-            {expanded && (
-              <View className="gap-3 border-t border-border px-3.5 py-3">
-                {s.gps_points.length > 1 && (
-                  <RouteMap points={s.gps_points} pointsVersion={s.gps_points.length} height={160} activityType={s.activity_type} />
-                )}
-                <View className="flex-row gap-2">
-                  <MiniStat value={String(s.calories_burned ?? 0)} label={t('nutrition.calories')} />
-                  <MiniStat value={`${s.elevation_gain ?? 0}m`} label={t('cardio.elevation')} />
-                  <MiniStat
-                    value={isCycling ? formatSpeed(s.max_speed_kmh ?? 0) : formatPace(s.max_pace ?? 0)}
-                    label={isCycling ? t('cardio.maxSpeed') : t('cardio.maxPace')}
-                  />
-                </View>
-                {s.splits && s.splits.length > 0 && <SplitsTable splits={s.splits} />}
-                {s.note ? <Text className="text-xs italic text-muted-foreground">{s.note}</Text> : null}
+      {visible.length === 0 ? (
+        <View className="items-center rounded-xl border border-border bg-card py-8">
+          <Text className="text-sm text-muted-foreground">{t('cardio.noSessionsOfType')}</Text>
+        </View>
+      ) : (
+        <View className="gap-2">
+          {visible.map((s) => {
+            const isCycling = s.activity_type === 'cycling'
+            const date = new Date(s.started_at)
+            return (
+              <View key={s.id} className="flex-row items-center overflow-hidden rounded-xl border border-border bg-card">
+                {/* La fila abre el detalle (/cardio/[id]): mapa, elevación, splits
+                    y compartir viven allí y no se duplican aquí. */}
+                <Pressable
+                  onPress={() => { if (s.id) router.push(`/cardio/${s.id}`) }}
+                  disabled={!s.id}
+                  accessibilityRole="button"
+                  className="flex-1 shrink flex-row items-center gap-3 px-3.5 py-3 active:opacity-70"
+                >
+                  <Text className="text-xl">{CARDIO_ACTIVITY[s.activity_type]?.icon ?? '🏃'}</Text>
+                  <View className="flex-1 shrink">
+                    <View className="flex-row items-baseline gap-2">
+                      <Text className="font-bebas text-lg leading-none text-foreground">
+                        {s.distance_km.toFixed(2)} km
+                      </Text>
+                      <Text className="font-mono text-[11px] text-muted-foreground">
+                        {formatDuration(s.duration_seconds)}
+                      </Text>
+                      <Text className="font-mono text-[11px] text-sky-500">
+                        {isCycling ? `${formatSpeed(s.avg_speed_kmh ?? 0)} km/h` : `${formatPace(s.avg_pace)} /km`}
+                      </Text>
+                    </View>
+                    <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {date.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {' · '}
+                      {date.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color="#888899" />
+                </Pressable>
+
                 <Pressable
                   onPress={() => confirmDelete(s)}
-                  className="flex-row items-center justify-center gap-1.5 rounded-lg border border-red-500/20 py-2 active:bg-red-500/10"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('cardio.deleteSession')}
+                  className="h-full shrink-0 justify-center border-l border-border px-3.5 py-3 active:bg-red-500/10"
                 >
-                  <Trash2 size={13} color="#f87171" />
-                  <Text className="font-mono text-[10px] uppercase tracking-[1.5px] text-red-400">
-                    {t('cardio.deleteSession')}
-                  </Text>
+                  <Trash2 size={15} color="#f87171" />
                 </Pressable>
               </View>
-            )}
-          </View>
-        )
-      })}
-    </View>
-  )
-}
-
-function MiniStat({ value, label }: { value: string; label: string }) {
-  return (
-    <View className="flex-1 items-center rounded-lg bg-muted/40 py-2">
-      <Text className="font-bebas text-base leading-none text-amber-400">{value}</Text>
-      <Text className="mt-0.5 font-mono text-[8px] uppercase tracking-[1px] text-muted-foreground" numberOfLines={1}>
-        {label}
-      </Text>
+            )
+          })}
+        </View>
+      )}
     </View>
   )
 }

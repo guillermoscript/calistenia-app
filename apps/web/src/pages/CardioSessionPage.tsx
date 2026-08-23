@@ -22,6 +22,7 @@ import { op } from '@calistenia/core/lib/analytics'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import CreateRaceDialog from '../components/race/CreateRaceDialog'
 import RacePRsPanel from '../components/race/RacePRsPanel'
+import ActiveRacesPanel from '../components/race/ActiveRacesPanel'
 import { cn } from '../lib/utils'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioActivityType, CardioSession } from '@calistenia/core/types'
@@ -281,12 +282,14 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             onCreated={(race) => navigate(`/race/${race.id}`)}
           />
 
+          <ActiveRacesPanel />
+
           <RacePRsPanel userId={userId} />
 
           {/* History */}
           <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
-            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} referralCode={referralCode} userName={user?.display_name || undefined} />
+            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} />
           </div>
 
           {/* Stats section */}
