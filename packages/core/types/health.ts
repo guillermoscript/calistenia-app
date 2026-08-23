@@ -12,20 +12,22 @@
 /** Origen de un dato de salud. '' / undefined se trata como 'manual'. */
 export type HealthSource = 'health_connect' | 'healthkit' | 'manual'
 
-/** Métricas que importamos del hub (Fase 1 = solo lectura). */
+/**
+ * Métricas que importamos del hub (Fase 1 = solo lectura).
+ *
+ * Lista CERRADA por la política de acceso mínimo a datos de Health Connect:
+ * cada tipo debe corresponder a un permiso declarado en apps/mobile/app.json y
+ * tener una función visible detrás. Ampliarla implica ampliar el manifiesto y
+ * volver a declararlo en Play Console.
+ */
 export type HealthDataType =
   | 'steps'
   | 'active_calories'
-  | 'total_calories'
   | 'heart_rate'
   | 'resting_hr'
-  | 'hrv'
-  | 'vo2max'
   | 'sleep'
   | 'weight'
   | 'body_fat'
-  | 'distance'
-  | 'exercise_session'
 
 /** Muestra cruda normalizada — espejo de la colección PB `health_samples`. */
 export interface HealthSample {
@@ -50,10 +52,7 @@ export interface DailyHealthSummary {
   date: string
   steps?: number
   active_calories?: number
-  total_calories?: number
   resting_hr?: number
-  hrv_ms?: number
-  vo2max?: number
   sleep_minutes?: number
   sleep_quality?: number
   weight_kg?: number
