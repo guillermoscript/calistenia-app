@@ -24,6 +24,7 @@ import CardioStats from '@/components/cardio/CardioStats'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import RacePRsPanel from '@/components/race/RacePRsPanel'
+import ActiveRacesPanel from '@/components/race/ActiveRacesPanel'
 import CardioShareButton from '@/components/share/CardioShareButton'
 
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
@@ -319,6 +320,8 @@ export default function CardioScreen() {
                 <Text className="font-bebas text-base uppercase tracking-widest text-muted-foreground">{t('race.join')}</Text>
               </Pressable>
             </View>
+
+            <ActiveRacesPanel />
 
             <RacePRsPanel userId={userId} />
 
