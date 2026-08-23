@@ -23,16 +23,16 @@ Los ángulos de copy salen de `10-publicidad-venezuela-primeros-100.md`.
 ## Regenerar el lienzo
 
 Los ficheros de `src/` llevan el marcador `/*FONTS*/` para poder editarlos sin arrastrar
-136 KB de base64. `build.py` sustituye ese marcador por las fuentes incrustadas y deja el
-resultado en `build/` (ignorado por git).
+136 KB de base64. `build.py` sustituye ese marcador por las fuentes incrustadas, reduce el
+logo desde `apps/web/public/logo-bg-less.png` y deja todo en `build/` (ignorado por git).
 
 ```bash
 python3 docs/business/ads/check.py    # data-props, referencias e imagen, layout del canvas
-python3 docs/business/ads/build.py    # inyecta las fuentes en build/
+python3 docs/business/ads/build.py    # inyecta fuentes y logo en build/
 ```
 
 Después se siembra el lienzo con el helper del skill `/design` pasando los siete artboards
-de `build/`, `logo.png` y `build/canvas.json`.
+de `build/`, `build/logo.png` y `build/canvas.json`.
 
 `mkfonts.py` solo hace falta si cambian las fuentes de marca: descarga las variantes latin
 de Google Fonts y las incrusta como `data:` URI. Es necesario porque la exportación a PNG

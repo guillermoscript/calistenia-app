@@ -9,12 +9,27 @@ sustitucion antes de sembrar el lienzo.
 
 import pathlib
 import shutil
+import subprocess
 
 d = pathlib.Path(__file__).parent
+repo = d.parents[2]
 src, out = d / "src", d / "build"
 fonts = (d / "fonts-embedded.css").read_text()
 
 out.mkdir(exist_ok=True)
+
+# El logo se reduce desde el original de la app (el repo ignora *.png, asi que no
+# se guarda una copia aqui). El lienzo rechaza entradas grandes: 420 px basta.
+logo_src = repo / "apps/web/public/logo-bg-less.png"
+logo_out = out / "logo.png"
+shutil.copy(logo_src, logo_out)
+if shutil.which("sips"):
+    subprocess.run(["sips", "-Z", "420", str(logo_out), "--out", str(logo_out)],
+                   capture_output=True, check=True)
+    print("ok logo.png", logo_out.stat().st_size // 1024, "KB")
+else:
+    print("aviso: sin sips, logo.png va a tamano completo (%d KB); reducelo a mano"
+          % (logo_out.stat().st_size // 1024))
 for f in sorted(src.glob("*.dc.html")):
     html = f.read_text()
     if "/*FONTS*/" not in html:
