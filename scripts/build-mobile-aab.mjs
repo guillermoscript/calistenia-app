@@ -20,8 +20,17 @@
 
 import { execSync, execFileSync } from 'child_process'
 import { createHash } from 'crypto'
-import { copyFileSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'fs'
-import { homedir } from 'os'
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'fs'
+import { homedir, tmpdir } from 'os'
 import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -102,15 +111,19 @@ function verify(aabPath) {
 
   // 3. Bundle JS: URLs de prod dentro, cero LAN. `grep -a -o` obligatorio: el
   //    bundle es una sola línea gigante y sin -a grep lo trata como binario.
+  // Directorio propio con permisos 0700 y borrado al salir: el bundle son ~20 MB
+  // y en /tmp fijo quedaba legible por cualquier usuario de la máquina.
+  const scratch = mkdtempSync(resolve(tmpdir(), 'calistenia-aab-'))
+  const bundlePath = resolve(scratch, 'index.android.bundle')
   const jsBundle = execSync(
-    `unzip -p ${JSON.stringify(aabPath)} base/assets/index.android.bundle 2>/dev/null | tr -d '\\0' > /tmp/aab-bundle.js; wc -c < /tmp/aab-bundle.js`,
+    `unzip -p ${JSON.stringify(aabPath)} base/assets/index.android.bundle 2>/dev/null | tr -d '\\0' > ${JSON.stringify(bundlePath)}; wc -c < ${JSON.stringify(bundlePath)}`,
     { encoding: 'utf-8', shell: '/bin/bash' },
   ).trim()
   if (Number(jsBundle) > 0) {
     ok(`bundle JS ${(Number(jsBundle) / 1024 / 1024).toFixed(1)} MB`)
     const count = (pattern) =>
       Number(
-        execSync(`grep -a -o ${JSON.stringify(pattern)} /tmp/aab-bundle.js | wc -l`, {
+        execSync(`grep -a -o ${JSON.stringify(pattern)} ${JSON.stringify(bundlePath)} | wc -l`, {
           encoding: 'utf-8',
           shell: '/bin/bash',
         }).trim(),
@@ -123,6 +136,7 @@ function verify(aabPath) {
   } else {
     warn('no encontré base/assets/index.android.bundle (¿build sin Hermes?)')
   }
+  rmSync(scratch, { recursive: true, force: true })
 
   console.log('')
   if (failures) {
