@@ -9,6 +9,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.11.0] - 2026-08-23
+
+_El muro cuenta ahora todo lo que haces —sesiones libres, cardio, circuitos, retos, carreras y batallas—, el perfil estrena carné de atleta con tus cifras y tus marcas, y puedes poner tu cuenta en privado y aprobar quién te sigue._
+
+### Añadido
+
+- **El muro cuenta toda tu actividad** — Hasta ahora el muro solo enseñaba entrenos de programa, y las sesiones libres salían sin título. Ahora aparecen seis tipos de actividad: sesión de programa, sesión libre, cardio, circuito, reto, carrera y batalla. De paso, al bajar por el muro ya no se repiten publicaciones.
+- **Perfil con carné de atleta** — El perfil empieza por lo tuyo: nivel, semana del programa, tus cifras y tus skills. Los ajustes bajan al final, en una lista con una fila por tema que se despliega ahí mismo para editar sin cambiar de pantalla.
+- **Cuentas privadas con aprobación** — Activa «Cuenta privada» y quien quiera seguirte tendrá que solicitarlo: apruebas o rechazas desde notificaciones. El botón pasa a SOLICITAR / SOLICITADO, los perfiles privados muestran un candado en vez de ceros, y en los rankings de retos las cuentas privadas se ocultan a los demás sin descuadrar el número de participantes.
+
+### Corregido
+
+- **Compartir una sesión y verla entera** — El enlace para compartir una sesión le enseñaba a quien lo recibía su propio progreso, no el tuyo: arreglado. Y el detalle de una sesión sin series ya lista los ejercicios cronometrados en vez de decir solo «sin series registradas».
+- **El ranking deja de recargarse solo** — La pantalla de ranking se recargaba una y otra vez en segundo plano, gastando datos y batería. Ahora carga una vez, y las estadísticas de uso reflejan lo que de verdad haces.
+
 ## [1.10.2] - 2026-08-22
 
 _Los programas oficiales vuelven a tener sus días de entrenamiento: la semana ya no aparece como solo descanso. Además, mejoras internas de estabilidad._
@@ -319,7 +334,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...HEAD
+[1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
 [1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2
 [1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
