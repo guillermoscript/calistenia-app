@@ -9,9 +9,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "dayjs": "^1.11.21",
+    "dayjs": "^1.11.23",
     "i18next": "^26.3.6",
-    "pocketbase": "^0.27.1",
+    "pocketbase": "^0.28.0",
     "react-i18next": "^17.0.11"
   },
   "peerDependencies": {
@@ -27,6 +27,6 @@
     "@types/react": "^19.2.18",
     "react": "^19.2.8",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
