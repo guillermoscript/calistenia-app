@@ -52,12 +52,46 @@ describe('sessionKeyParts', () => {
 })
 
 describe('sessionKeyLabel', () => {
+  // El mock de i18next de arriba devuelve la clave (`t: key => key`), que es lo
+  // que hace i18next cuando le falta la traducción. `tr()` lo trata como "no hay
+  // texto" y cae al respaldo, así que estas aserciones comprueban justo el peor
+  // caso: lo que el usuario ve cuando i18n no responde.
   it('etiqueta las sesiones libres en vez de enseñar la clave cruda', () => {
-    expect(sessionKeyLabel('free_1783000000')).toBe('progress.freeSession')
-    expect(sessionKeyLabel('manual_1783000000')).toBe('progress.freeSession')
+    expect(sessionKeyLabel('free_1783000000')).toBe('Sesión Libre')
+    expect(sessionKeyLabel('manual_1783000000')).toBe('Sesión Libre')
   })
 
-  it('devuelve la clave tal cual para sesiones de programa', () => {
-    expect(sessionKeyLabel('p1_lun')).toBe('p1_lun')
+  it('humaniza una clave de programa que no está en el catálogo', () => {
+    expect(sessionKeyLabel('p1_lun')).toBe('Fase 1 · lun')
+    expect(sessionKeyLabel('p4_dom')).toBe('Fase 4 · dom')
+  })
+
+  /**
+   * Visto en el muro sobre datos reales: una sesión de marzo con
+   * `workout_key = 'lun'` (formato antiguo, sin fase) se pintaba con la clave
+   * cruda de título. Ninguna clave debe llegar a la UI sin traducir.
+   */
+  it('humaniza una clave que es solo un día, sin fase delante', () => {
+    // Con el mock, `t('day.lun')` devuelve la clave → `tr()` cae al respaldo.
+    expect(sessionKeyLabel('lun')).toBe('lun')
+    expect(sessionKeyLabel('dom')).toBe('dom')
+  })
+
+  it('no enseña la clave cruda cuando no la reconoce', () => {
+    expect(sessionKeyLabel('seed_social_demo')).toBe('Entrenamiento')
+    expect(sessionKeyLabel('basura_total')).toBe('Entrenamiento')
+  })
+
+  /**
+   * La regresión que motivó `tr()`: en la web, `packages/core` resuelve una
+   * copia de i18next que nadie inicializa, y `t()` de una instancia sin init
+   * devuelve `undefined` — ni la clave, ni cadena vacía. El muro pintaba el
+   * título de toda sesión libre en blanco. Nada que llegue a la UI puede salir
+   * de aquí vacío.
+   */
+  it('nunca devuelve vacío aunque i18next no esté inicializado', () => {
+    for (const key of ['free_1', 'manual_1', 'p1_lun', 'px_lun', 'basura', '']) {
+      expect(sessionKeyLabel(key)).toBeTruthy()
+    }
   })
 })

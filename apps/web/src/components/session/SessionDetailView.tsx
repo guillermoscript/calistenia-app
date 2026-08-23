@@ -103,6 +103,51 @@ function ExerciseSection({ exercise, t }: { exercise: SessionExercise; t: TFunct
   )
 }
 
+// ── Sesión sin series registradas ────────────────────────────────────────────
+
+/**
+ * Qué enseñar cuando una sesión no tiene ni una serie.
+ *
+ * Decía solo "Sesión completada sin series registradas" y ahí se acababa, que
+ * es justo lo que le pasa a una sesión libre de trabajo isométrico: cronometra
+ * los ejercicios pero no registra repeticiones, así que el detalle no contaba
+ * NADA de lo que se entrenó. `exercise_timings` sí lo sabe —y la view pública
+ * ya lo publica—, así que al menos se listan los ejercicios y su tiempo.
+ */
+function TimedOnlySession({ session, t }: { session: NonNullable<SessionDetailResult['session']>; t: TFunction }) {
+  const timings = session.exerciseTimings ?? []
+
+  if (timings.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <div className="text-muted-foreground text-sm">{t('session.noSetsRecorded')}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">
+        {t('session.timedExercises')}
+      </div>
+      <div className="divide-y divide-border">
+        {timings.map((timing, i) => (
+          <div key={`${timing.exerciseId}-${i}`} className="flex items-center justify-between gap-4 py-3">
+            <span className="text-sm text-foreground min-w-0 truncate">{timing.exerciseName || timing.exerciseId}</span>
+            {timing.seconds > 0 && (
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground shrink-0">
+                <Clock className="size-3" />
+                {formatTimingClock(timing.seconds)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 text-xs text-muted-foreground">{t('session.noSetsRecorded')}</div>
+    </div>
+  )
+}
+
 // ── Session Detail View ──────────────────────────────────────────────────────
 
 interface SessionDetailViewProps extends SessionDetailResult {
@@ -212,9 +257,7 @@ export default function SessionDetailView({
 
       {/* Exercise list or empty state */}
       {exercises.length === 0 ? (
-        <div className="py-12 text-center">
-          <div className="text-muted-foreground text-sm">{t('session.noSetsRecorded')}</div>
-        </div>
+        <TimedOnlySession session={session} t={t} />
       ) : (
         <div className="divide-y divide-border">
           {exercises.map(exercise => (

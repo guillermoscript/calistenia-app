@@ -29,7 +29,6 @@
     "apps/mobile/src/components/share/StreakShareCard.tsx": 2,
     "apps/mobile/src/components/share/WorkoutShareCard.tsx": 6,
     "apps/mobile/src/components/social/CommentsSheet.tsx": 4,
-    "apps/mobile/src/components/social/FeedCard.tsx": 3,
     "apps/mobile/src/components/StreakMilestone.tsx": 4,
     "apps/web/src/App.tsx": 2,
     "apps/web/src/components/cardio/ElevationProfile.tsx": 1,

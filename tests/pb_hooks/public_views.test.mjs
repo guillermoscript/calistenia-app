@@ -36,10 +36,12 @@ const CASES = [
   {
     base: "circuit_sessions",
     view: "public_circuit_sessions",
-    // El detalle de circuito solo se abre desde el calendario propio: fuera de
-    // ahí solo hace falta contar sesiones por fecha.
-    hidden: ["hr_avg", "hr_max", "calories_actual", "note", "exercises", "config", "circuit_name", "rounds_completed"],
-    visible: "started_at",
+    // Desde 1784600000 el muro pinta el circuito (nombre, rondas y duración),
+    // así que esos campos SÍ viajan. Lo que sigue fuera es la composición del
+    // circuito —`exercises` y `config`, que son del dueño— y la frecuencia
+    // cardiaca y las calorías del reloj, que es lo que #386 vino a tapar.
+    hidden: ["hr_avg", "hr_max", "calories_actual", "exercises", "config"],
+    visible: "circuit_name",
   },
   {
     base: "settings",
@@ -206,4 +208,100 @@ test("expand:user funciona sobre la view (el muro pinta nombre y avatar con él)
     token: await authAs(other),
   })
   assert.equal(rec.expand?.user?.id, owner.id, "expand=user debe resolver el perfil del dueño")
+})
+
+/**
+ * `public_battle_finishes` (1784600000).
+ *
+ * `battles` y `battle_participants` son ilegibles para quien no jugó, y eso
+ * protege también el MARCADOR EN VIVO. La view existe para que el muro pueda
+ * enseñar el resultado sin relajar esas reglas, así que la promesa que hay que
+ * fijar es exactamente esa: solo batallas ya cerradas, y sin el progreso del
+ * participante.
+ */
+async function seedBattle(user, status) {
+  const battle = await create("battles", {
+    creator: user.id,
+    status,
+    // Config real de un preset: el hook `battle_api` valida `scoring_mode` y
+    // exige al menos un ejercicio, así que un config de mentira da un 400.
+    config: {
+      workout_template_id: "battle_sprint_3",
+      rounds: 3,
+      scoring_mode: "rounds_then_reps_then_time",
+      exercises: [
+        { exercise_id: "push_ups", position: 0, target: { kind: "reps", value: 12 }, rest_seconds: 20 },
+        { exercise_id: "jump_squats", position: 1, target: { kind: "reps", value: 15 }, rest_seconds: 20 },
+        { exercise_id: "burpees", position: 2, target: { kind: "reps", value: 8 }, rest_seconds: 40 },
+      ],
+    },
+    starts_at: "2026-08-13 20:00:00.000Z",
+    ends_at: "2026-08-13 20:30:00.000Z",
+    finished_at: status === "finished" ? "2026-08-13 20:12:00.000Z" : "",
+    last_activity_at: "2026-08-13 20:12:00.000Z",
+    final_standings: [
+      { participant_id: "bp1", user: user.id, rank: 1, status: "active",
+        score: { completed_reps: 36, completed_rounds: 3, completed_time_seconds: 0, finished_at: null, tie_break_key: "bp1" } },
+    ],
+  })
+  const participant = await create("battle_participants", {
+    battle: battle.id,
+    user: user.id,
+    status: "finished",
+    joined_at: "2026-08-13 20:00:00.000Z",
+    finished_at: "2026-08-13 20:12:00.000Z",
+    progress: { secreto: "marcador en vivo" },
+  })
+  return { battle, participant }
+}
+
+test("public_battle_finishes publica el resultado sin abrir la batalla en vivo", async () => {
+  const player = await createUser("Battle Player")
+  const watcher = await createUser("Battle Watcher")
+
+  const closed = await seedBattle(player, "finished")
+  const live = await seedBattle(player, "live")
+
+  // 1. La tabla base sigue cerrada para quien no jugó: si no, la view sobra.
+  assert.equal(
+    await getOneAs(watcher, "battles", closed.battle.id), null,
+    "un tercero NO debe poder leer la fila de `battles`"
+  )
+
+  // 2. La batalla cerrada sí sale por la view, con lo que pinta la tarjeta.
+  const rows = await listAs(watcher, "public_battle_finishes", `user = '${player.id}'`)
+  assert.equal(rows.length, 1, `la view debe traer solo la batalla cerrada (trajo ${rows.length})`)
+  assert.equal(rows[0].battle, closed.battle.id, "y debe ser la cerrada, no la que sigue viva")
+  assert.ok(rows[0].battle_standings?.length, "el marcador congelado es lo que da el puesto")
+  assert.equal(
+    rows[0].battle_config?.workout_template_id, "battle_sprint_3",
+    "el cliente resuelve el nombre del preset con esta clave"
+  )
+
+  // 3. Y NUNCA el progreso en vivo del participante.
+  assert.equal(
+    rows[0].progress, undefined,
+    "`progress` es el marcador en vivo y no puede viajar en la view"
+  )
+
+  // 4. La batalla que sigue corriendo no aparece por ningún lado.
+  assert.equal(
+    await getOneAs(watcher, "public_battle_finishes", live.participant.id), null,
+    "una batalla en curso no puede asomar por la view"
+  )
+})
+
+test("challenge_participants tiene `created` para poder ordenar el muro", async () => {
+  // Sin timestamp es imposible colocar "se apuntó a un reto" en un feed
+  // cronológico; la colección no tenía NINGUNO hasta 1784600000.
+  const user = await createUser("Challenge Joiner")
+  const challenge = await create("challenges", {
+    creator: user.id, title: "Reto de prueba", metric: "most_pushups",
+    starts_at: "2026-08-20 00:00:00.000Z", ends_at: "2026-09-20 00:00:00.000Z", status: "active",
+  })
+  const row = await create("challenge_participants", { challenge: challenge.id, user: user.id })
+
+  const seen = await getOneAs(user, "challenge_participants", row.id)
+  assert.ok(seen?.created, "`created` debe rellenarse solo al crear la participación")
+  assert.match(seen.created, /^\d{4}-\d{2}-\d{2}/, "y venir como fecha, no como cadena vacía")
 })

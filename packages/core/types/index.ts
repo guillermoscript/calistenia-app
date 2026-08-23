@@ -800,3 +800,10 @@ export type {
   SavedRecipe,
   ConsumptionMatch, MatchConsumptionResult,
 } from './pantry'
+
+// ─── Feed de actividad ──────────────────────────────────────────────────────
+export { FEED_ITEM_TYPES } from './feed'
+export type {
+  FeedItem, FeedItemType,
+  FeedCardioMeta, FeedCircuitMeta, FeedChallengeMeta, FeedRaceMeta, FeedBattleMeta,
+} from './feed'

@@ -21,6 +21,8 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
+import { describeFeedItem } from '@calistenia/core/lib/feed-item'
+import { feedItemHref, openFeedItem } from '@/lib/feed-routes'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { timeAgo, relativeDate } from '@calistenia/core/lib/dateUtils'
@@ -160,14 +162,15 @@ export default function HomeActivity() {
             {friends.map(item => (
               <Pressable
                 key={item.id}
-                onPress={() => router.push(
-                  item.type === 'cardio'
-                    ? { pathname: '/cardio/[id]', params: { id: item.id } }
-                    : { pathname: '/s/[id]', params: { id: item.id } },
-                )}
+                // `openFeedItem` respeta que no todo tiene destino: un circuito
+                // ajeno o una batalla que no jugaste no se pueden abrir. Antes
+                // esto mandaba CUALQUIER tipo a `/s/[id]`, así que un reto o una
+                // carrera aterrizaban en un detalle de sesión inexistente.
+                onPress={() => openFeedItem(router, item, item.userId === userId)}
+                disabled={feedItemHref(item, item.userId === userId) === null}
                 className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 active:opacity-70"
                 accessibilityRole="button"
-                accessibilityLabel={`${item.displayName} · ${item.workoutTitle}`}
+                accessibilityLabel={`${item.displayName} · ${describeFeedItem(item).title}`}
               >
                 <Pressable
                   onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
@@ -202,7 +205,7 @@ export default function HomeActivity() {
                     </Text>
                   </Pressable>
                   <Text className="font-mono text-[10px] text-muted-foreground" numberOfLines={1}>
-                    {item.workoutTitle} · {timeAgo(item.completedAt)}
+                    {describeFeedItem(item).title} · {timeAgo(item.completedAt)}
                   </Text>
                 </View>
                 <ChevronRight size={16} color={MUTED} />
