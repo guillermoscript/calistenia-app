@@ -56,9 +56,12 @@ const rollout = flag('rollout')
 const statusFlag = flag('status', rollout ? 'inProgress' : 'completed')
 const dryRun = has('dry-run')
 
+// Los tracks de prueba cerrada tienen nombre propio (no siempre `alpha`), así
+// que no se valida contra una lista cerrada: sólo se avisa. `pnpm play:status`
+// enseña los nombres reales que Play tiene para esta app.
 if (!TRACKS.includes(track)) {
-  console.error(`Track desconocido: ${track}. Válidos: ${TRACKS.join(', ')}`)
-  process.exit(1)
+  console.log(`ℹ️  Track no estándar «${track}» (los estándar son ${TRACKS.join(', ')}).`)
+  console.log('   Si Play responde 404, mira el nombre exacto con: pnpm play:status')
 }
 if (!existsSync(aabPath)) {
   console.error(`No existe el AAB: ${aabPath}\nConstrúyelo antes: pnpm build:aab`)
