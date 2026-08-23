@@ -123,7 +123,9 @@ export class PlayClient {
         res.status === 403
           ? `\n\n   La clave es válida (Google emitió el token), pero el service account\n` +
             `   no tiene permiso sobre ${this.pkg}. En Play Console:\n` +
-            `     Usuarios y permisos → Invitar usuario\n` +
+            `     https://play.google.com/console/users-and-permissions\n` +
+            `     → botón «Invitar usuarios nuevos» (sólo sale a nivel de cuenta,\n` +
+            `       no dentro de una app)\n` +
             `     correo: ${this.serviceAccountEmail || '(el client_email del JSON)'}\n` +
             `     Permisos de la app → Calistenia → «Ver información de la app»\n` +
             `     + «Administrar versiones de pruebas»\n` +
