@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #C6F42F; } a:hover { color: #d8f766; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="position: relative; box-sizing: border-box; width: 1080px; height: 1350px; background: #0a0a0a; overflow: hidden; display: flex; flex-direction: column; padding: 64px 64px 0;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <img src="logo.png" alt="" style="width: 48px; height: 48px; object-fit: contain;">
+      <span class="bebas" style="font-size: 38px; line-height: 1; letter-spacing: 2px; color: #fafafa;">CALISTENIA</span>
+    </div>
+    <span class="mono" style="font-size: 20px; letter-spacing: 4px; color: #a3a3a3;">ANDROID + WEB</span>
+  </div>
+
+  <h1 class="bebas" style="margin: 36px 0 0; font-size: 92px; line-height: 0.84; letter-spacing: -1px; color: #fafafa;">
+    EMPIEZA DESDE CERO.<br><span style="color: {{accent}}">SIGUE AVANZANDO.</span>
+  </h1>
+
+  <p class="sans" style="margin: 28px 0 0; max-width: 900px; font-size: 30px; line-height: 1.45; color: rgba(250,250,250,0.68);">
+    Entrenamientos guiados, comida que acompaña tu objetivo y un plan claro para volver mañana.
+  </p>
+
+  <div style="display: flex; gap: 56px; margin-top: 44px;">
+
+    <div style="flex-shrink: 0; width: 390px; height: 820px; box-sizing: border-box; background: #0a0a0a; border: 12px solid #1c1c1c; border-radius: 44px; padding: 28px 20px; overflow: hidden;">
+      <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #a3a3a3; margin-bottom: 4px;">TU ENTRENAMIENTO</div>
+      <h2 class="bebas" style="margin: 0 0 4px; font-size: 36px; line-height: 1; color: #fafafa;">HOLA, GUILLE</h2>
+      <div class="sans" style="font-size: 14px; color: #a3a3a3; margin-bottom: 24px;">
+        Semana <strong style="color: #fafafa;">3</strong> de 12<span style="color: {{accent}};"> · Fuerza Base</span>
+      </div>
+
+      <div style="box-sizing: border-box; padding: 20px; border-radius: 12px; border: 2px solid rgba(198,244,47,0.3); background: rgba(198,244,47,0.05); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #a3a3a3; margin-bottom: 4px;">HOY ENTRENAS</div>
+          <div class="bebas" style="font-size: 30px; line-height: 1; color: {{accent}};">EMPUJE</div>
+          <div class="sans" style="font-size: 12px; color: #a3a3a3; margin-top: 4px;">Fuerza Base · Fase 1</div>
+        </div>
+        <div style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 999px; background: rgba(198,244,47,0.1); display: flex; align-items: center; justify-content: center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#C6F42F"><path d="M8 5v14l11-7z"></path></svg>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px;">
+        <div style="box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid #262626; background: #121212;">
+          <div class="bebas" style="font-size: 30px; line-height: 1; color: #fafafa;">14</div>
+          <div class="sans" style="font-size: 11px; color: #a3a3a3; margin-top: 2px;">sesiones</div>
+        </div>
+        <div style="box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid #262626; background: #121212;">
+          <div class="bebas" style="font-size: 30px; line-height: 1; color: {{accent}};">6</div>
+          <div class="sans" style="font-size: 11px; color: #a3a3a3; margin-top: 2px;">racha</div>
+        </div>
+        <div style="box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid #262626; background: #121212;">
+          <div class="bebas" style="font-size: 30px; line-height: 1; color: #fafafa;">3/4</div>
+          <div class="sans" style="font-size: 11px; color: #a3a3a3; margin-top: 2px;">semana</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid #262626; background: #121212;">
+          <span class="sans" style="font-size: 14px; font-weight: 700; color: #fafafa;">Fondos en paralelas</span>
+          <span class="mono" style="font-size: 12px; color: #a3a3a3;">4 × 8</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid #262626; background: #121212;">
+          <span class="sans" style="font-size: 14px; font-weight: 700; color: #fafafa;">Flexiones arquero</span>
+          <span class="mono" style="font-size: 12px; color: #a3a3a3;">3 × 10</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid #262626; background: #121212;">
+          <span class="sans" style="font-size: 14px; font-weight: 700; color: #fafafa;">Pino contra pared</span>
+          <span class="mono" style="font-size: 12px; color: #a3a3a3;">3 × 30 s</span>
+        </div>
+      </div>
+
+      <div style="box-sizing: border-box; margin-top: 24px; padding: 16px; border-radius: 12px; border: 1px solid #262626; background: #121212; display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+            <span class="sans" style="font-size: 13px; font-weight: 700; color: #fafafa;">Peso</span>
+            <span class="sans" style="font-size: 11px; color: #fafafa;">74,2<span style="color: #a3a3a3;"> / 78 kg</span></span>
+          </div>
+          <div style="height: 6px; border-radius: 999px; background: #262626; overflow: hidden;">
+            <div style="width: 62%; height: 100%; background: {{accent}};"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+            <span class="sans" style="font-size: 13px; font-weight: 700; color: #fafafa;">Proteína de hoy</span>
+            <span class="sans" style="font-size: 11px; color: #fafafa;">118<span style="color: #a3a3a3;"> / 150 g</span></span>
+          </div>
+          <div style="height: 6px; border-radius: 999px; background: #262626; overflow: hidden;">
+            <div style="width: 79%; height: 100%; background: {{accent}};"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 34px; padding-top: 12px;">
+      <div style="display: flex; align-items: flex-start; gap: 20px;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C6F42F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 4px;"><path d="m4.5 12.75 6 6 9-13.5"></path></svg>
+        <span class="sans" style="font-size: 30px; line-height: 1.35; color: rgba(250,250,250,0.85);">Programas por fases, con progresiones reales</span>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 20px;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C6F42F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 4px;"><path d="m4.5 12.75 6 6 9-13.5"></path></svg>
+        <span class="sans" style="font-size: 30px; line-height: 1.35; color: rgba(250,250,250,0.85);">Escribes lo que comiste y la IA saca los macros</span>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 20px;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C6F42F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 4px;"><path d="m4.5 12.75 6 6 9-13.5"></path></svg>
+        <span class="sans" style="font-size: 30px; line-height: 1.35; color: rgba(250,250,250,0.85);">Retos y batallas contra tus panas</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 10px;">
+        <div style="background: {{accent}}; border-radius: 12px; padding: 26px 32px;">
+          <span class="bebas" style="font-size: 52px; line-height: 1; letter-spacing: 1px; color: #121212;">GYM.GUILLE.TECH</span>
+        </div>
+        <span class="sans" style="font-size: 24px; color: rgba(250,250,250,0.45);">Gratis en acceso anticipado. Sin tarjeta.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F42F","options":["#C6F42F","#8FB80A","#fafafa","#ff5a1f"]},"$preview":{"width":1080,"height":1350}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#C6F42F' };
+  }
+}
+</script>
+</body>
+</html>

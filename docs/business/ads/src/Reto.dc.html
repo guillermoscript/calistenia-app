@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #121212; } a:hover { color: #000000; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="position: relative; box-sizing: border-box; width: 1080px; height: 1920px; background: {{accent}}; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 196px 88px 292px;">
+
+  <img src="logo.png" alt="" style="position: absolute; right: -190px; bottom: 96px; width: 880px; opacity: 0.16; filter: brightness(0); pointer-events: none;">
+
+  <div style="position: relative; display: flex; align-items: center; justify-content: space-between; gap: 18px;">
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <img src="logo.png" alt="" style="width: 56px; height: 56px; object-fit: contain; filter: brightness(0);">
+      <span class="bebas" style="font-size: 44px; line-height: 1; letter-spacing: 2px; color: #121212;">CALISTENIA</span>
+    </div>
+    <span class="mono" style="font-size: 22px; letter-spacing: 4px; color: rgba(18,18,18,0.6);">RETO EN LA APP</span>
+  </div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 40px;">
+    <h1 class="bebas" style="margin: 0; font-size: 210px; line-height: 0.82; letter-spacing: -2px; color: #121212;">
+      30 DÍAS<br>DE BARRAS
+    </h1>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <span class="mono" style="font-size: 24px; letter-spacing: 4px; color: rgba(18,18,18,0.6);">CON</span>
+      <span class="bebas" style="font-size: 84px; line-height: 0.9; letter-spacing: 1px; color: #121212;">[NOMBRE DEL ATLETA]</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 14px;">
+      <span class="mono" style="font-size: 24px; letter-spacing: 2px; color: #C6F42F; background: #121212; border-radius: 8px; padding: 16px 26px;">EMPIEZA [FECHA]</span>
+      <span class="mono" style="font-size: 24px; letter-spacing: 2px; color: #121212; border: 3px solid rgba(18,18,18,0.35); border-radius: 8px; padding: 14px 24px;">GRATIS</span>
+      <span class="mono" style="font-size: 24px; letter-spacing: 2px; color: #121212; border: 3px solid rgba(18,18,18,0.35); border-radius: 8px; padding: 14px 24px;">DESDE EL TELÉFONO</span>
+    </div>
+    <p class="sans" style="margin: 0; max-width: 760px; font-size: 34px; line-height: 1.45; font-weight: 700; color: rgba(18,18,18,0.78);">
+      Invita a un pana y compiten en el mismo tablero. El que falta un día, lo ve todo el grupo.
+    </p>
+  </div>
+
+  <div style="position: relative; display: flex; align-items: center; justify-content: space-between; gap: 24px; background: #121212; border-radius: 12px; padding: 32px 44px;">
+    <span class="bebas" style="font-size: 62px; line-height: 1; letter-spacing: 1px; color: {{accent}};">GYM.GUILLE.TECH/RETOS</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F42F","options":["#C6F42F","#8FB80A","#fafafa","#ff5a1f"]},"$preview":{"width":1080,"height":1920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#C6F42F' };
+  }
+}
+</script>
+</body>
+</html>

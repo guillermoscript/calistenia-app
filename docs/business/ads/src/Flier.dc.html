@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #6f8f08; } a:hover { color: #556e05; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="position: relative; box-sizing: border-box; width: 559px; height: 794px; background: #f8f8f6; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 42px 44px 40px;">
+
+  <div style="display: flex; flex-direction: column; gap: 26px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="logo.png" alt="" style="width: 34px; height: 34px; object-fit: contain; filter: saturate(1.4) brightness(0.72);">
+      <span class="bebas" style="font-size: 30px; line-height: 1; letter-spacing: 2px; color: #141414;">CALISTENIA</span>
+      <span style="flex-grow: 1;"></span>
+      <span class="mono" style="font-size: 12px; letter-spacing: 2px; color: #5c5c5c;">GRATIS</span>
+    </div>
+    <div style="width: 96px; height: 7px; background: {{accent}};"></div>
+    <h1 class="bebas" style="margin: 0; font-size: 82px; line-height: 0.86; letter-spacing: -0.5px; color: #141414;">
+      ESTE PARQUE<br>ES TU<br><span style="color: {{accent}}">GIMNASIO.</span>
+    </h1>
+    <p class="sans" style="margin: 0; font-size: 17px; line-height: 1.5; color: #3d3d3d;">
+      App gratis de calistenia en español: programas por fases, progresiones de verdad y tu progreso guardado. Entrena en las barras que ya tienes al lado.
+    </p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 26px;">
+    <div style="flex-shrink: 0; width: 178px; height: 178px; border: 3px dashed #b8b8b2; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; box-sizing: border-box;">
+      <span class="mono" style="font-size: 13px; line-height: 1.5; letter-spacing: 1px; color: #7a7a74;">[PEGA AQUÍ<br>TU CÓDIGO QR]</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m4.5 12.75 6 6 9-13.5"></path></svg>
+        <span class="sans" style="font-size: 17px; color: #141414;">Sin equipo y sin mensualidad</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m4.5 12.75 6 6 9-13.5"></path></svg>
+        <span class="sans" style="font-size: 17px; color: #141414;">Android o desde el navegador</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m4.5 12.75 6 6 9-13.5"></path></svg>
+        <span class="sans" style="font-size: 17px; color: #141414;">Retos con la gente del parque</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; background: {{accent}}; border-radius: 10px; padding: 20px 26px;">
+    <span class="bebas" style="font-size: 42px; line-height: 1; letter-spacing: 1px; color: #141414;">GYM.GUILLE.TECH</span>
+    <span class="mono" style="font-size: 12px; letter-spacing: 1px; color: #141414;">SIN TARJETA</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#8FB80A","options":["#8FB80A","#C6F42F","#141414","#ff5a1f"]},"$preview":{"width":559,"height":794}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#8FB80A' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #C6F42F; } a:hover { color: #d8f766; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="position: relative; box-sizing: border-box; width: 1200px; height: 630px; background: #0a0a0a; overflow: hidden; display: flex; align-items: center; gap: 48px; padding: 64px 72px;">
+
+  <div style="display: flex; flex-direction: column; gap: 30px; flex-grow: 1;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <img src="logo.png" alt="" style="width: 40px; height: 40px; object-fit: contain;">
+      <span class="bebas" style="font-size: 32px; line-height: 1; letter-spacing: 2px; color: #fafafa;">CALISTENIA</span>
+      <span class="mono" style="font-size: 15px; letter-spacing: 3px; color: #a3a3a3; margin-left: 10px;">ANDROID + WEB</span>
+    </div>
+    <h1 class="bebas" style="margin: 0; font-size: 96px; line-height: 0.84; letter-spacing: -1px; color: #fafafa;">
+      EMPIEZA DESDE CERO.<br><span style="color: {{accent}}">SIGUE AVANZANDO.</span>
+    </h1>
+    <p class="sans" style="margin: 0; max-width: 620px; font-size: 24px; line-height: 1.45; color: rgba(250,250,250,0.68);">
+      Entrenamientos guiados, nutrición con IA y progreso real. Sin gimnasio y sin mensualidad.
+    </p>
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <span class="bebas" style="font-size: 40px; line-height: 1; letter-spacing: 1px; color: #121212; background: {{accent}}; border-radius: 10px; padding: 14px 26px;">GYM.GUILLE.TECH</span>
+      <span class="sans" style="font-size: 19px; color: rgba(250,250,250,0.45);">Gratis. Sin tarjeta.</span>
+    </div>
+  </div>
+
+  <img src="logo.png" alt="" style="flex-shrink: 0; width: 340px; height: 340px; object-fit: contain;">
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F42F","options":["#C6F42F","#8FB80A","#fafafa","#ff5a1f"]},"$preview":{"width":1200,"height":630}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#C6F42F' };
+  }
+}
+</script>
+</body>
+</html>
