@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #ABBA71; } a:hover { color: #c2ce94; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="box-sizing: border-box; width: 1080px; height: 1920px; background: #13130F; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 184px 96px 240px;">
+
+  <div style="display: flex; align-items: center; gap: 18px;">
+    <img src="logo.png" alt="" style="width: 52px; height: 52px; object-fit: contain; filter: grayscale(1) brightness(2.1);">
+    <span class="bebas" style="font-size: 40px; line-height: 1; letter-spacing: 3px; color: #EEEDE7;">CALISTENIA</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 52px;">
+    <div style="display: flex; flex-direction: column; gap: 34px;">
+      <div style="display: flex; align-items: center; gap: 22px;">
+        <span style="width: 56px; height: 3px; background: {{accent}};"></span>
+        <span class="mono" style="font-size: 21px; letter-spacing: 5px; color: #9D9B96;">QUÉ ES</span>
+      </div>
+      <h1 class="bebas" style="margin: 0; font-size: 100px; line-height: 0.88; color: #EEEDE7;">
+        TU GIMNASIO<br>ENTERO EN EL<br><span style="color: {{accent}}">TELÉFONO.</span>
+      </h1>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 30px;">
+      <div style="display: flex; gap: 26px; border-top: 1px solid #34332D; padding-top: 30px;">
+        <span style="flex-shrink: 0; width: 12px; height: 12px; background: {{accent}}; margin-top: 16px;"></span>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <span class="bebas" style="font-size: 46px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">ENTRENAS</span>
+          <span class="sans" style="font-size: 27px; line-height: 1.5; color: #9D9B96;">Programas por fases con progresiones reales, no una lista suelta de ejercicios.</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 26px; border-top: 1px solid #34332D; padding-top: 30px;">
+        <span style="flex-shrink: 0; width: 12px; height: 12px; background: {{accent}}; margin-top: 16px;"></span>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <span class="bebas" style="font-size: 46px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">COMES</span>
+          <span class="sans" style="font-size: 27px; line-height: 1.5; color: #9D9B96;">Escribes lo que comiste y la IA saca los macros. Sin escanear códigos.</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 26px; border-top: 1px solid #34332D; padding-top: 30px;">
+        <span style="flex-shrink: 0; width: 12px; height: 12px; background: {{accent}}; margin-top: 16px;"></span>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <span class="bebas" style="font-size: 46px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">AVANZAS</span>
+          <span class="sans" style="font-size: 27px; line-height: 1.5; color: #9D9B96;">Racha, marcas personales y el progreso guardado sesión a sesión.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 20px; background: #21211C; border: 1px solid #34332D; border-radius: 12px; padding: 30px 38px;">
+    <span style="flex-shrink: 0; width: 12px; height: 12px; border-radius: 999px; background: {{accent}};"></span>
+    <span class="bebas" style="font-size: 54px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">GYM.GUILLE.TECH</span>
+    <span style="flex-grow: 1;"></span>
+    <span class="mono" style="font-size: 20px; letter-spacing: 3px; color: #9D9B96;">GRATIS</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#ABBA71","options":["#ABBA71","#647027","#9D9B96","#C6F42F"]},"$preview":{"width":1080,"height":1920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ABBA71' };
+  }
+}
+</script>
+</body>
+</html>

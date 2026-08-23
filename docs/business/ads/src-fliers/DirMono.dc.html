@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #EEEDE7; } a:hover { color: #ffffff; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+    .chip { display: flex; flex-direction: column; gap: 6px; }
+    .chip .sw { height: 44px; border-radius: 6px; border: 1px solid #34332D; }
+    .chip .hx { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; font-size: 11px; color: #9D9B96; }
+  </style>
+</helmet>
+<div style="box-sizing: border-box; width: 760px; height: 1000px; background: #13130F; overflow: hidden; display: flex; flex-direction: column; gap: 28px; padding: 44px;">
+
+  <div style="display: flex; align-items: baseline; gap: 14px;">
+    <h2 class="bebas" style="margin: 0; font-size: 46px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">MONOCROMO</h2>
+    <span class="mono" style="font-size: 12px; letter-spacing: 3px; color: #9D9B96;">ALTERNATIVA</span>
+  </div>
+
+  <div style="display: flex; gap: 28px;">
+
+    <div style="flex-shrink: 0; box-sizing: border-box; width: 300px; height: 533px; background: #13130F; border: 1px solid #34332D; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 52px 26px 74px;">
+      <div style="display: flex; align-items: center; gap: 7px;">
+        <img src="logo.png" alt="" style="width: 15px; height: 15px; object-fit: contain; filter: grayscale(1) brightness(2.1);">
+        <span class="bebas" style="font-size: 12px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">CALISTENIA</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 11px;">
+        <span style="width: 20px; height: 2px; background: #EEEDE7;"></span>
+        <span class="bebas" style="font-size: 31px; line-height: 0.88; color: #EEEDE7;">EMPIEZA DESDE CERO.<br><span style="color: #9D9B96;">SIGUE AVANZANDO.</span></span>
+        <span class="sans" style="font-size: 10px; line-height: 1.5; color: #9D9B96;">Entrenamientos guiados y progreso real.</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; background: #EEEDE7; border-radius: 5px; padding: 10px 12px;">
+        <span class="bebas" style="font-size: 16px; line-height: 1; color: #13130F;">GYM.GUILLE.TECH</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 24px; flex-grow: 1;">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        <div class="chip"><div class="sw" style="background: #13130F;"></div><span class="hx">#13130F fondo</span></div>
+        <div class="chip"><div class="sw" style="background: #21211C;"></div><span class="hx">#21211C carta</span></div>
+        <div class="chip"><div class="sw" style="background: #34332D;"></div><span class="hx">#34332D borde</span></div>
+        <div class="chip"><div class="sw" style="background: #EEEDE7;"></div><span class="hx">#EEEDE7 hueso</span></div>
+        <div class="chip"><div class="sw" style="background: #9D9B96;"></div><span class="hx">#9D9B96 apagado</span></div>
+        <div class="chip"><div class="sw" style="background: #13130F; border-style: dashed;"></div><span class="hx">sin acento</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #34332D; padding-top: 20px;">
+        <span class="bebas" style="font-size: 38px; line-height: 0.95; color: #EEEDE7;">Bebas Neue</span>
+        <span class="sans" style="font-size: 19px; font-weight: 700; color: #EEEDE7;">DM Sans</span>
+        <span class="mono" style="font-size: 15px; letter-spacing: 2px; color: #9D9B96;">JETBRAINS MONO</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #34332D; padding-top: 24px;">
+    <span class="sans" style="font-size: 19px; line-height: 1.5; color: #EEEDE7;">Sin color ninguno: la jerarquía la hace el tamaño y el aire. Imposible que canse, y el blanco del bloque final es lo único que resalta.</span>
+    <span class="sans" style="font-size: 17px; line-height: 1.5; color: #9D9B96;">A cambio: renuncias al verde, que ahora mismo es lo único que te identifica de un vistazo frente a cualquier otra app de gym.</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":760,"height":1000}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

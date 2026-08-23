@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #ABBA71; } a:hover { color: #c2ce94; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="position: relative; box-sizing: border-box; width: 1080px; height: 1080px; background: #13130F; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 88px;">
+
+  <img src="logo.png" alt="" style="position: absolute; right: -110px; bottom: 40px; width: 560px; opacity: 0.5; filter: grayscale(1) brightness(0.26); pointer-events: none;">
+
+  <div style="position: relative; display: flex; align-items: center; gap: 16px;">
+    <img src="logo.png" alt="" style="width: 46px; height: 46px; object-fit: contain; filter: grayscale(1) brightness(2.1);">
+    <span class="bebas" style="font-size: 36px; line-height: 1; letter-spacing: 3px; color: #EEEDE7;">CALISTENIA</span>
+  </div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <span style="width: 48px; height: 3px; background: {{accent}};"></span>
+      <span class="mono" style="font-size: 19px; letter-spacing: 5px; color: #9D9B96;">ANDROID Y WEB</span>
+    </div>
+    <h1 class="bebas" style="margin: 0; font-size: 90px; line-height: 0.88; color: #EEEDE7;">
+      EMPIEZA DESDE CERO.<br><span style="color: {{accent}}">SIGUE AVANZANDO.</span>
+    </h1>
+    <p class="sans" style="margin: 0; max-width: 660px; font-size: 27px; line-height: 1.55; color: #9D9B96;">
+      Entrenamientos guiados, nutrición con IA y progreso real. Sin gimnasio y sin mensualidad.
+    </p>
+  </div>
+
+  <div style="position: relative; display: flex; align-items: center; gap: 18px; background: #21211C; border: 1px solid #34332D; border-radius: 12px; padding: 26px 32px;">
+    <span style="flex-shrink: 0; width: 11px; height: 11px; border-radius: 999px; background: {{accent}};"></span>
+    <span class="bebas" style="font-size: 46px; line-height: 1; letter-spacing: 1px; color: #EEEDE7;">GYM.GUILLE.TECH</span>
+    <span style="flex-grow: 1;"></span>
+    <span class="mono" style="font-size: 18px; letter-spacing: 3px; color: #9D9B96;">GRATIS</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#ABBA71","options":["#ABBA71","#647027","#9D9B96","#C6F42F"]},"$preview":{"width":1080,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ABBA71' };
+  }
+}
+</script>
+</body>
+</html>

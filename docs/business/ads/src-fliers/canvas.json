@@ -1,0 +1,88 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Historia · Marca",
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 1920
+    },
+    {
+      "file": "Producto.dc.html",
+      "title": "Historia · Qué es",
+      "x": 1240,
+      "y": 0,
+      "w": 1080,
+      "h": 1920
+    },
+    {
+      "file": "Consejo.dc.html",
+      "title": "Historia · Plantilla",
+      "x": 2480,
+      "y": 0,
+      "w": 1080,
+      "h": 1920
+    },
+    {
+      "file": "Cuadrado.dc.html",
+      "title": "Feed 1:1 · Marca",
+      "x": 0,
+      "y": 2100,
+      "w": 1080,
+      "h": 1080
+    },
+    {
+      "file": "Impreso.dc.html",
+      "title": "Flier A5 · Impreso",
+      "x": 1240,
+      "y": 2100,
+      "w": 559,
+      "h": 794,
+      "print": "fixed"
+    },
+    {
+      "file": "DirGrafito.dc.html",
+      "title": "Dirección · Grafito",
+      "x": 0,
+      "y": 3400,
+      "w": 760,
+      "h": 1000
+    },
+    {
+      "file": "DirPapel.dc.html",
+      "title": "Dirección · Papel",
+      "x": 900,
+      "y": 3400,
+      "w": 760,
+      "h": 1000
+    },
+    {
+      "file": "DirMono.dc.html",
+      "title": "Dirección · Monocromo",
+      "x": 1800,
+      "y": 3400,
+      "w": 760,
+      "h": 1000
+    }
+  ],
+  "annotations": [
+    {
+      "id": "sociales",
+      "x": 0,
+      "y": -250,
+      "w": 960,
+      "text": "Las tres verticales son 1080×1920: el mismo archivo sirve para historia de Instagram, status de WhatsApp y TikTok.\nSon genéricas a propósito: ninguna menciona una fecha ni una campaña, así que puedes republicarlas cualquier semana. La tercera (Plantilla) está pensada para que le cambies el texto y la publiques cada semana."
+    },
+    {
+      "id": "direcciones",
+      "x": 0,
+      "y": 3210,
+      "w": 960,
+      "text": "Tres formas de resolver el color, para que elijas viendo. Las piezas de arriba están en Grafito.\nSi prefieres otra, dímelo y las paso todas: es cambiar seis valores."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

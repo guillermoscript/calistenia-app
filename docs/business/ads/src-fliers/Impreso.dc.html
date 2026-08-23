@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /*FONTS*/
+    body { margin: 0; }
+    a { color: #647027; } a:hover { color: #4c551d; }
+    .bebas { font-family: 'Bebas Neue', 'Haettenschweiler', 'Impact', sans-serif; font-weight: 400; }
+    .sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600; }
+  </style>
+</helmet>
+<div style="box-sizing: border-box; width: 559px; height: 794px; background: #F5F3EF; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 42px 44px 40px;">
+
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="logo.png" alt="" style="width: 32px; height: 32px; object-fit: contain; filter: grayscale(1) brightness(0.35);">
+      <span class="bebas" style="font-size: 28px; line-height: 1; letter-spacing: 3px; color: #1C1913;">CALISTENIA</span>
+      <span style="flex-grow: 1;"></span>
+      <span class="mono" style="font-size: 12px; letter-spacing: 2px; color: #605D57;">ANDROID Y WEB</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span style="width: 40px; height: 3px; background: {{accent}};"></span>
+      <span class="mono" style="font-size: 13px; letter-spacing: 4px; color: #605D57;">GRATIS</span>
+    </div>
+    <h1 class="bebas" style="margin: 0; font-size: 80px; line-height: 0.88; color: #1C1913;">
+      ENTRENA<br>DONDE YA<br><span style="color: {{accent}}">ESTÁS.</span>
+    </h1>
+    <p class="sans" style="margin: 0; font-size: 17px; line-height: 1.55; color: #3a3730;">
+      Programas de calistenia por fases, con progresiones reales y tu progreso guardado. En las barras del parque, en casa o donde te agarre el día.
+    </p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 26px;">
+    <div style="flex-shrink: 0; box-sizing: border-box; width: 170px; height: 170px; border: 2px dashed #C0BCB3; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px;">
+      <span class="mono" style="font-size: 12px; line-height: 1.6; letter-spacing: 1px; color: #86827a;">[PEGA AQUÍ<br>TU CÓDIGO QR]</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 13px;">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span style="flex-shrink: 0; width: 8px; height: 8px; background: {{accent}};"></span>
+        <span class="sans" style="font-size: 16px; color: #1C1913;">Sin equipo y sin mensualidad</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span style="flex-shrink: 0; width: 8px; height: 8px; background: {{accent}};"></span>
+        <span class="sans" style="font-size: 16px; color: #1C1913;">Se abre en el navegador</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span style="flex-shrink: 0; width: 8px; height: 8px; background: {{accent}};"></span>
+        <span class="sans" style="font-size: 16px; color: #1C1913;">Nutrición con IA incluida</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 16px; border-top: 2px solid #1C1913; padding-top: 18px;">
+    <span class="bebas" style="font-size: 40px; line-height: 1; letter-spacing: 1px; color: #1C1913;">GYM.GUILLE.TECH</span>
+    <span style="flex-grow: 1;"></span>
+    <span class="mono" style="font-size: 12px; letter-spacing: 1px; color: #605D57;">SIN TARJETA</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#647027","options":["#647027","#ABBA71","#1C1913","#8FB80A"]},"$preview":{"width":559,"height":794}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#647027' };
+  }
+}
+</script>
+</body>
+</html>

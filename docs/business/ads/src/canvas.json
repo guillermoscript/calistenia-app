@@ -1,28 +1,80 @@
 {
   "artboards": [
-    { "file": "Main.dc.html",   "title": "Status · El gym subió",      "x": 0,    "y": 0,    "w": 1080, "h": 1920 },
-    { "file": "Reto.dc.html",   "title": "Status · Reto 30 días",      "x": 1240, "y": 0,    "w": 1080, "h": 1920 },
-    { "file": "Mockup.dc.html", "title": "Feed 4:5 · Producto",        "x": 2480, "y": 0,    "w": 1080, "h": 1350 },
-    { "file": "Datos.dc.html",  "title": "Feed 1:1 · Sin gastar datos", "x": 0,    "y": 2100, "w": 1080, "h": 1080 },
-    { "file": "Banner.dc.html", "title": "Enlace · OG y WhatsApp",     "x": 1240, "y": 2100, "w": 1200, "h": 630 },
-    { "file": "Flier.dc.html",  "title": "Flier A5 · Parques",         "x": 2620, "y": 2100, "w": 559,  "h": 794, "print": "fixed" },
-    { "file": "Kit.dc.html",    "title": "Kit · Paleta y titulares",   "x": 0,    "y": 3400, "w": 1080, "h": 1460 }
+    {
+      "file": "Main.dc.html",
+      "title": "Status · El gym subió",
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 1920
+    },
+    {
+      "file": "Reto.dc.html",
+      "title": "Status · Reto 30 días",
+      "x": 1240,
+      "y": 0,
+      "w": 1080,
+      "h": 1920
+    },
+    {
+      "file": "Mockup.dc.html",
+      "title": "Feed 4:5 · Producto",
+      "x": 2480,
+      "y": 0,
+      "w": 1080,
+      "h": 1350
+    },
+    {
+      "file": "Datos.dc.html",
+      "title": "Feed 1:1 · Sin gastar datos",
+      "x": 0,
+      "y": 2100,
+      "w": 1080,
+      "h": 1080
+    },
+    {
+      "file": "Banner.dc.html",
+      "title": "Enlace · OG y WhatsApp",
+      "x": 1240,
+      "y": 2100,
+      "w": 1200,
+      "h": 630
+    },
+    {
+      "file": "Flier.dc.html",
+      "title": "Flier A5 · Parques",
+      "x": 2620,
+      "y": 2100,
+      "w": 559,
+      "h": 794,
+      "print": "fixed"
+    },
+    {
+      "file": "Kit.dc.html",
+      "title": "Kit · Paleta y titulares",
+      "x": 0,
+      "y": 3400,
+      "w": 1080,
+      "h": 1460
+    }
   ],
   "annotations": [
     {
       "id": "zona-segura",
       "x": 0,
       "y": -230,
-      "w": 1080,
+      "w": 960,
       "text": "Vertical 1080×1920: sirve igual para status de WhatsApp, story de Instagram y portada de TikTok.\nDeja el bloque principal entre y=250 e y=1600. Arriba y abajo cada app monta su propia interfaz encima (barra de responder, avatar, botones) y se come lo que pongas ahí."
     },
     {
       "id": "huecos",
       "x": 1240,
       "y": -230,
-      "w": 1080,
+      "w": 960,
       "text": "Lo que va entre corchetes es un hueco tuyo: [NOMBRE DEL ATLETA] y [FECHA] en el reto, y el QR del flier.\nLas cifras del teléfono (semana 3, racha 6, 14 sesiones) son de ejemplo: cámbialas por las tuyas antes de publicar."
     }
   ],
-  "launch": { "view": "canvas" }
+  "launch": {
+    "view": "canvas"
+  }
 }
