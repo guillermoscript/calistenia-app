@@ -79,8 +79,6 @@ export interface InsightDayRow {
   bodyFatPct?: number // estimado Navy, solo si hay cintura+cuello (+cadera mujer) y sexo/altura
   steps?: number // reloj (daily_health_cache)
   restingHr?: number
-  hrvMs?: number
-  vo2max?: number
 }
 
 export interface InsightSummary {
@@ -106,7 +104,7 @@ export interface InsightSummary {
   // Con peso estable + cintura bajando el LLM puede leer recomposición.
   waist: { firstCm: number | null; lastCm: number | null; deltaCm: number | null }
   bodyFat: { firstPct: number | null; lastPct: number | null; deltaPct: number | null }
-  watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null }
+  watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null }
   streaks: { currentTrainingStreak: number; longestTrainingStreak: number }
 }
 
@@ -148,7 +146,7 @@ export function emptyInsightActivity(): InsightActivity {
 }
 
 export type StrengthByDate = Record<string, { workouts: number; workoutMinutes: number }>
-export type WatchByDate = Record<string, { steps?: number; restingHr?: number; hrvMs?: number; vo2max?: number }>
+export type WatchByDate = Record<string, { steps?: number; restingHr?: number }>
 
 /** Lo que cada lado (cliente/servidor) inyecta. */
 export interface InsightDeps {
@@ -332,8 +330,6 @@ export function buildDayRows(input: BuildDayRowsInput): InsightDayRow[] {
     const row = ensure(date)
     if (w.steps !== undefined) row.steps = w.steps
     if (w.restingHr !== undefined) row.restingHr = w.restingHr
-    if (w.hrvMs !== undefined) row.hrvMs = w.hrvMs
-    if (w.vo2max !== undefined) row.vo2max = w.vo2max
   }
 
   return [...map.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
@@ -411,7 +407,6 @@ export function summarizeRows(rows: InsightDayRow[], input: SummarizeRowsInput):
 
   const stepsDays = countDefined((r) => r.steps)
   const hrDays = countDefined((r) => r.restingHr)
-  const hrvDays = countDefined((r) => r.hrvMs)
 
   // Racha más larga: mayor tramo de días consecutivos (calendario) con entrenamiento.
   const workoutDates = sorted.filter((r) => (r.workouts ?? 0) > 0).map((r) => r.date)
@@ -459,7 +454,6 @@ export function summarizeRows(rows: InsightDayRow[], input: SummarizeRowsInput):
       available: watchAvailable,
       avgSteps: watchAvailable && stepsDays > 0 ? Math.round(sum((r) => r.steps) / stepsDays) : null,
       avgRestingHr: watchAvailable && hrDays > 0 ? Math.round(sum((r) => r.restingHr) / hrDays) : null,
-      avgHrvMs: watchAvailable && hrvDays > 0 ? round1(sum((r) => r.hrvMs) / hrDays) : null,
     },
     streaks: { currentTrainingStreak, longestTrainingStreak },
   }
@@ -537,7 +531,7 @@ async function fetchWindow(
       watchAvailable = true
       for (const r of healthRows) {
         if (!r.date) continue
-        watchByDate[r.date] = { steps: r.steps, restingHr: r.resting_hr, hrvMs: r.hrv_ms, vo2max: r.vo2max }
+        watchByDate[r.date] = { steps: r.steps, restingHr: r.resting_hr }
       }
     }
   } catch (err) {

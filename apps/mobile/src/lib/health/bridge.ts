@@ -23,20 +23,29 @@ import {
 } from 'react-native-health-connect'
 import type { HealthHubStatus } from '@calistenia/core/types'
 
-/** Record types we read (Fase 1). Mirrors the READ_* perms in app.json. */
+/**
+ * Tipos de registro que leemos. Espejo EXACTO de los `android.permission.health.READ_*`
+ * de app.json — mínimo imprescindible para las funciones que la app expone hoy
+ * (política de acceso mínimo a datos de Health Connect de Google Play).
+ *
+ * Cada entrada tiene una función visible detrás:
+ *   Steps / ActiveCaloriesBurned / RestingHeartRate → pantalla "Reloj y salud"
+ *   ActiveCaloriesBurned                            → balance calórico en Nutrición
+ *   HeartRate + ActiveCaloriesBurned                → FC media/máx y kcal del entreno
+ *   SleepSession                                    → registro de sueño y calendario
+ *   Weight / BodyFat                                → seguimiento de peso y composición
+ *
+ * NO añadas un tipo aquí sin una función que lo muestre al usuario: aparece en
+ * el diálogo de permisos y Google rechaza la release por acceso excesivo.
+ */
 const READ_RECORD_TYPES = [
   'Steps',
   'SleepSession',
   'HeartRate',
   'RestingHeartRate',
-  'HeartRateVariabilityRmssd',
   'ActiveCaloriesBurned',
-  'TotalCaloriesBurned',
   'Weight',
   'BodyFat',
-  'Vo2Max',
-  'Distance',
-  'ExerciseSession',
 ] as const
 
 const READ_PERMISSIONS: Permission[] = READ_RECORD_TYPES.map((recordType) => ({
@@ -160,8 +169,6 @@ interface RawSleepSession extends RawInterval { stages?: RawSleepStage[] }
 interface RawHeartRateSample { time: string; beatsPerMinute: number }
 interface RawHeartRate extends RawInterval { samples?: RawHeartRateSample[] }
 interface RawRestingHeartRate extends RawInstant { beatsPerMinute: number }
-interface RawHrv extends RawInstant { heartRateVariabilityMillis: number }
-interface RawVo2Max extends RawInstant { vo2MillilitersPerMinuteKilogram: number }
 interface RawCalories extends RawInterval { energy?: RawEnergy }
 interface RawWeight extends RawInstant { weight?: RawMass }
 interface RawBodyFat extends RawInstant { percentage?: number }
@@ -197,25 +204,9 @@ export async function readRestingHeartRate(range: TimeRange): Promise<HrSample[]
   return recs.map((r) => ({ time: r.time, bpm: r.beatsPerMinute }))
 }
 
-export interface ValueSample { time: string; value: number }
-export async function readHrv(range: TimeRange): Promise<ValueSample[]> {
-  const recs = await read<RawHrv>('HeartRateVariabilityRmssd', range)
-  return recs.map((r) => ({ time: r.time, value: r.heartRateVariabilityMillis }))
-}
-
-export async function readVo2Max(range: TimeRange): Promise<ValueSample[]> {
-  const recs = await read<RawVo2Max>('Vo2Max', range)
-  return recs.map((r) => ({ time: r.time, value: r.vo2MillilitersPerMinuteKilogram }))
-}
-
 export interface EnergySample { startTime: string; endTime: string; kcal: number }
 export async function readActiveCalories(range: TimeRange): Promise<EnergySample[]> {
   const recs = await read<RawCalories>('ActiveCaloriesBurned', range)
-  return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
-}
-
-export async function readTotalCalories(range: TimeRange): Promise<EnergySample[]> {
-  const recs = await read<RawCalories>('TotalCaloriesBurned', range)
   return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
 }
 

@@ -31,10 +31,7 @@ interface DailyCacheRow {
   date: string
   steps?: number
   active_calories?: number
-  total_calories?: number
   resting_hr?: number
-  hrv_ms?: number
-  vo2max?: number
   sleep_minutes?: number
   sleep_quality?: number
   weight_kg?: number
@@ -330,13 +327,10 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
   const imported: Partial<Record<HealthDataType, number>> = {}
 
   try {
-    const [steps, active, total, resting, hrv, vo2, weight, bodyFat, sleep, heartRate] = await Promise.all([
+    const [steps, active, resting, weight, bodyFat, sleep, heartRate] = await Promise.all([
       hc.readSteps(range),
       hc.readActiveCalories(range),
-      hc.readTotalCalories(range),
       hc.readRestingHeartRate(range),
-      hc.readHrv(range),
-      hc.readVo2Max(range),
       hc.readWeight(range),
       hc.readBodyFat(range),
       hc.readSleep(range),
@@ -345,20 +339,14 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
 
     imported.steps = steps.length
     imported.active_calories = active.length
-    imported.total_calories = total.length
     imported.resting_hr = resting.length
-    imported.hrv = hrv.length
-    imported.vo2max = vo2.length
     imported.weight = weight.length
     imported.body_fat = bodyFat.length
     imported.sleep = sleep.length
 
     const stepsByDay = sumByDay(steps, (s) => localDay(s.startTime), (s) => s.count)
     const activeByDay = sumByDay(active, (s) => localDay(s.startTime), (s) => s.kcal)
-    const totalByDay = sumByDay(total, (s) => localDay(s.startTime), (s) => s.kcal)
     const restingByDay = latestByDay(resting, (s) => s.bpm)
-    const hrvByDay = latestByDay(hrv, (s) => s.value)
-    const vo2ByDay = latestByDay(vo2, (s) => s.value)
     const weightByDay = latestByDay(weight, (s) => s.kg)
     const bodyFatByDay = latestByDay(bodyFat, (s) => s.pct)
 
@@ -372,10 +360,7 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     const dates = new Set<string>([
       ...Object.keys(stepsByDay),
       ...Object.keys(activeByDay),
-      ...Object.keys(totalByDay),
       ...Object.keys(restingByDay),
-      ...Object.keys(hrvByDay),
-      ...Object.keys(vo2ByDay),
       ...Object.keys(weightByDay),
       ...Object.keys(bodyFatByDay),
       ...Object.keys(sleepByDay),
@@ -397,10 +382,7 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
           date,
           steps: stepsByDay[date] != null ? Math.round(stepsByDay[date]) : undefined,
           active_calories: activeByDay[date] != null ? Math.round(activeByDay[date]) : undefined,
-          total_calories: totalByDay[date] != null ? Math.round(totalByDay[date]) : undefined,
           resting_hr: restingByDay[date] != null ? Math.round(restingByDay[date]) : undefined,
-          hrv_ms: hrvByDay[date],
-          vo2max: vo2ByDay[date],
           weight_kg: weightByDay[date],
           body_fat_pct: bodyFatByDay[date],
           sleep_minutes: sleepByDay[date] != null ? Math.round(sleepByDay[date]) : undefined,
@@ -449,10 +431,7 @@ export async function readDailyCache(userId: string, date: string): Promise<Dail
       date: r.date,
       steps: r.steps || undefined,
       active_calories: r.active_calories || undefined,
-      total_calories: r.total_calories || undefined,
       resting_hr: r.resting_hr || undefined,
-      hrv_ms: r.hrv_ms || undefined,
-      vo2max: r.vo2max || undefined,
       sleep_minutes: r.sleep_minutes || undefined,
       sleep_quality: r.sleep_quality || undefined,
       weight_kg: r.weight_kg || undefined,

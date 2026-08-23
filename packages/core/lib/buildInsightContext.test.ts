@@ -213,7 +213,7 @@ describe('summarizeRows', () => {
       bedtimeConsistencyMin: 0,
     })
     expect(summary.weight).toEqual({ firstKg: null, lastKg: null, deltaKg: null })
-    expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null, avgHrvMs: null })
+    expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null })
     expect(summary.streaks).toEqual({ currentTrainingStreak: 0, longestTrainingStreak: 0 })
   })
 
@@ -250,13 +250,13 @@ describe('summarizeRows', () => {
       bedtimeConsistencyMin: 0,
     })
     expect(summary.weight).toEqual({ firstKg: 82.0, lastKg: 80.0, deltaKg: -2 })
-    expect(summary.watch).toEqual({ available: true, avgSteps: 10000, avgRestingHr: 54, avgHrvMs: null }) // round((55+52)/2)
+    expect(summary.watch).toEqual({ available: true, avgSteps: 10000, avgRestingHr: 54 }) // round((55+52)/2)
   })
 
   it('gates watch averages behind watchAvailable even if steps happen to be present', () => {
     const rows: InsightDayRow[] = [{ date: '2026-07-01', steps: 5000 }]
     const summary = summarizeRows(rows, { days: 7, end: '2026-07-01', tz: TZ, watchAvailable: false })
-    expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null, avgHrvMs: null })
+    expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null })
   })
 
   it('aggregates awakenings/caffeine/screen/stress/bedtime-consistency across logged sleep days', () => {
