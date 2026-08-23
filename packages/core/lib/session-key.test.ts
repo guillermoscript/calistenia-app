@@ -66,8 +66,20 @@ describe('sessionKeyLabel', () => {
     expect(sessionKeyLabel('p4_dom')).toBe('Fase 4 · dom')
   })
 
-  it('deja pasar una clave irreconocible tal cual', () => {
-    expect(sessionKeyLabel('seed_social_demo')).toBe('seed_social_demo')
+  /**
+   * Visto en el muro sobre datos reales: una sesión de marzo con
+   * `workout_key = 'lun'` (formato antiguo, sin fase) se pintaba con la clave
+   * cruda de título. Ninguna clave debe llegar a la UI sin traducir.
+   */
+  it('humaniza una clave que es solo un día, sin fase delante', () => {
+    // Con el mock, `t('day.lun')` devuelve la clave → `tr()` cae al respaldo.
+    expect(sessionKeyLabel('lun')).toBe('lun')
+    expect(sessionKeyLabel('dom')).toBe('dom')
+  })
+
+  it('no enseña la clave cruda cuando no la reconoce', () => {
+    expect(sessionKeyLabel('seed_social_demo')).toBe('Entrenamiento')
+    expect(sessionKeyLabel('basura_total')).toBe('Entrenamiento')
   })
 
   /**

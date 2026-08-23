@@ -198,9 +198,9 @@ export default function SocialScreen() {
         ListHeaderComponent={
           <View className="flex-row items-start justify-between pt-2 pb-3">
             <View>
-              <Text className="font-bebas text-4xl leading-none text-foreground">Comunidad</Text>
+              <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.community')}</Text>
               <Text className="mt-1 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-                Actividad reciente
+                {t('feed.recentActivity')}
               </Text>
             </View>
             <Pressable

@@ -54,6 +54,11 @@ export default function SessionDetailBody({
   onOpenExercise,
 }: SessionDetailBodyProps) {
   const totalSets = exercises.reduce((sum, ex) => sum + ex.sets.length, 0)
+  // Una sesión libre de isométricos no registra series, así que `exercises`
+  // viene vacío y la tira decía "0 EJERCICIOS" justo encima de la lista de los
+  // cinco que sí cronometró. Cuando no hay series, cuenta los cronómetros.
+  const timedCount = (session.exerciseTimings ?? []).length
+  const exerciseCount = exercises.length || timedCount
   const hasDuration = session.durationSeconds != null && session.durationSeconds > 0
   const showWarmup = session.warmupCompleted || session.warmupSkipped
   const showCooldown = session.cooldownCompleted || session.cooldownSkipped
@@ -72,8 +77,12 @@ export default function SessionDetailBody({
 
       {/* Stat strip */}
       <View className="flex-row gap-3">
-        <StatBox value={String(exercises.length)} label={t('nav.exercises')} accent="text-lime" />
-        <StatBox value={String(totalSets)} label={t('common.sets')} accent="text-foreground" />
+        <StatBox value={String(exerciseCount)} label={t('nav.exercises')} accent="text-lime" />
+        {/* El 0 de series es ruido si la sesión nunca tuvo ninguna: la lista de
+            abajo ya explica que fue trabajo cronometrado. */}
+        {(totalSets > 0 || timedCount === 0) && (
+          <StatBox value={String(totalSets)} label={t('common.sets')} accent="text-foreground" />
+        )}
         {hasDuration && (
           <StatBox value={formatTimingClock(session.durationSeconds!)} label={t('cardio.duration')} accent="text-sky-500" />
         )}

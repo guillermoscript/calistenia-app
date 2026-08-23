@@ -134,28 +134,33 @@ export const FeedCard = memo(function FeedCard({
       <View className="mt-2.5 flex-row flex-wrap items-center gap-2">
         <EmojiPicker reactions={reactions} onToggle={onReact} />
 
-        {/* Botón de comentarios */}
-        <Pressable
-          onPress={onComment}
-          className="flex-row items-center gap-1.5 px-3 py-1 min-h-8 rounded-full border border-border/60 active:opacity-70"
-          accessibilityRole="button"
-          accessibilityLabel={t('social.comments')}
-        >
-          <Text className="font-mono text-xs text-muted-foreground">💬</Text>
-          <Text className="font-mono text-xs text-muted-foreground">
-            {commentCount > 0 ? String(commentCount) : t('social.comment')}
-          </Text>
-        </Pressable>
+        {/* Comentar y compartir van juntos: sueltos en un `flex-wrap`, el ancho
+            de "Comentar"/"Comment" decide dónde parte la línea y en inglés la
+            flecha caía sola en una segunda fila. */}
+        <View className="flex-row items-center gap-2">
+          {/* Botón de comentarios */}
+          <Pressable
+            onPress={onComment}
+            className="flex-row items-center gap-1.5 px-3 py-1 min-h-8 rounded-full border border-border/60 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel={t('social.comments')}
+          >
+            <Text className="font-mono text-xs text-muted-foreground">💬</Text>
+            <Text className="font-mono text-xs text-muted-foreground">
+              {commentCount > 0 ? String(commentCount) : t('social.comment')}
+            </Text>
+          </Pressable>
 
-        {/* Botón compartir */}
-        <Pressable
-          onPress={() => { void shareFeedItem(item) }}
-          className="px-2.5 py-1 min-h-8 items-center justify-center rounded-full active:opacity-70"
-          accessibilityRole="button"
-          accessibilityLabel={t('common.share')}
-        >
-          <Text className="font-mono text-xs text-muted-foreground">↗</Text>
-        </Pressable>
+          {/* Botón compartir */}
+          <Pressable
+            onPress={() => { void shareFeedItem(item) }}
+            className="px-2.5 py-1 min-h-8 items-center justify-center rounded-full active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel={t('common.share')}
+          >
+            <Text className="font-mono text-xs text-muted-foreground">↗</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   )

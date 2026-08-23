@@ -29,6 +29,15 @@ export function isFreeSessionKey(workoutKey: string): boolean {
 
 const PROGRAM_KEY_RE = /^p(\d+)_(.+)$/
 
+/**
+ * Días que puede llevar una clave de programa.
+ *
+ * Hay filas antiguas cuyo `workout_key` es SOLO el día (`lun`), sin la fase
+ * delante. No encajan en ningún formato vigente, así que hace falta la lista
+ * para poder humanizarlas en vez de pintar la columna cruda.
+ */
+const DAY_IDS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+
 export interface SessionKeyParts {
   /** 1-4 para sesiones de programa; `NO_PHASE` (0) para libres/manuales. */
   phase: number
@@ -78,5 +87,10 @@ export function sessionKeyLabel(workoutKey: string): string {
     const day = tr(`day.${parts.day}`, parts.day)
     return `${tr('session.phase', `Fase ${parts.phase}`, { phase: parts.phase })} · ${day}`
   }
-  return workoutKey
+  // Clave irreconocible. `sessionKeyParts` la da por libre para no colar un
+  // `phase: NaN` en PocketBase, pero devolverla tal cual pinta el valor de una
+  // columna en el muro — se vio `lun` de título en una sesión de marzo. Si es
+  // un día suelto (formato viejo) se traduce; si no, queda el genérico.
+  if (DAY_IDS.includes(workoutKey)) return tr(`day.${workoutKey}`, workoutKey)
+  return tr('feed.workoutGeneric', 'Entrenamiento')
 }

@@ -16,7 +16,7 @@ import { WORKOUTS } from '../data/workouts'
 import { formatDuration, formatPace } from './geo'
 import { localize } from './i18n-db'
 import { currentLanguage, tr } from './i18n-safe'
-import { NO_PHASE, sessionKeyLabel } from './session-key'
+import { NO_PHASE, isFreeSessionKey, sessionKeyLabel } from './session-key'
 import { RANK_MEDALS } from './challenges'
 import { FEED_ACCENTS, PHASE_COLORS, type FeedAccent } from './style-tokens'
 import type { FeedItem } from '../types/feed'
@@ -107,7 +107,9 @@ function workoutTitleFor(item: FeedItem): string {
 }
 
 function workoutView(item: FeedItem): FeedItemView {
-  const isFree = item.phase === NO_PHASE
+  // La fase no basta para decidir el titular: una clave antigua tipo `lun` no
+  // trae fase y no es una sesión libre. Cuando hay clave, manda la clave.
+  const isFree = item.workoutKey ? isFreeSessionKey(item.workoutKey) : item.phase === NO_PHASE
   const phaseColor = PHASE_COLORS[item.phase]
   const counts: string[] = []
   if (item.exerciseNames.length > 0) {

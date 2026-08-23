@@ -57,6 +57,18 @@ describe('describeFeedItem · sesiones de fuerza', () => {
     expect(view.verb).toBeTruthy()
   })
 
+  /**
+   * Visto en el muro con datos reales: una sesión de marzo con
+   * `workout_key = 'lun'` salía como "completó una sesión libre" y de título la
+   * clave cruda. No trae fase, pero de libre no tiene nada.
+   */
+  it('no llama sesión libre a una clave antigua que solo es el día', () => {
+    const view = describeFeedItem(item({ workoutKey: 'lun', phase: NO_PHASE }))
+    expect(view.action).toBe('completó un entrenamiento')
+    expect(view.title).toBe('lun')
+    expect(view.title).not.toContain('_')
+  })
+
   it('cuenta QUÉ se entrenó en una sesión libre, no solo que hubo una', () => {
     const view = describeFeedItem(item({
       workoutKey: 'free_1',
