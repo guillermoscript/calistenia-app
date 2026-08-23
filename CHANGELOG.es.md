@@ -9,6 +9,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.11.1] - 2026-08-23
+
+_El historial de cardio estrena filtros por tipo, abre el detalle desde la propia fila y trae buscador de competencias. Además, la app ahora solo pide a Health Connect los datos que de verdad usa._
+
+### Añadido
+
+- **Historial de cardio con filtros y detalle directo** — Puedes filtrar el historial por tipo de sesión y abrir el detalle tocando la fila, sin pasos intermedios. Se añade además un buscador para encontrar competencias.
+
+### Corregido
+
+- **Health Connect pide menos datos tuyos** — La app pedía doce tipos de datos de salud y varios no se usaban para nada. Ahora solo pide siete, todos con una pantalla que te los enseña: pasos, calorías activas, frecuencia cardíaca, FC en reposo, sueño, peso y grasa corporal. Como contrapartida, desaparecen las métricas de VFC y VO₂ máx de «Reloj y salud». Si ya tenías el reloj conectado, revoca y vuelve a conceder los permisos en Health Connect para que se aplique el recorte.
+
 ## [1.11.0] - 2026-08-23
 
 _El muro cuenta ahora todo lo que haces —sesiones libres, cardio, circuitos, retos, carreras y batallas—, el perfil estrena carné de atleta con tus cifras y tus marcas, y puedes poner tu cuenta en privado y aprobar quién te sigue._
@@ -334,7 +346,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...HEAD
+[1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1
 [1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
 [1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2
 [1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1

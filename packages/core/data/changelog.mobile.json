@@ -1,6 +1,74 @@
 {
-  "generated": "2026-08-23T16:03:13.397Z",
+  "generated": "2026-08-23T23:56:43.310Z",
   "versions": [
+    {
+      "version": "1.11.1",
+      "date": "2026-08-23",
+      "summary": {
+        "es": "El historial de cardio estrena filtros por tipo, abre el detalle desde la propia fila y trae buscador de competencias. Además, la app ahora solo pide a Health Connect los datos que de verdad usa.",
+        "en": "The cardio history gets filters by type, opens the detail straight from the row and adds a competition search. The app also now asks Health Connect only for the data it actually uses."
+      },
+      "highlights": [
+        {
+          "icon": "🏃",
+          "type": "feat",
+          "title": {
+            "es": "Historial de cardio con filtros y detalle directo",
+            "en": "Cardio history with filters and direct detail"
+          },
+          "body": {
+            "es": "Puedes filtrar el historial por tipo de sesión y abrir el detalle tocando la fila, sin pasos intermedios. Se añade además un buscador para encontrar competencias.",
+            "en": "You can filter the history by session type and open the detail by tapping the row, with no extra steps. A search box for finding competitions is also included."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "fix",
+          "title": {
+            "es": "Health Connect pide menos datos tuyos",
+            "en": "Health Connect asks for less of your data"
+          },
+          "body": {
+            "es": "La app pedía doce tipos de datos de salud y varios no se usaban para nada. Ahora solo pide siete, todos con una pantalla que te los enseña: pasos, calorías activas, frecuencia cardíaca, FC en reposo, sueño, peso y grasa corporal. Como contrapartida, desaparecen las métricas de VFC y VO₂ máx de «Reloj y salud». Si ya tenías el reloj conectado, revoca y vuelve a conceder los permisos en Health Connect para que se aplique el recorte.",
+            "en": "The app used to request twelve health data types and several went unused. It now requests only seven, each with a screen that shows it to you: steps, active calories, heart rate, resting HR, sleep, weight and body fat. As a trade-off, the HRV and VO₂ max metrics are gone from “Watch & health”. If your watch was already connected, revoke and re-grant the permissions in Health Connect for the change to apply."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Publicar en Google Play desde local con la API de Play (#591)",
+              "scope": "release",
+              "breaking": false,
+              "hash": "4d70d7f"
+            },
+            {
+              "description": "Filtros en el historial, detalle desde la fila y buscador de competencias (#592)",
+              "scope": "cardio",
+              "breaking": false,
+              "hash": "8e719bc"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Recortar permisos de Health Connect al mínimo declarado (#593)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "1c5d89a"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.11.0",
       "date": "2026-08-23",

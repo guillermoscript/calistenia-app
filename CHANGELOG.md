@@ -9,6 +9,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.11.1] - 2026-08-23
+
+_The cardio history gets filters by type, opens the detail straight from the row and adds a competition search. The app also now asks Health Connect only for the data it actually uses._
+
+### Added
+
+- **Cardio history with filters and direct detail** — You can filter the history by session type and open the detail by tapping the row, with no extra steps. A search box for finding competitions is also included.
+
+### Fixed
+
+- **Health Connect asks for less of your data** — The app used to request twelve health data types and several went unused. It now requests only seven, each with a screen that shows it to you: steps, active calories, heart rate, resting HR, sleep, weight and body fat. As a trade-off, the HRV and VO₂ max metrics are gone from “Watch & health”. If your watch was already connected, revoke and re-grant the permissions in Health Connect for the change to apply.
+
 ## [1.11.0] - 2026-08-23
 
 _The feed now covers everything you do — free sessions, cardio, circuits, challenges, races and battles — your profile gets an athlete card with your numbers and personal bests, and you can make your account private and approve who follows you._
@@ -334,7 +346,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...HEAD
+[1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1
 [1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
 [1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2
 [1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
