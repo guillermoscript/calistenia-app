@@ -180,13 +180,18 @@ function parsePBTimestamp(dateStr: string): dayjs.Dayjs {
  */
 export function timeAgo(dateStr: string): string {
   if (!dateStr) return ''
-  const d = parsePBTimestamp(dateStr)
-  if (!d.isValid()) return ''
-  const diffDaysVal = dayjs().diff(d, 'day')
+  const parsed = parsePBTimestamp(dateStr)
+  if (!parsed.isValid()) return ''
+  const now = dayjs()
+  // Un reloj de servidor unos segundos adelantado al del dispositivo hace que un
+  // registro recién creado quede "en el futuro" y dayjs lo pinte como
+  // «en unos segundos». Es un pasado por definición: se clampa a ahora.
+  const d = parsed.isAfter(now) ? now : parsed
+  const diffDaysVal = now.diff(d, 'day')
   if (diffDaysVal > 7) {
     return d.tz(_tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
   }
-  return d.tz(_tz).fromNow()
+  return d.tz(_tz).from(now)
 }
 
 /**

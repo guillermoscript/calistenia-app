@@ -305,6 +305,15 @@ describe('timeAgo', () => {
     expect(result).not.toMatch(/hace/i)
     expect(result).toMatch(/^\d{1,2}\s/)
   })
+
+  it('unos segundos en el futuro (reloj del servidor adelantado) se pinta como pasado, no «en unos segundos»', () => {
+    setTimezone('UTC')
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    const result = timeAgo('2026-07-08 12:00:03.000Z')
+    expect(result).toMatch(/hace/i)
+    expect(result).not.toMatch(/^en /i)
+  })
 })
 
 describe('timeAgoShort', () => {

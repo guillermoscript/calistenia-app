@@ -79,7 +79,9 @@ async function fetchThread(sessionId: string): Promise<Comment[]> {
       authorAvatarUrl: expandAuthor ? getUserAvatarUrl(expandAuthor, '100x100') : (info?.avatarUrl || null),
       text: r.text,
       parentId: r.parent_id || null,
-      created: r.created || r.updated || new Date().toISOString(),
+      // Sin fecha se deja vacío: `timeAgo('')` no pinta nada. Inventar `new Date()`
+      // hacía que todos los comentarios salieran como «hace unos segundos».
+      created: r.created || r.updated || '',
       replies: [],
     }
   })
