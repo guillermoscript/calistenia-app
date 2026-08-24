@@ -58,7 +58,7 @@ export default function CalendarScreen() {
   const router = useRouter()
   const user = useAuthUser()
   const userId = user?.id ?? null
-  const { progress, weekDays, activeProgram, settings } = useWorkoutState()
+  const { progress, weekDays, activeProgram, programProgress } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
 
   const now = new Date()
@@ -354,7 +354,7 @@ export default function CalendarScreen() {
                       {!!activeProgram && <Text className="text-[10px] text-muted-foreground" numberOfLines={1}>{activeProgram.name}</Text>}
                     </View>
                     <Text className="mt-1 font-sans-medium text-foreground">{selectedPlanned.focus}</Text>
-                    <Text className="mt-0.5 text-[10px] text-muted-foreground">{selectedPlanned.name} · {t('workout.phase')} {settings.phase || 1}</Text>
+                    <Text className="mt-0.5 text-[10px] text-muted-foreground">{selectedPlanned.name} · {t('workout.phase')} {programProgress.currentPhase || 1}</Text>
                   </View>
                 )
               )}

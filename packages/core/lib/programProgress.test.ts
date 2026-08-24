@@ -5,10 +5,11 @@ import {
   parsePhaseWeeks,
   phaseForWeek,
   resolvePhase,
+  completedWorkoutsFromProgress,
+  type CompletedWorkout,
   type ProgramProgressInput,
-  type ProgramSessionRow,
 } from './programProgress'
-import type { Phase, WeekDay } from '../types'
+import type { Phase, ProgressMap, WeekDay } from '../types'
 
 // Todas las fechas son fijas: `today` y `utcToLocalDay` entran por parámetro,
 // así que ningún test depende del reloj ni de la zona horaria de la máquina.
@@ -45,15 +46,15 @@ function input(overrides: Partial<ProgramProgressInput> = {}): ProgramProgressIn
     durationWeeks: 12,
     phases: PHASES,
     weekDays: WEEK_DAYS,
-    sessions: [],
+    completed: [],
     utcToLocalDay,
     today: '2026-06-03',
     ...overrides,
   }
 }
 
-function session(day: string, dayId: string, phase = 1): ProgramSessionRow {
-  return { workout_key: `p${phase}_${dayId}`, completed_at: `${day} 19:00:00.000Z` }
+function done(day: string, dayId: string, phase = 1): CompletedWorkout {
+  return { day, workoutKey: `p${phase}_${dayId}` }
 }
 
 describe('dayIdFromDateStr', () => {
@@ -122,6 +123,38 @@ describe('resolvePhase', () => {
 
   it('sin semana ni fases devuelve la fase 1', () => {
     expect(resolvePhase([], null)).toEqual({ phase: 1, source: 'fallback' })
+  })
+})
+
+describe('completedWorkoutsFromProgress', () => {
+  it('extrae los marcadores done_ e ignora los logs de series', () => {
+    const progress: ProgressMap = {
+      'done_2026-06-04_p1_jue': { done: true, date: '2026-06-04', workoutKey: 'p1_jue', note: '' },
+      'done_2026-06-05_p1_vie': { done: true, date: '2026-06-05', workoutKey: 'p1_vie', note: '', count: 2 },
+      // Log de series: misma forma de clave pero sin `done_`.
+      '2026-06-04_p1_jue_pullups': { sets: [], date: '2026-06-04', workoutKey: 'p1_jue', exerciseId: 'pullups' },
+    }
+    expect(completedWorkoutsFromProgress(progress)).toEqual([
+      { day: '2026-06-04', workoutKey: 'p1_jue' },
+      { day: '2026-06-05', workoutKey: 'p1_vie' },
+    ])
+  })
+
+  it('incluye los días de cardio del programa', () => {
+    // Un día de cardio del programa deja un marcador done_ con cardioSessionId:
+    // cuenta como entreno de la semana igual que uno de fuerza.
+    const progress: ProgressMap = {
+      'done_2026-06-04_p1_mie': {
+        done: true, date: '2026-06-04', workoutKey: 'p1_mie', note: '', cardioSessionId: 'abc123',
+      },
+    }
+    expect(completedWorkoutsFromProgress(progress)).toEqual([{ day: '2026-06-04', workoutKey: 'p1_mie' }])
+  })
+
+  it('no revienta con un progreso vacío o con entradas rotas', () => {
+    expect(completedWorkoutsFromProgress({})).toEqual([])
+    const broken = { 'done_x': { done: true, date: '', workoutKey: '', note: '' } } as ProgressMap
+    expect(completedWorkoutsFromProgress(broken)).toEqual([])
   })
 })
 
@@ -200,12 +233,12 @@ describe('computeProgramProgress', () => {
   it('cuenta los entrenos de la ventana y deduplica el doble registro', () => {
     const r = computeProgramProgress(input({
       today: '2026-06-05',
-      sessions: [
-        session('2026-06-04', 'jue'),
-        session('2026-06-04', 'jue'), // mismo entreno registrado dos veces
-        session('2026-06-05', 'vie'),
-        session('2026-06-02', 'mar'), // anterior a apuntarse: fuera de la ventana
-        session('2026-06-11', 'jue'), // semana siguiente
+      completed: [
+        done('2026-06-04', 'jue'),
+        done('2026-06-04', 'jue'), // mismo entreno registrado dos veces
+        done('2026-06-05', 'vie'),
+        done('2026-06-02', 'mar'), // anterior a apuntarse: fuera de la ventana
+        done('2026-06-11', 'jue'), // semana siguiente
       ],
     }))
     expect(r.sessionsThisWeek).toBe(2)
@@ -221,7 +254,7 @@ describe('computeProgramProgress', () => {
   it('«hoy toca» salta al siguiente pendiente cuando hoy ya está hecho', () => {
     const r = computeProgramProgress(input({
       today: '2026-06-04',
-      sessions: [session('2026-06-04', 'jue')],
+      completed: [done('2026-06-04', 'jue')],
     }))
     expect(r.nextDay).toBe('vie')
   })
@@ -236,11 +269,11 @@ describe('computeProgramProgress', () => {
     // Lunes 8 de junio, última jornada entrenable de la ventana W1 (03–09 jun).
     const r = computeProgramProgress(input({
       today: '2026-06-08',
-      sessions: [
-        session('2026-06-04', 'jue'),
-        session('2026-06-05', 'vie'),
-        session('2026-06-08', 'lun'),
-        session('2026-06-09', 'mar'),
+      completed: [
+        done('2026-06-04', 'jue'),
+        done('2026-06-05', 'vie'),
+        done('2026-06-08', 'lun'),
+        done('2026-06-09', 'mar'),
       ],
     }))
     expect(r.sessionsThisWeek).toBe(4)
@@ -253,7 +286,7 @@ describe('computeProgramProgress', () => {
     const r = computeProgramProgress(input({
       today: '2026-06-04',
       phaseOverride: 2,
-      sessions: [session('2026-06-04', 'jue', 1)],
+      completed: [done('2026-06-04', 'jue', 1)],
     }))
     expect(r.currentPhase).toBe(2)
     expect(r.nextDay).toBe('vie')

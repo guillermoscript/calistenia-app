@@ -29,6 +29,8 @@ vi.mock('@calistenia/core/lib/dateUtils', () => ({
 vi.mock('../contexts/WorkoutContext', () => ({
   useWorkoutState: () => ({
     settings: { phase: 1 },
+    // #616: la fase ya no sale de settings sino del progreso del programa.
+    programProgress: { currentPhase: 1 },
     phases: [{ id: 1, name: 'F1' }],
     weekDays: h.weekDays,
     cardioDayConfigs: {},

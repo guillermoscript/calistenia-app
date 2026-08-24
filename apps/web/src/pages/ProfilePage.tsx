@@ -95,7 +95,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency(user?.id ?? null)
   // Cifras del carné: las mismas que el dashboard, leídas del contexto de
   // entreno para que no puedan discrepar de lo que ve el usuario en portada.
-  const { settings, activeProgram } = useWorkoutState()
+  const { settings, activeProgram, programProgress } = useWorkoutState()
   const { getTotalSessions, getLongestStreak, getWeeklyDoneCount } = useWorkoutActions()
   const totalSessions = getTotalSessions()
   const streak = getLongestStreak()
@@ -199,9 +199,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   // «Intermedio · Semana 12 de 12»: nivel y, si el programa tiene fecha de
   // inicio, en qué punto va. Sin fecha no se inventa la semana.
   const levelLabel = LEVELS.find(l => l.value === level)?.label ?? ''
+  // #616: con inscripción activa la semana la da el programa (`started_at`);
+  // sin ella se conserva el cálculo sobre `settings.startDate`, que es lo único
+  // que tiene quien todavía no se ha apuntado a nada.
   const week = useMemo(
-    () => programWeek(settings.startDate, activeProgram?.duration_weeks, todayStr()),
-    [settings.startDate, activeProgram?.duration_weeks],
+    () => (programProgress.hasStarted && programProgress.currentWeek
+      ? { current: programProgress.currentWeek, total: programProgress.totalWeeks }
+      : programWeek(settings.startDate, activeProgram?.duration_weeks, todayStr())),
+    [programProgress.hasStarted, programProgress.currentWeek, programProgress.totalWeeks, settings.startDate, activeProgram?.duration_weeks],
   )
   const identityLine = [
     levelLabel,
@@ -371,7 +376,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           </div>
 
           <Badge className="shrink-0 self-start rounded-full border-transparent bg-lime px-3 font-mono text-[10px] font-normal uppercase tracking-widest text-lime-foreground hover:bg-lime sm:self-center">
-            {t('profile.phase', { phase: settings.phase || 1 })}
+            {t('profile.phase', { phase: programProgress.currentPhase || 1 })}
           </Badge>
         </div>
 

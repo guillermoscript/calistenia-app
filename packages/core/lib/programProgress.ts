@@ -33,9 +33,8 @@
  */
 
 import { buildWeekWindows, type WeekWindow } from './community-programs'
-import { countWorkouts, type SessionRowForTotal } from './cumulative-scoring'
 import { WEEK_ORDER, isTrainableDay } from './training-day'
-import type { DayId, Phase, WeekDay } from '../types'
+import type { DayId, Phase, ProgressMap, SessionDone, WeekDay } from '../types'
 
 export type { WeekWindow }
 
@@ -104,10 +103,36 @@ export function phaseForWeek(phases: readonly Phase[], week: number): number | n
 
 // ─── Entrada y salida ────────────────────────────────────────────────────────
 
-/** Fila de `sessions` que necesita el cálculo (subconjunto del registro de PB). */
-export interface ProgramSessionRow extends SessionRowForTotal {
-  workout_key?: string
-  completed_at?: string
+/**
+ * Un entreno del programa ya completado, con el día YA en hora local.
+ *
+ * La entrada no son filas crudas de `sessions` a propósito: la fuente es el
+ * `ProgressMap` de `useProgress`, que ya está deduplicado por
+ * `(día local, workout_key)`, ya incluye lo que sigue en la cola offline y ya
+ * cuenta los días de cardio del programa. Refetchear `sessions` aquí sería una
+ * segunda consulta que además podría discrepar de lo que pinta `isWorkoutDone`.
+ */
+export interface CompletedWorkout {
+  /** Día local, `YYYY-MM-DD`. */
+  day: string
+  /** `p{fase}_{día}`. */
+  workoutKey: string
+}
+
+/** Marcadores `done_` del `ProgressMap` → entradas para `computeProgramProgress`. */
+export function completedWorkoutsFromProgress(progress: ProgressMap): CompletedWorkout[] {
+  const out: CompletedWorkout[] = []
+  const seen = new Set<string>()
+  for (const [key, value] of Object.entries(progress ?? {})) {
+    if (!key.startsWith('done_')) continue
+    const entry = value as SessionDone
+    if (!entry?.done || !entry.date || !entry.workoutKey) continue
+    const dedupe = `${entry.workoutKey}|${entry.date}`
+    if (seen.has(dedupe)) continue
+    seen.add(dedupe)
+    out.push({ day: entry.date, workoutKey: entry.workoutKey })
+  }
+  return out
 }
 
 export interface ProgramProgressInput {
@@ -122,9 +147,12 @@ export interface ProgramProgressInput {
   phases: readonly Phase[]
   /** Días de la semana del programa; los `type: 'rest'` no cuentan como planificados. */
   weekDays: readonly WeekDay[]
-  /** Filas de `sessions` del usuario para ESTE programa. */
-  sessions: readonly ProgramSessionRow[]
-  /** Convierte un timestamp UTC de PB al día local del usuario. */
+  /** Entrenos completados del usuario (`completedWorkoutsFromProgress`). */
+  completed: readonly CompletedWorkout[]
+  /**
+   * Convierte un timestamp UTC de PB al día local del usuario. Solo se usa para
+   * `startedAt`: los días de `completed` ya vienen en hora local.
+   */
   utcToLocalDay: (utc: string) => string
   /** Día local de hoy, `YYYY-MM-DD`. Inyectado para poder testear con fechas fijas. */
   today: string
@@ -212,7 +240,7 @@ export function resolvePhase(
 }
 
 /** Día (`DayId`) al que apunta un `workout_key` `p{fase}_{día}`. */
-function dayIdFromWorkoutKey(workoutKey: string | undefined): DayId | null {
+export function dayIdFromWorkoutKey(workoutKey: string | undefined): DayId | null {
   if (!workoutKey) return null
   const idx = workoutKey.indexOf('_')
   if (idx < 0) return null
@@ -223,7 +251,7 @@ function dayIdFromWorkoutKey(workoutKey: string | undefined): DayId | null {
 // ─── Cálculo ─────────────────────────────────────────────────────────────────
 
 export function computeProgramProgress(input: ProgramProgressInput): ProgramProgress {
-  const { startedAt, durationWeeks, phases, weekDays, sessions, utcToLocalDay, today, phaseOverride } = input
+  const { startedAt, durationWeeks, phases, weekDays, completed, utcToLocalDay, today, phaseOverride } = input
 
   const startDay = startedAt ? utcToLocalDay(startedAt) : ''
   const totalWeeks = Number.isFinite(durationWeeks) ? Math.max(0, Math.floor(durationWeeks)) : 0
@@ -254,16 +282,13 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
   const { phase, source } = resolvePhase(phases, currentWeek, phaseOverride)
 
   // ── Entrenos de la semana ──────────────────────────────────────────────────
-  const inWindow = (timestamp?: string) => {
-    if (!timestamp) return false
-    const day = utcToLocalDay(timestamp)
-    return day >= activeWindow.startDay && day <= activeWindow.endDay
-  }
-  const sessionsInWindow = sessions.filter(s => inWindow(s.completed_at))
-  // Cardio va vacío a propósito: las sesiones de cardio de un día de programa
-  // se registran TAMBIÉN en `sessions` con su `workout_key` (ver `useProgress`),
-  // así que pasarlas aquí las contaría dos veces.
-  const sessionsThisWeek = countWorkouts([...sessionsInWindow], [], utcToLocalDay)
+  const doneInWindow = completed.filter(c =>
+    !!c.day && c.day >= activeWindow.startDay && c.day <= activeWindow.endDay,
+  )
+  // `completedWorkoutsFromProgress` ya deduplica por (día, workout_key), pero el
+  // recuento se vuelve a deduplicar aquí: la lib no puede confiar en que quien
+  // la llame haya pasado por el adaptador.
+  const sessionsThisWeek = new Set(doneInWindow.map(c => `${c.workoutKey}|${c.day}`)).size
 
   // `duration_weeks` son semanas enteras, así que toda ventana mide exactamente
   // 7 días de calendario y contiene cada día de la semana una vez: los días
@@ -273,8 +298,8 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
 
   // ── Siguiente día por hacer ────────────────────────────────────────────────
   const doneDayIds = new Set<DayId>()
-  for (const s of sessionsInWindow) {
-    const id = dayIdFromWorkoutKey(s.workout_key)
+  for (const c of doneInWindow) {
+    const id = dayIdFromWorkoutKey(c.workoutKey)
     if (id) doneDayIds.add(id)
   }
 

@@ -4,6 +4,7 @@ import { localDay } from '@calistenia/core/lib/dateUtils'
 import { DAY_BY_INDEX, nextTrainingDay } from '@calistenia/core/lib/training-day'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { WeekDay, ProgramMeta } from '@calistenia/core/types'
+import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 
 interface TodayWorkoutHeroProps {
   weekDays: WeekDay[]
@@ -11,11 +12,13 @@ interface TodayWorkoutHeroProps {
   activeProgram: ProgramMeta | null
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   today_str: string
+  /** Progreso del programa activo: añade «N de M esta semana» bajo el título (#616). */
+  programProgress?: ProgramProgress
   onStart: (dayId: string) => void
 }
 
 export default function TodayWorkoutHero({
-  weekDays, phase, activeProgram, isWorkoutDone, today_str, onStart,
+  weekDays, phase, activeProgram, isWorkoutDone, today_str, programProgress, onStart,
 }: TodayWorkoutHeroProps) {
   const { t } = useTranslation()
 
@@ -75,6 +78,26 @@ export default function TodayWorkoutHero({
           {activeProgram && (
             <div className="text-xs text-muted-foreground mt-1">
               {activeProgram.name} · {t('workout.phaseLabel', { phase: phase || 1 })}
+              {programProgress && programProgress.currentWeek && programProgress.totalWeeks > 0 && (
+                <> · {t('programProgress.weekOf', { week: programProgress.currentWeek, total: programProgress.totalWeeks })}</>
+              )}
+            </div>
+          )}
+          {programProgress && programProgress.plannedThisWeek > 0 && programProgress.hasStarted && !programProgress.isCompleted && (
+            <div
+              className={cn(
+                'text-[10px] font-mono tracking-widest uppercase mt-1.5',
+                programProgress.sessionsThisWeek >= programProgress.plannedThisWeek
+                  ? 'text-emerald-500'
+                  : 'text-muted-foreground',
+              )}
+            >
+              {programProgress.sessionsThisWeek >= programProgress.plannedThisWeek
+                ? t('programProgress.weekDone')
+                : t('programProgress.thisWeek', {
+                    done: programProgress.sessionsThisWeek,
+                    planned: programProgress.plannedThisWeek,
+                  })}
             </div>
           )}
           {restClickable && nextDay && (

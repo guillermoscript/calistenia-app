@@ -13,12 +13,13 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
+import ProgramProgressBar from '@/components/programs/ProgramProgressBar'
 
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useTranslation()
   const router = useRouter()
-  const { programs, activeProgram } = useWorkoutState()
+  const { programs, activeProgram, programProgress } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
 
   // El catálogo en memoria solo trae programas is_active y puede no estar
@@ -85,6 +86,9 @@ export default function ProgramDetailScreen() {
                   )}
                   {program.discipline === 'yoga' && <Chip label="Yoga" />}
                 </View>
+                {/* Solo para el programa en curso: en el resto no hay
+                    inscripción de la que derivar semana ni fase. */}
+                {isActive && <ProgramProgressBar progress={programProgress} className="mt-2" />}
               </CardContent>
             </Card>
 

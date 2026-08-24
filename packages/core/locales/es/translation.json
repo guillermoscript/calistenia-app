@@ -4736,5 +4736,10 @@
   "install.guideAndroidFirefox": "Toca el menú <strong>⋮</strong> y selecciona <strong>Instalar</strong> o <strong>Agregar a inicio</strong>",
   "install.guideDesktopFirefox": "Abre el menú y busca <strong>Instalar este sitio como aplicación</strong> en la barra de direcciones",
   "install.guideDesktopSafari": "Ve a <strong>Archivo → Agregar al Dock</strong> para instalar como app",
-  "install.guideGeneric": "Busca el icono de instalar en la barra de direcciones de tu navegador"
+  "install.guideGeneric": "Busca el icono de instalar en la barra de direcciones de tu navegador",
+  "programProgress.weekOf": "Semana {{week}} de {{total}}",
+  "programProgress.notStarted": "Aún no empieza",
+  "programProgress.programCompleted": "Programa completado",
+  "programProgress.thisWeek": "{{done}} de {{planned}} esta semana",
+  "programProgress.weekDone": "Semana completada"
 }

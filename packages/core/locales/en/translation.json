@@ -4736,5 +4736,10 @@
   "install.guideAndroidFirefox": "Tap the <strong>⋮</strong> menu and pick <strong>Install</strong> or <strong>Add to Home screen</strong>",
   "install.guideDesktopFirefox": "Open the menu and look for <strong>Install this site as an app</strong> in the address bar",
   "install.guideDesktopSafari": "Go to <strong>File → Add to Dock</strong> to install it as an app",
-  "install.guideGeneric": "Look for the install icon in your browser's address bar"
+  "install.guideGeneric": "Look for the install icon in your browser's address bar",
+  "programProgress.weekOf": "Week {{week}} of {{total}}",
+  "programProgress.notStarted": "Not started yet",
+  "programProgress.programCompleted": "Program completed",
+  "programProgress.thisWeek": "{{done}} of {{planned}} this week",
+  "programProgress.weekDone": "Week complete"
 }
