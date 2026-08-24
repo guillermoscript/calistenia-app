@@ -24,6 +24,7 @@ import {
   Modal,
 } from 'react-native'
 import { useColorScheme } from 'nativewind'
+import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { KeyboardProvider, KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Text } from '@/components/ui/text'
@@ -562,15 +563,27 @@ function CommentBubble({
         )}
         style={{ backgroundColor: `oklch(0.32 0.07 ${hue})` }}
       >
-        <Text
-          className={cn('uppercase', isReply ? 'text-[9px]' : 'text-[11px]')}
-          style={{
-            color: `oklch(0.88 0.10 ${hue})`,
-            fontFamily: FONT_MEDIUM,
-          }}
-        >
-          {(comment.authorName[0] ?? '?').toUpperCase()}
-        </Text>
+        {comment.authorAvatarUrl ? (
+          <Image
+            source={{ uri: comment.authorAvatarUrl }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            transition={150}
+            cachePolicy="memory-disk"
+            recyclingKey={comment.authorId}
+            accessibilityLabel={comment.authorName}
+          />
+        ) : (
+          <Text
+            className={cn('uppercase', isReply ? 'text-[9px]' : 'text-[11px]')}
+            style={{
+              color: `oklch(0.88 0.10 ${hue})`,
+              fontFamily: FONT_MEDIUM,
+            }}
+          >
+            {(comment.authorName[0] ?? '?').toUpperCase()}
+          </Text>
+        )}
       </View>
 
       {/* ── Cuerpo ────────────────────────────────────────────────────── */}
@@ -591,9 +604,11 @@ function CommentBubble({
               <Text className="font-mono text-[9px] text-lime/70">tú</Text>
             </View>
           )}
-          <Text className="font-mono text-[10px] text-muted-foreground/40 shrink-0">
-            {timeAgo(comment.created)}
-          </Text>
+          {comment.created ? (
+            <Text className="font-mono text-[10px] text-muted-foreground/40 shrink-0">
+              {timeAgo(comment.created)}
+            </Text>
+          ) : null}
         </View>
 
         {/* Texto del comentario */}
