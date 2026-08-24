@@ -201,6 +201,179 @@ function genId(): string {
   return `ex_${Date.now()}_${_idCounter}`
 }
 
+// ─── Validación de los pasos del asistente (#610) ────────────────────────────
+
+/**
+ * Un error de validación todavía sin traducir: la clave i18n y sus parámetros.
+ *
+ * `collectStepErrors` se exporta pura y sin traducir a propósito. Los tests de
+ * `packages/core` corren en Node y sin renderizador de React, así que una regla
+ * metida dentro del `useCallback` del hook sería inalcanzable; y como i18next
+ * no siempre está inicializado en ese entorno, `t()` devolvería `undefined`.
+ * Devolviendo la clave, el test afirma sobre un identificador estable y la
+ * traducción queda como último paso, ya dentro de `validate`.
+ */
+export interface ProgramValidationError {
+  key: string
+  params?: Record<string, string | number>
+}
+
+/** Acepta `1-6` y `6`. Devuelve null si el texto no es un rango legible. */
+function parseWeekRange(raw: string): { start: number; end: number } | null {
+  const m = raw.trim().match(/^(\d+)\s*(?:-\s*(\d+))?$/)
+  if (!m) return null
+  const start = Number(m[1])
+  const end = m[2] === undefined ? start : Number(m[2])
+  if (start < 1 || end < start) return null
+  return { start, end }
+}
+
+/**
+ * `sets` es `number | string` porque `StepExercises.tsx:207` guarda el texto
+ * crudo cuando no es numérico (`isNaN(n) ? v : n`). Se aceptan los dos
+ * mientras representen un entero ≥ 1; el texto libre se rechaza.
+ */
+function isPositiveInteger(value: number | string): boolean {
+  const raw = typeof value === 'number' ? value : String(value).trim()
+  if (raw === '') return false
+  const n = Number(raw)
+  return Number.isInteger(n) && n >= 1
+}
+
+/** `12` o `8-12`. El texto libre («al fallo», «máx») no pasa. */
+const REPS_PATTERN = /^\d+(-\d+)?$/
+
+const MIN_TIMER_SECONDS = 5
+
+/**
+ * Un día de cardio no lleva ejercicios: `StepExercises.tsx:133,161` ni siquiera
+ * dibuja el editor, remite al paso 3 para fijar distancia y duración. Exigirle
+ * un ejercicio haría imposible guardar cualquier programa con cardio.
+ */
+function requiresExercises(day: EditorDay): boolean {
+  return day.type !== 'rest' && day.type !== 'cardio'
+}
+
+/** Los días de una fase. Las claves de `state.days` son `${phaseIndex}_${dayId}`. */
+function daysOfPhase(state: ProgramEditorState, phaseIndex: number): EditorDay[] {
+  const prefix = `${phaseIndex}_`
+  return Object.entries(state.days)
+    .filter(([key]) => key.startsWith(prefix))
+    .map(([, day]) => day)
+}
+
+/**
+ * Todos los errores del paso indicado, en orden de lectura.
+ *
+ * `validate` solo enseña el primero (es el contrato que esperan los dos
+ * asistentes), pero la lista completa deja preparado el resumen de errores.
+ */
+export function collectStepErrors(step: number, state: ProgramEditorState): ProgramValidationError[] {
+  const errors: ProgramValidationError[] = []
+
+  if (step === 1) {
+    if (!state.info.name.trim()) errors.push({ key: 'programEditor.nameRequired' })
+    if (state.info.durationWeeks < 1) errors.push({ key: 'programEditor.minOneWeek' })
+  }
+
+  if (step === 2) {
+    // Se recorren las fases en orden y se exige que cada una empiece justo
+    // donde acabó la anterior. Esa única comprobación cubre a la vez los huecos
+    // y los solapes: «1-6» seguido de «4-8» falla porque 4 ≠ 7.
+    //
+    // `null` significa «ya no sé por qué semana voy»: en cuanto una fase trae un
+    // rango ilegible se deja de juzgar la continuidad, porque si no la siguiente
+    // fase carga con un error que no es suyo.
+    let expectedStart: number | null = 1
+    for (let i = 0; i < state.phases.length; i++) {
+      const phase = state.phases[i]
+      const n = i + 1
+      if (!phase.name.trim()) {
+        errors.push({ key: 'programEditor.phaseNeedsName', params: { n } })
+        expectedStart = null
+        continue
+      }
+      if (!phase.weeks.trim()) {
+        errors.push({ key: 'programEditor.phaseNeedsWeeks', params: { n } })
+        expectedStart = null
+        continue
+      }
+      const range = parseWeekRange(phase.weeks)
+      if (!range) {
+        errors.push({ key: 'programEditor.phaseWeeksInvalid', params: { n } })
+        expectedStart = null
+        continue
+      }
+      if (expectedStart !== null && range.start !== expectedStart) {
+        errors.push({
+          key: 'programEditor.phaseWeeksNotContiguous',
+          params: { n, expected: expectedStart, found: range.start },
+        })
+      }
+      expectedStart = range.end + 1
+    }
+    // La cobertura solo se juzga si la cadena está entera: encadenar este
+    // mensaje sobre unos rangos ya rotos confunde más de lo que ayuda.
+    if (state.phases.length > 0 && errors.length === 0 && expectedStart !== null) {
+      const covered = expectedStart - 1
+      if (covered !== state.info.durationWeeks) {
+        errors.push({
+          key: 'programEditor.phaseWeeksMustCoverDuration',
+          params: { total: state.info.durationWeeks, covered },
+        })
+      }
+    }
+  }
+
+  if (step === 3) {
+    for (let i = 0; i < state.phases.length; i++) {
+      const days = daysOfPhase(state, i)
+      if (!days.some(d => d.type !== 'rest')) {
+        errors.push({
+          key: 'programEditor.phaseNeedsTrainingDay',
+          params: { n: i + 1, name: state.phases[i].name.trim() },
+        })
+      }
+    }
+  }
+
+  if (step === 4) {
+    for (let i = 0; i < state.phases.length; i++) {
+      for (const day of daysOfPhase(state, i)) {
+        if (!requiresExercises(day)) continue
+        const where = { n: i + 1, day: day.dayName }
+
+        // `section` ausente cuenta como `main`, igual que en el resto del
+        // fichero (`:314`, `:628`, `:663`): los programas antiguos no la traen.
+        const main = day.exercises.filter(e => !e.section || e.section === 'main')
+        if (main.length === 0) {
+          errors.push({ key: 'programEditor.dayNeedsExercise', params: where })
+          continue
+        }
+
+        for (const ex of day.exercises) {
+          const exWhere = { ...where, exercise: ex.name.trim() }
+          if (!isPositiveInteger(ex.sets)) {
+            errors.push({ key: 'programEditor.exerciseSetsInvalid', params: exWhere })
+          }
+          if (ex.isTimer) {
+            if (!(ex.timerSeconds >= MIN_TIMER_SECONDS)) {
+              errors.push({
+                key: 'programEditor.exerciseTimerTooShort',
+                params: { ...exWhere, min: MIN_TIMER_SECONDS },
+              })
+            }
+          } else if (!REPS_PATTERN.test(ex.reps.trim())) {
+            errors.push({ key: 'programEditor.exerciseRepsInvalid', params: exWhere })
+          }
+        }
+      }
+    }
+  }
+
+  return errors
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useProgramEditor() {
@@ -368,19 +541,12 @@ export function useProgramEditor() {
   }, [])
 
   // ── Validation ──────────────────────────────────────────────────────────────
+  // Las reglas viven en `collectStepErrors` (pura, testable). Aquí solo se
+  // traduce el primero de los errores, que es lo que los asistentes pintan.
   const validate = useCallback((step: number): string | null => {
-    if (step === 1) {
-      if (!state.info.name.trim()) return i18n.t('programEditor.nameRequired')
-      if (state.info.durationWeeks < 1) return i18n.t('programEditor.minOneWeek')
-    }
-    if (step === 2) {
-      for (let i = 0; i < state.phases.length; i++) {
-        if (!state.phases[i].name.trim()) return i18n.t('programEditor.phaseNeedsName', { n: i + 1 })
-        if (!state.phases[i].weeks.trim()) return i18n.t('programEditor.phaseNeedsWeeks', { n: i + 1 })
-      }
-    }
-    return null
-  }, [state.info, state.phases])
+    const [first] = collectStepErrors(step, state)
+    return first ? i18n.t(first.key, first.params) : null
+  }, [state])
 
   // ── Load program from PB ───────────────────────────────────────────────────
   const loadProgram = useCallback(async (programId: string) => {
