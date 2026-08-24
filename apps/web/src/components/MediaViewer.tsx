@@ -8,10 +8,8 @@ import {
 } from './ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'
 import type { Exercise } from '@calistenia/core/types'
-import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
 import type { CatalogMediaRecord } from '@calistenia/core/lib/exerciseMedia'
-import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
-import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
+import { useExerciseMedia } from '@calistenia/core/hooks/useExerciseMedia'
 
 interface MediaViewerProps {
   exercise: Exercise
@@ -23,26 +21,11 @@ interface MediaViewerProps {
 export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaViewerProps) {
   const { t } = useTranslation()
   const [imgIdx, setImgIdx] = useState<number>(0)
-  // El catálogo empaquetado se carga bajo demanda (#486): esto lo pide y
-  // vuelve a pintar cuando llega, en lugar de quedarse sin media estática.
-  useCatalogIndex()
 
-  // Supply the bundled catalog's structured media (by exercise id) when the caller
-  // didn't pass an explicit catalogRecord — so library/session/free-session all resolve it.
-  const staticMedia = catalogRecord?.staticMedia ?? getCatalogStaticMedia(exercise.id)
-  const effectiveCatalogRecord: CatalogMediaRecord | undefined =
-    (catalogRecord || staticMedia) ? { ...catalogRecord, staticMedia } : undefined
-
-  // Resolve media via canonical hierarchy: program override → catalog static → catalog PB → curated → youtube
-  const resolved = getExerciseMedia(
-    {
-      pbRecordId: exercise.pbRecordId,
-      demoImages: exercise.demoImages,
-      demoVideo: exercise.demoVideo,
-      youtube: exercise.youtube,
-    },
-    { catalogRecord: effectiveCatalogRecord },
-  )
+  // Jerarquía canónica: override del programa → media estática del catálogo →
+  // ficheros del catálogo → vídeo curado → YouTube. El hook se encarga además de
+  // esperar al catálogo perezoso (#486) y de buscarle la media estática por id.
+  const resolved = useExerciseMedia(exercise, { catalogRecord })
 
   // [015] Structured media: prefer structured fields when available; fall back to legacy images[]
   const sequenceUrl = resolved.sequence

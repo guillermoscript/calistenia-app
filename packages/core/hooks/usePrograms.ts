@@ -151,6 +151,11 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       priority:     r.priority,
       isTimer:      r.is_timer,
       timerSeconds: r.timer_seconds,
+      // `demoImages`/`demoVideo` son los NOMBRES DE FICHERO de PocketBase, no URLs.
+      // Se exponen crudos a propósito: son la entrada que espera `getExerciseMedia()`
+      // (y así los consume también el `ExerciseScreen` móvil). Resolverlos aquí
+      // duplicaría la construcción de URLs fuera de core. Para pintarlos hay que
+      // pasar por `useExerciseMedia`/`ExerciseThumbnail`, nunca por un `src` directo (#608).
       pbRecordId:   r.id,
       demoImages:   r.demo_images || [],
       demoVideo:    r.demo_video || '',
