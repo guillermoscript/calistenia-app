@@ -18,7 +18,7 @@
  * web.
  */
 
-import { getOrLoadCatalogIndex, normalizeForLookup } from './catalogIndex'
+import { getOrLoadCatalogIndex, normalizeForLookup, type CatalogIndex } from './catalogIndex'
 
 // El normalizador vive en `catalogIndex` porque lo necesita el propio indexado;
 // se re-exporta aquí para no mover el import de sus consumidores.
@@ -26,10 +26,14 @@ export { normalizeForLookup }
 
 // ── Public resolver ────────────────────────────────────────────────────────────
 
-export function resolveExerciseId(input: string): string {
+export function resolveExerciseId(
+  input: string,
+  // Inyectable para quien ya tiene el índice en la mano (y para los tests);
+  // por defecto, el índice compartido del módulo.
+  index: CatalogIndex | null = getOrLoadCatalogIndex(),
+): string {
   if (!input) return input
 
-  const index = getOrLoadCatalogIndex()
   // Sin índice todavía no se puede afirmar nada: se cae al paso 4, que es
   // justamente «no hay coincidencia segura, devuelve la entrada intacta».
   if (!index) return input
