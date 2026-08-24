@@ -16,9 +16,13 @@ interface CardioHistoryProps {
   sessions: CardioSession[]
   loading?: boolean
   onDelete?: (id: string) => Promise<void>
+  /** La carga falló. Manda sobre la lista vacía: sin esto un 504 se pintaba
+      como «no tienes sesiones», que es mentira (#559, CALISTENIA-APP-S). */
+  error?: boolean
+  onRetry?: () => void
 }
 
-export default function CardioHistory({ sessions, loading, onDelete }: CardioHistoryProps) {
+export default function CardioHistory({ sessions, loading, onDelete, error, onRetry }: CardioHistoryProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [filter, setFilter] = useState<HistoryFilter>('all')
@@ -35,6 +39,25 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
         {[1, 2, 3].map(i => (
           <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />
         ))}
+      </div>
+    )
+  }
+
+  // Antes que el vacío: no sabemos si hay sesiones, sólo que no pudimos leerlas.
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-3xl mb-3" aria-hidden="true">📡</div>
+        <p className="text-sm text-muted-foreground">{t('cardio.historyError')}</p>
+        <p className="text-xs text-muted-foreground/60 mt-1 mb-4">{t('cardio.historyErrorBody')}</p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="rounded-lg border border-border px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-foreground transition-colors hover:bg-muted"
+          >
+            {t('cardio.retry')}
+          </button>
+        )}
       </div>
     )
   }

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { View, Pressable, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, MapPin } from 'lucide-react-native'
+import { Trash2, ChevronRight, MapPin, WifiOff } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
@@ -21,9 +21,13 @@ interface Props {
   onDelete: (id: string) => void
   /** CTA del empty state («Empezar cardio») — el padre decide (p. ej. subir al tracker). */
   onStart?: () => void
+  /** La carga falló. Manda sobre la lista vacía: sin esto un 504 se pintaba
+      como «no tienes sesiones», que es mentira (#559, CALISTENIA-APP-S). */
+  error?: boolean
+  onRetry?: () => void
 }
 
-export default function CardioHistory({ sessions, loading, onDelete, onStart }: Props) {
+export default function CardioHistory({ sessions, loading, onDelete, onStart, error, onRetry }: Props) {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const [filter, setFilter] = useState<HistoryFilter>('all')
@@ -37,6 +41,26 @@ export default function CardioHistory({ sessions, loading, onDelete, onStart }: 
     return (
       <View className="items-center rounded-xl border border-border bg-card py-8">
         <Text className="text-sm text-muted-foreground">{t('common.loading')}</Text>
+      </View>
+    )
+  }
+
+  // Antes que el vacío: no sabemos si hay sesiones, sólo que no pudimos leerlas.
+  if (error) {
+    return (
+      <View className="items-center gap-2 rounded-xl border border-border bg-card px-4 py-8">
+        <WifiOff size={22} color="#888899" />
+        <Text className="text-center font-bebas text-lg text-foreground">{t('cardio.historyError')}</Text>
+        <Text className="text-center text-xs text-muted-foreground">{t('cardio.historyErrorBody')}</Text>
+        {onRetry && (
+          <Pressable
+            onPress={onRetry}
+            accessibilityRole="button"
+            className="mt-2 rounded-lg border border-border px-4 py-2 active:opacity-70"
+          >
+            <Text className="font-mono text-[11px] uppercase tracking-widest text-foreground">{t('cardio.retry')}</Text>
+          </Pressable>
+        )}
       </View>
     )
   }
