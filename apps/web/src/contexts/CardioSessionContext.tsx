@@ -11,6 +11,7 @@ import {
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
 import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
+import { retryTransient } from '@calistenia/core/lib/pocketbase-errors'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -318,13 +319,15 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     // Sin try/catch: un fallo aqui NO es «no hay sesiones» — debe llegar al
     // caller, que distingue y reporta (#559). Antes cualquier abort/fallo
     // devolvia [] y se pintaba el estado vacio aunque hubiera datos.
-    const res = await pb.collection('cardio_sessions').getList(1, limit, {
+    // Reintento ante 5xx/sin-respuesta: un solo 504 del gateway pintaba el
+    // historial vacío (CALISTENIA-APP-S). Los 4xx no se reintentan.
+    const res = await retryTransient(() => pb.collection('cardio_sessions').getList(1, limit, {
       filter: pb.filter('user = {:userId}', { userId }),
       sort: '-started_at',
       // Sin auto-cancelación: chocaba con el getFullList de stats sobre la misma
       // colección — en web de forma determinista al montar la página (#559).
       requestKey: null,
-    })
+    }))
     // Las rutas viven aparte (#299) y se rellenan en una segunda consulta.
     // Solo se hace aquí, en el historial propio; el muro no las pide.
     return hydrateCardioRoutes(res.items.map(r => ({

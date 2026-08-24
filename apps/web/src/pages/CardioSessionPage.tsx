@@ -62,6 +62,10 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>(urlActivity || 'running')
   const [history, setHistory] = useState<CardioSession[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyError, setHistoryError] = useState(false)
+  // Se incrementa desde el botón «Reintentar»: re-dispara el efecto sin tocar
+  // el resto de su estado (mismo patrón que la búsqueda de FriendsPage).
+  const [historyRetry, setHistoryRetry] = useState(0)
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   const [raceName, setRaceName] = useState('')
@@ -73,10 +77,18 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   useEffect(() => {
     if (!isIdle && !savedSession) return
     setHistoryLoading(true)
+    setHistoryError(false)
     // El catch ya solo ve fallos reales (la auto-cancelacion murio en #559): reportar, no tragar.
-    getHistory(20).then(setHistory).catch((e) => { Sentry.captureException(e, { tags: { feature: 'cardio', op: 'load_history' } }) }).finally(() => setHistoryLoading(false))
+    // Y marcar el error, o la lista vacia mentiria diciendo que no hay sesiones.
+    getHistory(20)
+      .then((sessions) => { setHistory(sessions); setHistoryError(false) })
+      .catch((e) => {
+        setHistoryError(true)
+        Sentry.captureException(e, { tags: { feature: 'cardio', op: 'load_history' } })
+      })
+      .finally(() => setHistoryLoading(false))
     loadStats()
-  }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps -- `savedSession` solo abre la guarda; recargar al guardar lo dispara ya el paso a idle
+  }, [isIdle, getHistory, loadStats, historyRetry]) // eslint-disable-line react-hooks/exhaustive-deps -- `savedSession` solo abre la guarda; recargar al guardar lo dispara ya el paso a idle
 
   // Preload RouteMap chunk (+ leaflet) on idle so first map paint is instant
   // whether the user starts tracking or expands history.
@@ -289,7 +301,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* History */}
           <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
-            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} />
+            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession}
+              error={historyError} onRetry={() => setHistoryRetry(c => c + 1)} />
           </div>
 
           {/* Stats section */}
