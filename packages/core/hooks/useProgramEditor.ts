@@ -736,9 +736,10 @@ export function useProgramEditor() {
       await executePlans(collections)
 
       setState(s => ({ ...s, programId, isSaving: false, isDirty: false }))
-      // Refresca catálogo/detalle de usePrograms y la caché de edición.
-      qc.invalidateQueries({ queryKey: qk.programs.catalog })
-      qc.invalidateQueries({ queryKey: ['programs', 'detail'] })
+      // Refresca todo el dominio de programas (catálogo, inscripción y las DOS
+      // claves de detalle: `detail` de usePrograms y `detailView` de
+      // useProgramDetail, #606) y la caché de edición, que es un dominio aparte.
+      qc.invalidateQueries({ queryKey: qk.programs.all })
       if (programId) qc.invalidateQueries({ queryKey: qk.programEditor(programId) })
       return programId
     } catch (e: any) {

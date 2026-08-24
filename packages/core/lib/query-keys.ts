@@ -67,8 +67,16 @@ export const qk = {
     catalog: ['programs', 'catalog'] as const,
     activeEnrollment: (userId: string | null) =>
       ['programs', 'activeEnrollment', userId] as const,
+    // OJO: `detail` y `detailView` son el MISMO programa visto por dos hooks
+    // que cachean formas incompatibles. Compartieron clave hasta #606 y se
+    // pisaban entre sí: cada uno leía del objeto del otro y caía a su fallback
+    // en silencio. Si añades un tercer consumidor, dale su propia clave.
+    /** `usePrograms`: `{ phases, weekDays, workoutsMap, cardioDayConfigs }` del programa ACTIVO. */
     detail: (programId: string | null) =>
       ['programs', 'detail', programId] as const,
+    /** `useProgramDetail`: `{ program, days }` de CUALQUIER programa (ficha / deep-link). */
+    detailView: (programId: string | null) =>
+      ['programs', 'detailView', programId] as const,
   },
   programEditor: (programId: string | null) =>
     ['programEditor', programId] as const,
