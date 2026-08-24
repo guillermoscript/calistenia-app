@@ -1,7 +1,17 @@
-import { useState, useEffect, useMemo } from 'react'
+/**
+ * Picker de ejercicios del catálogo para el editor de programas.
+ *
+ * Desde el #609 la lista sale de `useCatalogExerciseList()` de core, que fusiona
+ * el catálogo empaquetado con `exercises_catalog` de PB por identidad canónica.
+ * Antes esto leía PB por su cuenta y, si no respondía, caía a un
+ * `extractFallbackCatalog()` local sobre `WORKOUTS` — unas decenas de
+ * ejercicios frente a los 1.578 del bundle. `WORKOUTS` sigue estando en la base
+ * estática compartida, así que ese suelo no se ha perdido: sólo dejó de ser una
+ * lista aparte.
+ */
+import { useState, useMemo } from 'react'
 import { cn } from '../lib/utils'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
-import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Button } from './ui/button'
 import { Loader } from './ui/loader'
 import { Input } from './ui/input'
@@ -17,47 +27,37 @@ import { useTranslation } from 'react-i18next'
 import { useWgerSearch } from '@calistenia/core/hooks/useWgerSearch'
 import WgerResultCard from './WgerResultCard'
 import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
-import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
-import { localize } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
-import { catalogExerciseIdentity, inferCategory } from '@calistenia/core/lib/exerciseCatalog'
+import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
+import {
+  CATALOG_CATEGORIES,
+  mapCatalogRecord,
+  type CatalogExercise,
+} from '@calistenia/core/lib/exerciseCatalog'
+import { qk } from '@calistenia/core/lib/query-keys'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface ExerciseCatalogPickerProps {
   onAdd: (exercise: EditorExercise) => void
   onClose: () => void
 }
 
-interface CatalogExercise {
-  exerciseId: string
-  name: TranslatableField
-  sets: number | string
-  reps: string
-  rest: number
-  muscles: TranslatableField
-  note: TranslatableField
-  youtube: string
-  priority: 'high' | 'med' | 'low'
-  isTimer: boolean
-  timerSeconds: number
-  category: string
-  created_by?: string
-  status?: 'official' | 'private' | 'promoted'
-  variant_of?: string
-  promoted_from?: string
+/**
+ * Etiquetas de las píldoras. Las claves son las categorías canónicas que emite
+ * `inferCategory()`; la lista de antes traía `mobility`, que no casaba con el
+ * `movilidad` del catálogo, así que esa píldora no podía filtrar nada.
+ */
+const CATEGORY_LABELS: Record<string, string> = {
+  push: 'Push',
+  pull: 'Pull',
+  legs: 'Legs',
+  core: 'Core',
+  lumbar: 'Lumbar',
+  full: 'Full',
+  movilidad: 'Movilidad',
+  skill: 'Skill',
+  yoga: 'Yoga',
 }
-
-const CATEGORIES = [
-  { id: 'all',      label: 'Todos' },
-  { id: 'push',     label: 'Push' },
-  { id: 'pull',     label: 'Pull' },
-  { id: 'legs',     label: 'Legs' },
-  { id: 'core',     label: 'Core' },
-  { id: 'lumbar',   label: 'Lumbar' },
-  { id: 'full',     label: 'Full' },
-  { id: 'mobility', label: 'Movilidad' },
-  { id: 'skill',    label: 'Skill' },
-  { id: 'yoga',     label: 'Yoga' },
-]
 
 const PRIORITY_COLORS: Record<string, string> = {
   high: 'text-red-400 border-red-400/30',
@@ -65,76 +65,16 @@ const PRIORITY_COLORS: Record<string, string> = {
   low:  'text-emerald-400 border-emerald-400/30',
 }
 
-function extractFallbackCatalog(): CatalogExercise[] {
-  const seen = new Set<string>()
-  const catalog: CatalogExercise[] = []
-
-  Object.values(WORKOUTS).forEach(workout => {
-    workout.exercises.forEach(ex => {
-      if (seen.has(ex.id)) return
-      seen.add(ex.id)
-      catalog.push({
-        exerciseId: ex.id,
-        name: ex.name,
-        sets: ex.sets,
-        reps: ex.reps,
-        rest: ex.rest,
-        muscles: ex.muscles,
-        note: ex.note,
-        youtube: ex.youtube,
-        priority: ex.priority,
-        isTimer: ex.isTimer || false,
-        timerSeconds: ex.timerSeconds || 0,
-        category: inferCategory(ex),
-      })
-    })
-  })
-
-  return catalog.sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
-}
-
 export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalogPickerProps) {
   const { t } = useTranslation()
   const l = useLocalize()
-  const [catalog, setCatalog] = useState<CatalogExercise[]>([])
-  const [loading, setLoading] = useState(true)
+  const { exercises: catalog, loading } = useCatalogExerciseList()
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
   const [importedIds, setImportedIds] = useState<Set<number>>(new Set())
 
   const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
-
-  useEffect(() => {
-    const load = async () => {
-      const available = await isPocketBaseAvailable()
-      if (available) {
-        try {
-          const items = await pb.collection('exercises_catalog').getFullList({ batch: 500, sort: 'name', $autoCancel: false })
-          if (items.length > 0) {
-            setCatalog(items.map(r => ({
-              exerciseId: catalogExerciseIdentity(r),
-              name: r.name,
-              sets: r.sets ?? 3,
-              reps: r.reps ?? '10',
-              rest: r.rest_seconds ?? 60,
-              muscles: r.muscles ?? '',
-              note: r.note ?? '',
-              youtube: r.youtube ?? '',
-              priority: r.priority ?? 'med',
-              isTimer: r.is_timer ?? false,
-              timerSeconds: r.timer_seconds ?? 0,
-              category: r.category || inferCategory({ name: r.name, muscles: r.muscles, note: r.note }),
-            })))
-            setLoading(false)
-            return
-          }
-        } catch { /* fall through to fallback */ }
-      }
-      setCatalog(extractFallbackCatalog())
-      setLoading(false)
-    }
-    load()
-  }, [])
 
   const filtered = useMemo(() => {
     let items = catalog
@@ -148,7 +88,9 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
         l(ex.muscles).toLowerCase().includes(q)
       )
     }
-    return items
+    // Alfabético en el idioma que se está viendo. El orden lo pone el picker y
+    // no core, porque es lo único de esta lista que depende del locale.
+    return [...items].sort((a, b) => l(a.name).localeCompare(l(b.name)))
     // `l` cambia de identidad al cambiar de idioma (useLocalize → useCallback
     // sobre el locale): sin él, el buscador seguía filtrando por los nombres
     // del idioma anterior. (#484)
@@ -156,7 +98,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
 
   const handleAdd = (ex: CatalogExercise) => {
     onAdd({
-      exerciseId: ex.exerciseId,
+      exerciseId: ex.slug,
       name: l(ex.name),
       sets: ex.sets,
       reps: ex.reps,
@@ -165,8 +107,8 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
       note: l(ex.note),
       youtube: ex.youtube,
       priority: ex.priority,
-      isTimer: ex.isTimer,
-      timerSeconds: ex.timerSeconds,
+      isTimer: ex.isTimer ?? false,
+      timerSeconds: ex.timerSeconds ?? 0,
     })
   }
 
@@ -191,15 +133,15 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
 
         {/* Category pills */}
         <div className="flex gap-1.5 flex-wrap">
-          {CATEGORIES.map(cat => (
+          {['all', ...CATALOG_CATEGORIES].map(cat => (
             <Button
-              key={cat.id}
-              variant={category === cat.id ? 'limeSolid' : 'outline'}
+              key={cat}
+              variant={category === cat ? 'limeSolid' : 'outline'}
               size="sm"
-              onClick={() => setCategory(cat.id)}
+              onClick={() => setCategory(cat)}
               className="h-7 px-2.5 text-[10px] tracking-wide"
             >
-              {cat.label}
+              {cat === 'all' ? 'Todos' : CATEGORY_LABELS[cat] ?? cat}
             </Button>
           ))}
         </div>
@@ -227,7 +169,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
           ) : (
             filtered.map(ex => (
               <div
-                key={ex.exerciseId}
+                key={ex.slug}
                 className="flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg hover:border-[hsl(var(--lime))]/25 transition-colors"
               >
                 <div className="flex-1 min-w-0">
@@ -273,19 +215,13 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                     setImportedIds(prev => new Set(prev).add(wgerId))
                     // Fetch the created record and add to program
                     const rec = await pb.collection('exercises_catalog').getOne(recordId, { requestKey: null })
-                    onAdd({
-                      exerciseId: catalogExerciseIdentity(rec),
-                      name: l(rec.name),
-                      sets: rec.default_sets ?? 3,
-                      reps: rec.default_reps ?? '8-12',
-                      rest: rec.default_rest_seconds ?? 60,
-                      muscles: l(rec.muscles),
-                      note: l(rec.note) || l(rec.description) || '',
-                      youtube: rec.youtube ?? '',
-                      priority: rec.priority ?? 'med',
-                      isTimer: rec.is_timer ?? false,
-                      timerSeconds: rec.timer_seconds ?? 0,
-                    })
+                    // Mismo mapper que la lista: antes esto repetía la conversión
+                    // a mano y era donde se veía que `timer_seconds` no existe.
+                    handleAdd(mapCatalogRecord(rec))
+                    // El catálogo está cacheado media hora (#609): sin esto, el
+                    // ejercicio recién importado no saldría en la lista al
+                    // reabrir el picker.
+                    queryClient.invalidateQueries({ queryKey: qk.exerciseCatalog })
                   } catch (err) {
                     console.error('Import failed:', err)
                   }

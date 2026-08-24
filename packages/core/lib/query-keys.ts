@@ -104,7 +104,10 @@ export const qk = {
     ['workout_reminders', userId] as const,
 
   // Catálogo de ejercicios de PB (`exercises_catalog`), fusionado con el estático
-  // de WORKOUTS. Sin userId: es un catálogo global, igual para todo el mundo.
+  // del bundle y de WORKOUTS. Sin userId: es un catálogo global, igual para todo
+  // el mundo. Guarda la lista completa (`CatalogExercise[]`), que es de lo que
+  // tiran tanto los pickers como el mapa de nombres de las vistas de detalle
+  // (#609): una sola consulta a la colección para las dos cosas.
   exerciseCatalog: ['exercise-catalog'] as const,
   // Frecuencia cardiaca / calorías que el reloj dejó en la sesión de ese día.
   sessionHrMetrics: (userId: string | null, date: string, workoutKey: string) =>

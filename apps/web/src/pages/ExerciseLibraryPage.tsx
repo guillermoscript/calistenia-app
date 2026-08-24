@@ -59,6 +59,13 @@ const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string
   mobility:         { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   skills:           { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
   yoga:             { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/20' },
+  // Las claves de arriba son los ids de los botones de esta página. Desde el
+  // #609 `mapCatalogRecord()` emite la categoría ya normalizada al vocabulario
+  // del catálogo, así que estos tres alias son los que ve una tarjeta. (Los
+  // botones siguen buscando por su id, de ahí que convivan las dos formas.)
+  lumbar:           { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+  movilidad:        { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  skill:            { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
 }
 
 const PRIORITY_DOT: Record<Priority, string> = {
@@ -215,6 +222,7 @@ function CategoryIcon({ category }: { category: string }) {
         </svg>
       )
     case 'glutes_lower_back':
+    case 'lumbar':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3c0 0-3 4-3 9s3 9 3 9" /><path d="M12 3c0 0 3 4 3 9s-3 9-3 9" />
@@ -227,12 +235,14 @@ function CategoryIcon({ category }: { category: string }) {
         </svg>
       )
     case 'skills':
+    case 'skill':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2l2.5 7H22l-6 4.5 2.5 7L12 16l-6.5 4.5 2.5-7L2 9h7.5z" />
         </svg>
       )
     case 'mobility':
+    case 'movilidad':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="5" r="2" /><path d="M8 22l2-7 2 3 2-3 2 7" /><path d="M6 12c2-1 4-2 6-2s4 1 6 2" />
