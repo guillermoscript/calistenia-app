@@ -17,7 +17,8 @@
  * funciones puras y se testean como tales.
  */
 
-import type { DifficultyLevel, ExerciseLog, Priority } from '../types'
+import type { DifficultyLevel, Exercise, ExerciseLog, Priority } from '../types'
+import type { CatalogIndexEntry } from './catalogIndex'
 import type { TranslatableField } from './i18n-db'
 import { normalizeForLookup, resolveExerciseId } from './resolveExerciseId'
 
@@ -156,6 +157,13 @@ export function inferCategory(exercise: CategoryInput, dayType: string = ''): st
  *  - `equipment`/`muscle_groups` se mapean sólo si traen datos: un array vacío
  *    haría que `getExerciseEquipment()` diese el campo por bueno y se saltase su
  *    detección por palabras clave.
+ *
+ * Los nombres de columna salen del esquema real de la colección
+ * (`pb_migrations/1774000001_created_exercises_catalog.js`): `default_rest_seconds`,
+ * `default_timer_seconds` y `default_video`. Las tres se leían antes con el
+ * nombre equivocado (`default_rest`, `timer_seconds`, `demo_video`), así que
+ * **ningún** registro de PB traía descanso ni duración de temporizador: todos
+ * caían al 90 por defecto (#609).
  */
 export function mapCatalogRecord(rec: any): CatalogExercise {
   const note = rec.note || rec.description || ''
@@ -170,20 +178,127 @@ export function mapCatalogRecord(rec: any): CatalogExercise {
     priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3,
     reps: rec.default_reps || '8-12',
-    rest: rec.default_rest ?? 90,
+    rest: rec.default_rest_seconds ?? 90,
     note,
     youtube: rec.youtube || '',
     isTimer: rec.is_timer || false,
-    timerSeconds: rec.timer_seconds,
+    timerSeconds: rec.default_timer_seconds,
     demoImages: rec.default_images
       ? (Array.isArray(rec.default_images) ? rec.default_images : [rec.default_images])
       : undefined,
-    demoVideo: rec.demo_video,
+    demoVideo: rec.default_video,
     description,
     difficulty: rec.difficulty_level || undefined,
     equipment: Array.isArray(rec.equipment) && rec.equipment.length ? rec.equipment : undefined,
     muscle_groups: Array.isArray(rec.muscle_groups) && rec.muscle_groups.length ? rec.muscle_groups : undefined,
   }
+}
+
+/**
+ * Mapea una entrada del catálogo empaquetado (`data/exercise-catalog.json`, vía
+ * `catalogIndex`) a `CatalogExercise`.
+ *
+ * Existe para que un picker pueda pintar bundle y PocketBase con la misma forma.
+ * Antes cada lado se inventaba la suya: el picker móvil consumía la entrada
+ * cruda del JSON (con `youtube_search`/`youtube_query` en vez de `youtube`) y el
+ * web construía la suya desde `WORKOUTS` (#609).
+ *
+ * `slug` es el `id` de la entrada: las entradas del bundle **no traen** campo
+ * `slug`, y su `id` ya es la identidad canónica a la que `resolveExerciseId()`
+ * hace converger a todos los demás.
+ *
+ * @param fallbackCategory categoría de la que cuelga la entrada en el fichero,
+ *   por si la propia entrada no la trae.
+ */
+export function mapCatalogIndexEntry(
+  entry: CatalogIndexEntry,
+  fallbackCategory = '',
+): CatalogExercise {
+  return {
+    id: entry.id,
+    slug: entry.id,
+    name: entry.name ?? '',
+    muscles: entry.muscles ?? '',
+    category: entry.category || fallbackCategory || inferCategory(entry),
+    priority: (entry.priority as Priority) || 'med',
+    sets: entry.sets ?? 3,
+    reps: entry.reps || '8-12',
+    rest: entry.rest ?? 90,
+    note: entry.note ?? '',
+    // El JSON guarda la URL de búsqueda y la consulta suelta en dos campos
+    // distintos; `CatalogExercise.youtube` es un único campo, y la URL es lo que
+    // ya usaba el picker móvil.
+    youtube: entry.youtube_search || entry.youtube_query || '',
+    isTimer: entry.isTimer || false,
+    timerSeconds: entry.timerSeconds,
+    description: entry.description,
+    difficulty: (entry.difficulty as DifficultyLevel) || undefined,
+    equipment: Array.isArray(entry.equipment) && entry.equipment.length ? entry.equipment : undefined,
+    muscle_groups:
+      Array.isArray(entry.muscle_groups) && entry.muscle_groups.length ? entry.muscle_groups : undefined,
+  }
+}
+
+/**
+ * Mapea un ejercicio de `WORKOUTS` a `CatalogExercise`.
+ *
+ * `WORKOUTS` es el suelo del que no se baja: son los ejercicios del programa por
+ * defecto, y hay unas decenas que **no** están en el catálogo empaquetado. Si se
+ * quedan fuera de la base estática, las vistas de detalle de sesión vuelven a
+ * pintar ids crudos y el picker web pierde justo lo que le daba su
+ * `extractFallbackCatalog()` (#609).
+ *
+ * Sus campos son strings planos, no `{es,en}`: `localize()` los devuelve tal
+ * cual, así que conviven sin conversión con los del catálogo.
+ */
+export function mapWorkoutExercise(ex: Exercise, dayType = ''): CatalogExercise {
+  return {
+    id: ex.id,
+    slug: ex.id,
+    name: ex.name,
+    muscles: ex.muscles,
+    category: inferCategory(ex, dayType),
+    priority: ex.priority,
+    sets: ex.sets,
+    reps: ex.reps,
+    rest: ex.rest,
+    note: ex.note,
+    youtube: ex.youtube,
+    isTimer: ex.isTimer || false,
+    timerSeconds: ex.timerSeconds,
+    demoImages: ex.demoImages,
+    demoVideo: ex.demoVideo,
+    difficulty: ex.difficulty,
+    equipment: Array.isArray(ex.equipment) && ex.equipment.length ? ex.equipment : undefined,
+  }
+}
+
+/**
+ * Añade a la base estática los registros de `exercises_catalog` que no estén ya
+ * en ella, indexando por identidad canónica (`slug` primero).
+ *
+ * La precedencia es «gana el primero», es decir gana el bundle: sus nombres y
+ * notas están revisados y traducidos, los de PB pueden venir a medias. Lo que
+ * PB aporta es lo que sólo existe allí — los ejercicios privados del usuario,
+ * los promovidos y el yoga, que entró por la migración `1775100005` y no viaja
+ * en el JSON empaquetado (#609).
+ *
+ * Vive aquí, fuera del hook, para poder testear la fusión sin montar React.
+ */
+export function mergeCatalogRecords(base: CatalogExercise[], records: any[]): CatalogExercise[] {
+  const merged = [...base]
+  const seen = new Set(merged.map(ex => ex.slug))
+
+  for (const record of records) {
+    const mapped = mapCatalogRecord(record)
+    // Un registro sin slug ni id no tiene identidad con la que dedupear ni con
+    // la que registrar series: se descarta en vez de colarse como duplicado.
+    if (!mapped.slug || seen.has(mapped.slug)) continue
+    seen.add(mapped.slug)
+    merged.push(mapped)
+  }
+
+  return merged
 }
 
 // ── Identidad ────────────────────────────────────────────────────────────────
