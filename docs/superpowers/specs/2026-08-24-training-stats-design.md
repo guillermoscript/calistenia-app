@@ -18,14 +18,14 @@ Aplica a móvil y web, compartiendo el 100 % de la lógica de cálculo.
 
 - **Móvil** (`apps/mobile/src/app/(tabs)/history.tsx`): 3 `StatCard` (sesiones, semana/objetivo, racha), rejilla del mes, filas a batallas y fotos, lista de sesiones. Cero gráficas de análisis.
 - **Web** (`apps/web/src/pages/ProgressPage.tsx`): pestañas `resumen | graficas | cuerpo`. En Gráficas: `VolumeLoadChart` (4 semanas), `MuscleVolumeChart`, `WeightProgressionChart`, `OneRepMaxCalculator`, `ExerciseChart` por ejercicio.
-- **`MuscleVolumeChart` (web) está rota de raíz**: suma las series *planificadas* de `WORKOUTS[workoutKey]` (mapa estático), no las registradas; ignora sesiones libres y cualquier programa que no esté en el mapa; usa una taxonomía propia de 8 claves en castellano en vez de `lib/muscles.ts`.
+- **`MuscleVolumeChart` (web) está rota de raíz**: suma las series *planificadas* de `WORKOUTS[workoutKey]` (mapa estático), no las registradas; ignora sesiones libres y cualquier programa que no esté en el mapa; usa una taxonomía propia de 8 claves (`chest`, `back`, `shoulders`, `arms`, `core`, `legs`, `lumbar`, `other`) en vez de `lib/muscles.ts`.
 - **Datos en cliente**: `useProgress` (`packages/core/hooks/useProgress.ts`) ya carga con `getFullList` todas las `sessions` + `sets_log` + `cardio_sessions` del usuario y las fusiona en un `ProgressMap` (`Record<string, ExerciseLog | SessionDone>`) con caché en localStorage y overlay de la cola offline. Un `ExerciseLog` tiene `{ exerciseId, date, workoutKey, sets: SetData[] }` y cada `SetData` `{ reps: string, weight?: number, rpe?: number, note, timestamp }`. Un `SessionDone` tiene `date`, `workoutKey`, `count?`, `durationSeconds?`, `cardioSessionId?` (si está presente, es un marcador derivado de cardio que **todas** las estadísticas ignoran).
 - **Identidad de ejercicio**: `sets_log.exercise_id` es a veces un id canónico del catálogo y a veces una clave de slot del programa (`lun_1_2`). Los nombres de los slots viven en el programa activo (`usePrograms.workoutsMap`, accesible vía `getWorkout(phase, dayId)` en los dos `WorkoutContext`; `workoutKey` tiene la forma `p{phase}_{dayId}`). `SessionDetailPage.tsx:24-34` ya hace esa resolución para una sesión.
 - **Músculos**: `muscle_groups: string[]` (taxonomía canónica de 15 ids en `packages/core/lib/muscles.ts`) existe **solo en el JSON del catálogo empaquetado** (`packages/core/data/exercise-catalog.json`, 1554/1578 entradas), accesible por `CatalogIndex.byId` (`lib/catalogIndex.ts`, hook `useCatalogIndex`). **No está en PocketBase.** Los ejercicios de programa solo traen `muscles` como texto libre.
 - **Resolución de ids**: `lib/resolveExerciseId.ts` ya resuelve id exacto → `seed_slug` → nombre normalizado (`normalizeForLookup`) contra el índice.
 - **Récords**: `lib/pr-utils.ts` (`parseRepsForPR` = mayor entero del texto; `estimate1RM` = Epley) y `lib/pr-backfill.ts` reconstruyen `settings.prs` / `weight_prs` (localStorage). No hay UI que los liste.
 - **Fechas**: `lib/dateUtils.ts` (dayjs + `isoWeek`, timezone de módulo `_tz`): `todayStr`, `addDays`, `diffDays`, `startOfWeekStr`.
-- Web ya tiene `recharts`; móvil no tiene librería de gráficas (las barras de tendencia de `CardioStats` son `View` con ancho proporcional).
+- Las gráficas existentes de progreso (`VolumeLoadChart` en web, tendencia de `CardioStats` en móvil) son barras hechas con `div`/`View` de tamaño proporcional, sin librería.
 - i18n: `packages/core/locales/{es,en}/translation.json`, ES canónico, paridad de claves obligatoria; `muscleGroup.*` ya existen.
 
 ## Decisiones de diseño
@@ -52,7 +52,9 @@ export interface ResolvedExercise {
   name: string
   /** Ids de `MUSCLE_GROUPS`. [] si no se pudo determinar. */
   muscleGroups: string[]
-  /** true cuando `muscleGroups` viene de un match fiable (catálogo o tokens del texto libre); false si []. */
+  /** true si la IDENTIDAD (nombre/clave) es fiable — pasos 1 y 2. false solo en el paso 3.
+   *  Es independiente de la cobertura muscular: un ejercicio del catálogo sin `muscle_groups`
+   *  (hay 24) tiene `resolved: true` y `muscleGroups: []`. */
   resolved: boolean
 }
 
@@ -72,7 +74,7 @@ Cadena de resolución, en orden, con memo interno por `(exerciseId, workoutKey)`
 2. Si no, y `workoutKey` casa `^p(\d+)_(.+)$`, se busca en `getWorkout(phase, dayId).exercises` el ejercicio con `id === exerciseId`. Con su `name`: `index.byName.get(normalizeForLookup(name))` → si hay id, igual que el paso 1 pero conservando ese `key`. Si no hay match por nombre, `key` = `normalizeForLookup(name)`, `name` = nombre del programa, `muscleGroups` = `muscleTokensToGroups(ex.muscles)`.
 3. Si nada de lo anterior: `key` = `exerciseId`, `name` = `exerciseId`, `muscleGroups` = `[]`, `resolved` = false. La UI trata estas claves como "ejercicio desconocido" (ver 2.3).
 
-`muscleTokensToGroups(text: string): string[]` va en `lib/muscles.ts`: baja a minúsculas, parte por `[,\s/()+]+`, y mapea tokens por `includes` contra un diccionario ES/EN → id canónico (`pecho`/`chest`/`pectoral` → `pecho`; `dorsal`/`lat`/`espalda`/`back` → `espalda`; `hombro`/`deltoid`/`shoulder` → `hombros`; `tríceps`/`triceps` → `triceps`; `bíceps`/`bicep` → `biceps`; `antebrazo`/`forearm`/`grip` → `antebrazos`; `core`/`abs`/`abdominal`/`oblicuo`/`oblique` → `core`; `lumbar`/`erector` → `lumbar`; `glúteo`/`glute` → `gluteos`; `cuádriceps`/`quad` → `cuadriceps`; `isquio`/`hamstring`/`femoral` → `isquios`; `pantorrilla`/`calf`/`soleo`/`gemelo` → `pantorrillas`; `cadera`/`hip`/`flexor` → `cadera`; `cuello`/`neck`/`trapecio`/`trap` → `cuello`; `cardio`/`aeróbico` → `cardio`). Devuelve ids únicos, en el orden de `MUSCLE_GROUPS`. Mismo patrón que `detect-day-type.ts`, pero apuntando a la taxonomía canónica en lugar de a tipos de día.
+`muscleTokensToGroups(text: string | null | undefined): MuscleGroup[]` va en `lib/muscles.ts`: baja a minúsculas, quita acentos (NFD), colapsa «lower back» → «lumbar», parte por `[,\s/()+;.·]+`, y mapea cada token contra un diccionario ES/EN → id canónico donde el token casa si **empieza** por la clave («pectorales» → `pectoral`, «hamstrings» → `hamstring`). Unas pocas claves cortas son de match **exacto** para no tragarse otras palabras: `lat`/`lats` no casan «lateral» (deltoide lateral no es espalda), `abs` no casa «absoluto», `trap`/`traps` no casan «trapecio» (que tiene su propia clave). Diccionario: `pecho`/`chest`/`pectoral` → `pecho`; `dorsal`/`lat(s)`/`latissimus`/`espalda`/`back`/`romboide`/`rhomboid` → `espalda`; `hombro`/`deltoid(e)`/`shoulder` → `hombros`; `tricep` → `triceps`; `bicep` → `biceps`; `antebrazo`/`forearm`/`grip`/`agarre` → `antebrazos`; `core`/`abs`/`abdominal`/`oblicuo`/`oblique` → `core`; `lumbar`/`erector` → `lumbar`; `gluteo`/`glute` → `gluteos`; `cuadricep`/`quad` → `cuadriceps`; `isquio`/`hamstring`/`femoral` → `isquios`; `pantorrilla`/`calf`/`calves`/`soleo`/`gemelo` → `pantorrillas`; `cadera`/`hip`/`flexor` → `cadera`; `cuello`/`neck`/`trapecio`/`trapez`/`trap(s)` → `cuello`; `cardio`/`aerobic(o)` → `cardio`. Devuelve ids únicos, en el orden de `MUSCLE_GROUPS`. Mismo patrón que `detect-day-type.ts`, pero apuntando a la taxonomía canónica en lugar de a tipos de día y con match por prefijo en vez de `includes`.
 
 ### 1.2 `lib/training-stats.ts`
 
@@ -132,7 +134,7 @@ export interface TrainingStats {
   weekly: Array<{ weekStart: string; sessions: number; sets: number; reps: number }>
   /** Índice 0 = lunes … 6 = domingo. Sesiones del periodo. */
   weekdays: number[]
-  /** Series del periodo con `resolved === false` (clave desconocida). */
+  /** Series del periodo con `resolved === false` (identidad desconocida). Distinto de `muscles.unassignedSets`. */
   unknownExerciseSets: number
 }
 
@@ -152,17 +154,23 @@ Reglas de cálculo:
 - **Ejercicios**: agrupados por `key`; `sessions` = nº de `(date, workoutKey)` distintos con ≥1 serie; orden desc por `sessions`, luego `sets`, luego `name`. Las claves con `resolved === false` **no** entran en el ranking (van a `unknownExerciseSets`), pero sí a `totals`.
 - **`best` y `records`**: se recorre **todo** el `ProgressMap` (no solo el rango). Para cada serie: `n = parseRepsForPR(reps)`; si `weight > 0` y `estimate1RM(weight, n)` supera el `e1rm` actual → `kind: 'weight'`; si no hay peso y `n` supera las reps actuales → `kind: 'reps'`. Un ejercicio con al menos una serie con peso reporta el récord de peso (el 1RM es más informativo que las reps a peso corporal); si nunca tuvo peso, el de reps. Empates: gana la fecha más antigua (primer día que se alcanzó). `records` = todos los ejercicios con `best`, orden desc por `best.date`, luego por nombre. `isNew` = `best.date` dentro de `range`.
 - **`weekly`**: 12 cubos terminando en la semana ISO de `today`; `weekStart` = lunes en `'YYYY-MM-DD'`. Se rellenan a 0 las semanas sin actividad. Independiente de `period` (siempre 12 semanas) — es la gráfica de tendencia y su ventana fija es parte del contrato.
+- **Medias**: `avgSetsPerSession = sets / sessions` (1 decimal) y `avgMinutesPerSession = minutes / sessions` (entero); **ambas 0 cuando `sessions === 0`** (nunca NaN/Infinity).
+- **Fechas**: aritmética civil en UTC sobre `YYYY-MM-DD` (`Date.UTC`), como `streak.ts`, para que la lib no dependa del timezone de módulo de `dateUtils`; `today` llega ya en local desde el hook.
 - Todo se calcula en un solo recorrido del `ProgressMap` más un segundo recorrido de ordenación; no hay estado global.
 
 ### 1.3 `hooks/useTrainingStats.ts`
 
 ```ts
-export function useTrainingStats(period: StatsPeriod): { stats: TrainingStats; ready: boolean }
+export function useTrainingStats(
+  progress: ProgressMap,
+  getWorkout: (phase: number, dayId: string) => Workout | null,
+  period: StatsPeriod,
+): { stats: TrainingStats; ready: boolean }
 ```
 
-- Lee `progress` de `useWorkoutState()` y `getWorkout` de `useWorkoutActions()` **inyectados por parámetro**, no importados: los dos `WorkoutContext` viven en `apps/web` y `apps/mobile`, no en core. Firma real: `useTrainingStats(progress, getWorkout, period)`.
+- `progress` y `getWorkout` llegan **por parámetro** desde `useWorkoutState()` / `useWorkoutActions()` de cada app: los dos `WorkoutContext` viven en `apps/web` y `apps/mobile`, no en core, así que el hook no puede importarlos.
 - `useCatalogIndex()` para el índice; `ready = index != null`. Con `ready === false` devuelve igualmente stats (los ejercicios de catálogo caen al paso 3 del resolver) — la pantalla pinta skeleton mientras `!ready` y recalcula al llegar el índice.
-- `useMemo` con deps `[progress, getWorkout, index, period, i18n.language]`. El resolver se construye dentro del memo (memo interno por id) y no escapa.
+- `useMemo` con deps `[progress, getWorkout, index, period, locale]`, con `locale` de `useTranslation().i18n.language` (react-i18next, como `useLocalize`). El resolver se construye dentro del memo (memo interno por id) y no escapa.
 - `today` = `todayStr()`.
 
 ## 2. UI
@@ -184,14 +192,14 @@ export function useTrainingStats(period: StatsPeriod): { stats: TrainingStats; r
 ### 2.2 Web — pestaña `estadisticas` en `apps/web/src/pages/ProgressPage.tsx`
 
 - Añadir `'estadisticas'` a la lista de tabs válidas del deep-link y un `TabsTrigger` `progress.tab.stats` entre Resumen y Gráficas.
-- Contenido: `components/progress/stats/TrainingStatsPanel.tsx` con la misma estructura de 5 secciones y el mismo selector de periodo. Gráficas con `recharts` (ya en deps): barras horizontales para músculos, `BarChart` para las 12 semanas y para días de la semana; el balance es una barra apilada CSS. Ranking y récords como listas.
+- Contenido: `components/progress/stats/TrainingStatsPanel.tsx` con la misma estructura de 5 secciones y el mismo selector de periodo. Las barras son `div` con ancho/alto proporcional, **como ya hace `VolumeLoadChart`** (que no usa recharts): consistente con la pestaña Gráficas y sin arrastrar recharts a este panel. El balance es una barra apilada CSS. Ranking y récords como listas.
 - Subcomponentes en `components/progress/stats/`: `PeriodSelector`, `MuscleBarsChart`, `BalanceBar`, `ExerciseRanking`, `RecordsList`, `WeeklyBarsChart`, `WeekdayBarsChart`.
 - **Eliminar** `components/progress/MuscleVolumeChart.tsx` y su import/uso en `ProgressPage.tsx`; en su lugar, en la pestaña Gráficas, `MuscleBarsChart` alimentado por `useTrainingStats('4w')` para mantener la comparación de la ventana corta. El componente `VolumeLoadChart` se queda tal cual.
 - Estados iguales a móvil (skeleton, vacío con CTA a `/`).
 
 ### 2.3 Ejercicios desconocidos
 
-Series cuya clave no resuelve (paso 3 del resolver: slot de un programa que ya no es el activo, o id borrado del catálogo) se contabilizan en `totals` y en `unknownExerciseSets`, pero no aparecen en ranking ni en récords. Si `unknownExerciseSets > 0`, la sección de ejercicios muestra una línea mono muted `stats.unknownExercises` con `{{count}}`. No se intenta cargar programas inactivos: es un fetch nuevo fuera de alcance y la nota de cobertura ya evita mentir.
+Series cuya **identidad** no resuelve (`resolved === false`, paso 3 del resolver: slot de un programa que ya no es el activo, o id que no está en el catálogo empaquetado) se contabilizan en `totals` y en `unknownExerciseSets`, pero no aparecen en ranking ni en récords. Es una condición distinta de `muscles.unassignedSets` (identidad conocida pero sin grupo muscular): un ejercicio del catálogo sin `muscle_groups` sí entra en el ranking y en los récords. Si `unknownExerciseSets > 0`, la sección de ejercicios muestra una línea mono muted `stats.unknownExercises` con `{{count}}`. No se intenta cargar programas inactivos: es un fetch nuevo fuera de alcance y la nota de cobertura ya evita mentir.
 
 ### 2.4 i18n
 
