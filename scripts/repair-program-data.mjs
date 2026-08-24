@@ -19,6 +19,7 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { normalizePriority, resolveSection } from "./lib/program-exercise-fields.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -182,11 +183,11 @@ async function repairIntermedio() {
             muscles: i18n(ex.muscles || ""),
             note: i18n(ex.note || ""),
             youtube: ex.youtube || "",
-            priority: ex.priority || "primary",
+            priority: normalizePriority(ex.priority, ex.name?.es || ex.name),
             is_timer: ex.is_timer || false,
             timer_seconds: ex.timer_seconds || 0,
             sort_order: ex.sort_order,
-            section: "main",
+            section: resolveSection(ex),
           }),
         });
       }

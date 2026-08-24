@@ -13,6 +13,8 @@
  *   node scripts/seed-program-catalog.mjs <PB_URL> <SUPERUSER_EMAIL> <SUPERUSER_PASSWORD>
  */
 
+import { DEFAULT_PRIORITY, DEFAULT_SECTION } from './lib/program-exercise-fields.mjs'
+
 const PB_URL = process.argv[2]
 const SU_EMAIL = process.argv[3]
 const SU_PASSWORD = process.argv[4]
@@ -178,10 +180,13 @@ async function main() {
         muscles: i18n('', ''),
         note: i18n('El plan completo estará disponible muy pronto.', 'The full plan will be available soon.'),
         youtube: '',
-        priority: 'primary',
+        // Un stub de «contenido próximamente» no tiene prioridad real. Estas filas
+        // las borra y recrea `update-program-content.mjs` en cuanto hay contenido.
+        priority: DEFAULT_PRIORITY,
         is_timer: false,
         timer_seconds: 0,
         sort_order: 1,
+        section: DEFAULT_SECTION,
       }),
     })
     console.log(`  ✓ ${sk.name.es} (${prog.id})`)
