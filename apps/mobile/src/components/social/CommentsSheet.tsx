@@ -561,7 +561,8 @@ function CommentBubble({
           'shrink-0 rounded-full items-center justify-center overflow-hidden',
           isReply ? 'size-6' : 'size-9',
         )}
-        style={{ backgroundColor: `oklch(0.32 0.07 ${hue})` }}
+        // RN no parsea `oklch()` (se pintaba transparente): hsl equivalente.
+        style={{ backgroundColor: `hsl(${hue}, 35%, 28%)` }}
       >
         {comment.authorAvatarUrl ? (
           <Image
@@ -577,7 +578,7 @@ function CommentBubble({
           <Text
             className={cn('uppercase', isReply ? 'text-[9px]' : 'text-[11px]')}
             style={{
-              color: `oklch(0.88 0.10 ${hue})`,
+              color: `hsl(${hue}, 65%, 82%)`,
               fontFamily: FONT_MEDIUM,
             }}
           >
