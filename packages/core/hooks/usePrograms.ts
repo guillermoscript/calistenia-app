@@ -259,14 +259,35 @@ export async function fetchProgramDetail(programId: string): Promise<ProgramDeta
   }
 }
 
-/** Lee el programId activo (user_programs is_current) o null. */
-async function fetchActiveEnrollment(uid: string): Promise<string | null> {
+/**
+ * Lee el programId activo (user_programs is_current) o null.
+ *
+ * Expande `program` para no fiarse de la relación a ciegas: si el programa ya no
+ * existe, la fila es un «programa activo fantasma» (#605) y aquí vale como «sin
+ * programa». Devolver su id dejaba a `fetchProgramDetail` pidiendo un `programs`
+ * inexistente, y con él caía el «hoy toca» de home y del onboarding.
+ *
+ * El hook `pb_hooks/programs_delete_cleanup.pb.js` cierra estas filas al borrar
+ * el programa, así que de aquí en adelante no deberían aparecer. Esta guarda es
+ * para las que YA están en producción: su `programs` desapareció antes de que el
+ * hook existiera, así que nada las va a cerrar nunca.
+ *
+ * Exportada solo para el test: el hook no se renderiza (core corre en vitest/node,
+ * sin testing-library), así que la guarda se prueba sobre la función.
+ */
+export async function fetchActiveEnrollment(uid: string): Promise<string | null> {
   try {
     const rec = await pb.collection('user_programs').getFirstListItem(
       pb.filter('user = {:uid} && is_current = true', { uid }),
-      { requestKey: null },
+      { requestKey: null, expand: 'program' },
     )
-    return rec.program as string
+    const programId = rec.program as string
+    if (!programId) return null
+    // `programs` es visible para cualquier usuario autenticado (`viewRule`
+    // `@request.auth.id != ""`), así que un expand vacío significa que la fila
+    // apunta a un programa borrado, no que nos falte permiso para verlo.
+    if (!rec.expand?.program) return null
+    return programId
   } catch {
     return null // sin programa activo aún
   }
@@ -534,10 +555,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         const phasesR = await pb.collection('program_phases').getList(1, 20, { filter: pb.filter('program = {:pid}', { pid: programId }) })
         for (const p of phasesR.items) await pb.collection('program_phases').delete(p.id)
       } catch { /* no phases */ }
-      try {
-        const userProgs = await pb.collection('user_programs').getList(1, 100, { requestKey: null, filter: pb.filter('program = {:pid}', { pid: programId }) })
-        for (const up of userProgs.items) await pb.collection('user_programs').delete(up.id)
-      } catch { /* no user_programs */ }
+      // Las inscripciones NO se tocan desde aquí (#605). El `deleteRule` de
+      // `user_programs` es `user = @request.auth.id`: este bucle solo borraba la
+      // fila del propio autor y las de los demás inscritos fallaban con un 403
+      // que el `catch` se tragaba, dejándoles un programa activo apuntando a un
+      // registro inexistente. Ahora las cierra el servidor con `$app` en
+      // `pb_hooks/programs_delete_cleanup.pb.js`, para TODOS los inscritos.
 
       await pb.collection('programs').delete(programId)
 
