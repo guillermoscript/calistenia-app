@@ -44,6 +44,9 @@ interface WorkoutActions {
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<boolean>
   abandonProgram: (programId: string) => Promise<boolean>
+  /** Devuelve el id de la copia, o null si falló (#612). */
+  duplicateProgram: (programId: string) => Promise<string | null>
+  deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
 }
 
@@ -78,7 +81,7 @@ interface WorkoutProviderProps {
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
     programs, activeProgram, phases, weekDays, cardioDayConfigs, getWorkout,
-    selectProgram, abandonProgram, refreshPrograms, programsReady,
+    selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
   const {
@@ -106,13 +109,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, refreshPrograms,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, refreshPrograms,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
   ])
 
   const { i18n } = useTranslation()

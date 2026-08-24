@@ -34,6 +34,29 @@ interface ProgramDetailData {
   days: ProgramDayRow[]
 }
 
+/**
+ * Añade la portada resuelta a los metadatos traídos por red (#612).
+ *
+ * `toProgramMeta` es puro y ni siquiera copia `cover_image`: construir la URL
+ * exige el servicio de ficheros de PB, y el lib tiene tests que no deberían
+ * arrastrar el SDK. Sin esto la ficha pintaba portada solo cuando el programa
+ * venía del catálogo en memoria (que sí la resuelve, en `fetchCatalog`), y se
+ * quedaba sin ella justo en cold-start y en deep-link, que es cuando esta
+ * rama por red es la que manda.
+ *
+ * Se pide `800x0` en vez del `400x0` de la lista porque aquí la imagen ocupa
+ * el ancho completo de la cabecera.
+ */
+function withCoverUrl(record: unknown, meta: ProgramMeta): ProgramMeta {
+  const cover = (record as { cover_image?: string }).cover_image
+  if (!cover) return meta
+  return {
+    ...meta,
+    cover_image: cover,
+    cover_image_url: pb.files.getURL(record as Parameters<typeof pb.files.getURL>[0], cover, { thumb: '800x0' }),
+  }
+}
+
 export function useProgramDetail(
   programId: string | null,
   { knownProgram = null }: UseProgramDetailOptions = {},
@@ -67,7 +90,7 @@ export function useProgramDetail(
           : pb
               .collection('programs')
               .getOne(pid, { $autoCancel: false })
-              .then(rec => toProgramMeta(rec as unknown as ProgramRow, locale)),
+              .then(rec => withCoverUrl(rec, toProgramMeta(rec as unknown as ProgramRow, locale))),
         loadWeekDays(byPhaseOne, locale),
       ])
 

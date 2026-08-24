@@ -2994,6 +2994,8 @@
   "programDetail.goToWorkout": "Go to workout",
   "programDetail.duplicating": "Duplicating…",
   "programDetail.duplicate": "Duplicate",
+  "programDetail.duplicateError": "Could not duplicate the program.",
+  "programDetail.actions": "Actions",
   "programDetail.edit": "Edit",
   "programDetail.phaseLabel": "Phase {{id}}",
   "programDetail.weeksLabel": "Wk {{weeks}}",
