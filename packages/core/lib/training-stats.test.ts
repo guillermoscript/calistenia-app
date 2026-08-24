@@ -8,11 +8,11 @@ import type { ProgressMap, SetData } from '../types'
 const TODAY = '2026-08-24' // lunes
 
 const CATALOG: Record<string, Omit<ResolvedExercise, 'key'>> = {
-  pullups:  { name: 'Dominadas', muscleGroups: ['espalda', 'biceps'], resolved: true },
-  pushups:  { name: 'Flexiones', muscleGroups: ['pecho', 'triceps', 'hombros'], resolved: true },
-  squats:   { name: 'Sentadillas', muscleGroups: ['cuadriceps', 'gluteos'], resolved: true },
-  plank:    { name: 'Plancha', muscleGroups: ['core'], resolved: true },
-  nomuscle: { name: 'Raro', muscleGroups: [], resolved: true },
+  pullups:  { name: 'Dominadas', muscleGroups: ['espalda', 'biceps'], resolved: true, isTimer: false },
+  pushups:  { name: 'Flexiones', muscleGroups: ['pecho', 'triceps', 'hombros'], resolved: true, isTimer: false },
+  squats:   { name: 'Sentadillas', muscleGroups: ['cuadriceps', 'gluteos'], resolved: true, isTimer: false },
+  plank:    { name: 'Plancha', muscleGroups: ['core'], resolved: true, isTimer: true },
+  nomuscle: { name: 'Raro', muscleGroups: [], resolved: true, isTimer: false },
 }
 
 /** Resolver de fixture: ids del catálogo, el slot `lun_1_1` es «pushups» por nombre, el resto desconocido. */
@@ -20,7 +20,7 @@ const resolve: ExerciseResolver = (exerciseId) => {
   if (exerciseId === 'lun_1_1') return { key: 'pushups', ...CATALOG.pushups }
   const hit = CATALOG[exerciseId]
   if (hit) return { key: exerciseId, ...hit }
-  return { key: exerciseId, name: exerciseId, muscleGroups: [], resolved: false }
+  return { key: exerciseId, name: exerciseId, muscleGroups: [], resolved: false, isTimer: false }
 }
 
 function set(reps: string, weight?: number): SetData {
@@ -168,7 +168,7 @@ describe('músculos', () => {
     expect(s.muscles.groups).toEqual([
       { group: 'biceps', sets: 2, reps: 20, share: 2 / 3 },
       { group: 'espalda', sets: 2, reps: 20, share: 2 / 3 },
-      { group: 'core', sets: 1, reps: 60, share: 1 / 3 },
+      { group: 'core', sets: 1, reps: 0, share: 1 / 3 }, // plancha = temporizador: segundos, no reps
     ])
     expect(s.muscles.unassignedSets).toBe(0)
   })
@@ -202,7 +202,7 @@ describe('músculos', () => {
   })
 
   it('una serie que toca dos familias cuenta en las dos', () => {
-    const two: ExerciseResolver = () => ({ key: 'x', name: 'X', muscleGroups: ['pecho', 'core'], resolved: true })
+    const two: ExerciseResolver = () => ({ key: 'x', name: 'X', muscleGroups: ['pecho', 'core'], resolved: true, isTimer: false })
     const s = computeTrainingStats({ progress: log('2026-08-24', 'x', [set('10')]), resolve: two, period: 'all', today: TODAY })
     expect(s.muscles.balance).toEqual({ push: 50, pull: 0, legs: 0, core: 50 })
   })
@@ -282,6 +282,18 @@ describe('récords', () => {
   it('el ranking enlaza su récord', () => {
     const s = stats(log('2026-08-24', 'pullups', [set('7')]))
     expect(s.exercises[0].best).toEqual({ kind: 'reps', reps: 7, date: '2026-08-24' })
+  })
+
+  it('temporizador: las reps son segundos, no suman a reps y el récord es de tiempo', () => {
+    const p = merge(
+      log('2026-08-24', 'plank', [set('45s'), set('20-30s')]),
+      log('2026-08-20', 'pullups', [set('10')]),
+    )
+    const s = stats(p)
+    expect(s.totals.reps).toBe(10)
+    expect(s.exercises.find(e => e.key === 'plank')).toMatchObject({ isTimer: true, sets: 2, reps: 0, seconds: 75 })
+    expect(s.records.find(r => r.key === 'plank')?.best).toEqual({ kind: 'time', seconds: 45, date: '2026-08-24' })
+    expect(s.weekly[11].reps).toBe(0)
   })
 })
 

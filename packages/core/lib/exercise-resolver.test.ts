@@ -10,6 +10,7 @@ const RAW: RawCatalog = {
       exercises: [
         { id: 'pushups', seed_slug: 'flexiones-clasicas', name: { es: 'Flexiones', en: 'Push-ups' }, muscle_groups: ['pecho', 'triceps'] },
         { id: 'nomuscle', name: { es: 'Raro', en: 'Odd' } },
+        { id: 'plank', name: { es: 'Plancha', en: 'Plank' }, muscle_groups: ['core'], isTimer: true },
       ],
     },
     pull: {
@@ -39,7 +40,8 @@ describe('buildExerciseResolver', () => {
   const resolve = buildExerciseResolver({ index, getWorkout, locale: 'es' })
 
   it('paso 1: id de catálogo', () => {
-    expect(resolve('pullups', 'free_1')).toEqual({ key: 'pullups', name: 'Dominadas', muscleGroups: ['espalda', 'biceps'], resolved: true })
+    expect(resolve('pullups', 'free_1')).toEqual({ key: 'pullups', name: 'Dominadas', muscleGroups: ['espalda', 'biceps'], resolved: true, isTimer: false })
+    expect(resolve('plank', 'free_1').isTimer).toBe(true)
   })
 
   it('paso 1: seed_slug y nombre también resuelven al catálogo', () => {
@@ -48,7 +50,7 @@ describe('buildExerciseResolver', () => {
   })
 
   it('paso 1: entrada del catálogo sin muscle_groups sigue siendo resuelta', () => {
-    expect(resolve('nomuscle', 'free_1')).toEqual({ key: 'nomuscle', name: 'Raro', muscleGroups: [], resolved: true })
+    expect(resolve('nomuscle', 'free_1')).toEqual({ key: 'nomuscle', name: 'Raro', muscleGroups: [], resolved: true, isTimer: false })
   })
 
   it('localiza el nombre', () => {
@@ -57,11 +59,11 @@ describe('buildExerciseResolver', () => {
   })
 
   it('paso 2: slot del programa que casa por nombre con el catálogo hereda su id y músculos', () => {
-    expect(resolve('lun_1_1', 'p1_lun')).toEqual({ key: 'pushups', name: 'Flexiones', muscleGroups: ['pecho', 'triceps'], resolved: true })
+    expect(resolve('lun_1_1', 'p1_lun')).toEqual({ key: 'pushups', name: 'Flexiones', muscleGroups: ['pecho', 'triceps'], resolved: true, isTimer: false })
   })
 
   it('paso 2: slot sin match en catálogo tokeniza el texto de músculos', () => {
-    expect(resolve('lun_1_2', 'p1_lun')).toEqual({ key: 'remo invertido', name: 'Remo invertido', muscleGroups: ['biceps', 'espalda'], resolved: true })
+    expect(resolve('lun_1_2', 'p1_lun')).toEqual({ key: 'remo invertido', name: 'Remo invertido', muscleGroups: ['biceps', 'espalda'], resolved: true, isTimer: false })
   })
 
   it('paso 2: slot con nombre pero sin músculos queda resuelto y sin grupo', () => {
@@ -69,13 +71,13 @@ describe('buildExerciseResolver', () => {
   })
 
   it('paso 3: slot de un programa que no es el activo es desconocido', () => {
-    expect(resolve('mar_2_1', 'p2_mar')).toEqual({ key: 'mar_2_1', name: 'mar_2_1', muscleGroups: [], resolved: false })
+    expect(resolve('mar_2_1', 'p2_mar')).toEqual({ key: 'mar_2_1', name: 'mar_2_1', muscleGroups: [], resolved: false, isTimer: false })
     expect(resolve('lun_9_9', 'p1_lun')).toMatchObject({ resolved: false })
   })
 
   it('sin índice, los slots siguen resolviendo por el programa y los ids de catálogo caen a desconocido', () => {
     const noIndex = buildExerciseResolver({ index: null, getWorkout, locale: 'es' })
-    expect(noIndex('lun_1_1', 'p1_lun')).toEqual({ key: 'flexiones', name: 'Flexiones', muscleGroups: ['pecho', 'triceps'], resolved: true })
+    expect(noIndex('lun_1_1', 'p1_lun')).toEqual({ key: 'flexiones', name: 'Flexiones', muscleGroups: ['pecho', 'triceps'], resolved: true, isTimer: false })
     expect(noIndex('pullups', 'free_1').resolved).toBe(false)
   })
 

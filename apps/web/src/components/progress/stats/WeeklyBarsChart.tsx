@@ -18,7 +18,7 @@ export default function WeeklyBarsChart({ weekly }: WeeklyBarsChartProps) {
         const showLabel = i % 4 === 0
         const [, m, d] = w.weekStart.split('-')
         return (
-          <div key={w.weekStart} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+          <div key={w.weekStart} className="flex-1 flex flex-col items-center gap-1 min-w-0 h-full">
             {w.sets > 0 && (
               <span className={cn('text-[9px] font-mono tabular-nums leading-none', isCurrent ? 'text-lime' : 'text-muted-foreground')}>
                 {w.sets}

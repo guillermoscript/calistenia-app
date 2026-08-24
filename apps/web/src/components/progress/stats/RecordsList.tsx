@@ -42,7 +42,9 @@ export default function RecordsList({ records }: RecordsListProps) {
                   <div className="text-[11px] text-muted-foreground font-mono">
                     {r.best.kind === 'reps'
                       ? t('stats.bestReps', { reps: r.best.reps })
-                      : t('stats.bestWeight', { weight: r.best.weight, reps: r.best.reps, e1rm: r.best.e1rm })}
+                      : r.best.kind === 'time'
+                        ? t('stats.bestTime', { seconds: r.best.seconds })
+                        : t('stats.bestWeight', { weight: r.best.weight, reps: r.best.reps, e1rm: r.best.e1rm })}
                   </div>
                 </div>
                 <div className="text-[11px] text-muted-foreground shrink-0">{relativeDate(r.best.date)}</div>

@@ -1776,6 +1776,8 @@
   "stats.exerciseMeta": "{{sessions}} sess · {{sets}} sets · {{reps}} reps",
   "stats.bestReps": "Best set: {{reps}} reps",
   "stats.bestWeight": "Best set: {{weight}} kg × {{reps}} · est. 1RM {{e1rm}} kg",
+  "stats.bestTime": "Best set: {{seconds}} s",
+  "stats.exerciseMetaTime": "{{sessions}} sess · {{sets}} sets · {{seconds}} s",
   "stats.lastTime": "Last time: {{date}}",
   "stats.unknownExercises_one": "{{count}} set from an exercise no longer in your program",
   "stats.unknownExercises_other": "{{count}} sets from exercises no longer in your program",

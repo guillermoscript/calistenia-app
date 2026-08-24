@@ -38,7 +38,9 @@ export default function ExerciseRanking({ exercises, unknownExerciseSets }: Exer
                     >
                       <div className="font-medium text-sm truncate pr-3">{ex.name}</div>
                       <div className="text-[10px] text-muted-foreground font-mono shrink-0">
-                        {t('stats.exerciseMeta', { sessions: ex.sessions, sets: ex.sets, reps: ex.reps })}
+                        {ex.isTimer
+                          ? t('stats.exerciseMetaTime', { sessions: ex.sessions, sets: ex.sets, seconds: ex.seconds })
+                          : t('stats.exerciseMeta', { sessions: ex.sessions, sets: ex.sets, reps: ex.reps })}
                       </div>
                     </button>
                     {isOpen && (
@@ -47,7 +49,9 @@ export default function ExerciseRanking({ exercises, unknownExerciseSets }: Exer
                           <div>
                             {ex.best.kind === 'reps'
                               ? t('stats.bestReps', { reps: ex.best.reps })
-                              : t('stats.bestWeight', { weight: ex.best.weight, reps: ex.best.reps, e1rm: ex.best.e1rm })}
+                              : ex.best.kind === 'time'
+                                ? t('stats.bestTime', { seconds: ex.best.seconds })
+                                : t('stats.bestWeight', { weight: ex.best.weight, reps: ex.best.reps, e1rm: ex.best.e1rm })}
                           </div>
                         )}
                         <div>{t('stats.lastTime', { date: relativeDate(ex.lastDate) })}</div>

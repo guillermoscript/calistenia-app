@@ -36,6 +36,8 @@ export const BALANCE_FAMILIES: Record<BalanceFamily, readonly string[]> = {
 export type ExerciseBest =
   | { kind: 'reps'; reps: number; date: string }
   | { kind: 'weight'; weight: number; reps: number; e1rm: number; date: string }
+  /** Ejercicios de temporizador: la serie más larga, en segundos. */
+  | { kind: 'time'; seconds: number; date: string }
 
 export interface MuscleStat { group: string; sets: number; reps: number; share: number }
 
@@ -44,7 +46,11 @@ export interface ExerciseStat {
   name: string
   sessions: number
   sets: number
+  /** 0 en ejercicios de temporizador (sus «reps» son segundos → `seconds`). */
   reps: number
+  /** Segundos acumulados; solo > 0 en ejercicios de temporizador. */
+  seconds: number
+  isTimer: boolean
   lastDate: string
   best: ExerciseBest | null
 }
@@ -60,7 +66,7 @@ export interface TrainingStats {
   totals: {
     sessions: number
     sets: number
-    /** Suma de `parseRepsForPR(reps)`; las series no numéricas («max») aportan 0. */
+    /** Suma de `parseRepsForPR(reps)`; las series no numéricas («max») y las de temporizador aportan 0. */
     reps: number
     /** Suma de `durationSeconds` / 60, redondeada. */
     minutes: number
@@ -148,6 +154,12 @@ interface BestEntry { name: string; best: ExerciseBest }
 function updateBest(map: Map<string, BestEntry>, r: ResolvedExercise, weight: number | undefined, n: number | null, date: string): void {
   if (!r.resolved) return
   const cur = map.get(r.key)
+  if (r.isTimer) {
+    if (n == null) return
+    const better = !cur || cur.best.kind !== 'time' || n > cur.best.seconds || (n === cur.best.seconds && date < cur.best.date)
+    if (better) map.set(r.key, { name: r.name, best: { kind: 'time', seconds: n, date } })
+    return
+  }
   const e1rm = estimate1RM(weight, n)
   if (e1rm != null) {
     const better = !cur || cur.best.kind !== 'weight' || e1rm > cur.best.e1rm || (e1rm === cur.best.e1rm && date < cur.best.date)
@@ -155,9 +167,11 @@ function updateBest(map: Map<string, BestEntry>, r: ResolvedExercise, weight: nu
     return
   }
   if (n == null) return
-  if (cur?.best.kind === 'weight') return
-  const better = !cur || n > cur.best.reps || (n === cur.best.reps && date < cur.best.date)
-  if (better) map.set(r.key, { name: r.name, best: { kind: 'reps', reps: n, date } })
+  if (cur) {
+    if (cur.best.kind !== 'reps') return
+    if (n < cur.best.reps || (n === cur.best.reps && date >= cur.best.date)) return
+  }
+  map.set(r.key, { name: r.name, best: { kind: 'reps', reps: n, date } })
 }
 
 // ── Balance ──────────────────────────────────────────────────────────────────
@@ -207,7 +221,7 @@ export function computeTrainingStats({ progress, resolve, period, today }: Train
   let unknownExerciseSets = 0
   const muscleAgg = new Map<string, { sets: number; reps: number }>()
   const familyCounts: Record<BalanceFamily, number> = { push: 0, pull: 0, legs: 0, core: 0 }
-  const exAgg = new Map<string, { name: string; sessionKeys: Set<string>; sets: number; reps: number; lastDate: string }>()
+  const exAgg = new Map<string, { name: string; isTimer: boolean; sessionKeys: Set<string>; sets: number; reps: number; seconds: number; lastDate: string }>()
   const bestAll = new Map<string, BestEntry>()
 
   for (const v of Object.values(progress)) {
@@ -234,7 +248,9 @@ export function computeTrainingStats({ progress, resolve, period, today }: Train
 
     for (const s of v.sets) {
       const n = parseRepsForPR(s.reps)
-      const nReps = n ?? 0
+      // En un ejercicio de temporizador el número son segundos, no reps.
+      const nReps = r.isTimer ? 0 : (n ?? 0)
+      const nSeconds = r.isTimer ? (n ?? 0) : 0
       if (bucket) { bucket.sets++; bucket.reps += nReps }
       updateBest(bestAll, r, s.weight, n, d)
       if (!rangeHit) continue
@@ -261,10 +277,11 @@ export function computeTrainingStats({ progress, resolve, period, today }: Train
       }
 
       if (r.resolved) {
-        const e = exAgg.get(r.key) ?? { name: r.name, sessionKeys: new Set<string>(), sets: 0, reps: 0, lastDate: d }
+        const e = exAgg.get(r.key) ?? { name: r.name, isTimer: r.isTimer, sessionKeys: new Set<string>(), sets: 0, reps: 0, seconds: 0, lastDate: d }
         e.sessionKeys.add(`${d}|${v.workoutKey}`)
         e.sets++
         e.reps += nReps
+        e.seconds += nSeconds
         if (d > e.lastDate) e.lastDate = d
         exAgg.set(r.key, e)
       }
@@ -277,7 +294,7 @@ export function computeTrainingStats({ progress, resolve, period, today }: Train
     .sort((a, b) => b.sets - a.sets || (groupOrder.get(a.group) ?? 99) - (groupOrder.get(b.group) ?? 99))
 
   const exercises: ExerciseStat[] = [...exAgg.entries()]
-    .map(([key, e]) => ({ key, name: e.name, sessions: e.sessionKeys.size, sets: e.sets, reps: e.reps, lastDate: e.lastDate, best: bestAll.get(key)?.best ?? null }))
+    .map(([key, e]) => ({ key, name: e.name, sessions: e.sessionKeys.size, sets: e.sets, reps: e.reps, seconds: e.seconds, isTimer: e.isTimer, lastDate: e.lastDate, best: bestAll.get(key)?.best ?? null }))
     .sort((a, b) => b.sessions - a.sessions || b.sets - a.sets || a.name.localeCompare(b.name))
 
   const records: RecordStat[] = [...bestAll.entries()]

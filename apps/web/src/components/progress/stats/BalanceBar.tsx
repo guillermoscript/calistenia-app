@@ -31,7 +31,6 @@ export default function BalanceBar({ balance }: BalanceBarProps) {
 
   return (
     <div>
-      <div className="text-[11px] text-muted-foreground mb-2">{t('stats.balance')}</div>
       <div className="h-2.5 rounded-full overflow-hidden flex bg-muted">
         {families.map(f => (
           <div key={f} className={cn('h-full', FAMILY_COLOR[f])} style={{ width: `${balance[f]}%` }} />

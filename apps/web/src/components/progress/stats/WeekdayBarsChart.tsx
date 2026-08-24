@@ -21,7 +21,7 @@ export default function WeekdayBarsChart({ weekdays }: WeekdayBarsChartProps) {
           const height = n > 0 ? Math.max((n / max) * 100, 6) : 0
           const isMax = n > 0 && n === maxValue
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+            <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0 h-full">
               <div className="w-full flex-1 flex items-end">
                 <div
                   className={cn('w-full rounded-t-sm transition-all duration-300', isMax ? 'bg-lime' : n > 0 ? 'bg-lime/20' : 'bg-muted')}

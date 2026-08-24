@@ -1776,6 +1776,8 @@
   "stats.exerciseMeta": "{{sessions}} ses · {{sets}} series · {{reps}} reps",
   "stats.bestReps": "Mejor serie: {{reps}} reps",
   "stats.bestWeight": "Mejor serie: {{weight}} kg × {{reps}} · 1RM est. {{e1rm}} kg",
+  "stats.bestTime": "Mejor serie: {{seconds}} s",
+  "stats.exerciseMetaTime": "{{sessions}} ses · {{sets}} series · {{seconds}} s",
   "stats.lastTime": "Última vez: {{date}}",
   "stats.unknownExercises_one": "{{count}} serie de un ejercicio que ya no está en tu programa",
   "stats.unknownExercises_other": "{{count}} series de ejercicios que ya no están en tu programa",
