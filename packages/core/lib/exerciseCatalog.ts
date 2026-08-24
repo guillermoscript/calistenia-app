@@ -66,6 +66,32 @@ export const CATALOG_CATEGORIES = [
   'push', 'pull', 'legs', 'core', 'lumbar', 'full', 'movilidad', 'skill', 'yoga',
 ] as const
 
+/**
+ * Sinónimos históricos → categoría canónica.
+ *
+ * Las dos fuentes escriben la misma categoría distinto: los 1.578 del catálogo
+ * empaquetado usan `movilidad`, `skill` y `lumbar`; los registros de
+ * `exercises_catalog` en PB usan `mobility`, `skills` y `glutes_lower_back`.
+ * Mientras cada picker leía una sola fuente eso no se notaba —
+ * `ExerciseLibraryPage` ya lo esquivaba filtrando por alias—, pero al fusionar
+ * las dos listas la misma píldora dejaría fuera media lista (#609).
+ */
+const CATEGORY_ALIASES: Record<string, string> = {
+  mobility: 'movilidad',
+  skills: 'skill',
+  glutes_lower_back: 'lumbar',
+}
+
+/**
+ * Devuelve la categoría en el vocabulario de `CATALOG_CATEGORIES`.
+ * Lo que no reconoce lo devuelve intacto: es mejor una píldora que no casa que
+ * reescribir una categoría que no conocemos.
+ */
+export function normalizeCatalogCategory(category?: string | null): string {
+  if (!category) return ''
+  return CATEGORY_ALIASES[category] ?? category
+}
+
 export interface CategoryInput {
   name?: TranslatableField | null
   muscles?: TranslatableField | null
@@ -174,7 +200,7 @@ export function mapCatalogRecord(rec: any): CatalogExercise {
     slug: catalogExerciseIdentity(rec),
     name: rec.name ?? '',
     muscles: rec.muscles ?? '',
-    category: rec.category || inferCategory(rec),
+    category: normalizeCatalogCategory(rec.category) || inferCategory(rec),
     priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3,
     reps: rec.default_reps || '8-12',
@@ -219,7 +245,10 @@ export function mapCatalogIndexEntry(
     slug: entry.id,
     name: entry.name ?? '',
     muscles: entry.muscles ?? '',
-    category: entry.category || fallbackCategory || inferCategory(entry),
+    category:
+      normalizeCatalogCategory(entry.category) ||
+      normalizeCatalogCategory(fallbackCategory) ||
+      inferCategory(entry),
     priority: (entry.priority as Priority) || 'med',
     sets: entry.sets ?? 3,
     reps: entry.reps || '8-12',

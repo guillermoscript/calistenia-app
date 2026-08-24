@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
+  CATALOG_CATEGORIES,
   catalogExerciseIdentity,
   countSetsLoggedFor,
   inferCategory,
+  normalizeCatalogCategory,
   mapCatalogIndexEntry,
   mapCatalogRecord,
   mapWorkoutExercise,
@@ -298,6 +300,48 @@ describe('mapCatalogRecord — nombres reales del esquema (regresión #609)', ()
     expect(mapped.rest).toBe(90)
     expect(mapped.timerSeconds).toBeUndefined()
     expect(mapped.demoVideo).toBeUndefined()
+  })
+})
+
+/**
+ * Las dos fuentes escriben la misma categoría distinto: el bundle usa
+ * `movilidad`/`skill`/`lumbar` y PB usa `mobility`/`skills`/`glutes_lower_back`.
+ * Con una sola fuente por picker no se notaba; al fusionarlas, una píldora
+ * dejaría fuera media lista (#609).
+ */
+describe('normalizeCatalogCategory', () => {
+  it('unifica los sinónimos de PB con el vocabulario del bundle', () => {
+    expect(normalizeCatalogCategory('mobility')).toBe('movilidad')
+    expect(normalizeCatalogCategory('skills')).toBe('skill')
+    expect(normalizeCatalogCategory('glutes_lower_back')).toBe('lumbar')
+  })
+
+  it('deja intactas las categorías que ya son canónicas', () => {
+    for (const cat of CATALOG_CATEGORIES) {
+      expect(normalizeCatalogCategory(cat)).toBe(cat)
+    }
+  })
+
+  it('no reescribe lo que no reconoce, ni revienta sin categoría', () => {
+    expect(normalizeCatalogCategory('cardio')).toBe('cardio')
+    expect(normalizeCatalogCategory(undefined)).toBe('')
+    expect(normalizeCatalogCategory('')).toBe('')
+  })
+
+  it('los dos mappers emiten la categoría ya normalizada', () => {
+    expect(mapCatalogRecord({ id: 'a', slug: 'a', name: 'A', category: 'mobility' }).category)
+      .toBe('movilidad')
+    expect(mapCatalogIndexEntry({ id: 'a', name: 'A', category: 'skills' }).category).toBe('skill')
+    expect(mapCatalogIndexEntry({ id: 'a', name: 'A' }, 'glutes_lower_back').category).toBe('lumbar')
+  })
+
+  it('la lista fusionada usa una sola categoría para las dos fuentes', () => {
+    const bundle = [mapCatalogIndexEntry({ id: 'cat_cow', name: 'Gato-Vaca' }, 'movilidad')]
+    const merged = mergeCatalogRecords(bundle, [
+      { id: 'pb_rand_id_0005', slug: 'movilidad_de_tobillo', name: 'Movilidad de tobillo', category: 'mobility' },
+    ])
+
+    expect(merged.map(ex => ex.category)).toEqual(['movilidad', 'movilidad'])
   })
 })
 
