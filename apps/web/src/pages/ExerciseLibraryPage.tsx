@@ -16,6 +16,7 @@ import WgerResultCard from '../components/WgerResultCard'
 import type { Priority, DifficultyLevel } from '@calistenia/core/types'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
+import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
 import { op } from '@calistenia/core/lib/analytics'
@@ -632,20 +633,29 @@ export default function ExerciseLibraryPage() {
               >
                 {/* Thumbnail or category placeholder */}
                 <div className="relative">
-                  {ex.demoImages && ex.demoImages.length > 0 ? (
-                    <div className="h-36 bg-muted overflow-hidden">
-                      <img
-                        src={ex.demoImages[0]}
-                        alt={l(ex.name)}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className={cn('h-24 flex items-center justify-center', catStyle.bg || 'bg-muted/50')}>
-                      <CategoryIcon category={ex.category} />
-                    </div>
-                  )}
+                  {/* Miniatura por el resolutor canónico (#608). `demoImages` aquí son
+                      los `default_images` de `exercises_catalog` —nombres de fichero
+                      crudos— salvo en el camino de respaldo del catálogo empaquetado,
+                      donde ya son URLs absolutas de wger; el resolutor distingue los dos.
+                      La media estática se indexa por `slug` (identidad canónica), no por
+                      el id aleatorio de PocketBase, que es lo que direcciona el fichero. */}
+                  <ExerciseThumbnail
+                    exercise={{ id: ex.id, youtube: ex.youtube }}
+                    catalogKey={ex.slug || ex.id}
+                    catalogRecord={{
+                      pbRecordId: ex.id,
+                      defaultImages: ex.demoImages,
+                      defaultVideo: ex.demoVideo,
+                    }}
+                    alt={l(ex.name)}
+                    className="h-36 bg-muted overflow-hidden"
+                    imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fallback={
+                      <div className={cn('h-24 flex items-center justify-center', catStyle.bg || 'bg-muted/50')}>
+                        <CategoryIcon category={ex.category} />
+                      </div>
+                    }
+                  />
                   {/* Favorite star */}
                   <span
                     role="button"

@@ -104,8 +104,33 @@ export interface ResolvedMedia {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Is this value already a usable URL, rather than a bare PocketBase file name?
+ *
+ * `demo_images` / `default_images` normally hold bare file names ("demo_x1y2.png"),
+ * but the same fields also carry values that are already addressable:
+ *   - absolute URLs — the bundled catalog ships wger images as "https://wger.de/…"
+ *   - origin-relative paths — the static media bundle uses "/exercise-media/…"
+ *
+ * Running those through `pbFileUrl` would produce nonsense
+ * ("/api/files/exercises_catalog/<id>/https://wger.de/…"), so they pass through
+ * untouched. Without this guard, routing the remaining call sites through the
+ * resolver (#608) would break the one media path that works today.
+ */
+function isAlreadyUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value) || value.startsWith('/')
+}
+
 function pbFileUrl(baseUrl: string, collection: string, recordId: string, filename: string): string {
   return `${baseUrl}/api/files/${collection}/${recordId}/${filename}`
+}
+
+/** Build a PB file URL for `filename`, honouring the absolute/origin-relative passthrough. */
+function fileUrl(baseUrl: string, collection: string, recordId: string, filename: string): string {
+  if (isAlreadyUrl(filename)) return filename
+  return baseUrl
+    ? pbFileUrl(baseUrl, collection, recordId, filename)
+    : `/api/files/${collection}/${recordId}/${filename}`
 }
 
 function buildYoutubeUrl(query: string): string {
@@ -164,14 +189,10 @@ export function getExerciseMedia(
   if (exercise.pbRecordId && (exercise.demoImages?.length || exercise.demoVideo)) {
     const images = (exercise.demoImages || [])
       .filter(Boolean)
-      .map(f => pbBaseUrl
-        ? pbFileUrl(pbBaseUrl, 'program_exercises', exercise.pbRecordId!, f)
-        : `/api/files/program_exercises/${exercise.pbRecordId}/${f}`)
+      .map(f => fileUrl(pbBaseUrl, 'program_exercises', exercise.pbRecordId!, f))
 
     const video = exercise.demoVideo
-      ? (pbBaseUrl
-          ? pbFileUrl(pbBaseUrl, 'program_exercises', exercise.pbRecordId, exercise.demoVideo)
-          : `/api/files/program_exercises/${exercise.pbRecordId}/${exercise.demoVideo}`)
+      ? fileUrl(pbBaseUrl, 'program_exercises', exercise.pbRecordId, exercise.demoVideo)
       : null
 
     if (images.length > 0 || video) {
@@ -209,14 +230,10 @@ export function getExerciseMedia(
   if (catalogRecord?.pbRecordId && (catalogRecord.defaultImages?.length || catalogRecord.defaultVideo)) {
     const images = (catalogRecord.defaultImages || [])
       .filter(Boolean)
-      .map(f => pbBaseUrl
-        ? pbFileUrl(pbBaseUrl, 'exercises_catalog', catalogRecord.pbRecordId!, f)
-        : `/api/files/exercises_catalog/${catalogRecord.pbRecordId}/${f}`)
+      .map(f => fileUrl(pbBaseUrl, 'exercises_catalog', catalogRecord.pbRecordId!, f))
 
     const video = catalogRecord.defaultVideo
-      ? (pbBaseUrl
-          ? pbFileUrl(pbBaseUrl, 'exercises_catalog', catalogRecord.pbRecordId, catalogRecord.defaultVideo)
-          : `/api/files/exercises_catalog/${catalogRecord.pbRecordId}/${catalogRecord.defaultVideo}`)
+      ? fileUrl(pbBaseUrl, 'exercises_catalog', catalogRecord.pbRecordId, catalogRecord.defaultVideo)
       : null
 
     if (images.length > 0 || video) {

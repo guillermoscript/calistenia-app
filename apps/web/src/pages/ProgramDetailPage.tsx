@@ -15,6 +15,7 @@ import { PRIORITY_COLORS, CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tok
 import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from '@calistenia/core/types'
 import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
+import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
@@ -244,6 +245,8 @@ export default function ProgramDetailPage({
           priority: r.priority,
           isTimer: r.is_timer,
           timerSeconds: r.timer_seconds,
+          // Nombres de fichero crudos de PB, no URLs: se pintan vía `ExerciseThumbnail`
+          // / `MediaViewer`, que resuelven por `getExerciseMedia()` (#608).
           demoImages: r.demo_images || [],
           demoVideo: r.demo_video || '',
           pbRecordId: r.id,
@@ -716,17 +719,14 @@ export default function ProgramDetailPage({
                                     idx < workout.exercises.length - 1 && 'border-b border-border/40',
                                   )}
                                 >
-                                  {/* Demo thumbnail */}
-                                  {exercise.demoImages && exercise.demoImages.length > 0 && exercise.demoImages[0] && (
-                                    <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0">
-                                      <img
-                                        src={exercise.demoImages[0]}
-                                        alt={exercise.name}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                      />
-                                    </div>
-                                  )}
+                                  {/* Demo thumbnail — resuelto por `exerciseMedia`; `demoImages`
+                                      son nombres de fichero de PB, no URLs (#608). */}
+                                  <ExerciseThumbnail
+                                    exercise={exercise}
+                                    alt={exercise.name}
+                                    className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0"
+                                    imgClassName="w-full h-full object-cover"
+                                  />
 
                                   {/* Sets x Reps in accent */}
                                   <div className="shrink-0 w-16 text-center">
