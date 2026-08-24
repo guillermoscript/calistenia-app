@@ -14,7 +14,7 @@
  * móvil es decorativa.
  *
  * NINGUNO ES `required`, y no es por comodidad: en PocketBase un campo `number`
- * con `required: true` RECHAZA EL 0 (lo trata como valor vacío). El editor
+ * marcado como obligatorio RECHAZA EL 0 (lo trata como valor vacío). El editor
  * escribe 0 de forma legítima —`circuit_rest_between_exercises` vale 0 por
  * defecto, y los seis campos se ponen a 0/'' cuando el día deja de ser de tipo
  * `circuit`—, así que marcarlos obligatorios rompería el guardado de cualquier
