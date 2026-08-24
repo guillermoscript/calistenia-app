@@ -30,7 +30,7 @@ import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/anal
 import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
 import i18n from 'i18next'
-import { localize } from '../lib/i18n-db'
+import { duplicatedName, localize } from '../lib/i18n-db'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -450,7 +450,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     try {
       const original = await pb.collection('programs').getOne(programId)
       const newProgramData: Record<string, unknown> = {
-        name: `${original.name} (copia)`, description: original.description,
+        name: duplicatedName(original.name, i18n.language), description: original.description,
         duration_weeks: original.duration_weeks, is_active: true, created_by: userId,
       }
       if ('is_official' in original) newProgramData.is_official = false
