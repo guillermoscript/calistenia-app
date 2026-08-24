@@ -581,11 +581,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const refreshPrograms = useCallback(async () => {
     if (!userId) return
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: qk.programs.catalog }),
-      qc.invalidateQueries({ queryKey: qk.programs.activeEnrollment(userId) }),
-      qc.invalidateQueries({ queryKey: ['programs', 'detail'] }),
-    ])
+    // La raíz del dominio (`['programs']`) cubre catalog, activeEnrollment,
+    // detail y detailView. Antes eran tres invalidaciones, una de ellas con la
+    // clave literal `['programs', 'detail']`, que se quedaba corta en cuanto el
+    // dominio ganaba una sub-clave — justo lo que pasó con `detailView` (#606).
+    await qc.invalidateQueries({ queryKey: qk.programs.all })
   }, [userId, qc])
 
   return {

@@ -10,6 +10,7 @@
  * cualquiera (incluido un deep-link a un programa inactivo).
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
@@ -40,8 +41,18 @@ export function useProgramDetail(
   const hasKnown = !!knownProgram
   const locale = i18n.language
 
+  // Clave propia, distinta de la de `usePrograms` (#606): las dos queries son
+  // del mismo programa pero cachean formas incompatibles, y `WorkoutContext`
+  // monta `usePrograms` globalmente, así que al abrir la ficha del programa
+  // ACTIVO ambas convivían sobre la misma entrada y se pisaban.
+  //
+  // Memoizada aunque React Query compare la key por igualdad estructural: una
+  // key recreada en cada render es un bucle de refetch esperando a que alguien
+  // la meta en las dependencias de un `useCallback`/`useEffect` (#451).
+  const queryKey = useMemo(() => qk.programs.detailView(programId), [programId])
+
   const query = useQuery({
-    queryKey: qk.programs.detail(programId),
+    queryKey,
     enabled: !!programId,
     staleTime: 60_000,
     queryFn: async (): Promise<ProgramDetailData> => {
