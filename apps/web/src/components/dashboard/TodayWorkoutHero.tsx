@@ -26,7 +26,12 @@ export default function TodayWorkoutHero({
   const todayDay = weekDays.find(d => d.id === todayDayId)
   const todayIsRest = todayDay?.type === 'rest'
   // #574: en descanso el héroe era un callejón sin salida; ofrece el próximo entreno.
-  const nextDayId = todayIsRest ? nextTrainingDay(weekDays, todayDayId) : null
+  // #616: con programa activo lo dice `programProgress.nextDay`, que además se
+  // salta los días que ya están hechos esta semana; sin él, el cálculo de
+  // siempre sobre la semana tipo.
+  const nextDayId = todayIsRest
+    ? (programProgress?.nextDay ?? nextTrainingDay(weekDays, todayDayId))
+    : null
   const nextDay = nextDayId ? weekDays.find(d => d.id === nextDayId) : undefined
   const restClickable = todayIsRest && !!nextDay
   const todayIsCardio = todayDay?.type === 'cardio'
