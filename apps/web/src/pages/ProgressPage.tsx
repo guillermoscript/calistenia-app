@@ -7,7 +7,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { cn } from '../lib/utils'
 import { relativeDate } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { useWorkoutState } from '../contexts/WorkoutContext'
+import { useTrainingStats } from '@calistenia/core/hooks/useTrainingStats'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import type { ExerciseLog } from '@calistenia/core/types'
 import ProgressSummary from '../components/progress/ProgressSummary'
@@ -15,8 +16,9 @@ import ExerciseChart from '../components/progress/ExerciseChart'
 import WeightTracker from '../components/progress/WeightTracker'
 import BodyPhotosTimeline from '../components/progress/BodyPhotosTimeline'
 import WeightProgressionChart from '../components/progress/WeightProgressionChart'
-import MuscleVolumeChart from '../components/progress/MuscleVolumeChart'
 import VolumeLoadChart from '../components/progress/VolumeLoadChart'
+import TrainingStatsPanel from '../components/progress/stats/TrainingStatsPanel'
+import MuscleBarsChart from '../components/progress/stats/MuscleBarsChart'
 import OneRepMaxCalculator from '../components/progress/OneRepMaxCalculator'
 import PhotoComparator from '../components/progress/PhotoComparator'
 import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
@@ -80,12 +82,13 @@ interface SessionLog {
 export default function ProgressPage() {
   const { t } = useTranslation()
   const { progress, settings, activeProgram } = useWorkoutState()
+  const { getWorkout } = useWorkoutActions()
   const { userId } = useAuthState()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   // Deep-link a una tab concreta (p.ej. /progress?tab=cuerpo desde el CTA de
   // primera medición post-onboarding, #227).
-  const initialTab = ['resumen', 'graficas', 'cuerpo'].includes(searchParams.get('tab') || '')
+  const initialTab = ['resumen', 'estadisticas', 'graficas', 'cuerpo'].includes(searchParams.get('tab') || '')
     ? searchParams.get('tab')!
     : 'resumen'
   const { weights } = useWeight(userId || null)
@@ -135,6 +138,10 @@ export default function ProgressPage() {
   const programName = activeProgram?.name || null
   const freeLogCount = allLogs.filter(l => l.isFree).length
 
+  // Sustituye al gráfico de músculos anterior (#596): series REGISTRADAS a
+  // 4 semanas, no series planificadas de un mapa estático.
+  const { stats: fourWeekStats } = useTrainingStats(progress, getWorkout, '4w')
+
   return (
     <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <div className="flex items-end gap-4 mb-6 flex-wrap">
@@ -157,6 +164,7 @@ export default function ProgressPage() {
         <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="w-full mb-6">
             <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
+            <TabsTrigger value="estadisticas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.stats')}</TabsTrigger>
             <TabsTrigger value="graficas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.charts')}</TabsTrigger>
             <TabsTrigger value="cuerpo" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.body')}</TabsTrigger>
           </TabsList>
@@ -242,7 +250,12 @@ export default function ProgressPage() {
             <ExportData progress={progress} weights={weights} />
           </TabsContent>
 
-          {/* ── Tab 2: Gráficas ── */}
+          {/* ── Tab 2: Estadísticas ── */}
+          <TabsContent value="estadisticas">
+            <TrainingStatsPanel />
+          </TabsContent>
+
+          {/* ── Tab 3: Gráficas ── */}
           <TabsContent value="graficas">
             {Object.keys(exerciseLogs).length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
@@ -260,7 +273,10 @@ export default function ProgressPage() {
                 {/* Headline: Weekly Volume + Muscle Distribution */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 [&>*]:mb-0">
                   <VolumeLoadChart progress={progress} />
-                  <MuscleVolumeChart progress={progress} />
+                  <MuscleBarsChart
+                    groups={fourWeekStats.muscles.groups}
+                    unassignedSets={fourWeekStats.muscles.unassignedSets}
+                  />
                 </div>
 
                 {/* Weight Progression (lastre) */}
@@ -279,7 +295,7 @@ export default function ProgressPage() {
             )}
           </TabsContent>
 
-          {/* ── Tab 3: Cuerpo ── */}
+          {/* ── Tab 4: Cuerpo ── */}
           <TabsContent value="cuerpo">
             {/* Phase Photo Timeline */}
             {userId && (
