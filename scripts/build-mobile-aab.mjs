@@ -59,6 +59,7 @@ const appJson = JSON.parse(readFileSync(resolve(MOBILE, 'app.json'), 'utf-8'))
 const VERSION = appJson.expo.version
 const CODE = appJson.expo.android.versionCode
 const PKG = appJson.expo.android.package
+const HEALTH_PERMS = (appJson.expo.android.permissions || []).filter((p) => p.includes('.health.')).sort()
 const DEST = resolve(homedir(), `Desktop/calistenia-v${VERSION}-vc${CODE}.aab`)
 const BUILT = resolve(ANDROID, 'app/build/outputs/bundle/release/app-release.aab')
 
@@ -93,6 +94,27 @@ function verify(aabPath) {
   gotCode === String(CODE) ? ok(`versionCode ${gotCode}`) : fail(`versionCode ${gotCode} ≠ ${CODE} (app.json)`)
   gotName === VERSION ? ok(`versionName ${gotName}`) : fail(`versionName ${gotName} ≠ ${VERSION}`)
   gotPkg === PKG ? ok(`package ${gotPkg}`) : fail(`package ${gotPkg} ≠ ${PKG}`)
+
+  // 1b. Permisos de Health Connect: tienen que ser EXACTAMENTE los de app.json.
+  //     Trampa que costó un rechazo de Play (v1.11.0, política de acceso mínimo
+  //     a datos): este script NO ejecuta `expo prebuild`, así que el AAB sale
+  //     del AndroidManifest.xml de android/ — que está gitignorado y puede
+  //     haberse quedado con permisos que ya se quitaron de app.json.
+  const aabHealth = [...new Set(manifest.match(/android\.permission\.health\.[A-Z_]+/g) || [])].sort()
+  const missing = HEALTH_PERMS.filter((p) => !aabHealth.includes(p))
+  const extra = aabHealth.filter((p) => !HEALTH_PERMS.includes(p))
+  if (missing.length === 0 && extra.length === 0) {
+    ok(`${aabHealth.length} permiso(s) de salud, idénticos a app.json`)
+  } else {
+    if (extra.length) {
+      fail(`el AAB pide ${extra.length} permiso(s) de salud que NO están en app.json: ${extra.join(', ')}`)
+    }
+    if (missing.length) {
+      fail(`faltan en el AAB permisos de salud de app.json: ${missing.join(', ')}`)
+    }
+    console.log('    → android/ está desincronizado. Regenéralo:')
+    console.log('      pnpm --filter @calistenia/mobile exec expo prebuild --platform android')
+  }
 
   // 2. Firma: tiene que ser la upload key registrada en Play.
   try {
