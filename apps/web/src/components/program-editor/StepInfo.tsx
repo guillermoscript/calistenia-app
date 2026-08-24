@@ -81,6 +81,29 @@ export function StepInfo({ info, updateInfo, redistributeWeeks, canPublishOffici
             </div>
           </div>
 
+          <div>
+            <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.visibilityLabel')}</label>
+            <div className="flex gap-2">
+              {(['private', 'link', 'public'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => updateInfo({ visibility: v })}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-[11px] font-mono tracking-widest border transition-all uppercase',
+                    info.visibility === v
+                      ? 'bg-[hsl(var(--lime))]/10 border-[hsl(var(--lime))]/30 text-[hsl(var(--lime))]'
+                      : 'border-border text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {t(`programEditor.visibility.${v}`)}
+                </button>
+              ))}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-1.5">
+              {t(`programEditor.visibilityDesc.${info.visibility}`)}
+            </div>
+          </div>
+
           {canPublishOfficial && (
             <div className="pt-2 border-t border-border">
               <label className="flex items-center gap-3 cursor-pointer">

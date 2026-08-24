@@ -16,6 +16,7 @@ import { haptics } from '@/lib/haptics'
 import type { ProgramEditorState } from '@calistenia/core/hooks/useProgramEditor'
 
 const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'] as const
+const VISIBILITIES = ['private', 'link', 'public'] as const
 
 interface StepInfoProps {
   info: ProgramEditorState['info']
@@ -100,6 +101,33 @@ export function StepInfo({ info, updateInfo, redistributeWeeks }: StepInfoProps)
               )
             })}
           </View>
+        </View>
+        <View className="gap-1.5">
+          <Text className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t('programEditor.visibilityLabel')}
+          </Text>
+          <View className="flex-row gap-2">
+            {VISIBILITIES.map(v => {
+              const active = info.visibility === v
+              return (
+                <Pressable
+                  key={v}
+                  onPress={() => { haptics.light(); updateInfo({ visibility: v }) }}
+                  className={cn(
+                    'flex-1 items-center rounded-lg border py-2.5 active:opacity-70',
+                    active ? 'border-lime/50 bg-lime/10' : 'border-border bg-card',
+                  )}
+                >
+                  <Text className={cn('font-mono text-[10px] uppercase tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
+                    {t(`programEditor.visibility.${v}`)}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </View>
+          <Text className="text-[11px] text-muted-foreground">
+            {t(`programEditor.visibilityDesc.${info.visibility}`)}
+          </Text>
         </View>
       </CardContent>
     </Card>

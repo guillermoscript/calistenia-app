@@ -125,6 +125,8 @@ async function repairIntermedio() {
         is_active: true,
         is_official: true,
         is_featured: true,
+        // Catálogo curado: público explícito (#603).
+        visibility: "public",
       }),
     });
     console.log(`  ✅ Updated program metadata`);
@@ -141,6 +143,8 @@ async function repairIntermedio() {
         is_active: true,
         is_official: true,
         is_featured: true,
+        // Catálogo curado: público explícito (#603).
+        visibility: "public",
       }),
     });
     console.log(`  ✅ Created new program: ${prog.id}`);

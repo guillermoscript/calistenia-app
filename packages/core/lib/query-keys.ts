@@ -64,7 +64,11 @@ export const qk = {
   // — Programas / progreso —
   programs: {
     all: ['programs'] as const,
-    catalog: ['programs', 'catalog'] as const,
+    // Lleva `userId` desde #603: el catálogo ya no es el mismo para todo el
+    // mundo — incluye los borradores PRIVADOS de quien pregunta. Con la clave
+    // compartida, el caché de disco (24h) podía servirle a la siguiente cuenta
+    // del mismo dispositivo los programas privados de la anterior.
+    catalog: (userId: string | null) => ['programs', 'catalog', userId] as const,
     /**
      * `usePrograms`: el REGISTRO de `user_programs` activo (o null), no solo su
      * `program`. La clave cambió de `activeEnrollment` a `enrollment` en #616

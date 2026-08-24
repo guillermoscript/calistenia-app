@@ -2,7 +2,7 @@
  * usePrograms — catálogo de programas + programa activo del usuario.
  *
  * Migrado a TanStack Query con una cadena de queries dependientes:
- *   1. catalog        (qk.programs.catalog)               — catálogo de programas
+ *   1. catalog        (qk.programs.catalog(userId))      — catálogo de programas
  *   2. enrollment      (qk.programs.enrollment(uid))       — inscripción activa o null
  *   3. detail         (qk.programs.detail(programId))      — phases/weekDays/workouts/cardio
  *
@@ -166,7 +166,7 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
 }
 
 /** Catálogo (+ disciplina por programa) desde PB. */
-async function fetchCatalog(): Promise<ProgramMeta[]> {
+async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   // Guard: sin token válido, el listRule `@request.auth.id != ""` de PocketBase
   // devuelve 200 con lista VACÍA (no 401). Si dejáramos pasar eso, React Query
   // cachearía —y el persister lo guardaría en disco hasta 24h— un catálogo vacío,
@@ -177,8 +177,17 @@ async function fetchCatalog(): Promise<ProgramMeta[]> {
   if (!pb.authStore.isValid) {
     throw new Error('programs catalog: fetch attempted without a valid auth token')
   }
+  // Solo lo publicado y lo propio (#603). Los borradores del autor tienen que
+  // seguir saliendo: este catálogo es la ÚNICA lista de programas de la app, y
+  // filtrar a `visibility = "public"` a secas los dejaría inalcanzables.
+  // El servidor ya recorta lo ajeno privado (las reglas de 1784900000 devuelven
+  // 0 filas, no 403); este filtro es lo que hace que TÚ veas tus borradores.
+  const visibilityFilter = userId
+    ? pb.filter('(visibility = "public" || created_by = {:uid})', { uid: userId })
+    : 'visibility = "public"'
   const catalogRes = await pb.collection('programs').getList(1, 100, {
-    filter: 'is_active = true', sort: 'name', expand: 'created_by', $autoCancel: false,
+    filter: `is_active = true && ${visibilityFilter}`,
+    sort: 'name', expand: 'created_by', $autoCancel: false,
   })
   const locale = i18n.language
   const programIds = catalogRes.items.map(p => p.id)
@@ -208,6 +217,7 @@ async function fetchCatalog(): Promise<ProgramMeta[]> {
     created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
     is_official:    p.is_official || false,
     is_featured:    p.is_featured || false,
+    visibility:     p.visibility || undefined,
     difficulty:     p.difficulty || undefined,
     cover_image:    p.cover_image || undefined,
     cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
@@ -325,7 +335,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const authReady = !!userId && pb.authStore.isValid
 
   const catalogQuery = useQuery({
-    queryKey: qk.programs.catalog,
+    queryKey: qk.programs.catalog(userId),
     enabled: authReady,
     staleTime: 5 * 60 * 1000,
     // Reintento ante fallos transitorios en cold-start (red/DNS/5xx/429).
@@ -335,7 +345,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       return transient && failureCount < 3
     },
     retryDelay: (attempt) => 400 * (attempt + 1),
-    queryFn: fetchCatalog,
+    queryFn: () => fetchCatalog(userId),
   })
 
   const enrollmentQuery = useQuery({
@@ -423,7 +433,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       // cabecera pintaría «sin empezar» hasta el siguiente refetch.
       qc.setQueryData(qk.programs.enrollment(userId), toEnrollment(enrollmentAfterSelect))
 
-      const newActive = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).find(p => p.id === programId) || null
+      const newActive = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog(userId)) || []).find(p => p.id === programId) || null
       if (events.selected) {
         op.track('program_selected', { program_id: programId, program_name: newActive?.name || '' })
       }
@@ -475,7 +485,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
       op.track('program_abandoned', {
         program_id: programId,
-        program_name: (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).find(p => p.id === programId)?.name || '',
+        program_name: (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog(userId)) || []).find(p => p.id === programId)?.name || '',
         sessions_completed: sessionsCompleted,
       })
       return true
@@ -495,6 +505,9 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       }
       if ('is_official' in original) newProgramData.is_official = false
       if ('is_featured' in original) newProgramData.is_featured = false
+      // La copia nace privada aunque el original fuera público (#603): duplicar
+      // el programa de otra persona no debe republicarlo a tu nombre.
+      newProgramData.visibility = 'private'
       if (original.difficulty) newProgramData.difficulty = original.difficulty
       const newProgram = await pb.collection('programs').create(newProgramData)
 
@@ -546,7 +559,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       }
 
       // Refrescamos el catálogo para incluir la copia.
-      await qc.invalidateQueries({ queryKey: qk.programs.catalog })
+      await qc.invalidateQueries({ queryKey: qk.programs.catalog(userId) })
       return newProgram.id
     } catch (e) {
       console.error('usePrograms: duplicateProgram error', e)
@@ -577,8 +590,8 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       await pb.collection('programs').delete(programId)
 
       // Actualiza el catálogo en caché eliminando el programa borrado.
-      const catalogNow = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).filter(p => p.id !== programId)
-      qc.setQueryData(qk.programs.catalog, catalogNow)
+      const catalogNow = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog(userId)) || []).filter(p => p.id !== programId)
+      qc.setQueryData(qk.programs.catalog(userId), catalogNow)
 
       if (activeProgramId === programId) {
         // Busca una inscripción activa del usuario en cualquier otro programa

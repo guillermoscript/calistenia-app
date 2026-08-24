@@ -30,7 +30,7 @@ import {
   type Row,
 } from '../lib/programEditorDiff'
 import { stretchTemplates } from '../data/stretch-templates'
-import type { DayType, Exercise } from '../types'
+import type { DayType, Exercise, ProgramVisibility } from '../types'
 
 /**
  * Campos de las colecciones del programa que se guardan como `{ locale: texto }`.
@@ -119,6 +119,8 @@ export interface ProgramEditorState {
     description: string
     durationWeeks: number
     isOfficial: boolean
+    /** Nivel de exposición elegido por el autor (#603). */
+    visibility: ProgramVisibility
     difficulty: 'beginner' | 'intermediate' | 'advanced'
   }
   phases: EditorPhase[]
@@ -171,7 +173,7 @@ function createInitialState(): ProgramEditorState {
   return {
     programId: null,
     step: 1,
-    info: { name: '', description: '', durationWeeks: 26, isOfficial: false, difficulty: 'beginner' },
+    info: { name: '', description: '', durationWeeks: 26, isOfficial: false, visibility: 'private', difficulty: 'beginner' },
     phases: [...DEFAULT_PHASES],
     days: buildDefaultDays(4),
     isDirty: false,
@@ -503,6 +505,11 @@ export function useProgramEditor() {
           description: localize(program.description, locale) || '',
           durationWeeks: program.duration_weeks || 26,
           isOfficial: program.is_official || false,
+          // Las filas anteriores a #603 traen el campo vacío. El backfill de
+          // 1784900000 las dejó en `public`, así que un vacío aquí solo puede
+          // venir de un cliente viejo que creó el programa sin mandarlo: se
+          // trata como privado, que es la dirección segura.
+          visibility: (program.visibility as ProgramVisibility) || 'private',
           difficulty: program.difficulty || 'beginner',
         },
         phases: loadedPhases.length > 0 ? loadedPhases : [...DEFAULT_PHASES],
@@ -538,7 +545,11 @@ export function useProgramEditor() {
         name: toTranslatable(state.info.name, locale),
         description: toTranslatable(state.info.description, locale),
         duration_weeks: state.info.durationWeeks,
+        // `is_active` se queda en true: quien oculta ahora es `visibility`.
+        // Ponerlo en false dejaría la fila fuera de TODAS las queries, que
+        // siguen filtrando por este campo — incluido el catálogo del autor.
         is_active: true,
+        visibility: state.info.visibility,
       }
       // Only set created_by on new programs — don't overwrite ownership on edit
       if (!state.programId) {
