@@ -45,7 +45,10 @@ describe('fetchActiveEnrollment', () => {
 
   it('devuelve el programa de la inscripción activa', async () => {
     getFirstListItem.mockResolvedValue(enrollment())
-    await expect(fetchActiveEnrollment('user_1')).resolves.toBe('prog_vivo_1')
+    await expect(fetchActiveEnrollment('user_1')).resolves.toMatchObject({
+      id: 'enroll_1',
+      program: 'prog_vivo_1',
+    })
   })
 
   it('pide el expand del programa, o no hay nada que comprobar', async () => {

@@ -3,7 +3,7 @@
  *
  * Migrado a TanStack Query con una cadena de queries dependientes:
  *   1. catalog        (qk.programs.catalog)               — catálogo de programas
- *   2. activeEnrollment (qk.programs.activeEnrollment(uid)) — programId actual o null
+ *   2. enrollment      (qk.programs.enrollment(uid))       — inscripción activa o null
  *   3. detail         (qk.programs.detail(programId))      — phases/weekDays/workouts/cardio
  *
  * Cae a los workouts hardcodeados cuando no hay programa/PB. Forma pública
@@ -260,12 +260,36 @@ export async function fetchProgramDetail(programId: string): Promise<ProgramDeta
 }
 
 /**
- * Lee el programId activo (user_programs is_current) o null.
- *
+ * Inscripción activa del usuario (`user_programs` con `is_current = true`), o
+ * null. Devuelve el REGISTRO y no solo `program` porque `started_at` y
+ * `current_phase` son la entrada del progreso dentro del programa (#616), y
+ * pedirlos aparte sería una segunda consulta a la misma fila.
+ */
+export interface ActiveEnrollment {
+  id: string
+  program: string
+  /** Timestamp UTC de PB. Vacío en inscripciones anteriores a que se guardara. */
+  started_at: string
+  status: 'active' | 'completed' | 'abandoned' | ''
+  /** Override manual de fase. 0 = automática (derivada de `started_at`). */
+  current_phase: number
+}
+
+function toEnrollment(rec: RecordModel): ActiveEnrollment {
+  return {
+    id: rec.id,
+    program: rec.program as string,
+    started_at: (rec.started_at as string) || '',
+    status: (rec.status as ActiveEnrollment['status']) || '',
+    current_phase: typeof rec.current_phase === 'number' ? rec.current_phase : 0,
+  }
+}
+
+/**
  * Expande `program` para no fiarse de la relación a ciegas: si el programa ya no
  * existe, la fila es un «programa activo fantasma» (#605) y aquí vale como «sin
- * programa». Devolver su id dejaba a `fetchProgramDetail` pidiendo un `programs`
- * inexistente, y con él caía el «hoy toca» de home y del onboarding.
+ * programa». Devolver la inscripción dejaba a `fetchProgramDetail` pidiendo un
+ * `programs` inexistente, y con él caía el «hoy toca» de home y del onboarding.
  *
  * El hook `pb_hooks/programs_delete_cleanup.pb.js` cierra estas filas al borrar
  * el programa, así que de aquí en adelante no deberían aparecer. Esta guarda es
@@ -275,19 +299,18 @@ export async function fetchProgramDetail(programId: string): Promise<ProgramDeta
  * Exportada solo para el test: el hook no se renderiza (core corre en vitest/node,
  * sin testing-library), así que la guarda se prueba sobre la función.
  */
-export async function fetchActiveEnrollment(uid: string): Promise<string | null> {
+export async function fetchActiveEnrollment(uid: string): Promise<ActiveEnrollment | null> {
   try {
     const rec = await pb.collection('user_programs').getFirstListItem(
       pb.filter('user = {:uid} && is_current = true', { uid }),
       { requestKey: null, expand: 'program' },
     )
-    const programId = rec.program as string
-    if (!programId) return null
+    if (!rec.program) return null
     // `programs` es visible para cualquier usuario autenticado (`viewRule`
     // `@request.auth.id != ""`), así que un expand vacío significa que la fila
     // apunta a un programa borrado, no que nos falte permiso para verlo.
     if (!rec.expand?.program) return null
-    return programId
+    return toEnrollment(rec)
   } catch {
     return null // sin programa activo aún
   }
@@ -296,6 +319,8 @@ export async function fetchActiveEnrollment(uid: string): Promise<string | null>
 interface UseProgramsReturn {
   programs: ProgramMeta[]
   activeProgram: ProgramMeta | null
+  /** Inscripción activa: `started_at` y `current_phase` para el progreso (#616). */
+  activeEnrollment: ActiveEnrollment | null
   phases: Phase[]
   weekDays: WeekDay[]
   cardioDayConfigs: Record<string, CardioDayConfig>
@@ -333,13 +358,14 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   })
 
   const enrollmentQuery = useQuery({
-    queryKey: qk.programs.activeEnrollment(userId),
+    queryKey: qk.programs.enrollment(userId),
     enabled: authReady,
     staleTime: 5 * 60 * 1000,
     queryFn: () => fetchActiveEnrollment(userId!),
   })
 
-  const activeProgramId = enrollmentQuery.data ?? null
+  const activeEnrollment = enrollmentQuery.data ?? null
+  const activeProgramId = activeEnrollment?.program ?? null
 
   const detailQuery = useQuery({
     queryKey: qk.programs.detail(activeProgramId),
@@ -382,13 +408,17 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       // crear el enrollment. Se decide ANTES de escribir en PB.
       const events = programSelectionEvents(existing ? { is_current: existing.is_current === true } : null)
 
-      if (existing) {
-        await pb.collection('user_programs').update(existing.id, { is_current: true, status: 'active', ended_at: '' })
-      } else {
-        await pb.collection('user_programs').create({
-          user: userId, program: programId, started_at: nowLocalForPB(), is_current: true, status: 'active',
-        })
-      }
+      // Re-inscribirse reinicia `started_at`: la semana 1 empieza HOY, no en la
+      // fecha en que se apuntó la primera vez (#616). Si no, quien retoma un
+      // programa que abandonó hace tres meses vería «Semana 14 de 12».
+      const enrollmentAfterSelect = existing
+        ? await pb.collection('user_programs').update(existing.id, {
+            is_current: true, status: 'active', ended_at: '',
+            ...(existing.status === 'active' && existing.started_at ? {} : { started_at: nowLocalForPB(), current_phase: 0 }),
+          })
+        : await pb.collection('user_programs').create({
+            user: userId, program: programId, started_at: nowLocalForPB(), is_current: true, status: 'active',
+          })
 
       const currentList = await pb.collection('user_programs').getList(1, 100, {
         requestKey: null,
@@ -407,7 +437,10 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         queryFn: () => fetchProgramDetail(programId),
         staleTime: 0,
       }).catch(() => { /* sin detail fresco seguimos: el enrollment ya está en PB */ })
-      qc.setQueryData(qk.programs.activeEnrollment(userId), programId)
+      // El registro que acabamos de escribir/actualizar, con la forma de la
+      // query: si aquí pusiéramos solo el id, `started_at` llegaría vacío y la
+      // cabecera pintaría «sin empezar» hasta el siguiente refetch.
+      qc.setQueryData(qk.programs.enrollment(userId), toEnrollment(enrollmentAfterSelect))
 
       const newActive = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).find(p => p.id === programId) || null
       if (events.selected) {
@@ -456,7 +489,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       })
 
       if (activeProgramId === programId) {
-        qc.setQueryData(qk.programs.activeEnrollment(userId), null)
+        qc.setQueryData(qk.programs.enrollment(userId), null)
       }
 
       op.track('program_abandoned', {
@@ -591,13 +624,13 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
               { requestKey: null },
             )
             await pb.collection('user_programs').update(nextEnrollment.id, { is_current: true, status: 'active', ended_at: '' })
-            qc.setQueryData(qk.programs.activeEnrollment(userId), nextEnrollmentProgramId)
+            qc.setQueryData(qk.programs.enrollment(userId), toEnrollment(nextEnrollment))
           } catch (e) {
             console.warn('usePrograms: fallback de inscripción tras delete falló', e)
           }
         } else {
           // Sin inscripciones activas restantes: limpiar el programa activo.
-          qc.setQueryData(qk.programs.activeEnrollment(userId), null)
+          qc.setQueryData(qk.programs.enrollment(userId), null)
         }
       }
       return true
@@ -609,7 +642,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const refreshPrograms = useCallback(async () => {
     if (!userId) return
-    // La raíz del dominio (`['programs']`) cubre catalog, activeEnrollment,
+    // La raíz del dominio (`['programs']`) cubre catalog, enrollment,
     // detail y detailView. Antes eran tres invalidaciones, una de ellas con la
     // clave literal `['programs', 'detail']`, que se quedaba corta en cuanto el
     // dominio ganaba una sub-clave — justo lo que pasó con `detailView` (#606).
@@ -619,6 +652,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   return {
     programs,
     activeProgram,
+    activeEnrollment,
     phases,
     weekDays,
     cardioDayConfigs,

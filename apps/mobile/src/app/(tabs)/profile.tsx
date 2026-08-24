@@ -75,7 +75,7 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
-  const { settings, activeProgram } = useWorkoutState()
+  const { settings, activeProgram, programProgress } = useWorkoutState()
   const { colorScheme } = useColorScheme()
   const { getTotalSessions, getLongestStreak, getWeeklyDoneCount } = useWorkoutActions()
 
@@ -135,7 +135,12 @@ export default function ProfileScreen() {
   const streak = getLongestStreak()
   const weeklyDone = getWeeklyDoneCount()
   const skills = buildSkills(settings as unknown as Record<string, number>)
-  const week = programWeek(settings.startDate, activeProgram?.duration_weeks, todayStr())
+  // #616: con inscripción activa la semana sale del programa (`started_at`);
+  // sin ella se conserva el cálculo sobre `settings.startDate`, que es lo
+  // único que tiene quien todavía no se ha apuntado a nada.
+  const week = programProgress.hasStarted && programProgress.currentWeek
+    ? { current: programProgress.currentWeek, total: programProgress.totalWeeks }
+    : programWeek(settings.startDate, activeProgram?.duration_weeks, todayStr())
   const levelLabel = level && LEVEL_LABEL_KEYS[level] ? t(LEVEL_LABEL_KEYS[level]) : ''
   const identityLine = [
     levelLabel,
@@ -233,7 +238,7 @@ export default function ProfileScreen() {
             </View>
             <View className="shrink-0 rounded-full bg-lime px-3 py-1">
               <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-foreground">
-                {t('profile.phase', { phase: settings.phase || 1 })}
+                {t('profile.phase', { phase: programProgress.currentPhase || 1 })}
               </Text>
             </View>
           </CardContent>
