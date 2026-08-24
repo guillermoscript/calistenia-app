@@ -65,8 +65,16 @@ export const qk = {
   programs: {
     all: ['programs'] as const,
     catalog: ['programs', 'catalog'] as const,
-    activeEnrollment: (userId: string | null) =>
-      ['programs', 'activeEnrollment', userId] as const,
+    /**
+     * `usePrograms`: el REGISTRO de `user_programs` activo (o null), no solo su
+     * `program`. La clave cambió de `activeEnrollment` a `enrollment` en #616
+     * justamente porque cambió la forma del valor: el persister guarda la caché
+     * en disco hasta 24h, y una entrada vieja con la forma antigua (un string
+     * con el id del programa) se leería como un registro sin `program` — el
+     * usuario aparecería sin programa activo hasta que la query refrescara.
+     */
+    enrollment: (userId: string | null) =>
+      ['programs', 'enrollment', userId] as const,
     // OJO: `detail` y `detailView` son el MISMO programa visto por dos hooks
     // que cachean formas incompatibles. Compartieron clave hasta #606 y se
     // pisaban entre sí: cada uno leía del objeto del otro y caía a su fallback

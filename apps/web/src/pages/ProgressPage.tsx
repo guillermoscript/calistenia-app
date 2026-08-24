@@ -79,7 +79,7 @@ interface SessionLog {
 
 export default function ProgressPage() {
   const { t } = useTranslation()
-  const { progress, settings, activeProgram } = useWorkoutState()
+  const { progress, settings, activeProgram, programProgress } = useWorkoutState()
   const { userId } = useAuthState()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -90,7 +90,8 @@ export default function ProgressPage() {
     : 'resumen'
   const { weights } = useWeight(userId || null)
   const { photos, getPhotosByPhase, uploadPhotos } = useBodyPhotos(userId || null)
-  const currentPhase = settings.phase || 1
+  // #616: fase derivada del programa activo, no del entero global.
+  const currentPhase = programProgress.currentPhase || 1
 
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)

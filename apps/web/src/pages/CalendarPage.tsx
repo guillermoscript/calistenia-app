@@ -50,9 +50,10 @@ export interface CalendarEntry {
 
 export default function CalendarPage() {
   const { t } = useTranslation()
-  const { progress, weekDays, activeProgram, settings } = useWorkoutState()
+  const { progress, weekDays, activeProgram, programProgress } = useWorkoutState()
   const { userId } = useAuthState()
-  const currentPhase = settings.phase
+  // #616: fase derivada del programa activo, no del entero global.
+  const currentPhase = programProgress.currentPhase
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
   const DAY_NAMES = useMemo(() => Array.from({length: 7}, (_, i) => t(`dayShort.${i}`)), [t])

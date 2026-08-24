@@ -18,10 +18,10 @@ import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
 import { DAY_TYPE_COLORS, CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
-import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig, CircuitDefinition } from '@calistenia/core/types'
+import type { Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig, CircuitDefinition } from '@calistenia/core/types'
 
 export default function WorkoutPage() {
-  const { settings, phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, activeProgram } = useWorkoutState()
+  const { phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, activeProgram, programProgress } = useWorkoutState()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { startCircuit } = useCircuitSession()
@@ -42,7 +42,13 @@ export default function WorkoutPage() {
 
   const todayId  = DAY_BY_INDEX[localDay()]
 
-  const [selectedPhase, setSelectedPhase] = useState(settings?.phase || 1)
+  // #616: la fase ya no sale de `settings.phase` (entero global del usuario)
+  // sino del programa activo: derivada de `started_at` + `duration_weeks`, con
+  // el override manual en `user_programs.current_phase`. Aquí sigue siendo
+  // estado local porque las pestañas de fase son para MIRAR otra fase sin
+  // cambiar la tuya; el override se fija desde el dashboard.
+  const derivedPhase = programProgress.currentPhase
+  const [selectedPhase, setSelectedPhase] = useState(derivedPhase)
   // #574: sin `?day=` la página nacía vacía y los usuarios nuevos nunca llegaban
   // a un entreno. Por defecto, hoy (o el siguiente día entrenable), como en móvil.
   const [selectedDay,   setSelectedDay]   = useState<DayId | null>(() => dayParam ?? pickTrainingDay(WEEK_DAYS, todayId))
@@ -52,7 +58,7 @@ export default function WorkoutPage() {
   const [restExerciseId, setRestExerciseId] = useState<string | null>(null)
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
 
-  useEffect(() => { if (settings?.phase) setSelectedPhase(settings.phase) }, [settings])
+  useEffect(() => { if (derivedPhase >= 1) setSelectedPhase(derivedPhase) }, [derivedPhase])
 
   // Consume ?day= param on mount, then clean URL
   useEffect(() => {

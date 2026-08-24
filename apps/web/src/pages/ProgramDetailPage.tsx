@@ -13,9 +13,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { PRIORITY_COLORS, CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from '@calistenia/core/types'
+import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
+import ProgramProgressBar from '../components/programs/ProgramProgressBar'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
@@ -103,6 +105,12 @@ interface ProgramDetailPageProps {
   userId?: string
   userRole?: import('@calistenia/core/types').UserRole
   activeProgram?: ProgramMeta | null
+  /**
+   * Progreso dentro del programa ACTIVO (#616). Llega por prop y no por
+   * contexto porque esta página también se pinta en `/shared/:id`, fuera del
+   * `WorkoutProvider`.
+   */
+  programProgress?: ProgramProgress
   onBack: () => void
   onNavigateToProgram?: (programId: string) => void
   onSelectProgram?: (programId: string) => Promise<boolean>
@@ -120,6 +128,7 @@ export default function ProgramDetailPage({
   userId,
   userRole = 'user',
   activeProgram,
+  programProgress,
   onBack,
   onNavigateToProgram,
   onSelectProgram,
@@ -456,6 +465,13 @@ export default function ProgramDetailPage({
         )}
         {program.description && (
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>{program.description}</p>
+        )}
+
+        {/* Progreso: solo del programa en el que el usuario está inscrito (#616). */}
+        {programProgress && activeProgram?.id === programId && (
+          <div className="max-w-md mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '125ms', animationFillMode: 'both' }}>
+            <ProgramProgressBar progress={programProgress} />
+          </div>
         )}
 
         {/* Meta stats */}

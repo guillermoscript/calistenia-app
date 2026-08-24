@@ -83,7 +83,7 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs } = useWorkoutState()
+  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs, programProgress } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
   const milestoneUser = useAuthUser()
@@ -100,7 +100,9 @@ export default function TodayScreen() {
   }, [milestoneUser?.id, loadNotifications])
 
   const todayId = DAY_IDS[localDay()]
-  const phase = settings.phase || 1
+  // #616: la fase sale del programa activo (semana derivada de `started_at`),
+  // ya no del entero global `settings.phase`.
+  const phase = programProgress.currentPhase || 1
   const todayMeta = weekDays.find(d => d.id === todayId)
   const workout = useMemo(() => getWorkout(phase, todayId), [getWorkout, phase, todayId])
   const workoutKey = `p${phase}_${todayId}`
