@@ -15,6 +15,7 @@ import { Textarea } from '../ui/textarea'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { DAY_IDS, PRIORITY_OPTIONS } from './constants'
+import { ExerciseMediaEditor } from './ExerciseMediaEditor'
 
 interface StepExercisesProps {
   phases: EditorPhase[]
@@ -306,6 +307,12 @@ export function StepExercises({
                           </div>
                         )}
                       </div>
+
+                      {/* Media propia del ejercicio (#618): gana al catálogo. */}
+                      <ExerciseMediaEditor
+                        exercise={ex}
+                        onChange={data => updateExercise(currentDayKey, ei, data)}
+                      />
                     </div>
                   )}
                 </CardContent>

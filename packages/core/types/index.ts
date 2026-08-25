@@ -332,6 +332,13 @@ export interface ProgramMeta {
   days_per_week?: number
   equipment_required?: string[]
   contraindications?: string[]
+  /**
+   * «Cómo seguir este programa» (#618) — ya localizado. `undefined` significa
+   * «no se ha cargado», que no es lo mismo que `''` («el autor no escribió
+   * nada»): el catálogo de `usePrograms` no trae este campo, así que la ficha
+   * lo pide aparte.
+   */
+  instructions?: string
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────

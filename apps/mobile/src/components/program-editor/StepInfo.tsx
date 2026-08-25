@@ -8,8 +8,9 @@
  * existió solo se podían fijar por script, así que ningún programa creado desde
  * aquí entraba nunca en el «PARA TI» del onboarding.
  */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { View, Pressable } from 'react-native'
+import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
@@ -23,6 +24,7 @@ import { haptics } from '@/lib/haptics'
 import type { ProgramEditorState } from '@calistenia/core/hooks/useProgramEditor'
 import { EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { CONDITION_IDS, INJURY_IDS } from '@calistenia/core/types/onboarding'
+import { pickCover, type MediaSource } from '@/lib/program-media'
 
 const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'] as const
 const VISIBILITIES = ['private', 'link', 'public'] as const
@@ -57,6 +59,110 @@ function toggle(list: string[], id: string): string[] {
  */
 function SectionLabel({ children }: { children: ReactNode }) {
   return <Text className="text-[11px] uppercase tracking-wide text-muted-foreground">{children}</Text>
+}
+
+/**
+ * Selector de portada (#618). Mismo camino que la foto de perfil de #434:
+ * `expo-image-picker` → `uriToBlob` → subida multipart en `saveProgram`.
+ *
+ * A nivel de módulo por lo mismo que `SectionLabel`.
+ */
+function CoverPicker({
+  info,
+  updateInfo,
+}: {
+  info: ProgramEditorState['info']
+  updateInfo: (info: Partial<ProgramEditorState['info']>) => void
+}) {
+  const { t } = useTranslation()
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  // Lo elegido ahora gana a lo que hay en el servidor; si se ha quitado, no se
+  // enseña nada aunque el registro todavía tenga fichero.
+  const preview = info.coverFile?.previewUri || (info.coverRemoved ? null : info.coverUrl)
+
+  const pick = async (source: MediaSource) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      const result = await pickCover(source, {
+        title: t('common.permissionRequired'),
+        message: t(source === 'camera' ? 'common.cameraPermissionMessage' : 'common.galleryPermissionMessage'),
+      })
+      // `ok: null` es cancelar o denegar el permiso: no hay nada que contar.
+      if (result.ok === null) return
+      if (result.ok === false) {
+        setError(t(result.reason === 'size' ? 'programEditor.coverTooLarge' : 'programEditor.coverUnsupported'))
+        return
+      }
+      setError(null)
+      haptics.light()
+      updateInfo({ coverFile: result.files[0], coverRemoved: false })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const remove = () => {
+    setError(null)
+    haptics.light()
+    updateInfo({ coverFile: null, coverRemoved: true })
+  }
+
+  return (
+    <View className="gap-1.5">
+      <SectionLabel>{t('programEditor.coverLabel')}</SectionLabel>
+      {preview ? (
+        <Image
+          source={{ uri: preview }}
+          style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 8 }}
+          contentFit="cover"
+          accessibilityLabel={t('programEditor.coverPreviewAlt')}
+        />
+      ) : (
+        <View className="w-full items-center justify-center rounded-lg border border-dashed border-border py-8">
+          <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            {t('programEditor.coverEmpty')}
+          </Text>
+        </View>
+      )}
+      <View className="flex-row gap-2">
+        <Pressable
+          onPress={() => void pick('gallery')}
+          disabled={busy}
+          className="flex-1 items-center rounded-lg border border-border py-2.5 active:opacity-70 disabled:opacity-40"
+        >
+          <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            {t('programEditor.coverPickGallery')}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => void pick('camera')}
+          disabled={busy}
+          className="flex-1 items-center rounded-lg border border-border py-2.5 active:opacity-70 disabled:opacity-40"
+        >
+          <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            {t('programEditor.coverPickCamera')}
+          </Text>
+        </Pressable>
+        {preview && (
+          <Pressable
+            onPress={remove}
+            disabled={busy}
+            className="items-center rounded-lg border border-border px-3 py-2.5 active:opacity-70 disabled:opacity-40"
+          >
+            <Text className="font-mono text-[10px] uppercase tracking-wide text-red-400">
+              {t('programEditor.coverRemove')}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+      <Text className={cn('text-[11px]', error ? 'text-red-400' : 'text-muted-foreground')}>
+        {error || t('programEditor.coverDesc')}
+      </Text>
+    </View>
+  )
 }
 
 interface StepInfoProps {
@@ -105,6 +211,24 @@ export function StepInfo({ info, updateInfo, redistributeWeeks, derivedDaysPerWe
               onChangeText={description => updateInfo({ description })}
               numberOfLines={3}
             />
+          </View>
+
+          <CoverPicker info={info} updateInfo={updateInfo} />
+
+          <View className="gap-1.5">
+            <Label nativeID="pe-instructions">
+              <Text className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {t('programEditor.instructionsLabel')}
+              </Text>
+            </Label>
+            <Textarea
+              aria-labelledby="pe-instructions"
+              placeholder={t('programEditor.instructionsPlaceholder')}
+              value={info.instructions}
+              onChangeText={instructions => updateInfo({ instructions })}
+              numberOfLines={5}
+            />
+            <Text className="text-[11px] text-muted-foreground">{t('programEditor.instructionsDesc')}</Text>
           </View>
 
           <View className="gap-1.5">

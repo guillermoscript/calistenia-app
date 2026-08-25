@@ -30,6 +30,15 @@ import {
   type Row,
 } from '../lib/programEditorDiff'
 import { stretchTemplates } from '../data/stretch-templates'
+import {
+  buildCoverPayload,
+  buildExerciseMediaPayload,
+  emptyExerciseMedia,
+  hasExerciseMediaChanges,
+  type CoverMediaState,
+  type EditorMediaFile,
+  type ExerciseMediaState,
+} from '../lib/programMedia'
 import type {
   DayType,
   Exercise,
@@ -116,6 +125,47 @@ export interface EditorExercise {
   isTimer: boolean
   timerSeconds: number
   section?: 'warmup' | 'main' | 'cooldown'
+  /**
+   * Media propia del ejercicio dentro de ESTE programa (#618), que en el
+   * reproductor de #608 gana al vídeo/imágenes del catálogo compartido.
+   *
+   * Los seis campos son opcionales a propósito: un ejercicio recién sacado del
+   * catálogo o de una plantilla de estiramientos no tiene media, y obligar a
+   * los cuatro sitios que construyen un `EditorExercise` a deletrear seis
+   * campos vacíos solo añade ruido. Quien necesite el estado completo pasa por
+   * `exerciseMediaOf`.
+   */
+  demoImages?: string[]
+  demoVideo?: string
+  pendingImages?: EditorMediaFile[]
+  pendingVideo?: EditorMediaFile | null
+  removedImages?: string[]
+  removeVideo?: boolean
+  /**
+   * Id de la fila de `program_exercises`, cuando existe. Solo sirve para
+   * construir la URL de vista previa de la media ya subida: la identidad entre
+   * guardados sigue siendo la clave natural de `programEditorDiff.ts`, no este
+   * id, y por eso el editor no lo usa para nada más.
+   */
+  pbRecordId?: string
+}
+
+/**
+ * El estado de media de un ejercicio, con los huecos rellenos.
+ *
+ * Existe para que las reglas de `lib/programMedia.ts` — que son puras y
+ * testeables — no tengan que conocer los opcionales del editor.
+ */
+export function exerciseMediaOf(ex: EditorExercise): ExerciseMediaState {
+  return {
+    ...emptyExerciseMedia(),
+    demoImages: ex.demoImages ?? [],
+    demoVideo: ex.demoVideo ?? '',
+    pendingImages: ex.pendingImages ?? [],
+    pendingVideo: ex.pendingVideo ?? null,
+    removedImages: ex.removedImages ?? [],
+    removeVideo: ex.removeVideo ?? false,
+  }
 }
 
 export interface ProgramEditorState {
@@ -152,6 +202,28 @@ export interface ProgramEditorState {
     daysPerWeek: number | null
     equipmentRequired: string[]
     contraindications: string[]
+    /**
+     * «Cómo seguir este programa» (#618) — las notas del autor sobre cómo
+     * llevarlo, que van debajo de la descripción en la ficha. Se guardan en
+     * `programs.instructions`, que es un `json` `{ locale: texto }` como
+     * `name` y `description`.
+     *
+     * Es un campo aparte y no un párrafo más de `description` porque la
+     * descripción es la frase corta que se pinta en la tarjeta del catálogo.
+     */
+    instructions: string
+    /**
+     * Portada: lo que ya está en el servidor (`coverImage` es el nombre de
+     * fichero, `coverUrl` la URL con la que se previsualiza) separado de lo que
+     * el autor ha tocado en esta sesión.
+     *
+     * Sin esa separación no se distingue «no la ha tocado» de «la ha borrado»,
+     * y son dos peticiones distintas: ninguna, contra una que vacía el campo.
+     */
+    coverImage: string
+    coverUrl: string | null
+    coverFile: EditorMediaFile | null
+    coverRemoved: boolean
   }
   phases: EditorPhase[]
   days: Record<string, EditorDay>  // key: "phaseIndex_dayId"
@@ -277,6 +349,8 @@ function createInitialState(): ProgramEditorState {
       visibility: 'private', difficulty: 'beginner',
       goalType: '', skill: '', intensity: '',
       daysPerWeek: null, equipmentRequired: [], contraindications: [],
+      instructions: '',
+      coverImage: '', coverUrl: null, coverFile: null, coverRemoved: false,
     },
     phases: [...DEFAULT_PHASES],
     days: buildDefaultDays(4),
@@ -598,6 +672,12 @@ export function useProgramEditor() {
           isTimer: r.is_timer || false,
           timerSeconds: r.timer_seconds || 0,
           section: (r.section || 'main') as EditorExercise['section'],
+          // Media ya subida (#618). Son NOMBRES DE FICHERO de PocketBase, no
+          // URLs: quien las pinta las resuelve con `pb.files.getURL` sobre el
+          // registro, igual que hace la cascada de media de #608.
+          demoImages: Array.isArray(r.demo_images) ? r.demo_images : [],
+          demoVideo: r.demo_video || '',
+          pbRecordId: r.id,
         })
       }
 
@@ -627,6 +707,19 @@ export function useProgramEditor() {
             : null,
           equipmentRequired: Array.isArray(program.equipment_required) ? program.equipment_required : [],
           contraindications: Array.isArray(program.contraindications) ? program.contraindications : [],
+          // «Cómo seguir este programa» (#618). Los programas anteriores a la
+          // migración `1786000000` no traen el campo, y un programa sin notas
+          // es el caso normal: se queda vacío y la ficha no pinta el bloque.
+          instructions: localize(program.instructions, locale) || '',
+          // Portada ya subida. `coverImage` es el nombre del fichero y
+          // `coverUrl` la miniatura con la que el editor la previsualiza; el
+          // par pendiente/borrado arranca limpio en cada carga.
+          coverImage: program.cover_image || '',
+          coverUrl: program.cover_image
+            ? pb.files.getURL(program, program.cover_image, { thumb: '400x0' })
+            : null,
+          coverFile: null,
+          coverRemoved: false,
         },
         phases: loadedPhases.length > 0 ? loadedPhases : [...DEFAULT_PHASES],
         days,
@@ -666,6 +759,10 @@ export function useProgramEditor() {
         // siguen filtrando por este campo — incluido el catálogo del autor.
         is_active: true,
         visibility: state.info.visibility,
+        // «Cómo seguir este programa» (#618). Viaja como `{ locale: texto }`
+        // igual que `name` y `description`; leerlo sin `localize()` imprimiría
+        // `[object Object]`.
+        instructions: toTranslatable(state.info.instructions, locale),
       }
       // Only set created_by on new programs — don't overwrite ownership on edit
       if (!state.programId) {
@@ -684,6 +781,22 @@ export function useProgramEditor() {
       } else {
         const created = await pb.collection('programs').create(programData)
         programId = created.id
+      }
+
+      // ── Portada (#618) ───────────────────────────────────────────────────
+      //
+      // Va en una petición aparte y no dentro de `programData` porque un
+      // fichero obliga a `multipart/form-data`, y ahí los campos i18n
+      // (`name`, `description`, `instructions`) tendrían que ir serializados a
+      // mano. Separarlo deja el guardado del texto exactamente como estaba y
+      // reduce la subida a un `update` de un solo campo.
+      //
+      // `buildCoverPayload` devuelve null cuando no hay nada que hacer, que es
+      // el caso mayoritario: un guardado que no toca la portada no emite
+      // ninguna petición de más.
+      const coverPayload = buildCoverPayload(state.info as CoverMediaState)
+      if (coverPayload) {
+        await pb.collection('programs').update(programId, coverPayload, { requestKey: null })
       }
 
       // ── Guardado reconciliado (issue #463) ───────────────────────────────
@@ -712,6 +825,17 @@ export function useProgramEditor() {
 
       const desiredDayConfig: DesiredRow[] = []
       const desiredExercises: DesiredRow[] = []
+      /**
+       * Media pendiente por ejercicio, indexada por la MISMA clave natural que
+       * usa el reconciliador (#618).
+       *
+       * Los ficheros no pueden entrar en `desiredExercises`: `diffCollection`
+       * compara campo a campo contra lo que devuelve el servidor, y un fichero
+       * nunca va a ser igual al nombre de fichero guardado, así que todas las
+       * filas de ejercicios se marcarían como cambiadas en cada guardado. Se
+       * apartan aquí y se suben después, cuando ya existen las filas.
+       */
+      const pendingExerciseMedia = new Map<string, ExerciseMediaState>()
       let sortOrder = 0
       let daySortOrder = 0
       for (let pi = 0; pi < state.phases.length; pi++) {
@@ -768,8 +892,11 @@ export function useProgramEditor() {
             sortOrder++
             const occurrence = occurrences.get(ex.exerciseId) ?? 0
             occurrences.set(ex.exerciseId, occurrence + 1)
+            const key = exerciseKey(pi + 1, day.dayId, ex.exerciseId, occurrence)
+            const media = exerciseMediaOf(ex)
+            if (hasExerciseMediaChanges(media)) pendingExerciseMedia.set(key, media)
             desiredExercises.push({
-              key: exerciseKey(pi + 1, day.dayId, ex.exerciseId, occurrence),
+              key,
               data: {
                 program: programId,
                 phase_number: pi + 1,
@@ -866,7 +993,77 @@ export function useProgramEditor() {
       // Escrituras primero, borrados al final. Ver executePlans.
       await executePlans(collections)
 
-      setState(s => ({ ...s, programId, isSaving: false, isDirty: false }))
+      // ── Media por ejercicio (#618) ───────────────────────────────────────
+      //
+      // Va DESPUÉS de `executePlans` por una razón concreta: `executePlans` no
+      // devuelve los registros que crea, así que un ejercicio nuevo no tiene id
+      // hasta este punto. Se relee la colección y se reconstruyen las claves
+      // naturales con `makeExerciseKeyOf()`, recorriendo en orden de
+      // `sort_order` igual que hace el diff — si el orden no coincide, el
+      // desempate por repetición se desalinea y la media acabaría en el
+      // ejercicio equivocado cuando el mismo aparece dos veces en un día.
+      //
+      // También va al final a propósito: si una subida falla, el programa ya
+      // está guardado entero. El peor caso es «se guardó el texto pero no la
+      // foto», nunca al revés.
+      if (pendingExerciseMedia.size > 0) {
+        const savedExercises = await pb.collection('program_exercises').getFullList(readOpts)
+        const keyOf = makeExerciseKeyOf()
+        const idByKey = new Map<string, string>()
+        for (const record of [...(savedExercises as ExistingRecord[])].sort(
+          (a, b) => Number(a.sort_order) - Number(b.sort_order),
+        )) {
+          const key = keyOf(record)
+          // Un duplicado solo puede venir de un guardado anterior a medias, y
+          // el diff acaba de marcarlo para borrar: gana el primero, que es el
+          // mismo que reutiliza `diffCollection`.
+          if (!idByKey.has(key)) idByKey.set(key, record.id)
+        }
+
+        const uploads: Promise<unknown>[] = []
+        for (const [key, media] of pendingExerciseMedia) {
+          const recordId = idByKey.get(key)
+          if (!recordId) continue
+          const payload = buildExerciseMediaPayload(media)
+          if (!payload) continue
+          // `requestKey: null` por lo mismo que en `collectionWriter` (#536):
+          // el SDK deriva la clave de auto-cancelación de MÉTODO + ruta, y
+          // varias subidas en vuelo a la vez se abortarían entre ellas.
+          uploads.push(
+            pb.collection('program_exercises').update(recordId, payload, { requestKey: null }),
+          )
+        }
+        await Promise.all(uploads)
+      }
+
+      // Los ficheros pendientes ya están en el servidor: se limpian para que un
+      // segundo guardado sin recargar no los vuelva a subir. Los nombres de
+      // fichero (`coverImage`, `demoImages`) se quedan como estaban porque el
+      // servidor los renombra al guardarlos y aquí no se conocen los nuevos;
+      // ambas pantallas navegan fuera tras guardar y al reabrir el editor
+      // `loadProgram` los rehidrata desde PocketBase.
+      setState(s => ({
+        ...s,
+        programId,
+        isSaving: false,
+        isDirty: false,
+        info: { ...s.info, coverFile: null, coverRemoved: false },
+        days: Object.fromEntries(
+          Object.entries(s.days).map(([key, day]) => [
+            key,
+            {
+              ...day,
+              exercises: day.exercises.map(ex => ({
+                ...ex,
+                pendingImages: [],
+                pendingVideo: null,
+                removedImages: [],
+                removeVideo: false,
+              })),
+            },
+          ]),
+        ),
+      }))
       // Refresca todo el dominio de programas (catálogo, inscripción y las DOS
       // claves de detalle: `detail` de usePrograms y `detailView` de
       // useProgramDetail, #606) y la caché de edición, que es un dominio aparte.

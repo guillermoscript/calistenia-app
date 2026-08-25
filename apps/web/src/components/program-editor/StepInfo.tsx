@@ -7,10 +7,11 @@
  * existió solo se podían fijar por script, así que ningún programa creado desde
  * aquí entraba nunca en el «PARA TI» del onboarding.
  */
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { ProgramEditorState } from '@calistenia/core/hooks/useProgramEditor'
+import { COVER_ACCEPT, pickCover } from '../../lib/program-media'
 import { EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { CONDITION_IDS, INJURY_IDS } from '@calistenia/core/types/onboarding'
 import { Input } from '../ui/input'
@@ -67,6 +68,101 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   )
 }
 
+/**
+ * Selector de portada (#618). A nivel de módulo por lo mismo que `Chip`: dentro
+ * de `StepInfo` sería un tipo de componente nuevo en cada render y React
+ * remontaría el `<input type=file>`, perdiendo la selección en curso.
+ */
+function CoverPicker({
+  info,
+  updateInfo,
+}: {
+  info: ProgramEditorState['info']
+  updateInfo: (info: Partial<ProgramEditorState['info']>) => void
+}) {
+  const { t } = useTranslation()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [localPreview, setLocalPreview] = useState<string | null>(null)
+
+  // La vista previa de un fichero recién elegido es un blob URL, y hay que
+  // revocarlo o el navegador se queda con la imagen entera en memoria mientras
+  // viva la pestaña.
+  useEffect(() => {
+    if (!info.coverFile) {
+      setLocalPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(info.coverFile.blob)
+    setLocalPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [info.coverFile])
+
+  // Lo elegido ahora gana a lo que hay en el servidor; si se ha quitado, no se
+  // enseña nada aunque el registro todavía tenga fichero.
+  const preview = localPreview || (info.coverRemoved ? null : info.coverUrl)
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return
+    const result = pickCover(file)
+    if (!result.ok) {
+      setError(t(result.reason === 'size' ? 'programEditor.coverTooLarge' : 'programEditor.coverUnsupported'))
+      return
+    }
+    setError(null)
+    updateInfo({ coverFile: result.file, coverRemoved: false })
+  }
+
+  const handleRemove = () => {
+    setError(null)
+    // `coverRemoved` solo tiene efecto sobre lo que YA está en el servidor;
+    // descartar un fichero recién elegido es simplemente soltarlo.
+    updateInfo({ coverFile: null, coverRemoved: true })
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div>
+      <label className={LABEL_CLASS} htmlFor="pe-cover">{t('programEditor.coverLabel')}</label>
+      <div className="flex items-start gap-4">
+        {preview ? (
+          <img
+            src={preview}
+            alt={t('programEditor.coverPreviewAlt')}
+            className="h-24 w-40 shrink-0 rounded-lg border border-border object-cover"
+          />
+        ) : (
+          <div className="flex h-24 w-40 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-[10px] uppercase tracking-widest text-muted-foreground">
+            {t('programEditor.coverEmpty')}
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <input
+            ref={inputRef}
+            id="pe-cover"
+            type="file"
+            accept={COVER_ACCEPT}
+            onChange={e => handleFile(e.target.files?.[0])}
+            className="text-[11px] file:mr-2 file:rounded-md file:border file:border-border file:bg-transparent file:px-2.5 file:py-1 file:text-[10px] file:uppercase file:tracking-widest file:text-foreground"
+          />
+          {preview && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="self-start text-[10px] uppercase tracking-widest text-muted-foreground hover:text-red-400"
+            >
+              {t('programEditor.coverRemove')}
+            </button>
+          )}
+        </div>
+      </div>
+      {error
+        ? <div className="mt-1.5 text-[11px] text-red-400" role="alert">{error}</div>
+        : <div className={HELP_CLASS}>{t('programEditor.coverDesc')}</div>}
+    </div>
+  )
+}
+
 interface StepInfoProps {
   info: ProgramEditorState['info']
   updateInfo: (info: Partial<ProgramEditorState['info']>) => void
@@ -104,6 +200,21 @@ export function StepInfo({ info, updateInfo, redistributeWeeks, canPublishOffici
               rows={3}
               className="text-sm"
             />
+          </div>
+
+          <CoverPicker info={info} updateInfo={updateInfo} />
+
+          <div>
+            <label className={LABEL_CLASS} htmlFor="pe-instructions">{t('programEditor.instructionsLabel')}</label>
+            <Textarea
+              id="pe-instructions"
+              value={info.instructions}
+              onChange={e => updateInfo({ instructions: e.target.value })}
+              placeholder={t('programEditor.instructionsPlaceholder')}
+              rows={5}
+              className="text-sm"
+            />
+            <div className={HELP_CLASS}>{t('programEditor.instructionsDesc')}</div>
           </div>
 
           <div>
