@@ -69,6 +69,24 @@ export function setupOnlineManager(): void {
   })
 }
 
+/**
+ * Versión de la FORMA de los datos cacheados. Súbela cuando cambie el tipo de
+ * algo que se persiste y la query key NO cambie.
+ *
+ * Por qué existe: el caché persistido sobrevive al deploy, así que un build
+ * nuevo rehidrata objetos escritos por el build viejo. Si la clave es la misma
+ * (`['feed','sessions',…]`) y el tipo cambió, el componente pinta el dato
+ * ANTIGUO con el código NUEVO antes de que llegue el refetch. Pasó de verdad:
+ * #588 añadió `exerciseNames` a `FeedItem` y el muro de un usuario con caché
+ * previo tumbaba el dashboard entero con "Cannot read properties of undefined
+ * (reading 'length')" (GYM-GUILLE-1X/1Z). React Query descarta el caché entero
+ * cuando el buster no coincide, que es exactamente lo que hace falta.
+ *
+ * Coste de subirla: los usuarios pierden UNA vez el caché offline y la primera
+ * carga tras el deploy va a red. Barato al lado de un dashboard en blanco.
+ */
+export const PERSIST_BUSTER = 'v2-feed-588'
+
 /** Persister sobre el storage síncrono inyectado (localStorage / MMKV). */
 export function createCorePersister() {
   return createSyncStoragePersister({
