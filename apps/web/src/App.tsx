@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { WorkoutProvider, useWorkoutState, useWorkoutActions } from './contexts/WorkoutContext'
@@ -85,12 +85,12 @@ import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './componen
 import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { consumePendingSharedProgram } from '@calistenia/core/lib/sharedProgramHandoff'
 import { cn } from './lib/utils'
 import { Toaster, toast } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
 import { NotificationsProvider, useNotificationsContext } from './contexts/NotificationsContext'
 import { NotificationBadge } from './components/social/NotificationBadge'
-import type { Settings } from '@calistenia/core/types'
 import {
   SidebarProvider,
   Sidebar,
@@ -224,7 +224,8 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
 // ── AppShell (uses sidebar context) ─────────────────────────────────────────
 
 interface AppShellProps {
-  settings: Settings
+  /** Fase del programa activo, ya derivada (#616): el shell solo la pinta. */
+  phase: number
   displayName: string
   userId: string | null
   signOut: () => void
@@ -235,7 +236,7 @@ interface AppShellProps {
 }
 
 
-function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
+function AppShell({ phase, displayName, userId, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
   const { t, i18n } = useTranslation()
   const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
@@ -354,7 +355,7 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
             {open ? (
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">{displayName}</div>
-                <div className="text-[11px] text-muted-foreground">{t('nav.phase')} {settings.phase}</div>
+                <div className="text-[11px] text-muted-foreground">{t('nav.phase')} {phase}</div>
               </div>
             ) : null}
           </div>
@@ -410,7 +411,7 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
               <BellIcon className="size-4" />
               <NotificationBadge count={unreadCount} />
             </button>
-            <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">{t('nav.phase')} {settings.phase}</span>
+            <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">{t('nav.phase')} {phase}</span>
             <Button variant="ghost" size="icon" onClick={() => replayTourForPage(location.pathname)} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={t('nav.pageGuide')} title={t('nav.pageGuide')}>
               <span className="text-sm font-bold">?</span>
             </Button>
@@ -441,7 +442,7 @@ function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { activeProgram } = useWorkoutState()
+  const { activeProgram, programProgress } = useWorkoutState()
   const { selectProgram, abandonProgram, duplicateProgram, deleteProgram } = useWorkoutActions()
 
   const goToPrograms = useCallback(() => navigate('/programs'), [navigate])
@@ -475,6 +476,7 @@ function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole
   return (
     <ProgramDetailPage
       programId={id} userId={userId} userRole={userRole} activeProgram={activeProgram}
+      programProgress={programProgress}
       onBack={goToPrograms} onNavigateToProgram={goToProgram}
       onSelectProgram={selectProgram} onDuplicateProgram={handleDuplicate}
       onDeleteProgram={handleDelete} onAbandonProgram={handleAbandon} onEditProgram={handleEdit}
@@ -527,7 +529,7 @@ function AuthenticatedApp({
   const location = useLocation()
   const { user, userId, userRole } = useAuthState()
   const { signOut } = useAuthActions()
-  const { settings, pbReady, programs, activeProgram, programsReady } = useWorkoutState()
+  const { pbReady, programs, activeProgram, programsReady, programProgress } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
 
@@ -583,7 +585,7 @@ function AuthenticatedApp({
     <NotificationsProvider userId={userId ?? null}>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <AppShell settings={settings} displayName={displayName} userId={userId ?? null} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
+        <AppShell phase={programProgress.currentPhase} displayName={displayName} userId={userId ?? null} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
           <Suspense fallback={<AppLoader />}>
           <Routes>
             <Route path="/" element={
@@ -594,7 +596,7 @@ function AuthenticatedApp({
             } />
             <Route path="/workout" element={<WorkoutPage />} />
             <Route path="/lumbar" element={<LumbarPage user={user!} />} />
-            <Route path="/nutrition" element={<NutritionPage userId={userId!} trainingPhase={settings.phase} />} />
+            <Route path="/nutrition" element={<NutritionPage userId={userId!} trainingPhase={programProgress.currentPhase} />} />
             <Route path="/nutrition/log" element={<MealLoggerPage userId={userId!} />} />
             <Route path="/pantry" element={<PantryPage userId={userId!} />} />
             <Route path="/pantry/shopping" element={<ShoppingListPage userId={userId!} />} />
@@ -685,6 +687,22 @@ function AppInner() {
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- solo al cambiar de usuario; `user` entero re-dispararía en cada authRefresh
 
   useEffect(() => { return setupAutoSync(pb, () => queryClient.invalidateQueries()) }, [])
+
+  /**
+   * Cierra el embudo del enlace compartido (#604): quien llega a `/shared/:id`
+   * sin cuenta, pulsa «Regístrate para usar este programa» y completa el alta,
+   * aterrizaba en el dashboard sin rastro del programa que venía a ver. La
+   * landing guarda el id antes de mandar a `/auth` y aquí se recoge.
+   *
+   * `consumePendingSharedProgram` es de un solo uso, así que este efecto puede
+   * correr en cada render sin secuestrar la navegación: a partir de la segunda
+   * vez no hay nada que consumir.
+   */
+  useEffect(() => {
+    if (!userId) return
+    const pendingProgram = consumePendingSharedProgram()
+    if (pendingProgram) navigate(`/programs/${pendingProgram}`)
+  }, [userId, navigate])
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -782,7 +800,7 @@ export default function App() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER }}
     >
       <AuthProvider>
         <AppInner />

@@ -43,9 +43,32 @@ export interface ProgressCardioRow {
   note?: string
 }
 
+/** Fila de `circuit_sessions` (solo los campos que pide `loadFromPB`). */
+export interface ProgressCircuitRow {
+  id: string
+  program_day_key?: string
+  started_at?: string
+  created?: string
+  note?: string
+}
+
 /**
- * Reconstruye el `ProgressMap` a partir de las filas de `sessions`, `sets_log` y
- * `cardio_sessions`.
+ * Marcador de "día hecho" que deriva de un circuito de programa.
+ *
+ * `circuitSessionId` es el gemelo de `cardioSessionId`: existe para que
+ * `isWorkoutDone` marque el día del programa como completado mientras las
+ * listas de historial/actividad/estadísticas lo ignoran (el circuito ya se
+ * pinta por su cuenta). Vive aquí y no en `SessionDone` porque los tipos
+ * compartidos son de otro dueño; cuando el campo se estabilice, moverlo allí es
+ * una línea.
+ */
+export interface CircuitSessionDone extends SessionDone {
+  circuitSessionId: string
+}
+
+/**
+ * Reconstruye el `ProgressMap` a partir de las filas de `sessions`, `sets_log`,
+ * `cardio_sessions` y `circuit_sessions`.
  *
  * Vive fuera del hook para poder recibir también los `create` que siguen en la
  * cola offline: su payload usa exactamente los mismos nombres de campo que el
@@ -61,6 +84,7 @@ export function buildProgressMap(
   sessionRows: ProgressSessionRow[],
   setRows: ProgressSetRow[],
   cardioRows: ProgressCardioRow[],
+  circuitRows: ProgressCircuitRow[] = [],
 ): ProgressMap {
   const prog: ProgressMap = {}
 
@@ -126,6 +150,34 @@ export function buildProgressMap(
       completedAt: new Date(c.started_at || c.created!).getTime(),
       cardioSessionId: c.id,
     }
+  })
+
+  // Circuito vinculado a un día de programa → mismo marcador "done_", etiquetado
+  // con circuitSessionId (#640). Sin esto, un circuito completado no ponía el
+  // check del día ni podía contar para el hito de fase, y como el día de
+  // circuito SÍ entra en `requiredDays`, el hito del programa entero quedaba
+  // bloqueado para siempre.
+  circuitRows.forEach((c) => {
+    if (!c.program_day_key) return
+    // A diferencia de cardio, `circuit_sessions.started_at` es texto libre y sin
+    // `autodate` no hay `created` al que caer: sin fecha usable la clave saldría
+    // como `done_Invalid Date_…` y ensuciaría el mapa para siempre.
+    const at = c.started_at || c.created
+    if (!at) return
+    const date = utcToLocalDateStr(at)
+    const dk = `done_${date}_${c.program_day_key}`
+    // No pisar un marcador que ya exista para el mismo día+clave: el de
+    // `sessions` lleva count, timings y notas, y ese sí alimenta estadísticas.
+    if (prog[dk]) return
+    const entry: CircuitSessionDone = {
+      done: true,
+      date,
+      workoutKey: c.program_day_key,
+      note: c.note || '',
+      completedAt: new Date(at).getTime(),
+      circuitSessionId: c.id,
+    }
+    prog[dk] = entry
   })
 
   return prog

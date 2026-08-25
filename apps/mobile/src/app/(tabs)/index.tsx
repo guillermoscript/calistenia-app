@@ -4,7 +4,7 @@ import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Play, Check, Moon, MapPin, Users, Bell, Trophy, Flag } from 'lucide-react-native'
+import { Play, Check, Moon, MapPin, Users, Bell, Trophy, Flag, Timer } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
+import { useCircuitSession } from '@/contexts/CircuitSessionContext'
 import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
@@ -36,6 +37,10 @@ const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
 /**
  * Días NO entrenables como sesión de fuerza en el MVP móvil. Igual que la web,
  * cualquier otro tipo (incluido day_type vacío en programas antiguos) es fuerza.
+ *
+ * `cardio` y `circuit` siguen aquí a propósito: NO son sesiones de fuerza, y
+ * este `Set` también gobierna `OtherDays`, que lista días para arrancar el
+ * runner de fuerza. Cada uno tiene su propio camino en el hero (#625).
  */
 const NON_STRENGTH_TYPES = new Set(['rest', 'cardio', 'yoga', 'circuit'])
 
@@ -83,9 +88,10 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs } = useWorkoutState()
+  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
+  const { startCircuit } = useCircuitSession()
   const milestoneUser = useAuthUser()
   const { unreadCount, loadNotifications } = useNotifications(milestoneUser?.id ?? null)
   // Para el hint cardio_gps (#235): comparte query key con HomeActivity, cero fetch extra.
@@ -100,7 +106,9 @@ export default function TodayScreen() {
   }, [milestoneUser?.id, loadNotifications])
 
   const todayId = DAY_IDS[localDay()]
-  const phase = settings.phase || 1
+  // #616: la fase sale del programa activo (semana derivada de `started_at`),
+  // ya no del entero global `settings.phase`.
+  const phase = programProgress.currentPhase || 1
   const todayMeta = weekDays.find(d => d.id === todayId)
   const workout = useMemo(() => getWorkout(phase, todayId), [getWorkout, phase, todayId])
   const workoutKey = `p${phase}_${todayId}`
@@ -138,12 +146,31 @@ export default function TodayScreen() {
     })
   }
 
+  // Día de circuito del programa: arranca el motor de circuitos con la config
+  // de ESTA fase y abre el runner nativo (#625). Antes ni se ofrecía: `circuit`
+  // está en NON_STRENGTH_TYPES y no tenía atajo propio como el cardio.
+  const isCircuitDay = todayMeta?.type === 'circuit'
+  const circuitConfig = circuitDayConfigs[workoutKey]
+  const canStartCircuit = isCircuitDay && !!circuitConfig && circuitConfig.exercises.length > 0
+  const handleStartCircuit = () => {
+    if (!circuitConfig) return
+    // `workoutKey` es `p{fase}_{día}`: el mismo formato que guarda el cardio en
+    // `program_day_key`, y el único que casa con los consumidores del progreso.
+    startCircuit(circuitConfig, 'program', activeProgram?.id, workoutKey)
+    router.push('/circuit')
+  }
+
   const handleStart = () => {
     if (!workout) return
     // Si hay una sesión activa de este mismo workout, retomarla; si es de otro
     // día se descarta (mismo comportamiento que la web al empezar otra).
+    //
+    // Sin `endSession()` delante: `startSession` ya resetea todo el estado, y
+    // pasando por el cierre la sesión a medias se contaba como una salida
+    // deliberada en vez de como un entreno reemplazado — la misma acción salía
+    // con un desenlace distinto en cada plataforma (#636). De paso se ahorra el
+    // borrado del registro remoto que el push siguiente vuelve a crear.
     if (!session.isActive || session.workoutKey !== workoutKey) {
-      session.endSession()
       session.startSession(workout, workoutKey, 'program')
     }
     router.push('/session')
@@ -199,7 +226,12 @@ export default function TodayScreen() {
           </Card>
         ) : (
           <Pressable
-            onPress={canTrainToday && !doneToday ? handleStart : isCardioDay ? handleStartCardio : undefined}
+            onPress={
+              canTrainToday && !doneToday ? handleStart
+              : isCardioDay ? handleStartCardio
+              : canStartCircuit && !doneToday ? handleStartCircuit
+              : undefined
+            }
             className={cn(
               'rounded-xl border-2 p-5',
               doneToday
@@ -208,9 +240,11 @@ export default function TodayScreen() {
                   ? 'border-lime/30 bg-lime/5 active:scale-[0.99]'
                   : isCardioDay
                     ? 'border-emerald-400/30 bg-emerald-400/5 active:scale-[0.99]'
-                    : 'border-border bg-card',
+                    : canStartCircuit
+                      ? 'border-orange-500/30 bg-orange-500/5 active:scale-[0.99]'
+                      : 'border-border bg-card',
             )}
-            accessibilityRole={(canTrainToday || isCardioDay) && !doneToday ? 'button' : undefined}
+            accessibilityRole={(canTrainToday || isCardioDay || canStartCircuit) && !doneToday ? 'button' : undefined}
           >
             <View className="flex-row items-center justify-between gap-4">
               <View className="flex-1">
@@ -220,7 +254,11 @@ export default function TodayScreen() {
                 <Text
                   className={cn(
                     'font-bebas text-3xl leading-none',
-                    doneToday ? 'text-emerald-500' : canTrainToday ? 'text-lime' : isCardioDay ? 'text-emerald-400' : 'text-muted-foreground',
+                    doneToday ? 'text-emerald-500'
+                    : canTrainToday ? 'text-lime'
+                    : isCardioDay ? 'text-emerald-400'
+                    : canStartCircuit ? 'text-orange-500'
+                    : 'text-muted-foreground',
                   )}
                 >
                   {doneToday
@@ -229,7 +267,9 @@ export default function TodayScreen() {
                       ? t('dashboard.restDay')
                       : isCardioDay
                         ? `${t('cardio.title')} · ${t(`cardio.${cardioConfig?.activityType ?? 'running'}`)}`
-                        : workout?.title || todayMeta?.focus || t('dashboard.train')}
+                        : isCircuitDay
+                          ? (circuitConfig?.mode === 'timed' ? 'HIIT' : t('circuit.modes.circuit'))
+                          : workout?.title || todayMeta?.focus || t('dashboard.train')}
                 </Text>
                 <Text className="mt-1.5 text-xs text-muted-foreground">
                   {activeProgram.name}{phaseMeta ? ` · ${t('workout.phaseLabel', { phase })}` : ''}
@@ -256,6 +296,10 @@ export default function TodayScreen() {
                 <View className="size-12 shrink-0 items-center justify-center rounded-full bg-emerald-400/10">
                   <MapPin size={22} color="#34d399" />
                 </View>
+              ) : canStartCircuit ? (
+                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-orange-500/10">
+                  <Timer size={22} color="#f97316" />
+                </View>
               ) : null}
             </View>
 
@@ -275,7 +319,13 @@ export default function TodayScreen() {
               </Text>
             )}
 
-            {!doneToday && !canTrainToday && !isCardioDay && todayMeta?.type !== 'rest' && (
+            {isCircuitDay && !doneToday && circuitConfig && (
+              <Text className="mt-3 font-mono text-[10px] uppercase tracking-[2px] text-orange-500">
+                {t('circuit.summary', { rounds: circuitConfig.rounds, exercises: circuitConfig.exercises.length })}
+              </Text>
+            )}
+
+            {!doneToday && !canTrainToday && !isCardioDay && !canStartCircuit && todayMeta?.type !== 'rest' && (
               <Text className="mt-3 text-sm text-muted-foreground">
                 {todayMeta?.focus} — {t('programs.contentComingSoon')}
               </Text>
@@ -434,7 +484,8 @@ function OtherDays({ phase, todayId, weekDays }: { phase: number; todayId: DayId
           <Pressable
             key={day.id}
             onPress={() => {
-              session.endSession()
+              // Igual que en `handleStart`: `startSession` resetea el estado y
+              // es quien decide el desenlace de la sesión que se reemplaza.
               session.startSession(w, key, 'program')
               router.push('/session')
             }}

@@ -19,6 +19,9 @@ const h = vi.hoisted(() => ({
   todayIndex: 1, // lunes
   weekDays: [] as unknown[],
   getWorkout: vi.fn(),
+  circuitDayConfigs: {} as Record<string, unknown>,
+  activeProgram: null as unknown,
+  startCircuit: vi.fn(),
 }))
 
 vi.mock('@calistenia/core/lib/dateUtils', () => ({
@@ -29,10 +32,13 @@ vi.mock('@calistenia/core/lib/dateUtils', () => ({
 vi.mock('../contexts/WorkoutContext', () => ({
   useWorkoutState: () => ({
     settings: { phase: 1 },
+    // #616: la fase ya no sale de settings sino del progreso del programa.
+    programProgress: { currentPhase: 1 },
     phases: [{ id: 1, name: 'F1' }],
     weekDays: h.weekDays,
     cardioDayConfigs: {},
-    activeProgram: null,
+    circuitDayConfigs: h.circuitDayConfigs,
+    activeProgram: h.activeProgram,
   }),
   useWorkoutActions: () => ({
     logSet: vi.fn(),
@@ -43,7 +49,7 @@ vi.mock('../contexts/WorkoutContext', () => ({
     getWorkout: h.getWorkout,
   }),
 }))
-vi.mock('../contexts/CircuitSessionContext', () => ({ useCircuitSession: () => ({ startCircuit: vi.fn() }) }))
+vi.mock('../contexts/CircuitSessionContext', () => ({ useCircuitSession: () => ({ startCircuit: h.startCircuit }) }))
 vi.mock('../contexts/ActiveSessionContext', () => ({ useActiveSession: () => ({ startSession: vi.fn() }) }))
 vi.mock('../contexts/AuthContext', () => ({ useAuthState: () => ({ userId: 'u1', userRole: 'user' }) }))
 vi.mock('@calistenia/core/hooks/useRestPreferences', () => ({
@@ -131,5 +137,80 @@ describe('WorkoutPage sin ?day= (#574)', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText('Ejercicio lun')).toBeTruthy()
+  })
+})
+
+/**
+ * #625 — un día de tipo `circuit` nunca arrancaba un circuito.
+ *
+ * La precondición del bug es sutil: un día de circuito CON ejercicios también
+ * genera filas en `program_exercises`, así que `getWorkout()` devuelve un
+ * `Workout` truthy. Como el ternario preguntaba por `workout` antes que por el
+ * tipo del día, ganaba siempre la pantalla de fuerza. Por eso estos tests dan
+ * un `getWorkout` que SÍ devuelve entreno: con `null` pasarían aun con el bug.
+ */
+describe('WorkoutPage en un día de circuito (#625)', () => {
+  const CIRCUIT_WEEK: WeekDay[] = [
+    day('lun', 'circuit', 'Lunes'), day('mar', 'rest', 'Martes'), day('mie', 'legs', 'Miércoles'),
+    day('jue', 'rest', 'Jueves'), day('vie', 'full', 'Viernes'), day('sab', 'rest', 'Sábado'), day('dom', 'rest', 'Domingo'),
+  ]
+  const circuitCfg = {
+    id: 'lun_circuit',
+    name: { es: 'Circuito', en: 'Circuit' },
+    mode: 'circuit',
+    exercises: [
+      { exerciseId: 'burpees', name: { es: 'Burpees', en: 'Burpees' }, reps: '10' },
+      { exerciseId: 'jump_squats', name: { es: 'Sentadillas con salto', en: 'Jump Squats' }, reps: '15' },
+    ],
+    rounds: 4,
+    restBetweenExercises: 15,
+    restBetweenRounds: 60,
+  }
+
+  beforeEach(() => {
+    h.todayIndex = 1 // lunes
+    h.weekDays = CIRCUIT_WEEK
+    h.activeProgram = { id: 'prog1', name: 'Programa' }
+    h.circuitDayConfigs = { p1_lun: circuitCfg }
+    h.startCircuit = vi.fn()
+    // El día de circuito tiene ejercicios en `program_exercises`, así que
+    // `getWorkout` devuelve un entreno: es justo lo que disparaba el bug.
+    h.getWorkout.mockImplementation((_p: number, d: string) => CIRCUIT_WEEK.find(w => w.id === d)?.type === 'rest' ? null : workoutFor(d))
+  })
+
+  it('pinta la tarjeta de circuito, no la de fuerza, aunque haya `workout`', () => {
+    mount()
+    expect(screen.getByText('circuit.startCircuit')).toBeTruthy()
+    expect(screen.getByText('circuit.summary:4,2')).toBeTruthy()
+    // La UI de fuerza no debe aparecer: ni sus ejercicios ni el botón EMPEZAR.
+    expect(screen.queryByText('Ejercicio lun')).toBeNull()
+    expect(document.querySelector('#tour-start-session')).toBeNull()
+  })
+
+  it('lista los ejercicios del circuito', () => {
+    mount()
+    expect(screen.getByText('Burpees')).toBeTruthy()
+    expect(screen.getByText('Sentadillas con salto')).toBeTruthy()
+  })
+
+  it('arranca con `p{fase}_{día}` como program_day_key, no con el día suelto', async () => {
+    mount()
+    await userEvent.click(screen.getByText('circuit.startCircuit'))
+    expect(h.startCircuit).toHaveBeenCalledWith(circuitCfg, 'program', 'prog1', 'p1_lun')
+  })
+
+  it('sin ejercicios configurados deshabilita el arranque en vez de abrir un runner vacío', () => {
+    h.circuitDayConfigs = { p1_lun: { ...circuitCfg, exercises: [] } }
+    mount()
+    expect(screen.getByText('circuit.noExercises')).toBeTruthy()
+    expect(screen.getByText('circuit.startCircuit').closest('button')!.hasAttribute('disabled')).toBe(true)
+  })
+
+  it('cae al `circuitConfig` del WeekDay cuando el mapa no trae ese día', () => {
+    h.circuitDayConfigs = {}
+    h.weekDays = CIRCUIT_WEEK.map(d => d.id === 'lun' ? { ...d, circuitConfig: circuitCfg } : d)
+    mount()
+    expect(screen.getByText('circuit.startCircuit')).toBeTruthy()
+    expect(screen.queryByText('Ejercicio lun')).toBeNull()
   })
 })

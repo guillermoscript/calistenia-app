@@ -50,17 +50,39 @@ const day = (over: Partial<EditorDay> = {}): EditorDay => ({
   ...over,
 })
 
+/**
+ * `info` completo con los valores por defecto del editor.
+ *
+ * `ProgramEditorInfo` creció con la visibilidad (#603), los campos de catálogo
+ * (#613) y la portada (#618). Los casos de abajo solo necesitan tocar dos o
+ * tres campos, así que parten de esta base en vez de repetir los catorce.
+ */
+const baseInfo = (over: Partial<ProgramEditorState['info']> = {}): ProgramEditorState['info'] => ({
+  name: '',
+  description: '',
+  durationWeeks: 26,
+  isOfficial: false,
+  visibility: 'private',
+  difficulty: 'beginner',
+  goalType: '',
+  skill: '',
+  intensity: '',
+  daysPerWeek: null,
+  equipmentRequired: [],
+  contraindications: [],
+  instructions: '',
+  coverImage: '',
+  coverUrl: null,
+  coverFile: null,
+  coverRemoved: false,
+  ...over,
+})
+
 /** Programa válido de 8 semanas: 2 fases, un día de entreno y uno de descanso. */
 const validState = (over: Partial<ProgramEditorState> = {}): ProgramEditorState => ({
   programId: null,
   step: 1,
-  info: {
-    name: 'Mi programa',
-    description: '',
-    durationWeeks: 8,
-    isOfficial: false,
-    difficulty: 'beginner',
-  },
+  info: baseInfo({ name: 'Mi programa', durationWeeks: 8 }),
   phases: [
     { name: 'Base', weeks: '1-4', color: '#c8f542', bgColor: '' },
     { name: 'Fuerza', weeks: '5-8', color: '#42c8f5', bgColor: '' },
@@ -300,7 +322,7 @@ describe('collectStepErrors', () => {
     const es = esTranslations as Record<string, string>
     const en = enTranslations as Record<string, string>
     const broken = validState({
-      info: { name: '', description: '', durationWeeks: 0, isOfficial: false, difficulty: 'beginner' },
+      info: baseInfo({ durationWeeks: 0 }),
       phases: [
         { name: 'Base', weeks: '1-6', color: '', bgColor: '' },
         { name: 'Fuerza', weeks: '4-9', color: '', bgColor: '' },

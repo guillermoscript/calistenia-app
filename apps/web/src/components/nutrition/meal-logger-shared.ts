@@ -112,21 +112,78 @@ export function sumFoodTotals(foods: FoodItem[]): MealTotals {
   )
 }
 
-/** Compress image client-side to max 1536px (higher res = better AI food detection) */
+/**
+ * Los ÚNICOS tipos que acepta la API de IA (`config.upload.allowedMimeTypes` en
+ * `mcp-server/src/api/config.ts`). El input del logger es `accept="image/*"`,
+ * que es MUCHO más ancho: el selector de macOS/Android deja elegir HEIC, AVIF,
+ * BMP o TIFF sin pestañear. Cualquiera de esos que llegue tal cual al servidor
+ * vuelve como 400 "Tipo de archivo no soportado".
+ */
+const AI_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+/** El navegador no supo decodificar el fichero (HEIC en Chrome, fichero corrupto). */
+export class UnreadableImageError extends Error {
+  constructor(public readonly mimeType: string) {
+    super(`No se pudo decodificar la imagen (${mimeType || 'tipo desconocido'})`)
+    this.name = 'UnreadableImageError'
+  }
+}
+
+/** Cambia la extensión a `.jpg` cuando re-codificamos: el fichero YA no es HEIC. */
+function asJpegName(name: string): string {
+  return name.replace(/\.[^./\\]+$/, '') + '.jpg'
+}
+
+/**
+ * Comprime a 1536px máximo (más resolución = el modelo acierta más comida) y
+ * garantiza un tipo que el servidor acepte.
+ *
+ * Dos bugs vividos aquí, los dos SILENCIOSOS:
+ *
+ * 1. No había `img.onerror`. Si el navegador no sabe decodificar el fichero
+ *    —HEIC de iPhone en Chrome es el caso típico, y `accept="image/*"` deja
+ *    elegirlo— `onload` no dispara nunca y esta promesa NO SE RESOLVÍA JAMÁS.
+ *    `handleFileChange` la espera con `await`, así que la foto desaparecía sin
+ *    preview, sin error y sin petición: la pantalla se quedaba igual que antes
+ *    de elegir el fichero. Nada llega a Sentry porque nada lanza.
+ * 2. Una imagen que ya cabía en 1536px salía por el atajo `resolve(file)` con su
+ *    tipo ORIGINAL. Una HEIC pequeña se subía tal cual y el servidor la
+ *    rechazaba con 400.
+ *
+ * Ahora: fallo de decodificación → `UnreadableImageError` (quien llama avisa), y
+ * el atajo solo se toma si además el tipo está en la lista del servidor.
+ */
 export function compressImage(file: File, maxSize = 1536): Promise<File> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
-    img.onload = () => {
+
+    img.onerror = () => {
       URL.revokeObjectURL(url)
+      reject(new UnreadableImageError(file.type))
+    }
+
+    // El cuerpo va aparte y envuelto en try/catch por la MISMA razón que existe
+    // `onerror`: lo que lance dentro de un manejador de eventos sale por el bucle
+    // de eventos, NO por la promesa. `getContext('2d')` puede devolver `null`
+    // (canvas bloqueado, sin memoria) y el `!` reventaría ahí dentro, dejando otra
+    // vez la promesa sin resolver y la foto desaparecida sin explicación.
+    const compress = () => {
       let { width, height } = img
-      if (width <= maxSize && height <= maxSize) {
+      const needsResize = width > maxSize || height > maxSize
+      // Re-codificar aunque quepa: es la única forma de que un HEIC pequeño no
+      // acabe en un 400 del servidor.
+      const needsReencode = !AI_ACCEPTED_TYPES.includes(file.type)
+      if (!needsResize && !needsReencode) {
         resolve(file)
         return
       }
-      const ratio = Math.min(maxSize / width, maxSize / height)
-      width = Math.round(width * ratio)
-      height = Math.round(height * ratio)
+
+      if (needsResize) {
+        const ratio = Math.min(maxSize / width, maxSize / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
 
       const canvas = document.createElement('canvas')
       canvas.width = width
@@ -136,7 +193,11 @@ export function compressImage(file: File, maxSize = 1536): Promise<File> {
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+            resolve(new File([blob], asJpegName(file.name), { type: 'image/jpeg' }))
+          } else if (needsReencode) {
+            // Devolver el original aquí sería mandar al servidor justo el tipo
+            // que no acepta: mejor decirlo ahora que comerse un 400 después.
+            reject(new UnreadableImageError(file.type))
           } else {
             resolve(file)
           }
@@ -145,6 +206,16 @@ export function compressImage(file: File, maxSize = 1536): Promise<File> {
         0.85
       )
     }
+
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      try {
+        compress()
+      } catch {
+        reject(new UnreadableImageError(file.type))
+      }
+    }
+
     img.src = url
   })
 }

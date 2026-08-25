@@ -39,3 +39,18 @@ describe('challenge notification deep links', () => {
     expect(resolveNotifUrl('/challenges/challenge-123?source=push')).toBe('/challenges/challenge-123?source=push')
   })
 })
+
+describe('program deleted notification (#633)', () => {
+  // `referenceId` guarda el id del programa borrado como rastro, pero navegar
+  // ahí daría un 404: el registro ya no existe. El catálogo es la acción útil
+  // que le queda al usuario.
+  it('lands on the catalog, never on the dead program', () => {
+    const n = notification({ type: 'program_deleted', referenceId: 'prog-borrado' })
+    expect(getNotifRoute(n)).toBe('/programs')
+  })
+
+  it('does not fall through to the unknown-type default', () => {
+    // El `default` manda a /notifications, que es donde el usuario YA está.
+    expect(getNotifRoute(notification({ type: 'program_deleted' }))).not.toBe('/notifications')
+  })
+})

@@ -9,6 +9,12 @@ export function syncWidgetSnapshot(args: {
   lang: string
   programName: string | null
   settings: Settings
+  /**
+   * Fase del programa activo (#616). Antes se leía de `settings.phase`, el
+   * entero global del usuario; ahora la deriva `programProgress` a partir de
+   * `started_at`, así que el widget avanza de fase solo.
+   */
+  phase: number
   weekDays: WeekDay[]
   getWorkout: (phase: number, dayId: string) => Workout | null
   isWorkoutDone: (key: string) => boolean
@@ -18,7 +24,7 @@ export function syncWidgetSnapshot(args: {
 }): void {
   const todayId = DAY_IDS[localDay()]
   const tomorrowId = DAY_IDS[(localDay() + 1) % 7]
-  const phase = args.settings.phase || 1
+  const phase = args.phase || 1
   const workout = args.programName ? args.getWorkout(phase, todayId) : null
   // Misma fase que hoy: los programas no cambian de fase a mitad de semana.
   const workoutTomorrow = args.programName ? args.getWorkout(phase, tomorrowId) : null

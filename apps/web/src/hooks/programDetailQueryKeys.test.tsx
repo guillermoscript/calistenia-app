@@ -38,7 +38,15 @@ const fx = vi.hoisted(() => {
     PROGRAM_ID,
     // Las dos consultas apuntan al MISMO programa, que es la precondición del
     // bug: la ficha se abre sobre el programa que `usePrograms` tiene activo.
-    ENROLLMENT: { id: 'e1', program: PROGRAM_ID },
+    // Lleva `expand.program` porque el programa está VIVO y eso es lo que
+    // devuelve PocketBase: desde #605 `fetchActiveEnrollment` pide
+    // `expand: 'program'` y trata una inscripción sin él como huérfana (su
+    // programa fue borrado), es decir «sin programa activo».
+    ENROLLMENT: {
+      id: 'e1',
+      program: PROGRAM_ID,
+      expand: { program: { id: PROGRAM_ID, name: 'Programa en la ficha' } },
+    },
     // Nombre distinto en el catálogo y en el `getOne` de la ficha: así se ve de
     // qué consulta viene cada dato, y no basta con que "haya algo" en la caché.
     CATALOG_ROW: { id: PROGRAM_ID, name: 'Programa en el catálogo', duration_weeks: 8 },
@@ -66,6 +74,10 @@ vi.mock('@calistenia/core/lib/pocketbase', () => {
   const collections: Record<string, any> = {
     programs: {
       getList: async () => list([fx.CATALOG_ROW]),
+      // El catálogo y las fases pasaron a `getFullList` al quitarles los topes
+      // de página (#614); `getList` se queda porque otras rutas del hook lo
+      // siguen usando.
+      getFullList: async () => [fx.CATALOG_ROW],
       getOne: async () => fx.PROGRAM_ROW,
     },
     user_programs: {
@@ -73,6 +85,7 @@ vi.mock('@calistenia/core/lib/pocketbase', () => {
     },
     program_phases: {
       getList: async () => list([fx.PHASE_ROW]),
+      getFullList: async () => [fx.PHASE_ROW],
     },
     program_exercises: {
       getList: async () => list([fx.EXERCISE_ROW]),
@@ -168,7 +181,7 @@ describe('usePrograms + useProgramDetail sobre el mismo programa (#606)', () => 
     expect(detail).not.toBe(detailView)
 
     // Y cada una tiene exactamente los campos de su hook, ninguno del otro.
-    expect(Object.keys(detail).sort()).toEqual(['cardioDayConfigs', 'phases', 'weekDays', 'workoutsMap'])
+    expect(Object.keys(detail).sort()).toEqual(['cardioDayConfigs', 'circuitDayConfigs', 'phases', 'weekDays', 'workoutsMap'])
     expect(Object.keys(detailView).sort()).toEqual(['days', 'program'])
   })
 

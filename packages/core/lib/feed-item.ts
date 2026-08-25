@@ -111,9 +111,19 @@ function workoutView(item: FeedItem): FeedItemView {
   // trae fase y no es una sesión libre. Cuando hay clave, manda la clave.
   const isFree = item.workoutKey ? isFreeSessionKey(item.workoutKey) : item.phase === NO_PHASE
   const phaseColor = PHASE_COLORS[item.phase]
+  // `?? []` y no `item.exerciseNames` a secas: este item puede venir del caché
+  // PERSISTIDO de react-query, escrito por una versión anterior de la app. Antes
+  // de #588 `FeedItem` no tenía `exerciseNames` y la clave de la query es la
+  // misma (`['feed','sessions',…]`), así que al abrir un build nuevo con caché
+  // viejo rehidratado el muro entero reventaba con "Cannot read properties of
+  // undefined (reading 'length')" antes de que el refetch trajera la forma
+  // nueva. El `buster` de `createCorePersister` corta la causa; esto es el
+  // cinturón, porque el presentador no puede confiar en la forma de un dato que
+  // lleva 24h en localStorage.
+  const exerciseNames = item.exerciseNames ?? []
   const counts: string[] = []
-  if (item.exerciseNames.length > 0) {
-    counts.push(tr('progress.exerciseCount', `${item.exerciseNames.length} ejercicios`, { count: item.exerciseNames.length }))
+  if (exerciseNames.length > 0) {
+    counts.push(tr('progress.exerciseCount', `${exerciseNames.length} ejercicios`, { count: exerciseNames.length }))
   }
   if (item.durationSeconds != null && item.durationSeconds > 0) {
     counts.push(formatDuration(item.durationSeconds))
@@ -124,7 +134,7 @@ function workoutView(item: FeedItem): FeedItemView {
       : tr('feed.completedWorkout', 'completó un entrenamiento'),
     verb: tr('widgets.completed', 'completó'),
     title: workoutTitleFor(item),
-    detail: exercisesLine(item.exerciseNames),
+    detail: exercisesLine(exerciseNames),
     metrics: counts.length > 0 ? counts.join(' · ') : null,
     badge: item.phase > NO_PHASE ? tr('feed.phaseN', `Fase ${item.phase}`, { phase: item.phase }) : null,
     // La sesión libre no tiene fase: sin acento propio salía en el lima del

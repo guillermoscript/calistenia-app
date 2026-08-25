@@ -180,11 +180,11 @@ export default function DashboardPage({
   nutritionTotals, nutritionGoals,
   cardioWeeklyStats, cardioLastSession,
 }: DashboardPageProps) {
-  const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays } = useWorkoutState()
+  const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays, programProgress } = useWorkoutState()
   const {
     getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity,
     updateSettings, isWorkoutDone, getLastSessionDate, selectProgram: onSelectProgram,
-    duplicateProgram,
+    duplicateProgram, setPhaseOverride,
   } = useWorkoutActions()
   const { userId, user } = useAuthState()
   const displayName = user?.display_name || user?.name || ''
@@ -221,14 +221,35 @@ export default function DashboardPage({
   }, [streak, userId, dismissedMilestone])
   const weeklyDone = getWeeklyDoneCount()
   const monthActivity = getMonthActivity()
-  const phase = PHASES.find(p => p.id === settings.phase) || PHASES[0]
+  // #616: la fase sale del programa activo (o del override manual guardado en
+  // `user_programs`), no del entero global `settings.phase`.
+  const phase = PHASES.find(p => p.id === programProgress.currentPhase) || PHASES[0]
   const phaseAccent = PHASE_COLORS[phase.id] || PHASE_COLORS[1]
   const today_str = todayStr()
+  // La semana y el porcentaje salen del programa cuando lo hay (#616). El
+  // cálculo viejo sobre `settings.startDate` —la fecha en que el usuario empezó
+  // a usar la app, no el programa— se queda solo para quien no está inscrito.
   const daysElapsed = settings.startDate ? diffDays(today_str, settings.startDate) : 0
-  const weekElapsed = Math.floor(daysElapsed / 7) + 1
-  const totalWeeks = activeProgram?.duration_weeks || 26
-  const progress = Math.min(100, (daysElapsed / (totalWeeks * 7)) * 100)
+  const hasProgramProgress = programProgress.totalWeeks > 0
+  const totalWeeks = hasProgramProgress ? programProgress.totalWeeks : (activeProgram?.duration_weeks || 26)
+  const weekElapsed = hasProgramProgress
+    ? (programProgress.currentWeek ?? 1)
+    : Math.floor(daysElapsed / 7) + 1
+  const progress = hasProgramProgress
+    ? programProgress.percent
+    : Math.min(100, (daysElapsed / (totalWeeks * 7)) * 100)
   const calDays = Object.entries(monthActivity)
+
+  /**
+   * Elegir fase a mano. #616: el override se guarda en `user_programs`
+   * (por programa), no en `settings` (global del usuario). Sin programa activo
+   * `setPhaseOverride` no tiene dónde escribir, así que ahí seguimos usando
+   * `settings.phase` — que es de donde la lee el fallback del hook.
+   */
+  const handleSelectPhase = useCallback(async (phaseId: number) => {
+    const saved = await setPhaseOverride(phaseId)
+    if (!saved) await updateSettings({ phase: phaseId })
+  }, [setPhaseOverride, updateSettings])
 
   const daysSinceLastSession = useMemo(() => {
     const last = getLastSessionDate ? getLastSessionDate() : null
@@ -310,8 +331,9 @@ export default function DashboardPage({
       {/* ═══ TODAY'S WORKOUT HERO ══════════════════════════════════════════ */}
       <TodayWorkoutHero
         weekDays={weekDays}
-        phase={settings.phase}
+        phase={programProgress.currentPhase}
         activeProgram={activeProgram}
+        programProgress={programProgress}
         isWorkoutDone={isWorkoutDone}
         today_str={today_str}
         onStart={(dayId) => navigate(`/workout?day=${dayId}`)}
@@ -489,7 +511,7 @@ export default function DashboardPage({
             )}
           </div>
         )}
-        <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
+        <WeekPlanWidget selectedPhase={programProgress.currentPhase} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
       </div>
 
       {/* ═══ STATS + ACTIVITY ════════════════════════════════════════════════ */}
@@ -592,10 +614,10 @@ export default function DashboardPage({
                   <div className="flex gap-2 flex-wrap">
                     {PHASES.map(p => {
                       const pa = PHASE_COLORS[p.id] || PHASE_COLORS[1]
-                      const isSelected = settings.phase === p.id
+                      const isSelected = programProgress.currentPhase === p.id
                       return (
                         <Button key={p.id} variant="outline" size="sm"
-                          onClick={() => updateSettings({ phase: p.id })} aria-pressed={isSelected}
+                          onClick={() => handleSelectPhase(p.id)} aria-pressed={isSelected}
                           className={cn('h-9 sm:h-7 px-4 sm:px-3 text-[11px] sm:text-[10px] tracking-wide transition-all', isSelected && cn('border-current', pa.text))}>
                           F{p.id}
                         </Button>

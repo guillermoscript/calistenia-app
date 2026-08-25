@@ -6,15 +6,19 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { cn } from '../../lib/utils'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { EditorDay, EditorExercise, EditorPhase } from '@calistenia/core/hooks/useProgramEditor'
+import { copyDayTargets } from '@calistenia/core/hooks/useProgramEditor'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { DAY_IDS, PRIORITY_OPTIONS } from './constants'
+import { CopyToDialog, type CopyTargetOption } from './CopyToDialog'
+import { ExerciseMediaEditor } from './ExerciseMediaEditor'
 
 interface StepExercisesProps {
   phases: EditorPhase[]
@@ -27,15 +31,27 @@ interface StepExercisesProps {
   updateExercise: (dayKey: string, index: number, data: Partial<EditorExercise>) => void
   removeExercise: (dayKey: string, index: number) => void
   moveExercise: (dayKey: string, index: number, direction: 'up' | 'down') => void
+  reorderExercise: (dayKey: string, section: 'warmup' | 'main' | 'cooldown', fromIndex: number, toIndex: number) => void
+  copyDay: (fromKey: string, toKey: string) => void
   onOpenCatalog: (section: 'warmup' | 'main' | 'cooldown') => void
 }
 
 export function StepExercises({
   phases, days, selectedPhaseTab, onSelectPhaseTab, selectedDayId, onSelectDayId,
-  addExercise, updateExercise, removeExercise, moveExercise, onOpenCatalog,
+  addExercise, updateExercise, removeExercise, moveExercise, reorderExercise, copyDay, onOpenCatalog,
 }: StepExercisesProps) {
   const { t } = useTranslation()
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null)
+  const [copyOpen, setCopyOpen] = useState(false)
+
+  // Arrastrar y soltar con la API nativa del navegador y sin librería (#621).
+  // Los índices son locales a la sección, como los espera `reorderExercise`, y
+  // el `section` que se guarda al empezar es lo que impide soltar un
+  // calentamiento en medio del principal: la lista se pinta agrupada, así que
+  // un cruce de secciones no tendría dónde caer.
+  const [dragFrom, setDragFrom] = useState<{ section: string; index: number } | null>(null)
+  const [dragOver, setDragOver] = useState<{ section: string; index: number } | null>(null)
+  const endDrag = () => { setDragFrom(null); setDragOver(null) }
 
   const currentDayKey = `${selectedPhaseTab}_${selectedDayId}`
   const currentDay = days[currentDayKey]
@@ -58,6 +74,15 @@ export function StepExercises({
     addExercise(currentDayKey, newEx)
     setExpandedExercise(currentDay ? currentDay.exercises.length : 0)
   }
+
+  const copyTargets: CopyTargetOption[] = copyOpen
+    ? copyDayTargets(days, phases.length, currentDayKey).map(target => ({
+        id: target.key,
+        label: target.dayName,
+        group: `F${target.phaseIndex + 1}: ${phases[target.phaseIndex]?.name ?? ''}`,
+        exerciseCount: target.exerciseCount,
+      }))
+    : []
 
   const allExercises = currentDay?.exercises || []
   const sections: { key: 'warmup' | 'main' | 'cooldown'; label: string; color: string; exercises: { ex: EditorExercise; globalIndex: number }[] }[] = [
@@ -122,10 +147,20 @@ export function StepExercises({
 
       {/* Day info */}
       {currentDay && (
-        <div className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{currentDay.dayName}</span>
-          {' · '}{currentDay.focus}
-          {' · '}<Badge variant="outline" className="text-[9px]">{currentDay.type.toUpperCase()}</Badge>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="min-w-0 flex-1 truncate">
+            <span className="font-medium text-foreground">{currentDay.dayName}</span>
+            {' · '}{currentDay.focus}
+            {' · '}<Badge variant="outline" className="text-[9px]">{currentDay.type.toUpperCase()}</Badge>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCopyOpen(true)}
+            className="h-7 shrink-0 text-[10px] tracking-wide"
+          >
+            {t('programEditor.copy.dayCta')}
+          </Button>
         </div>
       )}
 
@@ -160,20 +195,59 @@ export function StepExercises({
       {/* Exercise list — grouped by section */}
       {currentDay?.type !== 'cardio' && sections.map(section => (
         <div key={section.key} className="space-y-2">
-          <div className={cn('font-mono text-[10px] tracking-[2px] uppercase', section.color)}>
-            {section.label}
+          <div className="flex items-baseline gap-2">
+            <div className={cn('font-mono text-[10px] tracking-[2px] uppercase', section.color)}>
+              {section.label}
+            </div>
+            {/* El arrastre nativo no responde al dedo: en táctil quedan las flechas. */}
+            {section.exercises.length > 1 && (
+              <span className="hidden text-[9px] text-muted-foreground/60 sm:inline">
+                {t('programEditor.reorder.hint')}
+              </span>
+            )}
           </div>
 
-          {section.exercises.map(({ ex, globalIndex: ei }) => {
+          {section.exercises.map(({ ex, globalIndex: ei }, si) => {
             const isExpanded = expandedExercise === ei
             return (
-              <Card key={ei} className="overflow-hidden">
+              <Card
+                key={ei}
+                onDragOver={e => {
+                  if (!dragFrom || dragFrom.section !== section.key) return
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                  if (dragOver?.section !== section.key || dragOver.index !== si) {
+                    setDragOver({ section: section.key, index: si })
+                  }
+                }}
+                onDrop={e => {
+                  if (!dragFrom || dragFrom.section !== section.key) return
+                  e.preventDefault()
+                  reorderExercise(currentDayKey, section.key, dragFrom.index, si)
+                  endDrag()
+                }}
+                className={cn(
+                  'overflow-hidden transition-shadow',
+                  dragFrom?.section === section.key && dragFrom.index === si && 'opacity-50',
+                  dragOver?.section === section.key && dragOver.index === si
+                    && dragFrom && dragFrom.index !== si && 'ring-1 ring-lime/60'
+                )}
+              >
                 <CardContent className="p-0">
                   <div className="flex items-center gap-2 px-3 py-2.5">
-                    <div className="flex flex-col gap-0.5">
+                    <div
+                      className="flex cursor-grab flex-col gap-0.5 active:cursor-grabbing"
+                      draggable
+                      onDragStart={e => {
+                        e.dataTransfer.effectAllowed = 'move'
+                        setDragFrom({ section: section.key, index: si })
+                      }}
+                      onDragEnd={endDrag}
+                      title={t('programEditor.reorder.handle', { name: ex.name || t('programEditor.exercise') })}
+                    >
                       <button
                         onClick={() => moveExercise(currentDayKey, ei, 'up')}
-                        disabled={ei === 0}
+                        disabled={si === 0}
                         aria-label={t('programEditor.moveUp', { name: ex.name || t('programEditor.exercise') })}
                         className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
                       >
@@ -181,7 +255,7 @@ export function StepExercises({
                       </button>
                       <button
                         onClick={() => moveExercise(currentDayKey, ei, 'down')}
-                        disabled={ei === allExercises.length - 1}
+                        disabled={si === section.exercises.length - 1}
                         aria-label={t('programEditor.moveDown', { name: ex.name || t('programEditor.exercise') })}
                         className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
                       >
@@ -306,6 +380,12 @@ export function StepExercises({
                           </div>
                         )}
                       </div>
+
+                      {/* Media propia del ejercicio (#618): gana al catálogo. */}
+                      <ExerciseMediaEditor
+                        exercise={ex}
+                        onChange={data => updateExercise(currentDayKey, ei, data)}
+                      />
                     </div>
                   )}
                 </CardContent>
@@ -344,6 +424,18 @@ export function StepExercises({
           </div>
         </div>
       ))}
+
+      <CopyToDialog
+        open={copyOpen}
+        onOpenChange={setCopyOpen}
+        title={t('programEditor.copy.dayTitle', { day: currentDay?.dayName ?? '' })}
+        description={t('programEditor.copy.dayDesc')}
+        targets={copyTargets}
+        onSelect={toKey => {
+          copyDay(currentDayKey, toKey)
+          toast.success(t('programEditor.copy.doneDay', { target: days[toKey]?.dayName ?? '' }))
+        }}
+      />
     </div>
   )
 }
