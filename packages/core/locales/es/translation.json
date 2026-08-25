@@ -2725,6 +2725,17 @@
   "day.activeWalk": "Caminata activa",
   "day.totalRest": "Descanso total",
 
+  "programEditor.defaultPhase1": "Base & Activación",
+  "programEditor.defaultPhase2": "Fuerza Fundamental",
+  "programEditor.defaultPhase3": "Intensidad & Skills",
+  "programEditor.defaultPhase4": "Peak & Consolidación",
+  "programEditor.phaseNumbered": "Fase {{n}}",
+  "programEditor.dayFocusPush": "Empuje + Core",
+  "programEditor.dayFocusPull": "Tirón + Movilidad",
+  "programEditor.dayFocusLumbar": "Lumbar + Estiramientos",
+  "programEditor.dayFocusLegs": "Piernas + Glúteos",
+  "programEditor.dayFocusFull": "Cuerpo completo + Core",
+
   "programEditor.nameRequired": "El nombre del programa es obligatorio",
   "programEditor.minOneWeek": "La duración debe ser al menos 1 semana",
   "programEditor.phaseNeedsName": "La fase {{n}} necesita un nombre",
