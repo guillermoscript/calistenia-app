@@ -30,7 +30,14 @@ import {
   type Row,
 } from '../lib/programEditorDiff'
 import { stretchTemplates } from '../data/stretch-templates'
-import type { DayType, Exercise, ProgramVisibility } from '../types'
+import type {
+  DayType,
+  Exercise,
+  ProgramGoalType,
+  ProgramIntensity,
+  ProgramSkill,
+  ProgramVisibility,
+} from '../types'
 
 /**
  * Campos de las colecciones del programa que se guardan como `{ locale: texto }`.
@@ -122,12 +129,104 @@ export interface ProgramEditorState {
     /** Nivel de exposición elegido por el autor (#603). */
     visibility: ProgramVisibility
     difficulty: 'beginner' | 'intermediate' | 'advanced'
+    /**
+     * Campos de catálogo (#613) — los que alimentan el «PARA TI» del onboarding
+     * (`lib/matchPrograms.ts`) y los filtros del catálogo por objetivo y equipo.
+     *
+     * Hasta ahora solo se podían fijar por script (`scripts/seed-program-catalog.mjs`),
+     * así que ningún programa creado desde la UI entraba jamás en el matching.
+     *
+     * La cadena vacía es «sin fijar»: es como PocketBase representa un `select`
+     * opcional sin valor, y mantenerla evita que el ida y vuelta con la base de
+     * datos invente un objetivo que el autor no ha elegido.
+     */
+    goalType: ProgramGoalType | ''
+    /** Solo significa algo con `goalType === 'skill'`; si no, se limpia al guardar. */
+    skill: ProgramSkill | ''
+    intensity: ProgramIntensity | ''
+    /**
+     * `null` es «derívalo de la fase 1» (ver `deriveDaysPerWeek`). Un número es
+     * una elección explícita del autor, y entonces deja de moverse sola cuando
+     * se editan los días.
+     */
+    daysPerWeek: number | null
+    equipmentRequired: string[]
+    contraindications: string[]
   }
   phases: EditorPhase[]
   days: Record<string, EditorDay>  // key: "phaseIndex_dayId"
   isDirty: boolean
   isSaving: boolean
   error: string | null
+}
+
+// ─── Campos de catálogo (#613) ───────────────────────────────────────────────
+
+/** `days_per_week` es `min: 1, max: 7` en `1776600000_add_program_catalog_fields.js`. */
+const MIN_DAYS_PER_WEEK = 1
+const MAX_DAYS_PER_WEEK = 7
+
+/**
+ * Días entrenados por semana, contando los días no-`rest` de la fase 1.
+ *
+ * Se mira la fase 1 y no el programa entero porque es la que fija el ritmo con
+ * el que el usuario empieza, que es justo lo que compara `matchPrograms` contra
+ * los días que el usuario dice tener libres.
+ *
+ * Puede devolver 0 (una fase 1 entera de descanso). Ese 0 NO es un valor que el
+ * esquema acepte, así que quien llama decide qué hacer con él; ver
+ * `buildProgramCatalogFields`.
+ */
+export function deriveDaysPerWeek(days: Record<string, EditorDay>): number {
+  let count = 0
+  for (const [key, day] of Object.entries(days)) {
+    // Las claves son `${phaseIndex}_${dayId}`. Se parte por `_` en vez de usar
+    // `startsWith('0_')` para que siga siendo correcto si algún día el índice
+    // de fase pasa de una cifra.
+    if (key.split('_')[0] !== '0') continue
+    if (day.type !== 'rest') count++
+  }
+  return count
+}
+
+/**
+ * Los seis campos de catálogo tal y como deben viajar al registro `programs`.
+ *
+ * Se extrae de `saveProgram` para que los tests puedan alcanzarla: los de
+ * `packages/core` corren en Node y sin renderizador de React, así que una regla
+ * metida dentro del `useCallback` del hook sería inalcanzable.
+ */
+export function buildProgramCatalogFields(
+  info: ProgramEditorState['info'],
+  days: Record<string, EditorDay>,
+): Record<string, unknown> {
+  const fields: Record<string, unknown> = {
+    goal_type: info.goalType,
+    // Una skill solo tiene sentido colgando de un objetivo de skill. Si el autor
+    // marcó `handstand` y luego se pasó a `fat_loss`, arrastrarla dejaría el
+    // programa saliendo como match secundario de una skill que ya no entrena
+    // (`matchPrograms.ts` busca por `goal_type === 'skill' && skill === focus`).
+    skill: info.goalType === 'skill' ? info.skill : '',
+    intensity: info.intensity,
+    equipment_required: info.equipmentRequired,
+    contraindications: info.contraindications,
+  }
+
+  const explicit = info.daysPerWeek
+  const value = explicit === null ? deriveDaysPerWeek(days) : explicit
+  // Por debajo del mínimo se manda `null` y no el número: «no lo sé» y «entrena
+  // 0 días» no son lo mismo, y solo `null` deja el campo vacío de verdad.
+  //
+  // Comprobado contra PocketBase: el campo es `min: 1` pero NO es `required`, y
+  // para un número opcional el 0 es el valor cero, así que PB se salta el `min`
+  // y acepta tanto el 0 como el `null` — los dos acaban guardados como vacío.
+  // O sea que el 0 no reventaría la escritura; simplemente miente sobre lo que
+  // sabemos. `null` dice lo que hay.
+  fields.days_per_week = value >= MIN_DAYS_PER_WEEK
+    ? Math.min(value, MAX_DAYS_PER_WEEK)
+    : null
+
+  return fields
 }
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -173,7 +272,12 @@ function createInitialState(): ProgramEditorState {
   return {
     programId: null,
     step: 1,
-    info: { name: '', description: '', durationWeeks: 26, isOfficial: false, visibility: 'private', difficulty: 'beginner' },
+    info: {
+      name: '', description: '', durationWeeks: 26, isOfficial: false,
+      visibility: 'private', difficulty: 'beginner',
+      goalType: '', skill: '', intensity: '',
+      daysPerWeek: null, equipmentRequired: [], contraindications: [],
+    },
     phases: [...DEFAULT_PHASES],
     days: buildDefaultDays(4),
     isDirty: false,
@@ -511,6 +615,18 @@ export function useProgramEditor() {
           // trata como privado, que es la dirección segura.
           visibility: (program.visibility as ProgramVisibility) || 'private',
           difficulty: program.difficulty || 'beginner',
+          // Campos de catálogo (#613). Los programas anteriores los traen
+          // vacíos: se quedan sin fijar en vez de inventarles un objetivo.
+          goalType: (program.goal_type as ProgramGoalType) || '',
+          skill: (program.skill as ProgramSkill) || '',
+          intensity: (program.intensity as ProgramIntensity) || '',
+          // Un número guardado se lee como elección explícita del autor, así
+          // que reabrir el programa no vuelve a derivarlo por su cuenta.
+          daysPerWeek: typeof program.days_per_week === 'number' && program.days_per_week > 0
+            ? program.days_per_week
+            : null,
+          equipmentRequired: Array.isArray(program.equipment_required) ? program.equipment_required : [],
+          contraindications: Array.isArray(program.contraindications) ? program.contraindications : [],
         },
         phases: loadedPhases.length > 0 ? loadedPhases : [...DEFAULT_PHASES],
         days,
@@ -558,6 +674,10 @@ export function useProgramEditor() {
       // Only include SaaS fields if they have non-default values (avoids errors if PB migration not applied)
       if (state.info.isOfficial) programData.is_official = true
       if (state.info.difficulty && state.info.difficulty !== 'beginner') programData.difficulty = state.info.difficulty
+
+      // Campos de catálogo (#613). Sin ellos el programa no puede aparecer
+      // nunca en «PARA TI» ni en los filtros por objetivo/equipo.
+      Object.assign(programData, buildProgramCatalogFields(state.info, state.days))
 
       if (programId) {
         await pb.collection('programs').update(programId, programData)

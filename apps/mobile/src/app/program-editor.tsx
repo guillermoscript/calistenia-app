@@ -3,7 +3,7 @@
  * compartido useProgramEditor de core (port de ProgramEditorPage web).
  * Ruta apilada file-based: /program-editor (con ?id= edita uno existente).
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutActions } from '@/contexts/WorkoutContext'
-import { useProgramEditor, type EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
+import { useProgramEditor, deriveDaysPerWeek, type EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
 import { op } from '@calistenia/core/lib/analytics'
 
 import { STEP_LABEL_KEYS } from '@/components/program-editor/constants'
@@ -43,6 +43,11 @@ export default function ProgramEditorScreen() {
     updateDay, addExercise, removeExercise, updateExercise, moveExercise,
     loadProgram, saveProgram, validate, resetEditor,
   } = useProgramEditor()
+
+  // Lo que enseña el modo automático de «días por semana» (#613). Se calcula
+  // aquí y no dentro de `StepInfo` para que el paso 1 siga recibiendo solo
+  // `info` y no tenga que conocer la forma de `state.days`.
+  const derivedDaysPerWeek = useMemo(() => deriveDaysPerWeek(state.days), [state.days])
 
   const [selectedPhaseTab, setSelectedPhaseTab] = useState(0)
   const [selectedDayId, setSelectedDayId] = useState('lun')
@@ -173,7 +178,12 @@ export default function ProgramEditorScreen() {
         <ScrollView contentContainerClassName="px-4 pb-6" keyboardShouldPersistTaps="handled">
           <Animated.View key={step} entering={FadeInRight.duration(280)}>
             {step === 1 && (
-              <StepInfo info={state.info} updateInfo={updateInfo} redistributeWeeks={redistributeWeeks} />
+              <StepInfo
+                info={state.info}
+                updateInfo={updateInfo}
+                redistributeWeeks={redistributeWeeks}
+                derivedDaysPerWeek={derivedDaysPerWeek}
+              />
             )}
             {step === 2 && (
               <StepPhases phases={state.phases} addPhase={addPhase} removePhase={removePhase} updatePhase={updatePhase} />
