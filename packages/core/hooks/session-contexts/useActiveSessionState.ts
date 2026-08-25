@@ -31,7 +31,7 @@ import type { Exercise, Workout } from '../../types'
 import { op } from '../../lib/analytics'
 import {
   TRAINING_FUNNEL_EVENTS, plannedSetCount, sessionFunnelProperties,
-  type SessionAbandonReason,
+  type SessionAbandonReason, type TrainingFunnelEvent,
 } from '../../lib/session-funnel'
 import type { ExerciseTimingState } from '../../lib/exerciseTiming'
 import { pb } from '../../lib/pocketbase'
@@ -104,6 +104,13 @@ export interface ActiveSessionContextValue {
   setSectionStartTime: (time: number | null) => void
   /** Get warmup/cooldown tracking data */
   getWarmupCooldownData: () => WarmupCooldownData
+  /**
+   * Emite un paso INTERMEDIO del embudo (serie, ejercicio terminado, descanso
+   * saltado) con el mismo bloque de propiedades que los desenlaces. Es el hook
+   * quien lo construye: si cada app armase sus propias propiedades, el embudo
+   * volvería a no ser comparable entre plataformas, que es el bug del #636.
+   */
+  trackFunnelStep: (event: TrainingFunnelEvent, extra?: Record<string, unknown>) => void
   /** Skip warmup — jump to first main exercise */
   skipWarmup: () => void
   /** Skip cooldown — jump to celebrate */
@@ -283,7 +290,17 @@ export function useActiveSessionState({
    * callback es estable y se puede llamar desde un listener de `beforeunload`
    * registrado una sola vez.
    */
-  const funnelProps = useCallback((extra?: { endedAt?: number; reason?: SessionAbandonReason }) => {
+  const funnelProps = useCallback((extra?: {
+    endedAt?: number
+    reason?: SessionAbandonReason
+    /**
+     * Cuenta de series autoritativa. La serie que dispara `set_logged` todavía
+     * no ha llegado al progreso del contexto cuando el evento sale, así que sin
+     * esto el evento de la primera serie diría `sets_logged: 0` y
+     * `completion_pct: 0`.
+     */
+    setsLogged?: number
+  }) => {
     const exercises = workoutRef.current?.exercises ?? []
     return sessionFunnelProperties({
       workoutKey: workoutKeyRef.current,
@@ -292,10 +309,28 @@ export function useActiveSessionState({
       endedAt: extra?.endedAt ?? Date.now(),
       exerciseCount: exercises.length,
       plannedSets: plannedSetCount(exercises),
-      setsLogged: progressRef.current.setsCount,
+      setsLogged: extra?.setsLogged ?? progressRef.current.setsCount,
       reason: extra?.reason,
     })
   }, [])
+
+  /**
+   * Pasos INTERMEDIOS del embudo. No pasan por el pestillo del desenlace: el
+   * pestillo garantiza un único evento de CIERRE, mientras que registrar una
+   * serie o saltarse un descanso puede pasar muchas veces en la misma sesión.
+   *
+   * El guardia de sesión activa evita que una acción rezagada (un descanso que
+   * termina después de cerrar la sesión) emita un evento con `workout_key`
+   * vacío, que en OpenPanel aparecería como un entreno fantasma.
+   */
+  const trackFunnelStep = useCallback((event: TrainingFunnelEvent, extra?: Record<string, unknown>) => {
+    if (!isActiveRef.current || !workoutKeyRef.current) return
+    // Un `sets_logged` explícito manda sobre el del progreso, y además vuelve a
+    // derivar `completion_pct` de él: mandarlo solo en el spread dejaría las dos
+    // propiedades contándose una serie de diferencia.
+    const setsLogged = typeof extra?.sets_logged === 'number' ? extra.sets_logged : undefined
+    track(event, { ...funnelProps({ setsLogged }), ...extra })
+  }, [funnelProps, track])
 
   const getProgressSnapshot = useCallback(() => progressRef.current, [])
 
@@ -481,27 +516,55 @@ export function useActiveSessionState({
   // lista de `buildSteps` por separado (#475).
   const skipWarmup = useCallback(() => {
     if (!workout) return
+    const alreadySkipped = warmupSkippedRef.current
     warmupSkippedRef.current = true
     if (sectionStartTime) {
       warmupDurationRef.current = Math.round((Date.now() - sectionStartTime) / 1000)
+    }
+    // Solo el PRIMER salto emite: la metadata se puede reescribir sin coste,
+    // pero dos eventos por un solo calentamiento saltado vuelven a inflar la
+    // cifra, que es exactamente el bug del §2.1 (#636).
+    if (!alreadySkipped) {
+      trackFunnelStep(TRAINING_FUNNEL_EVENTS.warmupSkipped, {
+        section_duration_seconds: warmupDurationRef.current,
+      })
     }
     // Reabrir el cronómetro de sección: sin esto, el `skipCooldown` posterior
     // mediría el enfriamiento desde el arranque del CALENTAMIENTO. El móvil no
     // lo hacía y por eso inflaba `cooldownDurationSeconds` (#482).
     setSectionStartTime(Date.now())
-  }, [workout, sectionStartTime])
+  }, [workout, sectionStartTime, trackFunnelStep])
 
-  const skipCooldown = useCallback(() => {
+  /**
+   * `scope` distingue saltar el enfriamiento entero de saltar lo que queda de
+   * él. Va como propiedad y no como dos eventos porque la pregunta del embudo
+   * —«¿cuánta gente se salta el enfriamiento?»— es la misma en los dos casos.
+   */
+  const registerCooldownSkip = useCallback((scope: 'full' | 'remaining') => {
     if (!workout) return
+    const alreadySkipped = cooldownSkippedRef.current
     cooldownSkippedRef.current = true
     if (sectionStartTime) {
       cooldownDurationRef.current = Math.round((Date.now() - sectionStartTime) / 1000)
     }
-  }, [workout, sectionStartTime])
+    if (!alreadySkipped) {
+      trackFunnelStep(TRAINING_FUNNEL_EVENTS.cooldownSkipped, {
+        section_duration_seconds: cooldownDurationRef.current,
+        scope,
+      })
+    }
+  }, [workout, sectionStartTime, trackFunnelStep])
+
+  // Envoltorios sin argumentos a propósito: los dos se pasan directos a un
+  // `onPress`/`onClick` en las apps, que llamaría al callback con el evento del
+  // DOM como primer argumento.
+  const skipCooldown = useCallback(() => {
+    registerCooldownSkip('full')
+  }, [registerCooldownSkip])
 
   const skipRemainingCooldown = useCallback(() => {
-    skipCooldown()
-  }, [skipCooldown])
+    registerCooldownSkip('remaining')
+  }, [registerCooldownSkip])
 
   const endSession = useCallback(() => {
     // Quién cierra la sesión NO dice si estaba terminada: el mismo `endSession()`
@@ -541,6 +604,7 @@ export function useActiveSessionState({
     sectionStartTime,
     setSectionStartTime,
     getWarmupCooldownData,
+    trackFunnelStep,
     skipWarmup,
     skipCooldown,
     skipRemainingCooldown,
@@ -550,7 +614,7 @@ export function useActiveSessionState({
   }), [
     isActive, workout, source, sectionStartTime, resumeEpoch,
     getProgressSnapshot, setProgress, startSession, endSession,
-    getWarmupCooldownData, skipWarmup, skipCooldown, skipRemainingCooldown,
+    getWarmupCooldownData, trackFunnelStep, skipWarmup, skipCooldown, skipRemainingCooldown,
     getRestForExercise, setRestForExercise,
   ])
 

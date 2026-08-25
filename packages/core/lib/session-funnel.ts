@@ -2,8 +2,8 @@
  * Propiedades comunes a los eventos del ciclo de vida de una sesión de fuerza
  * (#636).
  *
- * Los cuatro eventos del embudo —arranque, completada, salida deliberada y
- * abandono— se emitían desde tres módulos distintos y con propiedades
+ * Los eventos del embudo —arranque, series, completada, salida deliberada y
+ * abandono— se emitían desde módulos distintos y con propiedades
  * distintas: `session_started` mandaba `{workout_key, source}`,
  * `workout_completed` mandaba `{workout_key, is_free_session}` y
  * `workout_abandoned` añadía `duration_seconds`. Sin un bloque común no se
@@ -18,17 +18,38 @@
  * ni notas, ni nombres, ni correos, ni coordenadas. `workout_key` es una clave
  * de programa (`p2_mie`) o un timestamp (`free_1783…`).
  */
-import { analyticsPlatform, getAnalyticsProgramId } from './analytics'
+import { analyticsPlatform, getAnalyticsProgramId, op } from './analytics'
 import { NO_PHASE, sessionKeyParts } from './session-key'
 
 /**
- * Los cuatro desenlaces posibles de una sesión. Nombres legacy:
- * `session_started`, `workout_completed` y `workout_abandoned` ya están en
- * producción y renombrarlos partiría los informes existentes sin ganar nada.
- * `session_exited` es nuevo.
+ * El embudo de entrenar, en orden: ver el día → arrancar → registrar series →
+ * terminar ejercicios → completar, salir o abandonar.
+ *
+ * Nombres legacy: `session_started`, `workout_completed` y `workout_abandoned`
+ * ya están en producción y renombrarlos partiría los informes existentes sin
+ * ganar nada. El resto son nuevos.
+ *
+ * Los tres últimos son los DESENLACES, mutuamente excluyentes: una sesión
+ * arrancada acaba en exactamente uno, y de eso responde el pestillo de
+ * `useActiveSessionState`. Los de en medio pueden repetirse dentro de una
+ * misma sesión.
  */
 export const TRAINING_FUNNEL_EVENTS = {
+  /**
+   * El usuario ve el entreno del día SIN arrancarlo. Es el denominador del
+   * embudo: sin él, `session_started` no tiene contra qué medirse y no se
+   * puede saber cuánta gente mira el día y se va (#636 §3).
+   */
+  workoutDayViewed: 'workout_day_viewed',
   sessionStarted: 'session_started',
+  /** Una serie registrada. Uno por serie, no uno por sesión. */
+  setLogged: 'set_logged',
+  /** La última serie de un ejercicio quedó registrada. */
+  exerciseCompleted: 'exercise_completed',
+  /** El descanso se cortó a mano; el que se agota solo NO lo emite. */
+  restSkipped: 'rest_skipped',
+  warmupSkipped: 'warmup_skipped',
+  cooldownSkipped: 'cooldown_skipped',
   workoutCompleted: 'workout_completed',
   /** El usuario cerró la sesión a propósito sin completarla (#636). */
   sessionExited: 'session_exited',
@@ -124,4 +145,23 @@ export function sessionFunnelProperties({
   if (reason) props.reason = reason
 
   return props
+}
+
+/**
+ * `workout_day_viewed`: el usuario abrió el entreno de un día sin arrancarlo.
+ *
+ * Vive aquí y no en `useActiveSessionState` porque se emite ANTES de que haya
+ * sesión: la pantalla del día no tiene contexto de sesión activa que consultar,
+ * solo el entreno del catálogo. `program_id` sale del registro de módulo, así
+ * que la pantalla no tiene que conocer el programa activo.
+ */
+export function trackWorkoutDayViewed(
+  input: SessionFunnelInput & { alreadyDone?: boolean },
+): void {
+  const { alreadyDone, ...funnel } = input
+  const props = sessionFunnelProperties(funnel)
+  // Un día ya hecho que se vuelve a mirar no es el mismo denominador que uno
+  // pendiente: sin esto, el embudo cuenta como «no arrancó» a quien ya entrenó.
+  if (alreadyDone != null) props.already_done = alreadyDone
+  op.track(TRAINING_FUNNEL_EVENTS.workoutDayViewed, props)
 }

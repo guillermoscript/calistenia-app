@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// `track` estable (no un `vi.fn()` nuevo por llamada a `getPlatform()`) para
+// poder afirmar sobre lo que se emite, no solo sobre lo que se construye.
+const mockTrack = vi.hoisted(() => vi.fn())
+
 vi.mock('../platform', () => ({
   storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
-  getPlatform: () => ({ analytics: { track: vi.fn(), identify: vi.fn(), clear: vi.fn() } }),
+  getPlatform: () => ({ analytics: { track: mockTrack, identify: vi.fn(), clear: vi.fn() } }),
   getClientInfo: () => ({ version: '1.0.0', build: 0, platform: 'android' as const }),
 }))
 
 import { setAnalyticsProgramId } from './analytics'
-import { plannedSetCount, sessionFunnelProperties } from './session-funnel'
+import { TRAINING_FUNNEL_EVENTS, plannedSetCount, sessionFunnelProperties, trackWorkoutDayViewed } from './session-funnel'
 
 describe('plannedSetCount', () => {
   it('suma las series numéricas', () => {
@@ -104,5 +108,55 @@ describe('sessionFunnelProperties', () => {
       expect(props).not.toHaveProperty(forbidden)
     }
     expect(Object.values(props).every(v => typeof v !== 'object' || v === null)).toBe(true)
+  })
+})
+
+describe('trackWorkoutDayViewed', () => {
+  beforeEach(() => {
+    mockTrack.mockClear()
+    setAnalyticsProgramId(null)
+  })
+
+  // Es el DENOMINADOR del embudo: sin él, `session_started` no tiene contra qué
+  // medirse y no se sabe cuánta gente abre el día y se va (#636 §3).
+  it('emite el bloque del embudo con el programa del registro', () => {
+    setAnalyticsProgramId('prog123')
+
+    trackWorkoutDayViewed({
+      workoutKey: 'p2_mie',
+      source: 'program',
+      exerciseCount: 4,
+      plannedSets: 12,
+      alreadyDone: false,
+    })
+
+    expect(mockTrack).toHaveBeenCalledTimes(1)
+    expect(mockTrack).toHaveBeenCalledWith(TRAINING_FUNNEL_EVENTS.workoutDayViewed, expect.objectContaining({
+      event_version: 1,
+      platform: 'mobile',
+      surface: 'session',
+      workout_key: 'p2_mie',
+      source: 'program',
+      phase: 2,
+      day_id: 'mie',
+      program_id: 'prog123',
+      exercise_count: 4,
+      already_done: false,
+    }))
+  })
+
+  // Un día ya hecho que se vuelve a mirar no es el mismo denominador que uno
+  // pendiente: sin distinguirlos, el embudo cuenta como «no arrancó» a quien ya
+  // había entrenado ese día.
+  it('marca el día ya hecho', () => {
+    trackWorkoutDayViewed({ workoutKey: 'p1_lun', source: 'program', alreadyDone: true })
+
+    expect(mockTrack.mock.calls[0][1]).toMatchObject({ already_done: true })
+  })
+
+  it('sin el dato, `already_done` no viaja como falso', () => {
+    trackWorkoutDayViewed({ workoutKey: 'p1_lun', source: 'program' })
+
+    expect(mockTrack.mock.calls[0][1]).not.toHaveProperty('already_done')
   })
 })

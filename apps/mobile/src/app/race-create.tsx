@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { createRace } from '@/lib/race/raceApi'
-import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { RaceActivityType, RaceMode } from '@calistenia/core/types/race'
 
@@ -57,7 +57,6 @@ export default function RaceCreateScreen() {
         is_public: isPublic,
         ...origin,
       })
-      op.track('race_created', { race_id: race.id, mode, activity_type: activity, platform: 'mobile' })
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceCreated, {
         surface: 'race', source: 'race_create', race_id: race.id,
         participant_count: 1, result: 'created', mode, activity_type: activity,

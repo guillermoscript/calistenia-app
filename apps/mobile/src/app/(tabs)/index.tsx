@@ -30,6 +30,7 @@ import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
+import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
 const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
@@ -113,6 +114,22 @@ export default function TodayScreen() {
   const workout = useMemo(() => getWorkout(phase, todayId), [getWorkout, phase, todayId])
   const workoutKey = `p${phase}_${todayId}`
   const doneToday = isWorkoutDone(workoutKey)
+
+  // Denominador del embudo (#636 §3). En móvil el «día de entreno» es el hero
+  // de hoy, no un selector de días como en web, así que `source` los separa:
+  // sin él, los dos volúmenes se sumarían como si midieran lo mismo.
+  useEffect(() => {
+    if (!workout || workout.exercises.length === 0) return
+    trackWorkoutDayViewed({
+      workoutKey,
+      source: 'program',
+      exerciseCount: workout.exercises.length,
+      plannedSets: plannedSetCount(workout.exercises),
+      alreadyDone: doneToday,
+    })
+    // `doneToday` fuera de las deps: marcar el día como hecho no es una vista
+    // nueva del día.
+  }, [workoutKey]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por día
 
   const hour = localHour()
   const greeting = hour < 12 ? t('dashboard.greeting.morning') : hour < 19 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')
