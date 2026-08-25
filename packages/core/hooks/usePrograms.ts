@@ -12,7 +12,7 @@
  * duplicateProgram, deleteProgram, refreshPrograms, programsReady).
  */
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb } from '../lib/pocketbase'
@@ -26,11 +26,12 @@ import { fetchProgramDetailRows } from '../lib/programDetailQuery'
 import { normalizeProgramDayIds, type DayRowLike } from '../lib/program-day-ids'
 import { programSelectionEvents } from '../lib/program-selection-events'
 import { getPlatform } from '../platform'
-import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, setAnalyticsProgramId, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType, CircuitDefinition, CircuitExercise } from '../types'
 import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
+import { authorDisplayName } from '../lib/author-name'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -327,10 +328,22 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   // lista de programas de la app y no tiene scroll infinito, así que el programa
   // 101 sencillamente no existía para nadie. Con 7 programas en la base el tope no
   // mordía todavía; el problema era que el día que mordiera nadie se iba a enterar.
+  // `sort: 'name'` y no `'-created'`: `programs` no tiene autodate, así que
+  // ordenar por `created` devuelve 400. El orden por seguidores que pide #620
+  // para la sección Comunidad se hace en cliente, sobre este catálogo ya
+  // completo, porque los conteos viven en otra colección (`view_program_stats`)
+  // y PocketBase no sabe ordenar una lista por una columna que no es suya.
+  //
+  // `forked_from.created_by` en el expand: el crédito «basado en X de Y»
+  // necesita el nombre del programa original Y el de su autor, y son dos saltos
+  // de relación. PocketBase los resuelve en la misma petición; pedirlos aparte
+  // serían dos viajes más por cada duplicado del catálogo.
   const catalogItems = await pb.collection('programs').getFullList({
     batch: CATALOG_PAGE_SIZE,
     filter: `is_active = true && ${visibilityFilter}`,
-    sort: 'name', expand: 'created_by', $autoCancel: false,
+    sort: 'name',
+    expand: 'created_by,forked_from,forked_from.created_by',
+    $autoCancel: false,
   })
   const locale = i18n.language
   const programIds = catalogItems.map(p => p.id)
@@ -358,13 +371,29 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     disciplineByProgram.set(pid, nonRest.length > 0 && nonRest.every(dc => dc.day_type === 'yoga') ? 'yoga' : 'calistenia')
   }
 
-  return catalogItems.map(p => ({
+  return catalogItems.map(p => {
+    // El original del que salió esta copia (#620). Puede faltar por tres vías
+    // distintas y ninguna es un error: el programa es un original, es un
+    // duplicado anterior a #620 (el vínculo no se guardaba), o su original se
+    // borró y PocketBase vació la relación no-cascade.
+    const forkedFrom = (p.expand as any)?.forked_from
+    return {
     id:             p.id,
     name:           localize(p.name, locale),
     description:    localize(p.description, locale),
     duration_weeks: p.duration_weeks,
     created_by:     p.created_by || undefined,
-    created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
+    // `display_name || name || email` y no solo `display_name` (#620): quien se
+    // dio de alta con Google llega con `name` y sin `display_name`, y salía sin
+    // nombre. Los tres campos son los que sobreviven al recorte de #411.
+    created_by_name: authorDisplayName((p.expand as any)?.created_by) || undefined,
+    forked_from:      p.forked_from || undefined,
+    // `localize` es obligatorio: el nombre es un `json {es,en}` y meterlo crudo
+    // en la frase del crédito pintaría «Basado en [object Object]».
+    forked_from_name: forkedFrom ? localize(forkedFrom.name, locale) || undefined : undefined,
+    forked_from_author: forkedFrom
+      ? authorDisplayName(forkedFrom.expand?.created_by) || undefined
+      : undefined,
     is_official:    p.is_official || false,
     is_featured:    p.is_featured || false,
     visibility:     p.visibility || undefined,
@@ -378,7 +407,8 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
     equipment_required: Array.isArray(p.equipment_required) ? p.equipment_required : undefined,
     contraindications:  Array.isArray(p.contraindications) ? p.contraindications : undefined,
-  }))
+    }
+  })
 }
 
 export interface ProgramDetail {
@@ -530,6 +560,15 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const activeEnrollment = enrollmentQuery.data ?? null
   const activeProgramId = activeEnrollment?.program ?? null
+
+  // Espejo del programa activo para los eventos del embudo de entreno (#636).
+  // Se escribe aquí porque este hook es el único dueño del dato en las dos
+  // apps; el contexto de la sesión activa lo LEE en el momento de emitir, sin
+  // suscribirse a nada — suscribir el provider que envuelve toda la app a un
+  // valor que cambia en cada serie es la regresión del #475.
+  useEffect(() => {
+    setAnalyticsProgramId(activeProgramId)
+  }, [activeProgramId])
 
   const detailQuery = useQuery({
     queryKey: qk.programs.detail(activeProgramId),
@@ -689,6 +728,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       // La copia nace privada aunque el original fuera público (#603): duplicar
       // el programa de otra persona no debe republicarlo a tu nombre.
       newProgramData.visibility = 'private'
+      // De dónde salió (#620). Se guarda el id del programa que se está
+      // copiando, NO su `forked_from`: una copia de una copia acredita a su
+      // fuente directa, que es la que esa persona vio y eligió. Encadenar hasta
+      // el original convertiría el crédito en una genealogía que nadie pidió y
+      // borraría del mapa a quien de verdad hizo el trabajo intermedio.
+      newProgramData.forked_from = programId
       if (original.difficulty) newProgramData.difficulty = original.difficulty
       const newProgram = await pb.collection('programs').create(newProgramData)
       newProgramId = newProgram.id
@@ -788,32 +833,27 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const deleteProgram = useCallback(async (programId: string): Promise<boolean> => {
     if (!userId) return false
     try {
-      // Aquí no se borra NADA a mano: el DELETE del padre basta. Son dos motivos
-      // distintos que llegaron por caminos distintos (#614 y #605) y que el merge
-      // junta, así que conviene tenerlos escritos los dos.
-      //
-      // Los ejercicios, los day-configs y las fases (#614): las tres colecciones
-      // declaran `program` como relación con `cascadeDelete: true`
-      // —`1773251039_created_program_exercises.js:26`,
+      // Los ejercicios, los day-configs y las fases NO se borran desde aquí (#614).
+      // Las tres colecciones declaran `program` como relación con
+      // `cascadeDelete: true` —`1773251039_created_program_exercises.js:26`,
       // `1773251039_created_program_phases.js:26`,
       // `1774378002_created_program_day_config.js:28`, y ninguna migración
       // posterior lo cambia—, así que PocketBase ya se las lleva por delante
-      // dentro de la transacción del DELETE del padre. Los bucles que había (uno
-      // por fila: ~760 peticiones en el programa más grande de la base)
-      // re-borraban filas que el servidor iba a borrar igual, y eran ELLOS los
-      // que abrían la ventana de «programa a medio borrar»: si el navegador se
-      // cerraba a mitad, las hijas ya no estaban y el padre seguía en el
-      // catálogo. Sin bucles no hay ventana que cerrar.
+      // dentro de la transacción del DELETE del padre.
       //
-      // Las inscripciones (#605): `user_programs.deleteRule` es
-      // `user = @request.auth.id`, así que aquel bucle solo alcanzaba la fila del
-      // propio autor — las de los demás inscritos daban 403 dentro de un `catch`
-      // vacío y les dejaban un programa activo apuntando a un registro que ya no
-      // existe. Ahora las cierra el servidor con `$app` en
-      // `pb_hooks/programs_delete_cleanup.pb.js`, para TODOS los inscritos, y
-      // además les avisa (#633). Que el DELETE del padre pase con inscripciones
-      // ajenas vivas lo permite `1784900001_user_programs_program_optional.js`, y
-      // lo cubre `tests/pb_hooks/program_delete_enrollments.test.mjs`.
+      // Los bucles que había aquí (uno por fila: ~760 peticiones en el programa
+      // más grande de la base) re-borraban filas que el servidor iba a borrar de
+      // todas formas, y eran ELLOS los que abrían la ventana de «programa a medio
+      // borrar»: si el navegador se cerraba a mitad, las hijas ya no estaban y el
+      // padre seguía en el catálogo. Sin bucles no hay ventana que cerrar.
+      //
+      // Las inscripciones tampoco se tocan desde aqui (#605). El `deleteRule` de
+      // `user_programs` es `user = @request.auth.id`: el bucle que había solo
+      // borraba la fila del propio autor y las de los demás inscritos fallaban
+      // con un 403 que el `catch` se tragaba, dejándoles un programa activo
+      // apuntando a un registro inexistente. Ahora las cierra el servidor con
+      // `$app` en `pb_hooks/programs_delete_cleanup.pb.js`, para TODOS los
+      // inscritos.
 
       await pb.collection('programs').delete(programId)
 

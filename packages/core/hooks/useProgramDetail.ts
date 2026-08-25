@@ -80,8 +80,16 @@ export function useProgramDetail(
               // deja de pintar el bloque y ya está.
               .catch(() => knownProgram)
           : pb
+              // El `expand` trae el crédito del remix (#620): el nombre del
+              // programa original y su autor, dos saltos de relación que
+              // PocketBase resuelve en esta misma petición. La rama de arriba no
+              // lo necesita — el programa que llega del catálogo ya los trae,
+              // porque `fetchCatalog` hace el mismo expand.
               .collection('programs')
-              .getOne(pid, { $autoCancel: false })
+              .getOne(pid, {
+                expand: 'forked_from,forked_from.created_by',
+                $autoCancel: false,
+              })
               .then(rec => toProgramMeta(rec as unknown as ProgramRow, locale)),
         loadWeekDays(byPhaseOne, locale),
       ])

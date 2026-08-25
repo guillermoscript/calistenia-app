@@ -62,6 +62,13 @@ jobs:
       - name: Schema contract (migraciones vs clientes instalados)
         run: node scripts/check-schema-contract.mjs
 
+      # La migración de siembra del catálogo (#615) es un artefacto GENERADO a
+      # partir de programs/*.json. Editar un programa sin regenerarla la deja
+      # atrás sin que nada falle: la migración se aplicaría igual, sembrando el
+      # contenido viejo. Este paso es lo único que lo convierte en un error.
+      - name: Seed de programas al día (programs/*.json vs migración)
+        run: pnpm programs:seed:check
+
   # Smoke E2E del golden path (#145): signup → primera sesión de entrenamiento.
   # Corre contra un PocketBase efímero recién migrado (sin seeds — el flujo usa
   # los workouts de fallback) + el dev server de Vite que levanta Playwright.

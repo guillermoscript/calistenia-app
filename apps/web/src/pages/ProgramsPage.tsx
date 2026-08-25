@@ -8,6 +8,8 @@ import { inferDifficulty, DIFFICULTY_COLORS } from '@calistenia/core/lib/difficu
 import type { DifficultyLevel } from '@calistenia/core/types'
 import { calculateWorkoutDuration, formatDuration } from '@calistenia/core/lib/duration'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
+import { ProgramFollowers } from '../components/programs/ProgramRemixCredit'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
@@ -53,6 +55,12 @@ interface ProgramCardProps {
   isOwn: boolean
   canEdit: boolean
   isActive: boolean
+  /**
+   * Cuánta gente sigue el programa (#620). `undefined` cuando la view todavía
+   * no respondió o no dejó ver esa fila; la tarjeta no pinta nada en ese caso
+   * ni tampoco con cero, así que no hace falta distinguirlos aquí.
+   */
+  followersCount?: number
   onSelect: () => void
   onShare: () => void
   onDelete?: () => void | Promise<void>
@@ -60,7 +68,7 @@ interface ProgramCardProps {
   onView?: () => void
 }
 
-function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onDelete, onEdit, onView }: ProgramCardProps) {
+function ProgramCard({ program, isOwn, canEdit, isActive, followersCount, onSelect, onShare, onDelete, onEdit, onView }: ProgramCardProps) {
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -203,6 +211,9 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
             {t('programs.by', { name: program.created_by_name })}
           </span>
         )}
+        {/* La prueba social va en esta fila y no en un bloque propio: es un dato
+            más del programa, del mismo peso que las semanas o la dificultad. */}
+        <ProgramFollowers count={followersCount} className="text-[10px]" />
       </div>
 
       {/* Actions */}
@@ -298,6 +309,12 @@ export default function ProgramsPage() {
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const [search, setSearch] = useState('')
 
+  // Los conteos de seguidores del catálogo entero en una sola consulta a la
+  // view (#620). Se piden sobre `programs` sin filtrar por la búsqueda: teclear
+  // en el buscador no debe disparar una consulta por pulsación.
+  const programIds = useMemo(() => programs.map(p => p.id), [programs])
+  const { statsById } = useProgramStats(programIds)
+
   // Always show all programs: featured first → official → user's own → community
   const sortedPrograms = useMemo(() => {
     let result = [...programs]
@@ -320,10 +337,23 @@ export default function ProgramsPage() {
       const bIsOwn = b.created_by === userId
       if (aIsOwn && !bIsOwn) return -1
       if (!aIsOwn && bIsOwn) return 1
+      // Dentro de la comunidad manda cuánta gente lo sigue (#620): el orden
+      // alfabético premiaba llamarse «Abdominales». Solo aquí — los oficiales
+      // los ordena el equipo con `is_featured`, y los propios son tan pocos que
+      // buscarlos por nombre sigue siendo lo más rápido.
+      //
+      // El programa sin fila en la view cuenta como 0 SOLO para ordenar. No es
+      // lo mismo que pintarlo: colocarlo abajo es una suposición reversible, y
+      // escribir «0 personas lo siguen» sería afirmar algo que no sabemos.
+      if (!aIsOwn && !bIsOwn) {
+        const aFollowers = statsById[a.id]?.followersCount ?? 0
+        const bFollowers = statsById[b.id]?.followersCount ?? 0
+        if (aFollowers !== bFollowers) return bFollowers - aFollowers
+      }
       return a.name.localeCompare(b.name)
     })
     return result
-  }, [programs, userId, search])
+  }, [programs, userId, search, statsById])
 
   const officialPrograms = useMemo(() => sortedPrograms.filter(p => p.is_official), [sortedPrograms])
   const userPrograms = useMemo(() => sortedPrograms.filter(p => !p.is_official), [sortedPrograms])
@@ -391,6 +421,7 @@ export default function ProgramsPage() {
                 isOwn={program.created_by === userId}
                 canEdit={isAdmin || program.created_by === userId}
                 isActive={program.id === activeProgram?.id}
+                followersCount={statsById[program.id]?.followersCount}
                 onSelect={() => onSelectProgram(program.id)}
                 onShare={() => handleShareProgram(program.id, program.name)}
                 onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
@@ -434,6 +465,7 @@ export default function ProgramsPage() {
                 isOwn={program.created_by === userId}
                 canEdit={isAdmin || program.created_by === userId}
                 isActive={program.id === activeProgram?.id}
+                followersCount={statsById[program.id]?.followersCount}
                 onSelect={() => onSelectProgram(program.id)}
                 onShare={() => handleShareProgram(program.id, program.name)}
                 onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}

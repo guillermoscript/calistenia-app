@@ -339,6 +339,17 @@ export interface ProgramMeta {
    * lo pide aparte.
    */
   instructions?: string
+  /**
+   * Id del programa del que se duplicó este (#620). Vacío en los originales, en
+   * los duplicados anteriores a #620 —el vínculo no se guardaba— y en aquellos
+   * cuyo original se borró: `forked_from` va SIN cascade a propósito, así que la
+   * copia sobrevive y PocketBase le vacía la relación.
+   */
+  forked_from?: string
+  /** Nombre YA LOCALIZADO del programa original. El campo en PB es `json {es,en}`. */
+  forked_from_name?: string
+  /** Autor del original, por `authorDisplayName` (`display_name || name || email`). */
+  forked_from_author?: string
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────

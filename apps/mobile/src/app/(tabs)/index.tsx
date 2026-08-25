@@ -164,8 +164,13 @@ export default function TodayScreen() {
     if (!workout) return
     // Si hay una sesión activa de este mismo workout, retomarla; si es de otro
     // día se descarta (mismo comportamiento que la web al empezar otra).
+    //
+    // Sin `endSession()` delante: `startSession` ya resetea todo el estado, y
+    // pasando por el cierre la sesión a medias se contaba como una salida
+    // deliberada en vez de como un entreno reemplazado — la misma acción salía
+    // con un desenlace distinto en cada plataforma (#636). De paso se ahorra el
+    // borrado del registro remoto que el push siguiente vuelve a crear.
     if (!session.isActive || session.workoutKey !== workoutKey) {
-      session.endSession()
       session.startSession(workout, workoutKey, 'program')
     }
     router.push('/session')
@@ -479,7 +484,8 @@ function OtherDays({ phase, todayId, weekDays }: { phase: number; todayId: DayId
           <Pressable
             key={day.id}
             onPress={() => {
-              session.endSession()
+              // Igual que en `handleStart`: `startSession` resetea el estado y
+              // es quien decide el desenlace de la sesión que se reemplaza.
               session.startSession(w, key, 'program')
               router.push('/session')
             }}

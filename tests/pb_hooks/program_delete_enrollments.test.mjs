@@ -44,6 +44,11 @@ async function makeProgram(author) {
     duration_weeks: 4,
     is_active: true,
     created_by: author.id,
+    // Público a propósito: desde #603 `programs.viewRule` filtra por
+    // `visibility`, y en un programa sin él (el editor crea `private`) nadie
+    // más que el autor puede inscribirse. Un programa con inscritos ajenos es,
+    // por construcción, uno que los demás podían ver.
+    visibility: "public",
   })
 }
 
@@ -120,7 +125,10 @@ test("una inscripción viva expande su programa para quien no es el autor", asyn
   // Es la suposición sobre la que se apoya la guarda del cliente
   // (`fetchActiveEnrollment`, y ya antes `useRoutineView`/`usePublicProfile`):
   // un expand vacío significa «programa borrado», no «no tengo permiso».
-  // `programs.viewRule` es `@request.auth.id != ""`.
+  // Desde #603 esa equivalencia solo se sostiene mientras el programa siga
+  // siendo `visibility = "public"` (1785000000_programs_visibility.js:82): si
+  // el autor lo pasa a `private`, el inscrito recibe el mismo expand vacío y el
+  // cliente le dirá «programa borrado». Queda anotado en la familia de #604.
   const author = await createUser("Autor Expand")
   const inscrito = await createUser("Inscrito Expand")
 

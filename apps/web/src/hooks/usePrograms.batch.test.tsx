@@ -167,6 +167,18 @@ describe('duplicateProgram', () => {
     expect(parent.data.created_by).toBe('user-1')
   })
 
+  it('la copia acredita al programa del que salió (#620)', async () => {
+    // `forked_from` guarda la fuente DIRECTA, no la raíz de la cadena: se
+    // acredita a quien hizo el trabajo que copiaste. Sin esta línea el vínculo
+    // no se pierde después — es que no se escribe nunca, y la ficha del programa
+    // no tiene de dónde sacar el «Basado en X de Y».
+    mount()
+    await act(async () => { await hook.duplicateProgram('prog-src') })
+
+    const parent = writes()[0] as Extract<Call, { kind: 'create' }>
+    expect(parent.data.forked_from).toBe('prog-src')
+  })
+
   it('si el batch falla (400 de una sub-petición), borra el programa nuevo', async () => {
     // 400 es el código con el que PocketBase rechaza una sub-petición que no
     // pasa la create rule: eso NO es «la API no está», es un fallo de verdad.

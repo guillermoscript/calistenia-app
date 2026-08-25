@@ -303,12 +303,37 @@ export function buildProgramCatalogFields(
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
 
-const DEFAULT_PHASES: EditorPhase[] = [
-  { name: 'Base & Activación',     weeks: '1-6',   color: '#c8f542', bgColor: 'rgba(200,245,66,0.08)' },
-  { name: 'Fuerza Fundamental',    weeks: '7-13',  color: '#42c8f5', bgColor: 'rgba(66,200,245,0.08)' },
-  { name: 'Intensidad & Skills',   weeks: '14-20', color: '#f542c8', bgColor: 'rgba(245,66,200,0.08)' },
-  { name: 'Peak & Consolidación',  weeks: '21-26', color: '#f5c842', bgColor: 'rgba(245,200,66,0.08)' },
+/**
+ * Las cuatro fases con las que arranca un programa nuevo.
+ *
+ * Aquí solo vive lo que NO depende del idioma —semanas y colores— más la clave
+ * i18n del nombre. Resolver el texto en el top-level del módulo es el bug de
+ * #588: `useProgramEditor` se importa antes de que i18next esté inicializado, y
+ * entonces `t()` no devuelve la traducción. Y como una constante de módulo se
+ * evalúa UNA vez, el valor malo se quedaría congelado para toda la vida del
+ * proceso: cambiar de idioma después tampoco lo arreglaría.
+ */
+const DEFAULT_PHASE_DEFS: { nameKey: string; weeks: string; color: string; bgColor: string }[] = [
+  { nameKey: 'programEditor.defaultPhase1', weeks: '1-6',   color: '#c8f542', bgColor: 'rgba(200,245,66,0.08)' },
+  { nameKey: 'programEditor.defaultPhase2', weeks: '7-13',  color: '#42c8f5', bgColor: 'rgba(66,200,245,0.08)' },
+  { nameKey: 'programEditor.defaultPhase3', weeks: '14-20', color: '#f542c8', bgColor: 'rgba(245,66,200,0.08)' },
+  { nameKey: 'programEditor.defaultPhase4', weeks: '21-26', color: '#f5c842', bgColor: 'rgba(245,200,66,0.08)' },
 ]
+
+/**
+ * Las fases por defecto con el nombre ya traducido.
+ *
+ * Se llama en runtime —dentro de un callback o de `createInitialState()`—, que
+ * es cuando i18next ya está vivo. Nunca en el top-level del módulo.
+ */
+export function defaultPhases(): EditorPhase[] {
+  return DEFAULT_PHASE_DEFS.map(p => ({
+    name: i18n.t(p.nameKey),
+    weeks: p.weeks,
+    color: p.color,
+    bgColor: p.bgColor,
+  }))
+}
 
 // Color palette for phases beyond the 4 defaults
 const EXTRA_PHASE_COLORS: Array<{ color: string; bgColor: string }> = [
@@ -320,20 +345,54 @@ const EXTRA_PHASE_COLORS: Array<{ color: string; bgColor: string }> = [
 
 const MAX_PHASES = 8
 
-const DAY_DEFAULTS: { dayId: string; dayName: string; focus: string; type: string; color: string }[] = [
-  { dayId: 'lun', dayName: 'Lunes',     focus: 'Empuje + Core',       type: 'push',   color: '#c8f542' },
-  { dayId: 'mar', dayName: 'Martes',    focus: 'Tirón + Movilidad',   type: 'pull',   color: '#42c8f5' },
-  { dayId: 'mie', dayName: 'Miércoles', focus: 'Lumbar + Stretching', type: 'lumbar', color: '#f54242' },
-  { dayId: 'jue', dayName: 'Jueves',    focus: 'Piernas + Glúteos',   type: 'legs',   color: '#f542c8' },
-  { dayId: 'vie', dayName: 'Viernes',   focus: 'Full Body + Core',    type: 'full',   color: '#f5c842' },
-  { dayId: 'sab', dayName: i18n.t('day.saturday'),    focus: i18n.t('day.activeWalk'),     type: 'rest',   color: '#888899' },
-  { dayId: 'dom', dayName: i18n.t('day.sunday'),   focus: i18n.t('day.totalRest'),      type: 'rest',   color: '#888899' },
+/**
+ * Los siete días con los que se rellena una fase nueva — la parte ESTRUCTURAL.
+ *
+ * El reparto en dos constantes es deliberado. Aquí solo hay id, tipo, color y
+ * las claves i18n: nada que dependa del idioma, así que es seguro evaluarlo en
+ * el top-level del módulo. `dayDefaults()` es quien resuelve el texto.
+ *
+ * Y no es solo higiene. `saveProgram` recorre esta lista para armar las claves
+ * `${fase}_${dayId}` y no mira ni el nombre ni el foco; leyendo la constante
+ * estructural se ahorra traducir 7 días × N fases en cada guardado para tirar
+ * el resultado a la basura.
+ *
+ * Los nombres reutilizan las claves `day.*` que ya existían; los focos son
+ * nuevos porque hasta ahora eran literales en español dentro de core.
+ */
+const DAY_DEFAULTS: { dayId: string; type: string; color: string; nameKey: string; focusKey: string }[] = [
+  { dayId: 'lun', type: 'push',   color: '#c8f542', nameKey: 'day.lun', focusKey: 'programEditor.dayFocusPush' },
+  { dayId: 'mar', type: 'pull',   color: '#42c8f5', nameKey: 'day.mar', focusKey: 'programEditor.dayFocusPull' },
+  { dayId: 'mie', type: 'lumbar', color: '#f54242', nameKey: 'day.mie', focusKey: 'programEditor.dayFocusLumbar' },
+  { dayId: 'jue', type: 'legs',   color: '#f542c8', nameKey: 'day.jue', focusKey: 'programEditor.dayFocusLegs' },
+  { dayId: 'vie', type: 'full',   color: '#f5c842', nameKey: 'day.vie', focusKey: 'programEditor.dayFocusFull' },
+  { dayId: 'sab', type: 'rest',   color: '#888899', nameKey: 'day.sab', focusKey: 'day.activeWalk' },
+  { dayId: 'dom', type: 'rest',   color: '#888899', nameKey: 'day.dom', focusKey: 'day.totalRest' },
 ]
+
+/** Un día por defecto ya montado: lo estructural más el texto traducido. */
+export type DefaultDay = Omit<EditorDay, 'exercises'>
+
+/**
+ * Los días por defecto con nombre y foco ya traducidos.
+ *
+ * Igual que `defaultPhases()`: se llama en runtime, nunca en el top-level.
+ */
+export function dayDefaults(): DefaultDay[] {
+  return DAY_DEFAULTS.map(d => ({
+    dayId: d.dayId,
+    dayName: i18n.t(d.nameKey),
+    focus: i18n.t(d.focusKey),
+    type: d.type,
+    color: d.color,
+  }))
+}
 
 function buildDefaultDays(phaseCount: number): Record<string, EditorDay> {
   const days: Record<string, EditorDay> = {}
+  const defaults = dayDefaults()
   for (let pi = 0; pi < phaseCount; pi++) {
-    for (const d of DAY_DEFAULTS) {
+    for (const d of defaults) {
       days[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
     }
   }
@@ -352,7 +411,7 @@ function createInitialState(): ProgramEditorState {
       instructions: '',
       coverImage: '', coverUrl: null, coverFile: null, coverRemoved: false,
     },
-    phases: [...DEFAULT_PHASES],
+    phases: defaultPhases(),
     days: buildDefaultDays(4),
     isDirty: false,
     isSaving: false,
@@ -379,6 +438,253 @@ let _idCounter = 0
 function genId(): string {
   _idCounter++
   return `ex_${Date.now()}_${_idCounter}`
+}
+
+// ─── Copiar días y fases, reordenar ejercicios (#621) ────────────────────────
+//
+// Las reglas viven aquí, en funciones puras a nivel de módulo, y no dentro de
+// los `useCallback` del hook. Los tests de `packages/core` corren en Node sin
+// renderizador de React, así que una regla metida en un callback sería
+// inalcanzable; es el mismo motivo por el que ya están fuera `deriveDaysPerWeek`
+// y `buildProgramCatalogFields`.
+//
+// Todas devuelven **la referencia de entrada** cuando la operación no cambia
+// nada. El hook lo usa para no marcar `isDirty` por un gesto que no hizo nada.
+
+export type ExerciseSection = 'warmup' | 'main' | 'cooldown'
+
+/** La sección de un ejercicio; `main` es el valor por defecto histórico. */
+function sectionOf(ex: EditorExercise): ExerciseSection {
+  return ex.section ?? 'main'
+}
+
+/**
+ * Un ejercicio listo para vivir en OTRO día, sin la media propia del programa.
+ *
+ * `demoImages` y `demoVideo` son nombres de fichero que solo resuelven contra
+ * el registro de `program_exercises` que los tiene colgados —`getExerciseMedia`
+ * construye la URL con `pbRecordId`—, así que arrastrarlos a la copia daría
+ * imágenes rotas apuntando a ficheros que el registro nuevo no tiene. Y
+ * `pendingImages`/`pendingVideo` son los objetos de una subida a medias:
+ * duplicarlos subiría el mismo fichero dos veces.
+ *
+ * La copia se queda con el contenido de entrenamiento, `youtube` incluido —que
+ * es una URL y no un fichero—, y pierde la media. Replicarla de verdad exigiría
+ * descargar y volver a subir cada fichero, que es otro problema.
+ */
+export function cloneExerciseForCopy(ex: EditorExercise): EditorExercise {
+  const {
+    pbRecordId: _pbRecordId,
+    demoImages: _demoImages,
+    demoVideo: _demoVideo,
+    pendingImages: _pendingImages,
+    pendingVideo: _pendingVideo,
+    removedImages: _removedImages,
+    removeVideo: _removeVideo,
+    ...content
+  } = ex
+  return { ...content }
+}
+
+/**
+ * El contenido de entrenamiento de un día en el hueco de otro.
+ *
+ * El destino **conserva su identidad** (`dayId` y `dayName`) y solo recibe qué
+ * se entrena: tipo, foco, color, ejercicios y la configuración de cardio y de
+ * circuito. Eso no es cosmético. `saveProgram` recorre `DAY_DEFAULTS` y busca
+ * cada día por la clave `${fase}_${dayDef.dayId}`, de modo que un día que
+ * llevara dentro el `dayId` de otro escribiría `day_id: 'lun'` en el hueco del
+ * jueves y rompería la clave natural con la que `programEditorDiff.ts`
+ * identifica las filas entre guardados.
+ *
+ * Copiar el lunes al jueves deja «el jueves entrena como el lunes»; el jueves
+ * sigue siendo el jueves.
+ */
+export function copyDayInto(
+  days: Record<string, EditorDay>,
+  fromKey: string,
+  toKey: string,
+): Record<string, EditorDay> {
+  if (fromKey === toKey) return days
+  const from = days[fromKey]
+  const to = days[toKey]
+  if (!from || !to) return days
+  return {
+    ...days,
+    [toKey]: {
+      ...from,
+      dayId: to.dayId,
+      dayName: to.dayName,
+      exercises: from.exercises.map(cloneExerciseForCopy),
+    },
+  }
+}
+
+/**
+ * Los siete días de una fase en los de otra.
+ *
+ * **No toca el nombre ni las semanas de la fase destino.** `weeks` lo reparte
+ * `distributeWeeks` a partir de la duración total del programa, así que
+ * pisarlo aquí lo dejaría descuadrado hasta el siguiente reparto; y duplicar el
+ * nombre solo deja dos fases indistinguibles en las pestañas del editor.
+ */
+export function copyPhaseInto(
+  days: Record<string, EditorDay>,
+  fromIndex: number,
+  toIndex: number,
+): Record<string, EditorDay> {
+  if (fromIndex === toIndex) return days
+  let next = days
+  for (const d of DAY_DEFAULTS) {
+    next = copyDayInto(next, `${fromIndex}_${d.dayId}`, `${toIndex}_${d.dayId}`)
+  }
+  return next
+}
+
+/** Un hueco al que se puede copiar un día, ya listo para pintar. */
+export interface CopyDayTarget {
+  /** Clave del día en `state.days`: `${indiceDeFase}_${dayId}`. */
+  key: string
+  phaseIndex: number
+  dayId: string
+  dayName: string
+  /**
+   * Cuántos ejercicios hay ya ahí. Copiar **reemplaza y no fusiona**, así que
+   * las dos apps lo usan para avisar antes de pisar un día con contenido.
+   */
+  exerciseCount: number
+}
+
+/**
+ * Los días a los que tiene sentido copiar `fromKey`: todos los del programa
+ * menos él mismo.
+ *
+ * Vive en core y no en cada app para que el selector de web y el de móvil
+ * ofrezcan exactamente lo mismo, y para que el orden salga de `DAY_DEFAULTS`
+ * —el mismo que recorre `saveProgram`— en vez de repetirse en dos sitios.
+ */
+export function copyDayTargets(
+  days: Record<string, EditorDay>,
+  phaseCount: number,
+  fromKey: string,
+): CopyDayTarget[] {
+  const targets: CopyDayTarget[] = []
+  for (let pi = 0; pi < phaseCount; pi++) {
+    for (const d of DAY_DEFAULTS) {
+      const key = `${pi}_${d.dayId}`
+      if (key === fromKey) continue
+      const day = days[key]
+      if (!day) continue
+      targets.push({
+        key,
+        phaseIndex: pi,
+        dayId: day.dayId,
+        dayName: day.dayName,
+        exerciseCount: day.exercises.length,
+      })
+    }
+  }
+  return targets
+}
+
+/** Una fase a la que se puede copiar otra, ya lista para pintar. */
+export interface CopyPhaseTarget {
+  phaseIndex: number
+  /** Cuántos ejercicios hay ya repartidos por los siete días de esa fase. */
+  exerciseCount: number
+}
+
+/**
+ * Las fases a las que tiene sentido copiar `fromIndex`: todas menos ella misma.
+ *
+ * El recuento suma los siete días porque copiar una fase los reemplaza todos;
+ * es el número que las dos apps enseñan antes de pisar una fase con contenido.
+ */
+export function copyPhaseTargets(
+  days: Record<string, EditorDay>,
+  phaseCount: number,
+  fromIndex: number,
+): CopyPhaseTarget[] {
+  const targets: CopyPhaseTarget[] = []
+  for (let pi = 0; pi < phaseCount; pi++) {
+    if (pi === fromIndex) continue
+    let exerciseCount = 0
+    for (const d of DAY_DEFAULTS) {
+      exerciseCount += days[`${pi}_${d.dayId}`]?.exercises.length ?? 0
+    }
+    targets.push({ phaseIndex: pi, exerciseCount })
+  }
+  return targets
+}
+
+/**
+ * Reordena un ejercicio **dentro de su sección**, con índices locales a esa
+ * sección (los que tiene a mano quien pinta la lista agrupada).
+ *
+ * Trabaja sobre posiciones locales y no sobre el índice global a propósito: las
+ * secciones no están garantizadas contiguas dentro de `day.exercises`. El
+ * guardado las ordena calentamiento → principal → vuelta a la calma, pero
+ * `addExercise` añade siempre al final, así que en una sesión de edición un
+ * calentamiento recién añadido queda detrás del principal. Mapear las
+ * posiciones de la sección y reescribir solo esas es correcto aunque estén
+ * intercaladas.
+ */
+export function reorderExerciseWithin(
+  exercises: EditorExercise[],
+  section: ExerciseSection,
+  fromIndex: number,
+  toIndex: number,
+): EditorExercise[] {
+  if (fromIndex === toIndex) return exercises
+  const positions: number[] = []
+  exercises.forEach((ex, i) => {
+    if (sectionOf(ex) === section) positions.push(i)
+  })
+  if (fromIndex < 0 || fromIndex >= positions.length) return exercises
+  if (toIndex < 0 || toIndex >= positions.length) return exercises
+
+  const ordered = positions.map(p => exercises[p])
+  const [moving] = ordered.splice(fromIndex, 1)
+  ordered.splice(toIndex, 0, moving)
+
+  const next = [...exercises]
+  positions.forEach((p, i) => { next[p] = ordered[i] })
+  return next
+}
+
+/**
+ * Sube o baja un ejercicio una posición **dentro de su sección**, a partir de
+ * su índice global en el día.
+ *
+ * Esto arregla un no-op invisible: la versión anterior intercambiaba con el
+ * índice adyacente del array completo, pero las dos apps pintan agrupando por
+ * el campo `section`. Con un calentamiento `[A, B]` y un principal `[C, D]`
+ * —array `[A, B, C, D]`— subir `C` lo intercambiaba con `B` y dejaba
+ * `[A, C, B, D]`; al filtrar por sección volvían a salir `[A, B]` y `[C, D]` y
+ * la pantalla no cambiaba. Subir el primer ejercicio de una sección, o bajar el
+ * último, no hacía nada visible.
+ *
+ * Se apoya en `reorderExerciseWithin` para que arrastrar y subir/bajar tengan
+ * exactamente la misma semántica.
+ */
+export function moveExerciseWithin(
+  exercises: EditorExercise[],
+  index: number,
+  direction: 'up' | 'down',
+): EditorExercise[] {
+  const current = exercises[index]
+  if (!current) return exercises
+  const section = sectionOf(current)
+  let localIndex = 0
+  for (let i = 0; i < index; i++) {
+    if (sectionOf(exercises[i]) === section) localIndex++
+  }
+  return reorderExerciseWithin(
+    exercises,
+    section,
+    localIndex,
+    localIndex + (direction === 'up' ? -1 : 1),
+  )
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -414,17 +720,24 @@ export function useProgramEditor() {
   const addPhase = useCallback(() => {
     setState(s => {
       if (s.phases.length >= MAX_PHASES) return s
-      const extraIdx = Math.max(0, s.phases.length - DEFAULT_PHASES.length) % EXTRA_PHASE_COLORS.length
-      const { color, bgColor } = s.phases.length < DEFAULT_PHASES.length
-        ? DEFAULT_PHASES[s.phases.length]
+      const phaseDefs = DEFAULT_PHASE_DEFS
+      const extraIdx = Math.max(0, s.phases.length - phaseDefs.length) % EXTRA_PHASE_COLORS.length
+      const { color, bgColor } = s.phases.length < phaseDefs.length
+        ? phaseDefs[s.phases.length]
         : EXTRA_PHASE_COLORS[extraIdx]
-      const newPhase: EditorPhase = { name: `Fase ${s.phases.length + 1}`, weeks: '', color, bgColor }
+      // El nombre de una fase añadida a mano se numera; el texto sale del locale
+      // porque este hook lo comparte web con móvil y antes decía «Fase N» en
+      // español pasara lo que pasara.
+      const newPhase: EditorPhase = {
+        name: i18n.t('programEditor.phaseNumbered', { n: s.phases.length + 1 }),
+        weeks: '', color, bgColor,
+      }
       const newPhases = [...s.phases, newPhase]
       const ranges = distributeWeeks(s.info.durationWeeks, newPhases.length)
       const redistributed = newPhases.map((p, i) => ({ ...p, weeks: ranges[i] }))
       const newDays = { ...s.days }
       const pi = newPhases.length - 1
-      for (const d of DAY_DEFAULTS) {
+      for (const d of dayDefaults()) {
         newDays[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
       }
       return { ...s, phases: redistributed, days: newDays, isDirty: true }
@@ -440,9 +753,10 @@ export function useProgramEditor() {
       // Rebuild days: remove old phase's days and re-index
       const newDays: Record<string, EditorDay> = {}
       let newIdx = 0
+      const defaults = dayDefaults()
       for (let i = 0; i < s.phases.length; i++) {
         if (i === index) continue
-        for (const d of DAY_DEFAULTS) {
+        for (const d of defaults) {
           const oldKey = `${i}_${d.dayId}`
           const newKey = `${newIdx}_${d.dayId}`
           newDays[newKey] = s.days[oldKey] || { ...d, exercises: [] }
@@ -537,13 +851,42 @@ export function useProgramEditor() {
     setState(s => {
       const day = s.days[dayKey]
       if (!day) return s
-      const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1
-      if (toIndex < 0 || toIndex >= day.exercises.length) return s
-      const exercises = [...day.exercises]
-      const temp = exercises[fromIndex]
-      exercises[fromIndex] = exercises[toIndex]
-      exercises[toIndex] = temp
+      const exercises = moveExerciseWithin(day.exercises, fromIndex, direction)
+      if (exercises === day.exercises) return s
       return { ...s, days: { ...s.days, [dayKey]: { ...day, exercises } }, isDirty: true }
+    })
+  }, [])
+
+  /** Reordenar arrastrando, con índices locales a la sección (#621). */
+  const reorderExercise = useCallback((
+    dayKey: string,
+    section: ExerciseSection,
+    fromIndex: number,
+    toIndex: number,
+  ) => {
+    setState(s => {
+      const day = s.days[dayKey]
+      if (!day) return s
+      const exercises = reorderExerciseWithin(day.exercises, section, fromIndex, toIndex)
+      if (exercises === day.exercises) return s
+      return { ...s, days: { ...s.days, [dayKey]: { ...day, exercises } }, isDirty: true }
+    })
+  }, [])
+
+  // ── Copiar (#621) ───────────────────────────────────────────────────────────
+  const copyDay = useCallback((fromKey: string, toKey: string) => {
+    setState(s => {
+      const days = copyDayInto(s.days, fromKey, toKey)
+      if (days === s.days) return s
+      return { ...s, days, isDirty: true }
+    })
+  }, [])
+
+  const copyPhase = useCallback((fromIndex: number, toIndex: number) => {
+    setState(s => {
+      const days = copyPhaseInto(s.days, fromIndex, toIndex)
+      if (days === s.days) return s
+      return { ...s, days, isDirty: true }
     })
   }, [])
 
@@ -604,8 +947,9 @@ export function useProgramEditor() {
 
       const days: Record<string, EditorDay> = {}
       // Pre-fill all days
+      const dayFallbacks = dayDefaults()
       for (let pi = 0; pi < loadedPhases.length; pi++) {
-        for (const d of DAY_DEFAULTS) {
+        for (const d of dayFallbacks) {
           days[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
         }
       }
@@ -721,7 +1065,7 @@ export function useProgramEditor() {
           coverFile: null,
           coverRemoved: false,
         },
-        phases: loadedPhases.length > 0 ? loadedPhases : [...DEFAULT_PHASES],
+        phases: loadedPhases.length > 0 ? loadedPhases : defaultPhases(),
         days,
         isDirty: false,
         isSaving: false,
@@ -1099,6 +1443,9 @@ export function useProgramEditor() {
     removeExercise,
     updateExercise,
     moveExercise,
+    reorderExercise,
+    copyDay,
+    copyPhase,
     loadProgram,
     saveProgram,
     validate,

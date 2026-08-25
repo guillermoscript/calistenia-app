@@ -27,7 +27,8 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
 
   const {
     state, setStep, updateInfo, redistributeWeeks, addPhase, removePhase, updatePhase,
-    updateDay, addExercise, removeExercise, updateExercise, moveExercise,
+    updateDay, addExercise, removeExercise, updateExercise, moveExercise, reorderExercise,
+    copyDay, copyPhase,
     loadProgram, saveProgram, validate, resetEditor,
   } = useProgramEditor()
 
@@ -213,6 +214,8 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               selectedPhaseTab={selectedPhaseTab}
               onSelectPhaseTab={setSelectedPhaseTab}
               updateDay={updateDay}
+              copyDay={copyDay}
+              copyPhase={copyPhase}
             />
           )}
           {state.step === 4 && (
@@ -227,6 +230,8 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               updateExercise={updateExercise}
               removeExercise={removeExercise}
               moveExercise={moveExercise}
+              reorderExercise={reorderExercise}
+              copyDay={copyDay}
               onOpenCatalog={openCatalogForSection}
             />
           )}
