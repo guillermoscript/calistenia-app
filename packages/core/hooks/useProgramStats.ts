@@ -63,7 +63,11 @@ function toStats(record: RecordModel): ProgramStats {
   }
 }
 
-async function fetchProgramStats(programIds: readonly string[]): Promise<Record<string, ProgramStats>> {
+/**
+ * Exportada para los tests: es donde vive el troceado y la decisión de dejar
+ * fuera al programa que no vino, que es lo que hay que fijar.
+ */
+export async function fetchProgramStats(programIds: readonly string[]): Promise<Record<string, ProgramStats>> {
   if (!programIds.length) return {}
 
   const chunks: string[][] = []
