@@ -19,7 +19,9 @@ vi.mock('../lib/pocketbase', () => ({
 import {
   cloneExerciseForCopy,
   copyDayInto,
+  copyDayTargets,
   copyPhaseInto,
+  copyPhaseTargets,
   moveExerciseWithin,
   reorderExerciseWithin,
   type EditorDay,
@@ -247,6 +249,75 @@ describe('copyPhaseInto', () => {
 
   it('devuelve el mismo estado si la fase destino no existe', () => {
     expect(copyPhaseInto(days, 0, 7)).toBe(days)
+  })
+})
+
+describe('copyDayTargets', () => {
+  const days: Record<string, EditorDay> = {
+    '0_lun': day('lun', { exercises: [ex('flexiones'), ex('fondos')] }),
+    '0_mar': day('mar'),
+    '0_mie': day('mie'),
+    '0_jue': day('jue'),
+    '0_vie': day('vie'),
+    '0_sab': day('sab'),
+    '0_dom': day('dom'),
+    '1_lun': day('lun', { exercises: [ex('sentadillas')] }),
+    '1_mar': day('mar'),
+    '1_mie': day('mie'),
+    '1_jue': day('jue'),
+    '1_vie': day('vie'),
+    '1_sab': day('sab'),
+    '1_dom': day('dom'),
+  }
+
+  it('ofrece todos los días del programa menos el de origen', () => {
+    const targets = copyDayTargets(days, 2, '0_lun')
+
+    expect(targets).toHaveLength(13)
+    expect(targets.some(t => t.key === '0_lun')).toBe(false)
+  })
+
+  it('respeta el orden de DAY_DEFAULTS dentro de cada fase', () => {
+    const targets = copyDayTargets(days, 2, '0_lun')
+
+    expect(targets.slice(0, 6).map(t => t.dayId)).toEqual(['mar', 'mie', 'jue', 'vie', 'sab', 'dom'])
+    expect(targets.slice(6).map(t => t.dayId)).toEqual(['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'])
+    expect(targets.slice(6).every(t => t.phaseIndex === 1)).toBe(true)
+  })
+
+  it('lleva el recuento de ejercicios del destino, que es el aviso de que copiar reemplaza', () => {
+    const targets = copyDayTargets(days, 2, '0_mar')
+
+    expect(targets.find(t => t.key === '0_lun')?.exerciseCount).toBe(2)
+    expect(targets.find(t => t.key === '1_lun')?.exerciseCount).toBe(1)
+    expect(targets.find(t => t.key === '1_dom')?.exerciseCount).toBe(0)
+  })
+
+  it('salta las claves que no existen en vez de inventar días', () => {
+    const partial: Record<string, EditorDay> = { '0_lun': day('lun'), '0_mar': day('mar') }
+
+    expect(copyDayTargets(partial, 2, '0_lun').map(t => t.key)).toEqual(['0_mar'])
+  })
+})
+
+describe('copyPhaseTargets', () => {
+  const days: Record<string, EditorDay> = {
+    '0_lun': day('lun', { exercises: [ex('flexiones')] }),
+    '1_lun': day('lun', { exercises: [ex('sentadillas'), ex('zancadas')] }),
+    '1_jue': day('jue', { exercises: [ex('dominadas')] }),
+    '2_lun': day('lun'),
+  }
+
+  it('ofrece todas las fases menos la de origen', () => {
+    expect(copyPhaseTargets(days, 3, 0).map(t => t.phaseIndex)).toEqual([1, 2])
+    expect(copyPhaseTargets(days, 3, 1).map(t => t.phaseIndex)).toEqual([0, 2])
+  })
+
+  it('suma los ejercicios de los siete días, porque copiar los reemplaza todos', () => {
+    const targets = copyPhaseTargets(days, 3, 0)
+
+    expect(targets.find(t => t.phaseIndex === 1)?.exerciseCount).toBe(3)
+    expect(targets.find(t => t.phaseIndex === 2)?.exerciseCount).toBe(0)
   })
 })
 

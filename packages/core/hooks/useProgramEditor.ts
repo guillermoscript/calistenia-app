@@ -587,6 +587,36 @@ export function copyDayTargets(
   return targets
 }
 
+/** Una fase a la que se puede copiar otra, ya lista para pintar. */
+export interface CopyPhaseTarget {
+  phaseIndex: number
+  /** Cuántos ejercicios hay ya repartidos por los siete días de esa fase. */
+  exerciseCount: number
+}
+
+/**
+ * Las fases a las que tiene sentido copiar `fromIndex`: todas menos ella misma.
+ *
+ * El recuento suma los siete días porque copiar una fase los reemplaza todos;
+ * es el número que las dos apps enseñan antes de pisar una fase con contenido.
+ */
+export function copyPhaseTargets(
+  days: Record<string, EditorDay>,
+  phaseCount: number,
+  fromIndex: number,
+): CopyPhaseTarget[] {
+  const targets: CopyPhaseTarget[] = []
+  for (let pi = 0; pi < phaseCount; pi++) {
+    if (pi === fromIndex) continue
+    let exerciseCount = 0
+    for (const d of DAY_DEFAULTS) {
+      exerciseCount += days[`${pi}_${d.dayId}`]?.exercises.length ?? 0
+    }
+    targets.push({ phaseIndex: pi, exerciseCount })
+  }
+  return targets
+}
+
 /**
  * Reordena un ejercicio **dentro de su sección**, con índices locales a esa
  * sección (los que tiene a mano quien pinta la lista agrupada).
