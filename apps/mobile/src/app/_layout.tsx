@@ -17,7 +17,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { PortalHost } from '@rn-primitives/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
@@ -27,6 +27,7 @@ import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHando
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
 import { resolveNotifUrl } from '@/lib/notification-route'
+import { screenPattern } from '@/lib/screen-pattern'
 import { cancelLegacyLocalReminders } from '@/lib/reminder-scheduler'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
@@ -127,10 +128,16 @@ function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONTS)
 
   // OpenPanel screen views (la web los auto-trackea; en RN es manual).
+  //
+  // El NOMBRE de la pantalla es el patrón de ruta (`/challenges/[id]`), no la
+  // ruta resuelta: mandando `pathname` cada reto, cada batalla y cada carrera
+  // creaba su propia pantalla en OpenPanel, así que el informe de vistas era
+  // una lista infinita de ids sin ninguna fila agregada por pantalla (#636).
+  // La ruta concreta sigue viajando como propiedad, que es donde no molesta.
   const pathname = usePathname()
   const segments = useSegments()
   useEffect(() => {
-    trackScreen(pathname, { segments: segments.join('/'), platform: 'mobile' })
+    trackScreen(screenPattern(segments), { path: pathname, platform: 'mobile' })
   }, [pathname, segments])
 
   // Reintenta acciones encoladas offline al recuperar conexión (igual que web).
@@ -237,7 +244,7 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER }}
       >
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <KeyboardProvider>

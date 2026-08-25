@@ -1,23 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { localize } from '@calistenia/core/lib/i18n-db'
 
 /**
- * La landing pública de un programa compartido (rama SIN login) era la única de
- * las cuatro vistas de detalle que no pasaba los campos de PocketBase por
- * `localize()`. Con los campos en forma objeto —que es como están TODOS los
- * programas de la base real— eso no era cosmético: `ex.muscles.split(',')`
- * lanzaba TypeError y `{program.name}` como hijo de React también.
+ * La landing pública de un programa compartido (rama SIN login).
  *
- * Se testea aquí, y no en el navegador, porque hoy `programs.viewRule` es
- * `@request.auth.id != ""`: un visitante anónimo recibe 404 y la landing nunca
- * llega a pintar los datos, así que el fallo es LATENTE y no se puede provocar
- * end-to-end sin relajar la regla. Este test sí lo provoca (#474).
+ * Nació (#474) cubriendo que los campos de PocketBase pasaran por `localize()`:
+ * con los campos en forma objeto —que es como están TODOS los programas de la
+ * base real— `ex.muscles.split(',')` lanzaba TypeError y `{program.name}` como
+ * hijo de React también. Aquello se testeaba aquí y no en el navegador porque
+ * el fallo era LATENTE: `programs.viewRule` exigía sesión, el visitante anónimo
+ * recibía 404 y la landing nunca llegaba a pintar los datos.
+ *
+ * #604 mató esa latencia por el otro extremo: los datos ya no salen de
+ * `pb.collection('programs')` sino de `GET /api/programs/{id}/public`, la ruta
+ * de `pb_hooks` que sí contesta sin sesión. Lo que se mockea ahora es el
+ * `fetch` de esa ruta —el contrato de campos lo cubre
+ * `tests/pb_hooks/public_program_preview.test.mjs` contra un PocketBase real—,
+ * y las aserciones de `TranslatableField` siguen intactas: son la razón por la
+ * que este archivo existe.
  */
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, opts?: Record<string, unknown>) =>
+      opts && 'name' in opts ? `${key}:${opts.name}` : key,
     i18n: { language: 'es' },
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
@@ -35,60 +43,74 @@ vi.mock('@calistenia/core/hooks/useLocalize', () => ({
   useLocalize: () => (field: unknown) => localize(field as never, 'es'),
 }))
 
-const h = vi.hoisted(() => ({
-  program: {} as Record<string, unknown>,
-  exercises: [] as Record<string, unknown>[],
-  phaseTotal: 0,
+vi.mock('@calistenia/core/lib/pocketbase', () => ({
+  pb: { baseUrl: 'http://pb.test' },
+  isPocketBaseAvailable: () => Promise.resolve(true),
 }))
 
-vi.mock('@calistenia/core/lib/pocketbase', () => ({
-  isPocketBaseAvailable: () => Promise.resolve(true),
-  pb: {
-    filter: (expr: string) => expr,
-    collection: (name: string) => ({
-      getOne: () => Promise.resolve(h.program),
-      getList: () =>
-        Promise.resolve(
-          name === 'program_phases'
-            ? { items: [], totalItems: h.phaseTotal }
-            : { items: h.exercises, totalItems: h.exercises.length },
-        ),
-    }),
-  },
+const h = vi.hoisted(() => ({
+  response: null as unknown,
+  status: 200,
+  captured: [] as string[],
+}))
+
+vi.mock('@calistenia/core/lib/sharedProgramHandoff', () => ({
+  capturePendingSharedProgram: (id: string) => { h.captured.push(id) },
+  consumePendingSharedProgram: () => null,
+  clearPendingSharedProgram: () => {},
 }))
 
 const { default: SharedProgramPage } = await import('./SharedProgramPage')
 
-describe('SharedProgramPage — landing anónima con campos TranslatableField (#474)', () => {
+function renderLanding(programId: string, onLogin: () => void = () => {}) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return render(
+    <QueryClientProvider client={client}>
+      <SharedProgramPage programId={programId} onBack={() => {}} onLogin={onLogin} />
+    </QueryClientProvider>,
+  )
+}
+
+describe('SharedProgramPage — landing anónima (#474, #604)', () => {
   beforeEach(() => {
+    h.status = 200
+    h.captured = []
     // Forma real de los datos: todos los programas de la base tienen `{es: …}`.
-    h.program = {
+    h.response = {
       id: 'd97d78hsknhk63e',
       name: { es: 'Ashtanga Yoga — Principiante' },
       description: { es: 'Programa progresivo de Ashtanga Yoga.' },
       duration_weeks: 24,
-      created_by: '',
+      phase_count: 6,
+      exercise_count: 42,
+      author_name: 'Marta Yoga',
+      exercises: [
+        {
+          name: { es: 'Surya Namaskar A' },
+          sets: 5,
+          reps: '1',
+          muscles: { es: 'cuerpo completo,cuádriceps' },
+        },
+      ],
     }
-    h.exercises = [
-      {
-        exercise_name: { es: 'Surya Namaskar A' },
-        sets: 5,
-        reps: '1',
-        muscles: { es: 'cuerpo completo,cuádriceps' },
-      },
-    ]
-    h.phaseTotal = 6
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      expect(url).toContain('/api/programs/')
+      expect(url).toContain('/public')
+      return { ok: h.status === 200, json: async () => h.response }
+    }))
   })
 
   it('traduce nombre y descripción del programa', async () => {
-    render(<SharedProgramPage programId="d97d78hsknhk63e" onBack={() => {}} onLogin={() => {}} />)
+    renderLanding('d97d78hsknhk63e')
 
     expect(await screen.findByText('Ashtanga Yoga — Principiante')).toBeInTheDocument()
     expect(screen.getByText('Programa progresivo de Ashtanga Yoga.')).toBeInTheDocument()
   })
 
   it('traduce el nombre y los músculos de los ejercicios de la vista previa', async () => {
-    render(<SharedProgramPage programId="d97d78hsknhk63e" onBack={() => {}} onLogin={() => {}} />)
+    renderLanding('d97d78hsknhk63e')
 
     expect(await screen.findByText('Surya Namaskar A')).toBeInTheDocument()
     // `muscles` se parte por comas y se une con ' · ' — eso es lo que lanzaba
@@ -97,27 +119,67 @@ describe('SharedProgramPage — landing anónima con campos TranslatableField (#
   })
 
   it('no deja ningún [object Object] en la página', async () => {
-    const { container } = render(
-      <SharedProgramPage programId="d97d78hsknhk63e" onBack={() => {}} onLogin={() => {}} />,
-    )
+    const { container } = renderLanding('d97d78hsknhk63e')
 
     await screen.findByText('Ashtanga Yoga — Principiante')
     expect(container.textContent).not.toContain('[object Object]')
   })
 
   it('sigue funcionando con campos en string plano (registros antiguos)', async () => {
-    h.program = {
+    h.response = {
       id: 'p1',
       name: 'Intermedio – Balance Total',
       description: 'Programa intermedio 6 días/semana.',
       duration_weeks: 12,
+      phase_count: 3,
+      exercise_count: 1,
+      author_name: '',
+      exercises: [{ name: 'Dominadas', sets: 4, reps: '6-8', muscles: 'dorsal,bíceps' }],
     }
-    h.exercises = [{ exercise_name: 'Dominadas', sets: 4, reps: '6-8', muscles: 'dorsal,bíceps' }]
 
-    render(<SharedProgramPage programId="p1" onBack={() => {}} onLogin={() => {}} />)
+    renderLanding('p1')
 
     expect(await screen.findByText('Intermedio – Balance Total')).toBeInTheDocument()
     expect(screen.getByText('Dominadas')).toBeInTheDocument()
     expect(screen.getByText('dorsal · bíceps')).toBeInTheDocument()
+  })
+
+  it('enseña el total real de ejercicios, no el tamaño de la vista previa', async () => {
+    // La ruta manda 8 ejercicios como mucho pero cuenta todos. Pintar
+    // `exercises.length` diría "1 ejercicio" en un programa de 42.
+    renderLanding('d97d78hsknhk63e')
+
+    await screen.findByText('Ashtanga Yoga — Principiante')
+    expect(screen.getByText('42')).toBeInTheDocument()
+  })
+
+  it('atribuye el programa a su autor', async () => {
+    renderLanding('d97d78hsknhk63e')
+
+    expect(await screen.findByText('programs.sharedBy:Marta Yoga')).toBeInTheDocument()
+  })
+
+  it('un programa no compartible se pinta como no encontrado', async () => {
+    // 404 es la respuesta tanto de un programa privado como de uno inexistente,
+    // y la landing no puede distinguirlos: hacerlo filtraría qué ids existen.
+    h.status = 404
+    h.response = { error: 'not found' }
+
+    renderLanding('privado')
+
+    expect(await screen.findByText('programs.notFound')).toBeInTheDocument()
+  })
+
+  it('guarda el programa antes de mandar a registrarse', async () => {
+    // Sin esto, quien completa el alta desde aquí aterriza en el dashboard y
+    // pierde el programa que venía a ver — el último paso del embudo (#604).
+    const onLogin = vi.fn()
+    renderLanding('d97d78hsknhk63e', onLogin)
+
+    const cta = await screen.findByText('programs.signUpToUse')
+    cta.click()
+
+    expect(h.captured).toEqual(['d97d78hsknhk63e'])
+    expect(onLogin).toHaveBeenCalled()
   })
 })

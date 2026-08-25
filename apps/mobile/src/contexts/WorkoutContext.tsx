@@ -6,7 +6,7 @@ import { usePrograms } from '@calistenia/core/hooks/usePrograms'
 import { useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
 import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
-import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, ExerciseTiming } from '@calistenia/core/types'
+import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, CircuitDefinition, ExerciseTiming } from '@calistenia/core/types'
 
 // ── Context interface (state + actions + meta) ──────────────────────────────
 
@@ -22,6 +22,8 @@ interface WorkoutState {
   phases: Phase[]
   weekDays: WeekDay[]
   cardioDayConfigs: Record<string, CardioDayConfig>
+  /** Circuitos del programa por `p{fase}_{día}` (#625). */
+  circuitDayConfigs: Record<string, CircuitDefinition>
   programsReady: boolean
   /** Progreso dentro del programa activo: semana X de Y, fase real, «hoy toca» (#616). */
   programProgress: ProgramProgress
@@ -83,7 +85,7 @@ interface WorkoutProviderProps {
 
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
-    programs, activeProgram, activeEnrollment, phases, weekDays, cardioDayConfigs, getWorkout,
+    programs, activeProgram, activeEnrollment, phases, weekDays, cardioDayConfigs, circuitDayConfigs, getWorkout,
     selectProgram, abandonProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
@@ -109,8 +111,8 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
 
   const state = useMemo<WorkoutState>(() => ({
     progress, settings, usePB, pbReady,
-    programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady, programProgress,
-  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady, programProgress])
+    programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress,
+  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress])
 
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,

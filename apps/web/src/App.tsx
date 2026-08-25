@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { WorkoutProvider, useWorkoutState, useWorkoutActions } from './contexts/WorkoutContext'
@@ -85,6 +85,7 @@ import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './componen
 import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { consumePendingSharedProgram } from '@calistenia/core/lib/sharedProgramHandoff'
 import { cn } from './lib/utils'
 import { Toaster, toast } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
@@ -687,6 +688,22 @@ function AppInner() {
 
   useEffect(() => { return setupAutoSync(pb, () => queryClient.invalidateQueries()) }, [])
 
+  /**
+   * Cierra el embudo del enlace compartido (#604): quien llega a `/shared/:id`
+   * sin cuenta, pulsa «Regístrate para usar este programa» y completa el alta,
+   * aterrizaba en el dashboard sin rastro del programa que venía a ver. La
+   * landing guarda el id antes de mandar a `/auth` y aquí se recoge.
+   *
+   * `consumePendingSharedProgram` es de un solo uso, así que este efecto puede
+   * correr en cada render sin secuestrar la navegación: a partir de la segunda
+   * vez no hay nada que consumir.
+   */
+  useEffect(() => {
+    if (!userId) return
+    const pendingProgram = consumePendingSharedProgram()
+    if (pendingProgram) navigate(`/programs/${pendingProgram}`)
+  }, [userId, navigate])
+
   useEffect(() => {
     const handler = (e: Event) => {
       const url = (e as CustomEvent).detail
@@ -783,7 +800,7 @@ export default function App() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER }}
     >
       <AuthProvider>
         <AppInner />

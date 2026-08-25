@@ -236,4 +236,26 @@ export const getUserAvatarUrl = (user: RecordModel, thumb: string = '200x200'): 
   return pb.files.getURL(user, user.avatar, { thumb })
 }
 
+/**
+ * URL de un fichero ya subido por el editor de programas (#618).
+ *
+ * `demo_images`, `demo_video` y `cover_image` guardan NOMBRES DE FICHERO, no
+ * URLs, así que pintarlos a pelo no enseña nada. `pb.files.getURL` solo
+ * necesita la colección y el id, no el registro entero: eso deja que el editor
+ * previsualice lo que ya está guardado sin tener que arrastrar el `RecordModel`
+ * de PocketBase por todo el estado del wizard.
+ *
+ * Devuelve null cuando no hay fichero o cuando la fila todavía no existe en el
+ * servidor (un ejercicio recién añadido y aún sin guardar).
+ */
+export const getProgramFileUrl = (
+  collection: 'programs' | 'program_exercises',
+  recordId: string | undefined | null,
+  filename: string | undefined | null,
+  thumb?: string,
+): string | null => {
+  if (!recordId || !filename) return null
+  return pb.files.getURL({ collectionName: collection, id: recordId }, filename, thumb ? { thumb } : undefined)
+}
+
 export default pb

@@ -7,9 +7,12 @@
 // la sesión, solo para restaurar tras navegar fuera. Esta refactor NO invierte
 // ese flujo.
 //
-// No se engancha el registro de abandono (`trackAbandon`): su disparo en web es
-// `beforeunload` y en nativo no hay equivalente — pasar a segundo plano no es
-// abandonar el entreno.
+// `trackAbandon` sigue sin engancharse: su disparo en web es `beforeunload` y
+// en nativo no hay equivalente — pasar a segundo plano no es abandonar el
+// entreno, y contarlo así inflaría la cifra hasta volverla inútil. El abandono
+// en nativo sí se mide desde core, por las otras dos vías que no dependen del
+// ciclo de vida de la app: la sesión que caduca a las 24 h y la que otra
+// sesión reemplaza (#636).
 import { createContext, use, type ReactNode } from 'react'
 import {
   useActiveSessionState,
@@ -28,8 +31,6 @@ export type { WarmupCooldownData } from '@calistenia/core/hooks/session-contexts
 const ActiveSessionContext = createContext<ActiveSessionContextValue | null>(null)
 const ActiveSessionProgressContext = createContext<SessionProgress | null>(null)
 
-const ANALYTICS_PROPS = { platform: 'mobile' } as const
-
 interface ProviderProps {
   children: ReactNode
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
@@ -38,8 +39,9 @@ interface ProviderProps {
 
 export function ActiveSessionProvider({ children, getRestForExercise, setRestForExercise }: ProviderProps) {
   const { value, progress } = useActiveSessionState({
+    // `platform: 'mobile'` ya no se manda a mano en cada evento: lo sella core
+    // desde `getClientInfo()`, que es la misma fuente para web y móvil (#636).
     platform: 'mobile',
-    analyticsProps: ANALYTICS_PROPS,
     getRestForExercise,
     setRestForExercise,
   })

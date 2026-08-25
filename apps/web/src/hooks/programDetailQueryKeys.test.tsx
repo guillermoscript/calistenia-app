@@ -74,6 +74,10 @@ vi.mock('@calistenia/core/lib/pocketbase', () => {
   const collections: Record<string, any> = {
     programs: {
       getList: async () => list([fx.CATALOG_ROW]),
+      // El catálogo y las fases pasaron a `getFullList` al quitarles los topes
+      // de página (#614); `getList` se queda porque otras rutas del hook lo
+      // siguen usando.
+      getFullList: async () => [fx.CATALOG_ROW],
       getOne: async () => fx.PROGRAM_ROW,
     },
     user_programs: {
@@ -81,6 +85,7 @@ vi.mock('@calistenia/core/lib/pocketbase', () => {
     },
     program_phases: {
       getList: async () => list([fx.PHASE_ROW]),
+      getFullList: async () => [fx.PHASE_ROW],
     },
     program_exercises: {
       getList: async () => list([fx.EXERCISE_ROW]),
@@ -176,7 +181,7 @@ describe('usePrograms + useProgramDetail sobre el mismo programa (#606)', () => 
     expect(detail).not.toBe(detailView)
 
     // Y cada una tiene exactamente los campos de su hook, ninguno del otro.
-    expect(Object.keys(detail).sort()).toEqual(['cardioDayConfigs', 'phases', 'weekDays', 'workoutsMap'])
+    expect(Object.keys(detail).sort()).toEqual(['cardioDayConfigs', 'circuitDayConfigs', 'phases', 'weekDays', 'workoutsMap'])
     expect(Object.keys(detailView).sort()).toEqual(['days', 'program'])
   })
 

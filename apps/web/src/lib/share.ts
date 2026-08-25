@@ -1,5 +1,6 @@
 import i18n from './i18n'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { buildProgramShareContent } from '@calistenia/core/lib/programShare'
 
 /** Deep link to a single saved cardio session's detail page. */
 export function cardioUrl(id: string): string {
@@ -63,12 +64,22 @@ export function shareRoutine(userName: string, programName: string, userId: stri
   }, method)
 }
 
+/**
+ * La URL y el título los construye core (#604). Había una segunda `shareProgram`
+ * dentro de `ProgramsPage.tsx` —y era ESA la que colgaba del botón de las
+ * tarjetas, así que esta no la llamaba nadie— que armaba el enlace con
+ * `window.location.origin`: en local generaba un `http://localhost:5173/shared/…`
+ * inservible para quien lo recibía.
+ */
 export function shareProgram(programName: string, programId: string, method?: ShareMethod) {
-  return shareContent({
-    title: programName,
-    text: i18n.t('share.programText', { name: programName }),
-    url: `${WEB_BASE_URL}/shared/${programId}`,
-  }, method)
+  return shareContent(
+    buildProgramShareContent(
+      programName,
+      programId,
+      i18n.t('share.programText', { name: programName }),
+    ),
+    method,
+  )
 }
 
 export function shareChallenge(challengeTitle: string, challengeId: string, method?: ShareMethod) {
