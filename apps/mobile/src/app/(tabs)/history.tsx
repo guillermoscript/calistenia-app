@@ -4,7 +4,7 @@ import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays, Swords } from 'lucide-react-native'
+import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays, Swords, BarChart3 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
@@ -175,6 +175,24 @@ export default function HistoryScreen() {
             </View>
           </CardContent>
         </Card>
+
+        {/* Estadísticas (#596): músculos, ejercicios, récords y tendencia. */}
+        <Pressable onPress={() => router.push('/stats')}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <BarChart3 size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('stats.title')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('stats.rowDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
 
         {/* Batallas (#398): el historial es lo que convierte una batalla en
             entrenamiento y no en una anécdota que se ve una vez y desaparece. */}
