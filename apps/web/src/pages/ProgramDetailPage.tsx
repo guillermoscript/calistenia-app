@@ -22,6 +22,9 @@ import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import { authorDisplayName } from '@calistenia/core/lib/author-name'
+import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
+import { ProgramRemixCredit, ProgramFollowers } from '../components/programs/ProgramRemixCredit'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -157,6 +160,12 @@ export default function ProgramDetailPage({
   const isActive = activeProgram?.id === programId
   const isOwn = program?.created_by === userId
   const currentUser = getCurrentUser()
+
+  // Cuánta gente sigue ESTE programa (#620). El array se memoiza porque es la
+  // clave de caché del hook: recrearlo en cada render lo dejaría refetcheando.
+  const statsIds = useMemo(() => (programId ? [programId] : []), [programId])
+  const { statsById } = useProgramStats(statsIds)
+  const followersCount = statsById[programId ?? '']?.followersCount
   const isAdminOrEditor = currentUser?.role === 'admin' || currentUser?.role === 'editor'
 
   // ── Fetch program data ─────────────────────────────────────────────────
@@ -174,13 +183,27 @@ export default function ProgramDetailPage({
 
     try {
       // Fetch program
-      const progRecord = await pb.collection('programs').getOne(programId, { $autoCancel: false })
+      // El `expand` trae el crédito del remix (#620): de qué programa salió esta
+      // copia y quién lo escribió. Son dos saltos de relación que PocketBase
+      // resuelve en esta misma petición.
+      const progRecord = await pb.collection('programs').getOne(programId, {
+        expand: 'forked_from,forked_from.created_by',
+        $autoCancel: false,
+      })
+      const forkedFrom = (progRecord.expand as any)?.forked_from
       const meta: ProgramMeta = {
         id: progRecord.id,
         name: localize(progRecord.name, locale),
         description: localize(progRecord.description, locale),
         duration_weeks: progRecord.duration_weeks,
         created_by: progRecord.created_by || undefined,
+        forked_from: progRecord.forked_from || undefined,
+        // `localize` obligatorio: el nombre es un `json {es,en}` y pintarlo
+        // crudo en la frase daría «Basado en [object Object]».
+        forked_from_name: forkedFrom ? localize(forkedFrom.name, locale) || undefined : undefined,
+        forked_from_author: forkedFrom
+          ? authorDisplayName(forkedFrom.expand?.created_by) || undefined
+          : undefined,
         // «Cómo seguir este programa» (#618). Se lee del registro crudo, que es
         // de donde ya salían nombre y descripción; `localize` es obligatorio
         // porque el campo es un `json` `{ es, en }` y pintarlo tal cual daría
@@ -481,6 +504,19 @@ export default function ProgramDetailPage({
         )}
         {program.description && (
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>{program.description}</p>
+        )}
+
+        {/* Crédito del remix y prueba social (#620). Las dos piezas se callan
+            solas cuando no hay dato, así que el bloque desaparece entero en un
+            programa original que nadie sigue todavía. */}
+        {(program.forked_from_name || followersCount) && (
+          <div
+            className="flex flex-wrap items-center gap-x-4 gap-y-1.5 max-w-2xl mb-6 motion-safe:animate-fade-in"
+            style={{ animationDelay: '110ms', animationFillMode: 'both' }}
+          >
+            <ProgramRemixCredit program={program} />
+            <ProgramFollowers count={followersCount} />
+          </div>
         )}
 
         {/* «Cómo seguir este programa» (#618): las notas del autor sobre cómo
