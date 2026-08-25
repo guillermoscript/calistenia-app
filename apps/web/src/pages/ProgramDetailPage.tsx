@@ -285,9 +285,11 @@ export default function ProgramDetailPage({
       }
 
       // Fetch related programs (others in catalog)
+      // Solo públicos (#603): esto es una recomendación hacia fuera, no la lista
+      // del autor, así que aquí no entran los borradores propios.
       try {
         const relatedRes = await pb.collection('programs').getList(1, 6, {
-          filter: pb.filter('is_active = true && id != {:pid}', { pid: programId }),
+          filter: pb.filter('is_active = true && visibility = "public" && id != {:pid}', { pid: programId }),
           sort: 'name',
         })
         setRelatedPrograms(relatedRes.items.map(p => ({

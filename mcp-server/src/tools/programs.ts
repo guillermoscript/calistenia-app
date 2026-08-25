@@ -373,6 +373,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           duration_weeks: input.duration_weeks || 0,
           difficulty: input.difficulty || "",
           is_active: true,
+          // Nace privado (#603): es un programa de usuario, no de catálogo.
+          // Se publica desde el editor cambiando la visibilidad.
+          visibility: "private",
           created_by: userId,
         });
 
@@ -804,6 +807,8 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           duration_weeks: input.duration_weeks || 0,
           difficulty: input.difficulty || "",
           is_active: true,
+          // Nace privado (#603): es un programa de usuario, no de catálogo.
+          visibility: "private",
           created_by: userId,
         });
 
@@ -999,6 +1004,8 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           difficulty: input.program.difficulty || "",
           is_active: true,
           is_official: input.is_official,
+          // Los sembrados como oficiales son catálogo; el resto, del usuario (#603).
+          visibility: input.is_official ? "public" : "private",
           created_by: userId,
         });
 
@@ -1141,6 +1148,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           duration_weeks: original.duration_weeks,
           difficulty: original.difficulty || "",
           is_active: true,
+          // La copia nace privada aunque el original fuera público (#603),
+          // igual que `duplicateProgram` en packages/core/hooks/usePrograms.ts.
+          visibility: "private",
           created_by: userId,
         });
 

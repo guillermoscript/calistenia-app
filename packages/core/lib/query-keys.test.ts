@@ -42,7 +42,7 @@ describe('qk — estabilidad y distinción de factorías', () => {
 describe('qk — jerarquía de invalidación (sub-keys empiezan con el prefijo de "all")', () => {
   it('programs: catalog/enrollment/detail/detailView comparten el prefijo de programs.all', () => {
     const prefix = qk.programs.all[0]
-    expect(qk.programs.catalog[0]).toBe(prefix)
+    expect(qk.programs.catalog('u1')[0]).toBe(prefix)
     expect(qk.programs.enrollment('u1')[0]).toBe(prefix)
     expect(qk.programs.detail('p1')[0]).toBe(prefix)
     expect(qk.programs.detailView('p1')[0]).toBe(prefix)

@@ -299,6 +299,16 @@ export type ProgramGoalType = 'fat_loss' | 'muscle_gain' | 'maintain' | 'skill'
 export type ProgramSkill = 'pull_up' | 'handstand' | 'muscle_up' | 'planche'
 export type ProgramIntensity = 'light' | 'moderate' | 'intense'
 
+/**
+ * Nivel de exposición elegido por el autor (#603).
+ *
+ * `link` está en el enum y en el selector, pero en la API de colección se
+ * comporta como `private`: las reglas de lectura solo abren `public`. Lo hace
+ * alcanzable la landing anónima de #604, que sirve el programa desde
+ * `pb_hooks` con `$app`.
+ */
+export type ProgramVisibility = 'private' | 'link' | 'public'
+
 export interface ProgramMeta {
   id: string
   name: string
@@ -308,6 +318,8 @@ export interface ProgramMeta {
   created_by_name?: string
   is_official?: boolean
   is_featured?: boolean
+  /** Vacío en filas creadas por clientes anteriores a #603: se trata como `private`. */
+  visibility?: ProgramVisibility
   difficulty?: ProgramDifficulty
   cover_image?: string
   /** Resolved cover image URL (built from PB file service) */
