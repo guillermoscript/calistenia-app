@@ -1,16 +1,20 @@
-import { useMemo, useState, useEffect } from 'react'
-import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
+import { useCallback, useMemo, useState, useEffect } from 'react'
+import { View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, BadgeCheck, CalendarDays, GitFork, Users } from 'lucide-react-native'
+import { ArrowLeft, BadgeCheck, CalendarDays, Copy, GitFork, LogOut, MoreVertical, Pencil, Trash2, Users } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { OptionSheet, type OptionSheetOption } from '@/components/ui/option-sheet'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
@@ -22,7 +26,8 @@ export default function ProgramDetailScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const { programs, activeProgram, programProgress } = useWorkoutState()
-  const { selectProgram } = useWorkoutActions()
+  const { selectProgram, abandonProgram, duplicateProgram, deleteProgram } = useWorkoutActions()
+  const user = useAuthUser()
 
   // El catálogo en memoria solo trae programas is_active y puede no estar
   // hidratado en cold-start. Como la web (getOne por id), buscamos primero en el
@@ -59,7 +64,16 @@ export default function ProgramDetailScreen() {
   }, [id, !!program]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por programa
 
   const [selecting, setSelecting] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [showActions, setShowActions] = useState(false)
   const [error, setError] = useState('')
+
+  // Mismo criterio que web (`ProgramDetailPage.tsx:149,560`): el dueño del
+  // programa, o quien tiene rol de edición, puede modificarlo y borrarlo.
+  const canManage = useMemo(() => {
+    if (!program || !user) return false
+    return program.created_by === user.id || user.role === 'admin' || user.role === 'editor'
+  }, [program, user])
 
   const handleSelect = async () => {
     if (!id || selecting) return
@@ -74,15 +88,126 @@ export default function ProgramDetailScreen() {
     }
   }
 
+  const handleEdit = useCallback(() => {
+    if (!id) return
+    router.push({ pathname: '/program-editor', params: { id } })
+  }, [id, router])
+
+  const handleDuplicate = useCallback(async () => {
+    if (!id || busy) return
+    setBusy(true)
+    const newId = await duplicateProgram(id)
+    setBusy(false)
+    if (newId) {
+      haptics.success()
+      // Igual que web: la copia se abre directamente en el editor, que es lo
+      // que se quiere hacer justo después de duplicar.
+      router.push({ pathname: '/program-editor', params: { id: newId } })
+    } else {
+      haptics.error()
+      Alert.alert(t('programDetail.duplicateError'))
+    }
+  }, [id, busy, duplicateProgram, router, t])
+
+  const handleAbandon = useCallback(() => {
+    if (!id) return
+    // Confirmación NATIVA (#345): en móvil `window.confirm` no existe.
+    Alert.alert(t('programDetail.abandonProgram'), t('programDetail.abandonConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('programDetail.abandonConfirmLabel'),
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true)
+          const ok = await abandonProgram(id)
+          setBusy(false)
+          if (ok) {
+            haptics.success()
+            router.replace('/(tabs)/programs')
+          } else {
+            haptics.error()
+            Alert.alert(t('programDetail.abandonError'))
+          }
+        },
+      },
+    ])
+  }, [id, abandonProgram, router, t])
+
+  const handleDelete = useCallback(() => {
+    if (!id) return
+    Alert.alert(t('programs.deleteProgram'), t('programs.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true)
+          const ok = await deleteProgram(id)
+          setBusy(false)
+          if (ok) {
+            haptics.success()
+            router.replace('/(tabs)/programs')
+          } else {
+            haptics.error()
+            Alert.alert(t('programs.deleteError'))
+          }
+        },
+      },
+    ])
+  }, [id, deleteProgram, router, t])
+
+  // El menú es un OptionSheet y no un Alert de opciones a propósito: el
+  // `Alert.alert` de Android admite tres botones como mucho y descarta los
+  // demás en silencio, y aquí puede haber cuatro entradas más cancelar.
+  const actions = useMemo<OptionSheetOption[]>(() => {
+    const opts: OptionSheetOption[] = []
+    if (canManage) {
+      opts.push({ key: 'edit', label: t('common.edit'), icon: Pencil, onPress: handleEdit })
+    }
+    opts.push({ key: 'duplicate', label: t('programDetail.duplicate'), icon: Copy, onPress: handleDuplicate })
+    if (isActive) {
+      opts.push({
+        key: 'abandon',
+        label: t('programDetail.abandonProgram'),
+        icon: LogOut,
+        destructive: true,
+        onPress: handleAbandon,
+      })
+    }
+    if (canManage) {
+      opts.push({
+        key: 'delete',
+        label: t('programs.deleteLabel'),
+        icon: Trash2,
+        destructive: true,
+        onPress: handleDelete,
+      })
+    }
+    return opts
+  }, [canManage, isActive, t, handleEdit, handleDuplicate, handleAbandon, handleDelete])
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-row items-center gap-2 px-2 py-1">
         <Pressable onPress={() => router.back()} hitSlop={8} className="p-2" accessibilityLabel={t('common.back')}>
           <ArrowLeft size={20} color="hsl(0 0% 55%)" />
         </Pressable>
+        {/* flex-1 + shrink-0 en el icono: en RN el shrink por defecto es 0, así
+            que sin esto un nombre largo empuja el botón de acciones fuera. */}
         <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
           {program?.name ?? ''}
         </Text>
+        {program && actions.length > 0 && (
+          <Pressable
+            onPress={() => { haptics.light(); setShowActions(true) }}
+            hitSlop={8}
+            className="shrink-0 p-2"
+            accessibilityLabel={t('programDetail.actions')}
+            accessibilityRole="button"
+          >
+            <MoreVertical size={20} color="hsl(0 0% 55%)" />
+          </Pressable>
+        )}
       </View>
 
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
@@ -94,6 +219,20 @@ export default function ProgramDetailScreen() {
           )
         ) : (
           <>
+            {!!program.cover_image_url && (
+              <View className="h-40 overflow-hidden rounded-xl border border-border bg-card">
+                <Image
+                  source={{ uri: program.cover_image_url }}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  transition={150}
+                  cachePolicy="memory-disk"
+                  recyclingKey={program.id}
+                  accessibilityLabel={program.name}
+                />
+              </View>
+            )}
+
             <Card>
               <CardContent className="gap-2 py-4">
                 <View className="flex-row flex-wrap items-center gap-2">
@@ -187,6 +326,12 @@ export default function ProgramDetailScreen() {
 
             {error ? <Text className="text-center text-sm text-destructive">{error}</Text> : null}
 
+            {canManage && (
+              <Button size="lg" variant="outline" onPress={handleEdit} disabled={busy}>
+                <Text>{t('common.edit')}</Text>
+              </Button>
+            )}
+
             {isActive ? (
               <Button size="lg" variant="outline" onPress={() => router.dismissTo('/(tabs)')}>
                 <Text>{t('programs.goToWorkout')}</Text>
@@ -201,6 +346,17 @@ export default function ProgramDetailScreen() {
           </>
         )}
       </ScrollView>
+
+      {program && (
+        <OptionSheet
+          visible={showActions}
+          kicker={t('programDetail.actions')}
+          title={program.name}
+          options={actions}
+          cancelLabel={t('common.cancel')}
+          onClose={() => setShowActions(false)}
+        />
+      )}
     </SafeAreaView>
   )
 }

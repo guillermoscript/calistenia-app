@@ -112,7 +112,16 @@ export default function ProgramEditorScreen() {
       // El evento lo emite ahora `saveProgram` de core, que es el único punto
       // por el que pasan las dos apps (#636 §5).
       await refreshPrograms()
-      router.replace({ pathname: '/program/[id]', params: { id: savedId } })
+      // Al EDITAR se viene de la ficha del programa, que sigue en la pila: un
+      // `replace` cambiaría el editor por una SEGUNDA ficha y dejaría dos
+      // apiladas, con la de abajo desactualizada (#611). Al CREAR no hay nada
+      // debajo, así que el replace sigue siendo lo correcto.
+      //
+      // No hace falta invalidar a mano: `saveProgram` invalida `qk.programs.all`
+      // (`['programs']`) y React Query invalida por prefijo, así que la clave
+      // `['programs','detailView',id]` de la ficha entra en el barrido.
+      if (programId && router.canGoBack()) router.back()
+      else router.replace({ pathname: '/program/[id]', params: { id: savedId } })
     } else {
       Alert.alert(t('programEditor.saveError'))
     }

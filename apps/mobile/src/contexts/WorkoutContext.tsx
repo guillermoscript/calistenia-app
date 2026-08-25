@@ -50,6 +50,9 @@ interface WorkoutActions {
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<boolean>
   abandonProgram: (programId: string) => Promise<boolean>
+  /** Devuelve el id de la copia, o null si falló (#612). */
+  duplicateProgram: (programId: string) => Promise<string | null>
+  deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
   /** Override manual de fase, guardado en `user_programs` (no en settings). */
   setPhaseOverride: (phase: number | null) => Promise<boolean>
@@ -86,7 +89,7 @@ interface WorkoutProviderProps {
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
     programs, activeProgram, activeEnrollment, phases, weekDays, cardioDayConfigs, circuitDayConfigs, getWorkout,
-    selectProgram, abandonProgram, refreshPrograms, programsReady,
+    selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
   const {
@@ -119,13 +122,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, refreshPrograms, setPhaseOverride,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, refreshPrograms, setPhaseOverride,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
   ])
 
   const { i18n } = useTranslation()
