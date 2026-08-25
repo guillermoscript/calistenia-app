@@ -1,8 +1,37 @@
 # Analytics & Growth Events
 
-Version: **3**
+Version: **4**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
+
+> **Version 4 (2026-08-25, issue #636) — race events deduplicated, training
+> funnel instrumented.** This version **breaks three saved reports on purpose**;
+> read the migration notes before the deploy.
+>
+> - **`race_joined` and `race_started` were being emitted twice per action.**
+>   The move to canonical names (v2) added the canonical call *alongside* the
+>   legacy one instead of replacing it, and both used the same event name. Both
+>   counts now drop by roughly half. **Any report that quotes an absolute number
+>   of race joins or starts before this date is quoting double**, and any
+>   conversion rate whose numerator or denominator mixes these with an
+>   un-duplicated event was wrong in that direction.
+> - **`race_finished` is renamed to `race_participant_finished`.** It fires once
+>   per runner and always did; `race_completed` fires once per race, from the
+>   creator's client. The two names read as synonyms, so no report could tell
+>   the numerator from the denominator of a race completion rate. **Reports
+>   filtering `race_finished` stop matching anything** and must be pointed at the
+>   new name.
+> - **`screen_view` on mobile now carries the route pattern**
+>   (`/challenges/[id]`) as the screen name, with the resolved path in a `path`
+>   property. Before, every challenge, race and battle id created its own screen,
+>   so screen reports were an unbounded list of ids with no aggregate row per
+>   screen. **Reports grouping by screen name will show far fewer, much larger
+>   rows**, and historical rows keep their old id-bearing names.
+> - **Additive:** the training funnel gains `session_exited`, a `reason` on
+>   `workout_abandoned`, and a shared property block on all four lifecycle
+>   events (see "Training session funnel"). Nothing about them breaks an
+>   existing report; `workout_abandoned` does start firing on mobile, where it
+>   never fired at all, so its volume jumps.
 
 > **Version 3 (2026-08-15, issue #357) — battle results and rematch.**
 > Two additions, both mobile-only and both additive: `battle_results_viewed`
@@ -46,6 +75,7 @@ Use the same property names and meanings on both platforms:
 | `milestone_id` | `community_program_milestones` id, or `phase_{n}` for `program_milestone_completed` | `ms123`, `phase_2` |
 | `race_id` | PocketBase `races` id. Only on `race_*` events | `race123` |
 | `battle_id` | PocketBase `battles` id. Only on `battle_*` events | `btl123` |
+| `platform` | Which app produced the event: `web`, `mobile`, or `unknown`. Stamped by core from the client identity, so it is never left to the caller. **Exception:** on `share_card_shared` this property means the share *destination* (`whatsapp`, `twitter`), which predates the stamp and still wins | `web`, `mobile` |
 | `share_type` | Asset or link shared | `workout`, `nutrition`, `race_result`, `invite_link` |
 | `participant_count` | Count known immediately after the action | `1`, `4` |
 | `action` | Which option was chosen on a surface that offers several | `share`, `invite`, `challenge`, `progress`, `repeat` |
@@ -81,7 +111,8 @@ GPS coordinates, or unnecessary personal data.
 | `race_created` | GPS race is created | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Race record is created |
 | `race_joined` | User joins an existing GPS race | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Participant record is created |
 | `race_started` | Race countdown starts | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Race enters its active state |
-| `race_completed` | Race finishes and results are published | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Race enters its finished state. Emitted once per race by the creator's client, so manual finishes, auto-finish and the `ends_at` watchdog all count exactly once (a race finished while the creator is offline is not counted) |
+| `race_completed` | Race finishes and results are published | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Race enters its finished state. Emitted once per **race** by the creator's client, so manual finishes, auto-finish and the `ends_at` watchdog all count exactly once (a race finished while the creator is offline is not counted) |
+| `race_participant_finished` | One runner finishes their own race | `surface=race`, `source=race_active`, `race_id`, `result=finished`, `distance_km`, `duration_seconds` | Web + mobile | Once per **participant**, from that runner's own device. Was called `race_finished` until v4, which made it indistinguishable by name from `race_completed`. This is the numerator of a race completion rate; `race_joined` is its denominator |
 | `race_shared` | Race invite link or result card is shared | `surface=race`, `source`, `race_id`, `share_type`, `participant_count`, `result`, `share_confirmed` | Web + mobile | Share sheet/export succeeds; see "Share confirmation" below |
 | `battle_created` | Collaborative circuit battle draft is created | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | `battles` record is created in `draft` |
 | `battle_joined` | Invite token is consumed and a participant row is accepted | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | Server creates the `(battle, user)` participant row. Emitted by the joining device |
@@ -90,6 +121,68 @@ GPS coordinates, or unnecessary personal data.
 | `battle_shared` | Battle invite link (`share_type=invite_link`) or finished-result card (`share_type=result_card`) is shared | `surface=battle`, `source`, `battle_id`, `share_type`, `participant_count`, `result`, `share_confirmed` | Mobile | Share sheet returns; see "Share confirmation" below. A result-card share also emits `share_card_shared` with `card_type=battle_result`, from the same outcome, so the two can never disagree. **The raw invite token is never sent as an analytics property**, and the shared image carries no invite token either |
 | `battle_results_viewed` | The results screen of a terminal battle is opened | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | Once per viewer per battle, not once per battle — unlike `battle_completed`, the question it answers is whether anyone looks at the result they earned. `result` carries the viewer's own outcome (`won`, `tied`, `placed`, `solo`, `left`, `none`) |
 | `battle_rematch_created` | A closed battle spawns a new one | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | The server accepted `POST /api/battles/{id}/rematch`. `battle_id` is the **new** battle; a double-tap replays the idempotency key and creates nothing, so it is emitted once per rematch. Also emits `invite_sent` with `share_type=rematch_invite` when former participants were re-invited |
+
+The four training-lifecycle events (`session_started`, `workout_completed`,
+`session_exited`, `workout_abandoned`) predate this contract and keep their
+legacy names, so they are not in the table above. Their shape is specified in
+the next section and follows the same versioning and privacy rules.
+
+## Training session funnel
+
+A strength session ends in **exactly one** terminal event (#636). Until v4 the
+decision was split across three modules that did not talk to each other, so
+sessions could end in none — leaving on purpose, and every session on mobile —
+or in two: finishing a workout and then closing the tab emitted both
+`workout_completed` and `workout_abandoned`. Neither a completion rate nor an
+abandonment rate could be computed from that.
+
+`useActiveSessionState` now owns the outcome and latches it on the first
+terminal event:
+
+| Outcome | Event | Trigger |
+|---|---|---|
+| Completed | none beyond `workout_completed` | Session progress reaches the `celebrate` phase, which the session machine sets immediately after the workout is marked done |
+| Left on purpose | `session_exited` | The session is closed from the UI without having reached `celebrate` |
+| Tab or window closed | `workout_abandoned`, `reason=page_closed` | `beforeunload` **and** `pagehide` (web only). Both may fire on one exit; the latch counts one |
+| Expired after 24 h | `workout_abandoned`, `reason=expired` | The persisted session is dropped on the next app start |
+| Replaced by another session | `workout_abandoned`, `reason=replaced` | A different `workout_key` is started while one is still open |
+
+The last two rows are the only abandonment signal that exists on native, where
+there is no `beforeunload` of any kind. Backgrounding the app is deliberately
+**not** treated as abandonment: minimising an app mid-workout is normal, and
+counting it would inflate the number until it means nothing.
+
+Two caveats worth knowing when reading the numbers:
+
+- **`reason=expired` arrives late.** The event is emitted when the app is next
+  opened, which can be days after the workout. `duration_seconds` is real (start
+  to last save), but the event timestamp is not the moment of abandonment.
+- **A session abandoned on a device that is never opened again is never
+  counted.** All five outcomes are client-side.
+
+### Shared properties
+
+All four lifecycle events — `session_started`, `workout_completed`,
+`session_exited`, `workout_abandoned` — carry the same block, built by
+`packages/core/lib/session-funnel.ts`, so the funnel can be segmented by any of
+them:
+
+| Property | Notes |
+|---|---|
+| `workout_key` | `p2_mie` for a program day, `free_<ts>` / `manual_<ts>` otherwise |
+| `source` | `program` or `free` |
+| `is_free_session` | Kept from the pre-v4 shape so existing breakdowns survive |
+| `phase`, `day_id` | Derived from `workout_key`. A free session has no `phase` — it is omitted rather than sent as `0` |
+| `program_id` | The active `programs` id. Omitted on free sessions |
+| `exercise_count`, `sets_logged`, `completion_pct` | `completion_pct` is `sets_logged` over the workout's planned sets, capped at 100. Omitted when the workout has no countable planned sets (a workout of "multiple"-set exercises) |
+| `duration_seconds` | Start to end of the session |
+| `platform`, `surface=session`, `event_version` | As in the contract above |
+
+`workout_completed` is emitted from a different module (the progress mutation,
+which is what actually writes the session row) and therefore knows only what
+was *logged*, not what was *planned*: it carries `sets_logged` but not
+`exercise_count` or `completion_pct`. Segment completion by `program_id`,
+`phase`, `platform` or `source` — those are present on all four.
 
 ## Share confirmation
 
@@ -110,12 +203,18 @@ cancellations and native failures do not emit `share_card_shared`.
 ## Compatibility rules
 
 Existing events remain available for current dashboards. In particular,
-`card_type` remains on `share_card_shared`, `race_*` events remain emitted for
-the existing race reports, and `program_selected` remains emitted alongside
-the canonical `program_joined` event. Canonical events are emitted once per
-completed action (with unconfirmed share outcomes labeled `opened`);
-compatibility events are not used as additional canonical
-funnel steps.
+`card_type` remains on `share_card_shared`, and `program_selected` remains
+emitted alongside the canonical `program_joined` event. Canonical events are
+emitted once per completed action (with unconfirmed share outcomes labeled
+`opened`); compatibility events are not used as additional canonical funnel
+steps.
+
+v4 is the one deliberate exception to "nothing is renamed or removed":
+`race_finished` no longer exists, and the volume of `race_joined` and
+`race_started` halves. Duplicate emissions and a pair of synonymous names are
+not backward compatibility — they are wrong numbers, and keeping them would
+have meant every future race report inheriting the error. See the version note
+at the top for what to repoint.
 
 ## Growth funnel
 
@@ -146,7 +245,9 @@ Create a dashboard called **Growth Loop v1** with these reports:
 | Completion → Return | Funnel | Funnel above | `surface`, `source` |
 | Referral conversion | Funnel | `invite_sent` → `invite_landing_viewed` → `signup_completed` | `share_type` |
 | Challenge activation | Funnel | `challenge_viewed` → `challenge_joined` → `challenge_progress_updated` → `challenge_completed` | `surface` |
-| Race adoption | Funnel | `race_created` → `race_joined` → `race_started` → `race_completed` | `share_type` |
+| Race adoption | Funnel | `race_created` → `race_joined` → `race_started` → `race_participant_finished` | `share_type` |
+| Training completion | Funnel | `session_started` → `workout_completed` | `program_id`, `phase`, `platform`, `source` |
+| Abandonment causes | Bar | `workout_abandoned` | `reason` |
 | Battle adoption | Funnel | `battle_created` → `battle_joined` → `battle_started` → `battle_completed` | `share_type` |
 | Battle replay | Funnel | `battle_completed` → `battle_results_viewed` → `battle_rematch_created` | `result` |
 | Shares by type | Bar | `share_card_shared` (filter `share_confirmed = true` for confirmed sends) | `share_type` |
@@ -172,8 +273,22 @@ dashboard and confirm the exact UI labels.
   rows badged as pending.
 - Open a challenge, join it, complete a contributing workout, and confirm
   `challenge_viewed`, `challenge_joined`, and `challenge_progress_updated`.
-- Create, join, start, finish, and share a race; confirm the five canonical
-  `race_*` events and that **no** `battle_*` event is emitted by the race flow.
+- Create, join, start, finish, and share a race; confirm the canonical `race_*`
+  events and that **no** `battle_*` event is emitted by the race flow. Confirm
+  `race_joined` and `race_started` fire **once** per action, not twice, and that
+  finishing emits `race_participant_finished` (not `race_finished`).
+- Start a program workout, log a set, and leave with the close button; confirm
+  one `session_exited` with `program_id`, `phase`, `sets_logged` and
+  `completion_pct`, and **no** `workout_abandoned`.
+- Start a workout, log sets, finish it, and then close the tab from the
+  celebration panel; confirm one `workout_completed` and **no**
+  `workout_abandoned` — this pairing used to emit both.
+- Start a workout and close the tab mid-set; confirm exactly one
+  `workout_abandoned` with `reason=page_closed` (not two, even though both
+  `beforeunload` and `pagehide` fire).
+- Start a workout, leave it open, then start a different day; confirm one
+  `workout_abandoned` with `reason=replaced` carrying the **first** workout's
+  key and set count.
 
 ### Mobile
 
@@ -214,6 +329,17 @@ dashboard and confirm the exact UI labels.
   `surface=referrals` and `source=referral_status`.
 - Tap a referral push notification and confirm it lands on the referrals screen
   rather than the friends list.
+- Open a challenge detail and then a race detail; confirm the `screen_view`
+  names are `/challenges/[id]` and `/races/[id]` — the pattern, not the id — and
+  that the resolved route arrives in `path`.
+- Start a program workout, leave it open, and start a different day; confirm one
+  `workout_abandoned` with `reason=replaced`. This is the abandonment signal that
+  did not exist at all on mobile before v4.
+- Start a workout, force-quit the app, and reopen it more than 24 h later;
+  confirm one `workout_abandoned` with `reason=expired` and a
+  `duration_seconds` that matches the workout, not the elapsed 24 h.
+- Complete a workout on mobile and confirm one `workout_completed` carrying
+  `program_id`, `phase`, `platform=mobile` and `sets_logged`.
 
 ## Privacy review
 
