@@ -44,8 +44,10 @@ export interface ProgramRow {
   created_by?: string
   is_official?: boolean
   is_featured?: boolean
+  visibility?: string
   difficulty?: string
   days_per_week?: number
+  instructions?: TranslatableField
 }
 
 const DEFAULT_DAY_COLOR = '#888899'
@@ -65,9 +67,14 @@ export function toProgramMeta(row: ProgramRow, locale: string): ProgramMeta {
     created_by: row.created_by || undefined,
     is_official: row.is_official || false,
     is_featured: row.is_featured || false,
+    // Vacío en filas anteriores a #603: el editor lo hidrata como `private`.
+    visibility: row.visibility || undefined,
     difficulty: row.difficulty || undefined,
     discipline: 'calistenia',
     days_per_week: typeof row.days_per_week === 'number' ? row.days_per_week : undefined,
+    // «Cómo seguir este programa» (#618). Siempre string, aunque sea vacío: la
+    // ficha distingue «no cargado» (undefined) de «el autor no escribió nada».
+    instructions: localize(row.instructions, locale),
   } as ProgramMeta
 }
 

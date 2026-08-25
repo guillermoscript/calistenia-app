@@ -143,6 +143,8 @@ async function main() {
       is_active: true,
       is_official: true,
       is_featured: false,
+      // Catálogo curado: público explícito (#603).
+      visibility: "public",
     }
     if (sk.skill) body.skill = sk.skill
     const prog = await api('/api/collections/programs/records', {

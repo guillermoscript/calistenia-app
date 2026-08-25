@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query'
 import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
+import { localize } from '../lib/i18n-db'
 import { buildProgramDayRows, refineDiscipline, toProgramMeta } from '../lib/program-detail'
 import type { ProgramDayRow, ProgramDaySourceRow, ProgramRow } from '../lib/program-detail'
 import type { ProgramMeta } from '../types'
@@ -63,7 +64,21 @@ export function useProgramDetail(
       // paralelo con él: dependen del id, no del registro.
       const [program, days] = await Promise.all([
         hasKnown
-          ? Promise.resolve(knownProgram)
+          // El catálogo de `usePrograms` no trae `instructions` (#618), así que
+          // el bloque «cómo seguir este programa» no aparecería al entrar desde
+          // ahí. Se pide solo ese campo, y dentro del mismo `Promise.all` que
+          // ya existía: es una petición más, pero no añade latencia porque va
+          // en paralelo con la de los días.
+          ? pb
+              .collection('programs')
+              .getOne(pid, { fields: 'instructions', $autoCancel: false })
+              .then(rec => ({
+                ...knownProgram!,
+                instructions: localize((rec as unknown as ProgramRow).instructions, locale),
+              }))
+              // Un fallo aquí no puede tumbar la ficha entera: sin el campo se
+              // deja de pintar el bloque y ya está.
+              .catch(() => knownProgram)
           : pb
               .collection('programs')
               .getOne(pid, { $autoCancel: false })

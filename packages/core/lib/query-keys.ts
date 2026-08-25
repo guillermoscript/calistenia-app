@@ -64,7 +64,11 @@ export const qk = {
   // — Programas / progreso —
   programs: {
     all: ['programs'] as const,
-    catalog: ['programs', 'catalog'] as const,
+    // Lleva `userId` desde #603: el catálogo ya no es el mismo para todo el
+    // mundo — incluye los borradores PRIVADOS de quien pregunta. Con la clave
+    // compartida, el caché de disco (24h) podía servirle a la siguiente cuenta
+    // del mismo dispositivo los programas privados de la anterior.
+    catalog: (userId: string | null) => ['programs', 'catalog', userId] as const,
     /**
      * `usePrograms`: el REGISTRO de `user_programs` activo (o null), no solo su
      * `program`. La clave cambió de `activeEnrollment` a `enrollment` en #616
@@ -85,6 +89,16 @@ export const qk = {
     /** `useProgramDetail`: `{ program, days }` de CUALQUIER programa (ficha / deep-link). */
     detailView: (programId: string | null) =>
       ['programs', 'detailView', programId] as const,
+    /**
+     * `usePublicProgramPreview`: la vista previa ANÓNIMA de `/shared/:id` (#604).
+     * Es el tercer consumidor del mismo programa y por eso lleva clave propia,
+     * como avisa el comentario de arriba: viene de otro endpoint
+     * (`/api/programs/{id}/public`, no de la colección), trae menos campos y la
+     * pide gente sin sesión. Compartir clave con `detailView` haría que la ficha
+     * completa de quien sí ha entrado se sirviera desde el recorte público.
+     */
+    publicPreview: (programId: string | null) =>
+      ['programs', 'publicPreview', programId] as const,
   },
   programEditor: (programId: string | null) =>
     ['programEditor', programId] as const,
@@ -104,7 +118,10 @@ export const qk = {
     ['workout_reminders', userId] as const,
 
   // Catálogo de ejercicios de PB (`exercises_catalog`), fusionado con el estático
-  // de WORKOUTS. Sin userId: es un catálogo global, igual para todo el mundo.
+  // del bundle y de WORKOUTS. Sin userId: es un catálogo global, igual para todo
+  // el mundo. Guarda la lista completa (`CatalogExercise[]`), que es de lo que
+  // tiran tanto los pickers como el mapa de nombres de las vistas de detalle
+  // (#609): una sola consulta a la colección para las dos cosas.
   exerciseCatalog: ['exercise-catalog'] as const,
   // Frecuencia cardiaca / calorías que el reloj dejó en la sesión de ese día.
   sessionHrMetrics: (userId: string | null, date: string, workoutKey: string) =>

@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import {
+  CATALOG_CATEGORIES,
   catalogExerciseIdentity,
   countSetsLoggedFor,
   inferCategory,
+  normalizeCatalogCategory,
+  mapCatalogIndexEntry,
   mapCatalogRecord,
+  mapWorkoutExercise,
+  mergeCatalogRecords,
 } from './exerciseCatalog'
 import type { ExerciseLog } from '../types'
 
@@ -38,7 +43,7 @@ describe('mapCatalogRecord', () => {
   it('mapea los campos default_* a sets/reps/rest', () => {
     const mapped = mapCatalogRecord({
       id: 'a', slug: 'a', name: 'A',
-      default_sets: 5, default_reps: '3-5', default_rest: 120,
+      default_sets: 5, default_reps: '3-5', default_rest_seconds: 120,
     })
 
     expect(mapped.sets).toBe(5)
@@ -56,7 +61,7 @@ describe('mapCatalogRecord', () => {
   })
 
   it('respeta un default_sets de 0 en vez de tratarlo como ausente', () => {
-    const mapped = mapCatalogRecord({ id: 'a', slug: 'a', name: 'A', default_sets: 0, default_rest: 0 })
+    const mapped = mapCatalogRecord({ id: 'a', slug: 'a', name: 'A', default_sets: 0, default_rest_seconds: 0 })
 
     expect(mapped.sets).toBe(0)
     expect(mapped.rest).toBe(0)
@@ -254,5 +259,178 @@ describe('countSetsLoggedFor', () => {
   it('suma varios logs de la misma fecha y workout', () => {
     const logs = [log('2026-08-17', 'p1_lun', 2), log('2026-08-17', 'p1_lun', 1)]
     expect(countSetsLoggedFor(logs, 'p1_lun', '2026-08-17')).toBe(3)
+  })
+})
+
+/**
+ * Los nombres de columna de `exercises_catalog` salen del esquema real
+ * (`pb_migrations/1774000001_created_exercises_catalog.js`). El mapper leía tres
+ * con el nombre equivocado —`default_rest`, `timer_seconds` y `demo_video`—, así
+ * que **ningún** ejercicio de PB traía descanso ni duración de temporizador: el
+ * picker web pintaba el mismo 3×10 · 60s para los 1.578, y la biblioteca y el
+ * detalle caían al 90 por defecto (#609).
+ */
+describe('mapCatalogRecord — nombres reales del esquema (regresión #609)', () => {
+  it('lee el descanso de default_rest_seconds', () => {
+    const mapped = mapCatalogRecord({ id: 'a', slug: 'a', name: 'A', default_rest_seconds: 45 })
+
+    expect(mapped.rest).toBe(45)
+  })
+
+  it('lee la duración del temporizador de default_timer_seconds', () => {
+    const mapped = mapCatalogRecord({
+      id: 'a', slug: 'a', name: 'A', is_timer: true, default_timer_seconds: 40,
+    })
+
+    expect(mapped.isTimer).toBe(true)
+    expect(mapped.timerSeconds).toBe(40)
+  })
+
+  it('lee el vídeo de demostración de default_video', () => {
+    const mapped = mapCatalogRecord({ id: 'a', slug: 'a', name: 'A', default_video: 'demo.mp4' })
+
+    expect(mapped.demoVideo).toBe('demo.mp4')
+  })
+
+  it('no se inventa valores desde los nombres viejos', () => {
+    const mapped = mapCatalogRecord({
+      id: 'a', slug: 'a', name: 'A', default_rest: 45, timer_seconds: 40, demo_video: 'viejo.mp4',
+    })
+
+    expect(mapped.rest).toBe(90)
+    expect(mapped.timerSeconds).toBeUndefined()
+    expect(mapped.demoVideo).toBeUndefined()
+  })
+})
+
+/**
+ * Las dos fuentes escriben la misma categoría distinto: el bundle usa
+ * `movilidad`/`skill`/`lumbar` y PB usa `mobility`/`skills`/`glutes_lower_back`.
+ * Con una sola fuente por picker no se notaba; al fusionarlas, una píldora
+ * dejaría fuera media lista (#609).
+ */
+describe('normalizeCatalogCategory', () => {
+  it('unifica los sinónimos de PB con el vocabulario del bundle', () => {
+    expect(normalizeCatalogCategory('mobility')).toBe('movilidad')
+    expect(normalizeCatalogCategory('skills')).toBe('skill')
+    expect(normalizeCatalogCategory('glutes_lower_back')).toBe('lumbar')
+  })
+
+  it('deja intactas las categorías que ya son canónicas', () => {
+    for (const cat of CATALOG_CATEGORIES) {
+      expect(normalizeCatalogCategory(cat)).toBe(cat)
+    }
+  })
+
+  it('no reescribe lo que no reconoce, ni revienta sin categoría', () => {
+    expect(normalizeCatalogCategory('cardio')).toBe('cardio')
+    expect(normalizeCatalogCategory(undefined)).toBe('')
+    expect(normalizeCatalogCategory('')).toBe('')
+  })
+
+  it('los dos mappers emiten la categoría ya normalizada', () => {
+    expect(mapCatalogRecord({ id: 'a', slug: 'a', name: 'A', category: 'mobility' }).category)
+      .toBe('movilidad')
+    expect(mapCatalogIndexEntry({ id: 'a', name: 'A', category: 'skills' }).category).toBe('skill')
+    expect(mapCatalogIndexEntry({ id: 'a', name: 'A' }, 'glutes_lower_back').category).toBe('lumbar')
+  })
+
+  it('la lista fusionada usa una sola categoría para las dos fuentes', () => {
+    const bundle = [mapCatalogIndexEntry({ id: 'cat_cow', name: 'Gato-Vaca' }, 'movilidad')]
+    const merged = mergeCatalogRecords(bundle, [
+      { id: 'pb_rand_id_0005', slug: 'movilidad_de_tobillo', name: 'Movilidad de tobillo', category: 'mobility' },
+    ])
+
+    expect(merged.map(ex => ex.category)).toEqual(['movilidad', 'movilidad'])
+  })
+})
+
+describe('mapCatalogIndexEntry', () => {
+  it('usa el id de la entrada como identidad: el bundle no trae slug', () => {
+    const mapped = mapCatalogIndexEntry({ id: 'ab_wheel_rollout', name: 'Ab Wheel Rollout' })
+
+    expect(mapped.id).toBe('ab_wheel_rollout')
+    expect(mapped.slug).toBe('ab_wheel_rollout')
+  })
+
+  it('aplana youtube_search/youtube_query al único campo youtube', () => {
+    const conUrl = mapCatalogIndexEntry({
+      id: 'a', name: 'A', youtube_search: 'https://youtube.com/x', youtube_query: 'a tutorial',
+    })
+    expect(conUrl.youtube).toBe('https://youtube.com/x')
+
+    const soloQuery = mapCatalogIndexEntry({ id: 'a', name: 'A', youtube_query: 'a tutorial' })
+    expect(soloQuery.youtube).toBe('a tutorial')
+  })
+
+  it('cae a la categoría del fichero cuando la entrada no la trae', () => {
+    expect(mapCatalogIndexEntry({ id: 'a', name: 'A' }, 'movilidad').category).toBe('movilidad')
+    expect(mapCatalogIndexEntry({ id: 'a', name: 'A', category: 'skill' }, 'core').category).toBe('skill')
+  })
+
+  it('conserva series, reps y descanso de la entrada', () => {
+    const mapped = mapCatalogIndexEntry({ id: 'a', name: 'A', sets: 4, reps: '8-10', rest: 120 })
+
+    expect(mapped.sets).toBe(4)
+    expect(mapped.reps).toBe('8-10')
+    expect(mapped.rest).toBe(120)
+  })
+})
+
+describe('mapWorkoutExercise', () => {
+  it('clasifica el ejercicio de WORKOUTS y conserva su identidad', () => {
+    const mapped = mapWorkoutExercise({
+      id: 'hollow_hold', name: 'Hollow Body Hold', sets: 3, reps: '20-30s', rest: 60,
+      muscles: 'Core profundo, TvA', note: 'Lumbar pegada al suelo.',
+      youtube: 'hollow body hold tutorial', priority: 'high', isTimer: true, timerSeconds: 25,
+    })
+
+    expect(mapped.slug).toBe('hollow_hold')
+    expect(mapped.category).toBe('core')
+    expect(mapped.isTimer).toBe(true)
+    expect(mapped.timerSeconds).toBe(25)
+  })
+})
+
+/**
+ * La fusión es lo que arregla el #609: el móvil leía sólo el bundle (sin los
+ * privados del usuario) y el web sólo PB (sin los 1.578 si PB no respondía).
+ */
+describe('mergeCatalogRecords', () => {
+  const bundle = [
+    mapCatalogIndexEntry({ id: 'pull_ups', name: { es: 'Dominadas', en: 'Pull-ups' } }, 'pull'),
+  ]
+
+  it('añade el ejercicio privado que sólo existe en PB', () => {
+    const merged = mergeCatalogRecords(bundle, [
+      { id: 'pb_rand_id_0001', slug: 'mi_ejercicio_privado', name: 'Mi ejercicio', status: 'private' },
+    ])
+
+    expect(merged).toHaveLength(2)
+    expect(merged[1].slug).toBe('mi_ejercicio_privado')
+  })
+
+  it('no deja que PB pise el nombre revisado del bundle', () => {
+    const merged = mergeCatalogRecords(bundle, [
+      { id: 'pb_rand_id_0002', slug: 'pull_ups', name: 'PULL UPS (sin traducir)' },
+    ])
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0].name).toEqual({ es: 'Dominadas', en: 'Pull-ups' })
+  })
+
+  it('dedupea por identidad canónica, no por el id aleatorio de PB', () => {
+    const merged = mergeCatalogRecords(bundle, [
+      { id: 'pb_rand_id_0003', slug: 'sentadilla_bulgara', name: 'Sentadilla búlgara' },
+      { id: 'pb_rand_id_0004', slug: 'sentadilla_bulgara', name: 'Sentadilla búlgara (copia)' },
+    ])
+
+    expect(merged.filter(ex => ex.slug === 'sentadilla_bulgara')).toHaveLength(1)
+  })
+
+  it('descarta el registro sin identidad en vez de colarlo', () => {
+    const merged = mergeCatalogRecords(bundle, [{ name: 'Sin id ni slug' }])
+
+    expect(merged).toHaveLength(1)
   })
 })

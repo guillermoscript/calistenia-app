@@ -1,8 +1,13 @@
 /**
  * Picker de ejercicios del catálogo para el editor de programas (#223).
- * Port nativo de apps/web/src/components/ExerciseCatalogPicker.tsx sobre el
- * CATALOG estático de la biblioteca (~1.5k ejercicios, FlatList + búsqueda);
- * sin bloque wger en v1. Modal nativo (patrón CommentsSheet).
+ * Port nativo de apps/web/src/components/ExerciseCatalogPicker.tsx (FlatList +
+ * búsqueda; sin bloque wger en v1). Modal nativo (patrón CommentsSheet).
+ *
+ * Desde el #609 la lista sale de `useCatalogExerciseList()` de core en vez del
+ * `CATALOG` estático: el bundle sigue siendo la respuesta inmediata y sin red
+ * (el índice viene primado desde `init-core.ts`), y PB añade encima lo que sólo
+ * existe allí — los ejercicios privados del usuario, los promovidos y el yoga,
+ * que entró por migración y no viaja en el JSON empaquetado.
  */
 import { useCallback, useMemo, useState } from 'react'
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native'
@@ -14,8 +19,9 @@ import { Kicker } from '@/components/ui/kicker'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
-import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
+import { CATALOG_CATEGORIES, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
 import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
 
 const LIME = 'hsl(74 90% 45%)'
@@ -30,38 +36,45 @@ interface ExercisePickerSheetProps {
 export function ExercisePickerSheet({ visible, onClose, onAdd }: ExercisePickerSheetProps) {
   const { t } = useTranslation()
   const l = useLocalize()
+  const { exercises: catalog } = useCatalogExerciseList()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return CATALOG.filter(ex => {
-      if (category !== 'all' && ex.category !== category) return false
-      if (!q) return true
-      return (
-        l(ex.name).toLowerCase().includes(q) ||
-        l(ex.muscles).toLowerCase().includes(q)
-      )
-    })
-  }, [query, category, l])
+    return catalog
+      .filter(ex => {
+        if (category !== 'all' && ex.category !== category) return false
+        if (!q) return true
+        return (
+          l(ex.name).toLowerCase().includes(q) ||
+          l(ex.muscles).toLowerCase().includes(q)
+        )
+      })
+      // Alfabético en el idioma que se está viendo, igual que el picker web:
+      // antes esta lista salía en el orden del fichero (agrupada por categoría).
+      .sort((a, b) => l(a.name).localeCompare(l(b.name)))
+  }, [catalog, query, category, l])
 
   const handleAdd = useCallback((ex: CatalogExercise) => {
     haptics.light()
     onAdd({
-      exerciseId: ex.id,
+      // `slug` y no `id`: la identidad canónica es la que viaja a `sets_log`, y
+      // para un ejercicio venido de PB el `id` es aleatorio (#474).
+      exerciseId: ex.slug,
       name: l(ex.name),
       sets: ex.sets,
       reps: ex.reps,
       rest: ex.rest,
       muscles: l(ex.muscles),
       note: l(ex.note),
-      youtube: ex.youtube_search || ex.youtube_query || '',
+      youtube: ex.youtube,
       priority: ex.priority,
       isTimer: !!ex.isTimer,
       timerSeconds: ex.timerSeconds ?? 0,
     })
-    setAddedIds(prev => new Set(prev).add(ex.id))
+    setAddedIds(prev => new Set(prev).add(ex.slug))
   }, [onAdd, l])
 
   const handleClose = () => {
@@ -70,7 +83,7 @@ export function ExercisePickerSheet({ visible, onClose, onAdd }: ExercisePickerS
   }
 
   const renderItem = useCallback(({ item: ex }: { item: CatalogExercise }) => {
-    const added = addedIds.has(ex.id)
+    const added = addedIds.has(ex.slug)
     return (
       <Pressable
         onPress={() => handleAdd(ex)}
@@ -162,7 +175,7 @@ export function ExercisePickerSheet({ visible, onClose, onAdd }: ExercisePickerS
 
         <FlatList
           data={filtered}
-          keyExtractor={ex => ex.id}
+          keyExtractor={ex => ex.slug}
           renderItem={renderItem}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"

@@ -91,6 +91,9 @@ async function main() {
       is_active: true,
       is_official: true,
       is_featured: true,
+      // Explícito desde #603: sin esto la fila nace con `visibility` vacío,
+      // se trata como privada y el smoke e2e no la encuentra en el catálogo.
+      visibility: "public",
     }),
   });
   console.log(`  ✓ Program created: ${prog.id}`);

@@ -6,6 +6,7 @@ import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useCircuitSession } from '../contexts/CircuitSessionContext'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { localDay } from '@calistenia/core/lib/dateUtils'
+import { localize } from '@calistenia/core/lib/i18n-db'
 import { DAY_BY_INDEX, pickTrainingDay, nextTrainingDay } from '@calistenia/core/lib/training-day'
 import { useAuthState } from '../contexts/AuthContext'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
@@ -21,7 +22,7 @@ import { DAY_TYPE_COLORS, CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tok
 import type { Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig, CircuitDefinition } from '@calistenia/core/types'
 
 export default function WorkoutPage() {
-  const { phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, activeProgram, programProgress } = useWorkoutState()
+  const { phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, circuitDayConfigs, activeProgram, programProgress } = useWorkoutState()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { startCircuit } = useCircuitSession()
@@ -30,7 +31,7 @@ export default function WorkoutPage() {
   // llega vacío al cliente; ver #247).
   const { health } = useUserHealth(userId ?? null)
   const userInjuries = health.injuries
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const PHASES    = phasesProp    || FALLBACK_PHASES
@@ -93,8 +94,19 @@ export default function WorkoutPage() {
   const workoutKey = selectedDay ? `p${selectedPhase}_${selectedDay}` : null
   const isDone   = workoutKey ? isWorkoutDone(workoutKey) : false
 
-  // Trigger workout detail tour when a day is selected for the first time
-  const hasWorkout = !!workout
+  const selectedWeekDay = WEEK_DAYS.find(d => d.id === selectedDay)
+  const selectedDayType = selectedWeekDay?.type
+  // Config del circuito de ESTA fase. `weekDays[].circuitConfig` es el respaldo:
+  // es plano (sin fase), así que solo describe la fase más baja del programa.
+  const circuitConfig = selectedDayType === 'circuit' && workoutKey
+    ? (circuitDayConfigs[workoutKey] ?? selectedWeekDay?.circuitConfig ?? null)
+    : null
+
+  // Trigger workout detail tour when a day is selected for the first time.
+  // `!circuitConfig` porque un día de circuito también trae `workout` (#625) y
+  // el tour apunta a `#tour-start-session` y a las tarjetas de ejercicio, que
+  // en la pantalla de circuito no existen.
+  const hasWorkout = !!workout && !circuitConfig
   useEffect(() => {
     if (hasWorkout) {
       triggerWorkoutDetailTour(userId ?? undefined)
@@ -109,13 +121,15 @@ export default function WorkoutPage() {
     navigate('/session')
   }, [workout, workoutKey, startSession, navigate])
 
+  // `programDayKey` es `p{fase}_{día}`, igual que `workout_key` en `sessions` y
+  // que el `program_day_key` del cardio. Hasta #625 se mandaba el día suelto
+  // (`"lun"`), formato que no casa con NINGÚN consumidor: ni el marcador
+  // `done_` de `progress-map`, ni el prefijo `p{fase}_` de `program-milestone`.
   const handleStartCircuit = useCallback((config: CircuitDefinition) => {
-    startCircuit(config, 'program', activeProgram?.id, `${selectedDay}`)
+    if (!workoutKey) return
+    startCircuit(config, 'program', activeProgram?.id, workoutKey)
     navigate('/circuit/active')
-  }, [startCircuit, activeProgram, selectedDay, navigate])
-
-  const selectedWeekDay = WEEK_DAYS.find(d => d.id === selectedDay)
-  const selectedDayType = selectedWeekDay?.type
+  }, [startCircuit, activeProgram, workoutKey, navigate])
 
   return (
     <div className="max-w-[900px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -205,7 +219,61 @@ export default function WorkoutPage() {
       </div>
 
       {/* Workout Content */}
-      {workout ? (
+      {/* El circuito se decide ANTES que `workout` a propósito (#625): un día de
+          circuito CON ejercicios también genera filas en `program_exercises`, así
+          que `getWorkout()` devuelve un `Workout` truthy y preguntando primero por
+          él ganaba siempre la pantalla de fuerza — se creaba una sesión normal y
+          los seis campos `circuit_*` del día se ignoraban. El tipo del día manda. */}
+      {circuitConfig ? (() => {
+        const circuitCfg = circuitConfig
+        const hasExercises = circuitCfg.exercises.length > 0
+        return (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-orange-500/30 text-orange-500">
+                  {circuitCfg.mode === 'timed' ? 'HIIT' : t('circuit.modes.circuit')}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('circuit.summary', {
+                  rounds: circuitCfg.rounds,
+                  exercises: circuitCfg.exercises.length
+                })}
+              </p>
+              {circuitCfg.mode === 'timed' && circuitCfg.workSeconds && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {circuitCfg.workSeconds}s {t('circuit.work').toLowerCase()} / {circuitCfg.restSeconds ?? 0}s {t('circuit.rest').toLowerCase()}
+                </p>
+              )}
+            </div>
+            {hasExercises && (
+              <ul className="rounded-xl border border-border divide-y divide-border">
+                {circuitCfg.exercises.map((ex, idx) => (
+                  <li key={`${ex.exerciseId}-${idx}`} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                    <span>{localize(ex.name, i18n.language)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {ex.workSecondsOverride ? `${ex.workSecondsOverride}s` : ex.reps ?? ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button
+              className="w-full"
+              disabled={!hasExercises}
+              onClick={() => handleStartCircuit(circuitCfg)}
+            >
+              {t('circuit.startCircuit')}
+            </Button>
+            {/* Un día de circuito sin ejercicios no tiene nada que ejecutar: el
+                botón se deshabilita en vez de abrir un runner vacío. */}
+            {!hasExercises && (
+              <p className="text-xs text-center text-muted-foreground">{t('circuit.noExercises')}</p>
+            )}
+          </div>
+        )
+      })() : workout ? (
         <div>
           {/* Workout header */}
           <div id="tour-workout-header" className={cn(
@@ -299,40 +367,6 @@ export default function WorkoutPage() {
               className="font-bebas text-xl tracking-wide bg-emerald-500 hover:bg-emerald-400 text-white px-8 h-12"
             >
               {t('workout.startCardio')}
-            </Button>
-          </div>
-        )
-      })() : selectedDay && selectedDayType === 'circuit' && selectedWeekDay?.circuitConfig ? (() => {
-        // Esta rama solo se alcanza cuando `workout` es nulo (ver el ternario de arriba), así
-        // que el antiguo relleno de `circuitCfg.exercises` desde `workout.exercises` nunca podía
-        // ejecutarse. `strict` lo destapó al tipar `workout` como `never` aquí. Se elimina: era
-        // código muerto que además mutaba el `WeekDay` del contexto. (#483)
-        const circuitCfg = selectedWeekDay.circuitConfig
-        return (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-orange-500/30 text-orange-500">
-                  {circuitCfg.mode === 'timed' ? 'HIIT' : t('circuit.modes.circuit')}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t('circuit.summary', {
-                  rounds: circuitCfg.rounds,
-                  exercises: circuitCfg.exercises.length
-                })}
-              </p>
-              {circuitCfg.mode === 'timed' && circuitCfg.workSeconds && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {circuitCfg.workSeconds}s {t('circuit.work').toLowerCase()} / {circuitCfg.restSeconds ?? 0}s {t('circuit.rest').toLowerCase()}
-                </p>
-              )}
-            </div>
-            <Button
-              className="w-full"
-              onClick={() => handleStartCircuit(circuitCfg)}
-            >
-              {t('circuit.startCircuit')}
             </Button>
           </div>
         )

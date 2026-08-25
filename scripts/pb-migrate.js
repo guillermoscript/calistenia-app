@@ -556,6 +556,8 @@ async function main() {
       description: 'Programa de 26 semanas de calistenia con enfoque en fuerza, movilidad lumbar y skills avanzados. Ideal para programadores y trabajadores de oficina.',
       duration_weeks: 26,
       is_active: true,
+      // Programa semilla del catálogo: público explícito (#603).
+      visibility: 'public',
     })
     console.log(`  → program creado: ${program.id}`)
 
