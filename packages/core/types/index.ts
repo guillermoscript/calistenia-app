@@ -299,6 +299,16 @@ export type ProgramGoalType = 'fat_loss' | 'muscle_gain' | 'maintain' | 'skill'
 export type ProgramSkill = 'pull_up' | 'handstand' | 'muscle_up' | 'planche'
 export type ProgramIntensity = 'light' | 'moderate' | 'intense'
 
+/**
+ * Nivel de exposición elegido por el autor (#603).
+ *
+ * `link` está en el enum y en el selector, pero en la API de colección se
+ * comporta como `private`: las reglas de lectura solo abren `public`. Lo hace
+ * alcanzable la landing anónima de #604, que sirve el programa desde
+ * `pb_hooks` con `$app`.
+ */
+export type ProgramVisibility = 'private' | 'link' | 'public'
+
 export interface ProgramMeta {
   id: string
   name: string
@@ -308,6 +318,8 @@ export interface ProgramMeta {
   created_by_name?: string
   is_official?: boolean
   is_featured?: boolean
+  /** Vacío en filas creadas por clientes anteriores a #603: se trata como `private`. */
+  visibility?: ProgramVisibility
   difficulty?: ProgramDifficulty
   cover_image?: string
   /** Resolved cover image URL (built from PB file service) */
@@ -320,6 +332,24 @@ export interface ProgramMeta {
   days_per_week?: number
   equipment_required?: string[]
   contraindications?: string[]
+  /**
+   * «Cómo seguir este programa» (#618) — ya localizado. `undefined` significa
+   * «no se ha cargado», que no es lo mismo que `''` («el autor no escribió
+   * nada»): el catálogo de `usePrograms` no trae este campo, así que la ficha
+   * lo pide aparte.
+   */
+  instructions?: string
+  /**
+   * Id del programa del que se duplicó este (#620). Vacío en los originales, en
+   * los duplicados anteriores a #620 —el vínculo no se guardaba— y en aquellos
+   * cuyo original se borró: `forked_from` va SIN cascade a propósito, así que la
+   * copia sobrevive y PocketBase le vacía la relación.
+   */
+  forked_from?: string
+  /** Nombre YA LOCALIZADO del programa original. El campo en PB es `json {es,en}`. */
+  forked_from_name?: string
+  /** Autor del original, por `authorDisplayName` (`display_name || name || email`). */
+  forked_from_author?: string
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────

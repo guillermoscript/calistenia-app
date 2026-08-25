@@ -86,6 +86,38 @@ describe('describeFeedItem · sesiones de fuerza', () => {
     expect(view.detail).toBe('Flexiones · Plank')
   })
 
+  /**
+   * La regresión de producción GYM-GUILLE-1X/1Z: no es un dato de PocketBase,
+   * es un dato del CACHÉ PERSISTIDO. Antes de #588 `FeedItem` no tenía
+   * `exerciseNames`, la query key no cambió, y al abrir el build nuevo con el
+   * caché viejo rehidratado `item.exerciseNames.length` tumbaba el dashboard
+   * entero (el error escala hasta el ErrorBoundary raíz, no solo la tarjeta).
+   *
+   * El objeto de abajo es EXACTAMENTE la forma vieja —`type: 'workout'` pero sin
+   * `exerciseNames` ni `durationSeconds`— por eso el `as unknown as FeedItem`:
+   * el tipo actual no lo admite, y ese es justo el punto.
+   */
+  it('no revienta con un item del caché viejo, sin exerciseNames', () => {
+    const cached = {
+      id: 'x1',
+      type: 'workout',
+      userId: 'u1',
+      displayName: 'Ana',
+      avatarUrl: null,
+      completedAt: '2026-08-09T16:58:12.000Z',
+      date: '2026-08-09',
+      workoutKey: 'free_1783000000',
+      workoutTitle: 'Sesión Libre',
+      phase: NO_PHASE,
+      note: '',
+    } as unknown as FeedItem
+
+    const view = describeFeedItem(cached)
+    expect(view.title).toBe('Sesión Libre')
+    expect(view.detail).toBeNull()
+    expect(view.metrics).toBeNull()
+  })
+
   it('sin ejercicios cronometrados no pinta una línea vacía', () => {
     const view = describeFeedItem(item({ workoutTitle: 'Fase 1 · lun', phase: 1 }))
     expect(view.detail).toBeNull()

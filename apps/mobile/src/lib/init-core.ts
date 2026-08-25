@@ -20,6 +20,7 @@ import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { isForeground, onForeground, onBackground } from './lifecycle'
 import { registerPushTokenAsync } from './push-registration'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // El catálogo de ejercicios va en el bundle de RN de todas formas, así que se
 // indexa aquí, en el arranque (#486). Las APIs síncronas de core que dependen de
@@ -178,6 +179,17 @@ initCore({
     },
   },
   reportError: (e) => {
+    // Paridad con el `page_error` de web (#636 §5): hasta ahora el móvil solo
+    // lo mandaba a Sentry, así que la tasa de errores por plataforma no se
+    // podía comparar. Sentry sigue siendo el sitio para depurarlo; esto solo
+    // pone el número en el mismo embudo que el resto.
+    try {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.pageError, {
+        surface: 'app', source: 'core_report',
+        error_type: 'reported',
+        message: e instanceof Error ? e.message : String(e),
+      })
+    } catch { /* informar de un error no puede provocar otro */ }
     if (__DEV__) console.error('[core]', e)
     else Sentry.captureException(e)
   },

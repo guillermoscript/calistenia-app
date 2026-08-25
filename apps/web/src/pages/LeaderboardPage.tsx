@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 import { cn } from '../lib/utils'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 import { Button } from '../components/ui/button'
 import { EmptyState } from '../components/ui/empty-state'
@@ -37,7 +37,11 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
 
   useEffect(() => { void load() }, [load])
   // Desacoplado de `load` (#578): un `leaderboard_viewed` por visita, no por render.
-  useEffect(() => { op.track('leaderboard_viewed') }, [])
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.leaderboardViewed, {
+      surface: 'leaderboard', source: 'leaderboard_page',
+    })
+  }, [])
 
   // Map time filter to actual category for sessions
   const activeCategory: LeaderboardCategory =

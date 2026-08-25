@@ -11,8 +11,9 @@ import { CANONICAL_ANALYTICS_EVENTS, emitOnce, trackCanonicalEvent } from './ana
  * single global blob and `loadFromPB` also pulls sessions with `program = ""`),
  * so another program's `p1_lun` would satisfy this program's phase 1 — and the
  * marker written below would then suppress the real milestone forever. Cardio
- * days live in `cardio_sessions`, so both collections are consulted; the local
- * marker keeps the event idempotent across re-renders and both platforms.
+ * days live in `cardio_sessions` and circuit days in `circuit_sessions`, so all
+ * three collections are consulted; the local marker keeps the event idempotent
+ * across re-renders and both platforms.
  */
 export async function emitProgramMilestoneIfCompleted(userId: string, programId: string, workoutKey: string): Promise<void> {
   const match = /^p(\d+)_/.exec(workoutKey)
@@ -23,7 +24,7 @@ export async function emitProgramMilestoneIfCompleted(userId: string, programId:
 
   const dayPrefix = `p${phase}_`
   try {
-    const [exerciseDays, configuredDays, sessions, cardioSessions] = await Promise.all([
+    const [exerciseDays, configuredDays, sessions, cardioSessions, circuitSessions] = await Promise.all([
       pb.collection('program_exercises').getFullList({
         filter: pb.filter('program = {:pid} && phase_number = {:phase}', { pid: programId, phase }),
         fields: 'day_id',
@@ -44,6 +45,15 @@ export async function emitProgramMilestoneIfCompleted(userId: string, programId:
         fields: 'program_day_key',
         $autoCancel: false,
       }).catch(() => [] as any[]),
+      // Días de circuito (#640). Un día de circuito con ejercicios entra en
+      // `requiredDays` vía program_exercises, así que sin esta lectura era un
+      // requisito imposible: el hito de fase no se disparaba NUNCA en un
+      // programa que tuviera uno.
+      pb.collection('circuit_sessions').getFullList({
+        filter: pb.filter('user = {:uid} && program = {:pid} && program_day_key ~ {:prefix}', { uid: userId, pid: programId, prefix: `${dayPrefix}%` }),
+        fields: 'program_day_key',
+        $autoCancel: false,
+      }).catch(() => [] as any[]),
     ])
     const requiredDays = new Set<string>([
       ...exerciseDays.map((record: any) => record.day_id).filter(Boolean),
@@ -57,6 +67,7 @@ export async function emitProgramMilestoneIfCompleted(userId: string, programId:
       [
         ...sessions.map((record: any) => record.workout_key),
         ...cardioSessions.map((record: any) => record.program_day_key),
+        ...circuitSessions.map((record: any) => record.program_day_key),
       ]
         .filter((key: unknown): key is string => typeof key === 'string' && key.startsWith(dayPrefix))
         .map((key: string) => key.slice(dayPrefix.length)),

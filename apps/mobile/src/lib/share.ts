@@ -31,6 +31,19 @@ export function cardioUrl(id: string): string {
   return `${WEB_BASE_URL}/cardio/session/${id}`
 }
 
+/**
+ * Enlace público de un programa (#604). Reexportado desde core en vez de
+ * reescrito aquí: la web ya tenía DOS versiones distintas de esta misma URL y
+ * una de ellas usaba el origen local, que no abre en el teléfono de nadie.
+ *
+ * La página de destino, `/shared/:id`, sirve la vista previa a quien no tiene
+ * cuenta a través de `GET /api/programs/{id}/public`, así que el enlace
+ * funciona para quien lo recibe — pero solo si el programa está marcado como
+ * `link` o `public`. Uno `private` enseña «programa no encontrado», y esa es la
+ * respuesta correcta.
+ */
+export { sharedProgramUrl as programUrl } from '@calistenia/core/lib/programShare'
+
 // ── Primitive share helpers ───────────────────────────────────────────────────
 
 export interface ShareTextOptions {

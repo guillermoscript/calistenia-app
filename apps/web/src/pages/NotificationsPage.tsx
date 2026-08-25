@@ -7,6 +7,8 @@ import { useAuthState } from '../contexts/AuthContext'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import type { FollowRequest } from '@calistenia/core/hooks/useFollows'
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
@@ -22,7 +24,16 @@ function GearIcon({ className }: { className?: string }) {
   )
 }
 
-function getNotificationMessage(n: AppNotification, t: TFunction): string {
+/**
+ * `l` localiza los campos i18n que viajan dentro de `data` (#633). El servidor no
+ * sabe en qué idioma tiene la app el destinatario, así que guarda el mapa
+ * `{es, en}` entero y lo resuelve aquí quien lo pinta.
+ */
+function getNotificationMessage(
+  n: AppNotification,
+  t: TFunction,
+  l: (field: TranslatableField | undefined | null) => string,
+): string {
   switch (n.type) {
     case 'follow':
       return t('notif.follow', { name: n.actorName })
@@ -67,6 +78,10 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
       return t('notif.friendWorkout', { name: n.actorName })
     case 'friend_joined':
       return t('notif.friendJoined', { name: n.actorName })
+    case 'program_deleted':
+      // El nombre puede venir vacío (programa sin `name`): el copy se sostiene
+      // igual, así que no hay fallback que inventar aquí.
+      return t('notif.programDeleted', { name: l(n.data?.programName) })
     default:
       return t('notif.default', { name: n.actorName })
   }
@@ -102,6 +117,11 @@ function getNotificationRoute(n: AppNotification): string {
     case 'friend_workout':
     case 'friend_joined':
       return `/u/${n.actorId}`
+    case 'program_deleted':
+      // `referenceId` guarda el id del programa borrado como rastro, pero NO se
+      // navega a él: el registro ya no existe y `/programs/:id` daría un 404.
+      // El catálogo es la acción útil que le queda al usuario: buscarse otro.
+      return '/programs'
     default:
       return '/'
   }
@@ -135,6 +155,7 @@ function RequestActions({ request, onAccept, onReject, t }: {
 
 export default function NotificationsPage() {
   const { t } = useTranslation()
+  const l = useLocalize()
   const navigate = useNavigate()
   const { user } = useAuthState()
   // Bandeja de solicitudes (#422): la fila de `follows` vive en useFollows;
@@ -265,7 +286,7 @@ export default function NotificationsPage() {
                     'text-sm leading-snug',
                     n.read ? 'text-muted-foreground' : 'text-foreground',
                   )}>
-                    {getNotificationMessage(n, t)}
+                    {getNotificationMessage(n, t, l)}
                   </div>
                   <div className="text-[11px] text-muted-foreground/60 mt-0.5">
                     {timeAgoShort(n.created)}
