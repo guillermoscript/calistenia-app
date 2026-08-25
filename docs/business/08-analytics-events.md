@@ -1,8 +1,55 @@
 # Analytics & Growth Events
 
-Version: **4**
+Version: **5**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
+
+> **Version 5 (2026-08-25, issue #636) — the training funnel gets its middle,
+> web and mobile stop measuring different things, and six silent surfaces start
+> reporting.** This version **breaks one saved report on purpose**; everything
+> else is additive.
+>
+> - **`race_created` was being emitted twice per action, on both platforms.**
+>   v4 removed the duplicated `race_joined` and `race_started`, but the same
+>   migration had left a third pair alive that nobody looked at — one in the web
+>   create dialog, one in the native create screen. **Any report quoting an
+>   absolute number of races created before this date is quoting double**, and
+>   the count now drops by roughly half. Race *creation* conversion rates whose
+>   denominator was this event were understating themselves by the same factor.
+> - **Additive — the middle of the training funnel.** `workout_day_viewed`,
+>   `set_logged`, `exercise_completed`, `rest_skipped`, `warmup_skipped` and
+>   `cooldown_skipped` join the four lifecycle events, all carrying the same
+>   property block. The funnel
+>   `workout_day_viewed → session_started → set_logged → workout_completed` is
+>   now buildable end to end and segmentable by `program_id` and `platform`, on
+>   both platforms. Note `set_logged` fires **once per set**, so it is by some
+>   margin the highest-volume event in the catalogue.
+> - **Additive — web ↔ mobile parity.** `notification_clicked`,
+>   `leaderboard_viewed`, `cardio_detail_viewed`, `exercise_searched`,
+>   `streak_milestone` and `page_error` now fire on **both** platforms instead of
+>   web only, and `program_editor_saved` on both instead of mobile only. **Names
+>   are unchanged, so saved reports keep matching** — but their volume roughly
+>   doubles as the second platform starts reporting, and a report that
+>   implicitly meant "web" now means "both" unless it filters `platform`. The
+>   seven also moved to the canonical facade, so they finally carry
+>   `event_version`, `surface` and `platform`.
+> - **Additive — `op.identify()` on web now sends `platform`.** Only mobile sent
+>   it, so every web-identified profile had the property empty and the two
+>   OpenPanel projects could not be cross-referenced by it. Profiles identified
+>   before this date keep their empty value until the user is re-identified.
+> - **Additive — six silent surfaces.** The activity feed (`feed_viewed`,
+>   `feed_reaction_toggled`, `feed_comment_added`), history and progress
+>   (`progress_viewed`, `calendar_viewed`, `history_viewed`,
+>   `session_detail_viewed`), the exercise catalogue
+>   (`exercise_catalog_viewed`, `exercise_viewed`), program detail
+>   (`program_viewed`), auth (`auth_viewed`, `login_started`, `login_failed`,
+>   `signup_started`, `signup_failed`) and onboarding (`onboarding_started`)
+>   emitted nothing at all before this version.
+>
+> Not added, deliberately: **`onboarding_abandoned`**. Detecting a mid-flow exit
+> is not reliable on native, and with `onboarding_started`,
+> `onboarding_step_viewed` and `onboarding_completed` the drop-off per step is
+> already computable. An unreliable event would have been worse than no event.
 
 > **Version 4 (2026-08-25, issue #636) — race events deduplicated, training
 > funnel instrumented.** This version **breaks three saved reports on purpose**;
@@ -122,10 +169,36 @@ GPS coordinates, or unnecessary personal data.
 | `battle_results_viewed` | The results screen of a terminal battle is opened | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | Once per viewer per battle, not once per battle — unlike `battle_completed`, the question it answers is whether anyone looks at the result they earned. `result` carries the viewer's own outcome (`won`, `tied`, `placed`, `solo`, `left`, `none`) |
 | `battle_rematch_created` | A closed battle spawns a new one | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | The server accepted `POST /api/battles/{id}/rematch`. `battle_id` is the **new** battle; a double-tap replays the idempotency key and creates nothing, so it is emitted once per rematch. Also emits `invite_sent` with `share_type=rematch_invite` when former participants were re-invited |
 
-The four training-lifecycle events (`session_started`, `workout_completed`,
-`session_exited`, `workout_abandoned`) predate this contract and keep their
-legacy names, so they are not in the table above. Their shape is specified in
-the next section and follows the same versioning and privacy rules.
+| `notification_clicked` | A push notification is tapped | `surface=notification`, `source`, `url`, `title` | Web + mobile | Once per tap. `source` separates the paths: `service_worker` (web), `cold_start` (the tap launched the app) and `tap` (app already running). Native taps were not measured at all before v5, which made the effect of push reminders — the main retention lever — invisible |
+| `leaderboard_viewed` | Leaderboard screen opens | `surface=leaderboard`, `source` | Web + mobile | Once per visit. Deliberately decoupled from the data load: tying it to the query re-fired it on every render (#578) |
+| `cardio_detail_viewed` | A cardio session detail opens | `surface=cardio`, `source`, `own` | Web + mobile | Once per visit, after the session resolves. `own` distinguishes looking at your own session from looking at someone else's |
+| `exercise_searched` | A catalogue search settles | `surface=exercise_catalog`, `source`, `query`, `result_count` | Web + mobile | Debounced 1500 ms on both platforms and only for queries of 2+ characters, so the report counts searches and not the prefixes typed on the way to one. `result_count` is mobile-only for now |
+| `streak_milestone` | A streak milestone notice is dismissed | `surface=streak`, `source`, `days` | Web + mobile | Fires on dismissal, not on render, so it counts milestones a user actually saw. `days` is the milestone reached, which is not always the current streak |
+| `page_error` | An error reaches the app boundary | `surface=app`, `source`, `error_type`, `message` | Web + mobile | Web emits from the React root handlers (`uncaught`, `caught`, `recoverable`); mobile from core's `reportError`, which every shared-package failure passes through. Sentry remains the place to debug one — this only puts the count in the same funnel |
+| `program_editor_saved` | A user program is saved in the editor | `surface=program_editor`, `source`, `program_id`, `is_new`, `visibility`, `day_count` | Web + mobile core | Emitted from the shared `saveProgram`, so it cannot drift again. Before v5 only mobile emitted it and half of all saves went uncounted |
+| `feed_viewed` | The activity feed opens | `surface=feed`, `source`, `deep_link` | Web + mobile | Once per visit. `deep_link` marks arrivals from a comment or reaction notification |
+| `feed_reaction_toggled` | A reaction is added or removed | `surface=feed`, `source`, `emoji`, `result`, `own_post` | Web + mobile core | `result` is `added` or `removed`. Without it a "reactions" report grows while people are *removing* them |
+| `feed_comment_added` | A comment is published | `surface=feed`, `source`, `is_reply`, `length`, `own_post` | Web + mobile core | Emitted after the record is created, so a failed or rate-limited comment counts as nothing. **The comment text never leaves the device** — only its length |
+| `progress_viewed` | The progress screen opens | `surface=progress`, `source`, `tab`, `session_count`, `phase`, `has_program` | Web | Once per visit |
+| `calendar_viewed` | The calendar opens | `surface=calendar`, `source` | Web | Once per visit; navigating between months is the same visit looking at the same thing |
+| `history_viewed` | The history tab opens | `surface=history`, `source`, `total_sessions`, `streak` | Mobile | Once per visit |
+| `session_detail_viewed` | A past session's detail opens | `surface=history`, `source`, `workout_key`, `is_free_session`, `exercise_count`, `sets_logged` | Mobile | Once per session opened |
+| `exercise_catalog_viewed` | The exercise catalogue list opens | `surface=exercise_catalog`, `source` | Web + mobile | The denominator `exercise_viewed` lacked |
+| `exercise_viewed` | An exercise detail opens | `surface=exercise_catalog`, `source`, `exercise_id`, `category`, `difficulty` | Web + mobile | Once per exercise opened. On web it waits for the async load; the native catalogue is synchronous |
+| `program_viewed` | A program detail opens | `surface=program`, `source`, `program_id`, `is_active`, plus `is_own`/`phase_count`/`workout_count` (web) or `followers_count`/`day_count` (mobile) | Web + mobile | Once per program opened. This is the denominator `program_selected` never had: it said how many people pick a program, never how many look and walk away. Web's `source` is `shared_link` on the public `/shared/:id` route |
+| `auth_viewed` | The sign-in screen renders | `surface=auth`, `source`, `mode`, plus `has_referral`/`has_challenge` (web) | Web + mobile | Once per visit. `mode` is the screen's initial tab, not the one finally submitted |
+| `login_started` | A sign-in attempt begins | `surface=auth`, `source`, `method` | Web + mobile core | One per attempt, emitted before the network call. `method` is `email` or `google` |
+| `login_failed` | A sign-in attempt fails | `surface=auth`, `source`, `method`, `status` | Web + mobile core | A cancelled Google dialog is **not** a failure and emits nothing — it is a user decision, and counting it would sink the success rate. **The error message is never sent**: PocketBase's can contain the email address |
+| `signup_started` | A registration attempt begins | `surface=auth`, `source`, `method` | Web + mobile core | One per attempt |
+| `signup_failed` | A registration attempt fails | `surface=auth`, `source`, `method`, `status` | Web + mobile core | Same message rule as `login_failed` |
+| `onboarding_started` | The onboarding flow mounts | `surface=onboarding`, `source`, `total_steps`, `needs_profile` | Web + mobile | Once per flow. `onboarding_step_viewed` only fires when *advancing*, so step 0 was never reported and `onboarding_completed` had no denominator |
+
+The training-funnel events (`session_started`, `workout_completed`,
+`session_exited`, `workout_abandoned`, `workout_day_viewed`, `set_logged`,
+`exercise_completed`, `rest_skipped`, `warmup_skipped`, `cooldown_skipped`)
+predate this contract or belong to its own block, so they are not in the table
+above. Their shape is specified in the next section and follows the same
+versioning and privacy rules.
 
 ## Training session funnel
 
@@ -166,12 +239,26 @@ Two caveats worth knowing when reading the numbers:
   under-counts abandonment in a narrow case, which is the safer direction: the
   alternative would have labelled every repeat-after-completion an abandonment.
 
+### Funnel steps
+
+The four outcomes above say how a session *ends*. v5 adds the steps in between,
+which is where users actually drop out — before v5 only the two extremes were
+measured, so "started a workout and never logged a set" was indistinguishable
+from "logged nineteen sets and stopped at the twentieth":
+
+| Step | Event | Fires |
+|---|---|---|
+| Looked at the day without starting it | `workout_day_viewed` | Once per day opened. On web the workout page is a day *selector*, so it keys on `workout_key` rather than on mount; on mobile the "day" is today's home hero. `source` keeps the two volumes apart instead of pooling them, and `already_done` marks a day the user had already finished — re-reading a finished day is not the same denominator as an unstarted one. Circuit days are excluded: they have their own `circuit_*` cycle and a different completion rate |
+| Logged a set | `set_logged` | **Once per set** — the highest-volume event in the catalogue. Adds `exercise_id`, `section`, `set_number`, `set_total`, `is_pr`. The set that triggers it is included in `sets_logged`, so the first set of a workout reports `sets_logged: 1`, not `0` |
+| Finished an exercise | `exercise_completed` | When the last set of an exercise is logged. Adds `exercise_index` and `exercise_total`. Navigating away from an exercise manually without finishing its sets emits nothing |
+| Cut a rest short | `rest_skipped` | Only a **manual** skip (button or swipe). A rest timer that runs out emits nothing — otherwise every completed rest would read as skipped. Adds `seconds_remaining` |
+| Skipped warm-up / cool-down | `warmup_skipped`, `cooldown_skipped` | Once per session each, latched: skipping the cool-down and then "the rest of the cool-down" is one skipped cool-down, not two. `scope` on `cooldown_skipped` is `full` or `remaining`. These flags were already persisted to the `sessions` row but were never emitted |
+
 ### Shared properties
 
-All four lifecycle events — `session_started`, `workout_completed`,
-`session_exited`, `workout_abandoned` — carry the same block, built by
-`packages/core/lib/session-funnel.ts`, so the funnel can be segmented by any of
-them:
+Every funnel event — the four outcomes and the six steps above — carries the
+same block, built by `packages/core/lib/session-funnel.ts`, so the funnel can be
+segmented by any of them:
 
 | Property | Notes |
 |---|---|
@@ -188,7 +275,13 @@ them:
 which is what actually writes the session row) and therefore knows only what
 was *logged*, not what was *planned*: it carries `sets_logged` but not
 `exercise_count` or `completion_pct`. Segment completion by `program_id`,
-`phase`, `platform` or `source` — those are present on all four.
+`phase`, `platform` or `source` — those are present on every funnel event.
+
+`program_id` reaches the block through a module-level register written by
+`usePrograms`, **not** through React context. The active program changes rarely,
+but the session context that would have to subscribe to it wraps the whole app
+and re-renders on every logged set — the #475 regression. Consequence for
+tests: the register has to be reset between them.
 
 ## Share confirmation
 
@@ -214,6 +307,12 @@ emitted alongside the canonical `program_joined` event. Canonical events are
 emitted once per completed action (with unconfirmed share outcomes labeled
 `opened`); compatibility events are not used as additional canonical funnel
 steps.
+
+v5 adds one more: `race_created` was duplicated on both platforms and its count
+halves. Nothing is renamed. The seven parity events keep their names and only
+gain properties and a second platform — but a saved report built on any of them
+before v5 implicitly meant "web only", and now means both; filter by `platform`
+to keep the old meaning.
 
 v4 is the one deliberate exception to "nothing is renamed or removed":
 `race_finished` no longer exists, and the volume of `race_joined` and
@@ -253,7 +352,14 @@ Create a dashboard called **Growth Loop v1** with these reports:
 | Challenge activation | Funnel | `challenge_viewed` → `challenge_joined` → `challenge_progress_updated` → `challenge_completed` | `surface` |
 | Race adoption | Funnel | `race_created` → `race_joined` → `race_started` → `race_participant_finished` | `share_type` |
 | Training completion | Funnel | `session_started` → `workout_completed` | `program_id`, `phase`, `platform`, `source` |
+| Training funnel (full) | Funnel | `workout_day_viewed` → `session_started` → `set_logged` → `workout_completed` | `program_id`, `platform`, `source` |
 | Abandonment causes | Bar | `workout_abandoned` | `reason` |
+| Registration funnel | Funnel | `auth_viewed` → `signup_started` → `signup_completed` → `onboarding_started` → `onboarding_completed` | `method`, `platform` |
+| Sign-in failure rate | Bar | `login_failed` | `method`, `status` |
+| Program consideration | Funnel | `program_viewed` → `program_selected` → `session_started` | `program_id`, `platform` |
+| Push effectiveness | Funnel | `notification_clicked` → `session_started` | `source`, `platform` |
+| Feed engagement | Funnel | `feed_viewed` → `feed_reaction_toggled` → `feed_comment_added` | `platform` |
+| Session shortcuts | Bar | `rest_skipped`, `warmup_skipped`, `cooldown_skipped` | `platform`, `phase` |
 | Battle adoption | Funnel | `battle_created` → `battle_joined` → `battle_started` → `battle_completed` | `share_type` |
 | Battle replay | Funnel | `battle_completed` → `battle_results_viewed` → `battle_rematch_created` | `result` |
 | Shares by type | Bar | `share_card_shared` (filter `share_confirmed = true` for confirmed sends) | `share_type` |
@@ -295,6 +401,39 @@ dashboard and confirm the exact UI labels.
 - Start a workout, leave it open, then start a different day; confirm one
   `workout_abandoned` with `reason=replaced` carrying the **first** workout's
   key and set count.
+- Open the workout page and pick a day without starting it; confirm one
+  `workout_day_viewed` with `program_id`, `phase` and `exercise_count`. Pick a
+  second day and confirm a second event; re-render the page without changing day
+  and confirm **no** third.
+- Pick a circuit day and confirm **no** `workout_day_viewed` (circuit days have
+  their own cycle).
+- Log the first set of a workout and confirm one `set_logged` with
+  `sets_logged: 1` — not `0` — and a `completion_pct` consistent with it.
+- Log the last set of an exercise and confirm one `set_logged` **and** one
+  `exercise_completed` with `exercise_index`/`exercise_total`.
+- Let a rest timer run out and confirm **no** `rest_skipped`; then skip one with
+  the button and one with a swipe, confirming one event each with
+  `seconds_remaining`.
+- Skip the warm-up twice (if reachable) and confirm exactly one
+  `warmup_skipped`; skip the cool-down and then "skip the rest", confirming
+  exactly one `cooldown_skipped` with `scope=full`.
+- Create a race and confirm `race_created` fires **once**, carrying
+  `target_distance_km`/`target_duration_seconds`/`has_route`.
+- Open `/feed`, react to a post, remove that reaction, and comment; confirm
+  `feed_viewed`, two `feed_reaction_toggled` with `result=added` then
+  `removed`, and one `feed_comment_added` whose properties contain **no**
+  comment text.
+- Open `/progress`, `/calendar`, an exercise detail, the exercise list and a
+  program detail; confirm one view event each with its ids.
+- Open `/auth`, submit a wrong password, then a correct one; confirm
+  `auth_viewed`, `login_started` + `login_failed` (with `status`, **no**
+  `message`), then `login_started` + `login_completed`.
+- Register a new account and confirm `signup_started` → `signup_completed` →
+  `onboarding_started` → `onboarding_completed`.
+- Save a program in the web editor and confirm one `program_editor_saved` with
+  `is_new` matching whether it was new.
+- Confirm `op.identify` on web now carries `platform: web` in the profile
+  properties.
 
 ### Mobile
 
@@ -347,6 +486,33 @@ dashboard and confirm the exact UI labels.
 - Complete a workout on mobile and confirm one `workout_completed` carrying
   `program_id`, `phase`, `platform=mobile` and `sets_logged`.
 
+Added in v5 (all mobile, all previously unmeasured):
+
+- Tap a push notification with the app closed, and again with it open; confirm
+  one `notification_clicked` each, with `source=cold_start` then `source=tap`.
+- Open the home screen on a training day and confirm one `workout_day_viewed`;
+  complete that day and reopen the screen, confirming `already_done: true`.
+- Run a full session: confirm `set_logged` per set, `exercise_completed` on each
+  exercise's last set, `rest_skipped` only when the rest is cut by hand, and
+  `warmup_skipped`/`cooldown_skipped` at most once each.
+- Create a race and confirm `race_created` fires **once**, not twice.
+- Open the leaderboard, a cardio detail, the exercise list, an exercise, a
+  program and the history tab; confirm one view event each.
+- Search the exercise catalogue and confirm a single `exercise_searched` about
+  1.5 s after typing stops, with `result_count`.
+- Open a past session from the history tab and confirm one
+  `session_detail_viewed`.
+- Open the social tab, react, un-react and comment; confirm the three feed
+  events and that no comment text appears in any property.
+- Reach a streak milestone and dismiss the notice; confirm one
+  `streak_milestone` with `days` equal to the milestone.
+- Open the login screen, fail a login, then cancel the Google dialog; confirm
+  `auth_viewed`, `login_started` + `login_failed`, and that the cancellation
+  emits **no** `login_failed`.
+- Force a handled error and confirm one `page_error` alongside the Sentry event.
+- Confirm `screen_view` still reports route patterns (v4) and that the new view
+  events do not double-count alongside them.
+
 ## Privacy review
 
 The canonical helper only normalizes and versions the properties supplied by a
@@ -354,3 +520,12 @@ caller; it is not a general-purpose PII scrubber. Before adding a property,
 verify that it is a stable identifier or low-cardinality product metadata.
 Never pass notes, meal descriptions, health measurements, profile text,
 coordinates, or raw URLs containing user data.
+
+Three v5 decisions worth recording, because each one had a tempting property
+right next to it:
+
+- `set_logged` carries the exercise id and the set number, **not** the set's
+  note — that field is free user text.
+- `feed_comment_added` carries the comment's *length*, **not** its text.
+- `login_failed` / `signup_failed` carry the HTTP `status`, **not** the error
+  message: PocketBase's auth errors can quote the email address back.
