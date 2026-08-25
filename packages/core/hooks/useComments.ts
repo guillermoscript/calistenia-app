@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl, getCurrentUser } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 
 export interface Comment {
   id: string
@@ -177,6 +178,16 @@ export function useComments(userId: string | null) {
         author: userId,
         text: text.trim(),
         parent_id: parentId || null,
+      })
+
+      // #636 §4/§6: el TEXTO del comentario no viaja nunca; solo su longitud y
+      // si es respuesta a otro. Se emite después del create, así que un
+      // comentario que falla no cuenta como publicado.
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.feedCommentAdded, {
+        surface: 'feed', source: 'comments_sheet',
+        is_reply: !!parentId,
+        length: text.trim().length,
+        own_post: sessionOwnerId === userId,
       })
 
       setCommentCounts(prev => ({ ...prev, [sessionId]: (prev[sessionId] || 0) + 1 }))

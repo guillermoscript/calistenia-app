@@ -25,6 +25,7 @@ import { localize } from '@calistenia/core/lib/i18n-db'
 import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import { ProgramRemixCredit, ProgramFollowers } from '../components/programs/ProgramRemixCredit'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -354,6 +355,21 @@ export default function ProgramDetailPage({
   useEffect(() => {
     fetchProgram()
   }, [fetchProgram])
+
+  // #636 §4: `program_selected` no tenía denominador — se sabía cuánta gente
+  // elige un programa, pero no cuánta lo mira y pasa de él.
+  useEffect(() => {
+    if (!program) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programViewed, {
+      surface: 'program', source: isSharedView ? 'shared_link' : 'program_detail',
+      program_id: programId,
+      is_active: isActive,
+      is_own: isOwn,
+      phase_count: phases.length,
+      workout_count: workouts.length,
+    })
+    // Solo por programa: recargar la ficha tras inscribirse no es una vista nueva.
+  }, [programId, !!program]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por programa
 
   // ── Actions ────────────────────────────────────────────────────────────
 

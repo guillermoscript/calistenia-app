@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -15,6 +15,7 @@ import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import ProgramProgressBar from '@/components/programs/ProgramProgressBar'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -42,6 +43,20 @@ export default function ProgramDetailScreen() {
   const statsIds = useMemo(() => (id ? [id] : []), [id])
   const { statsById } = useProgramStats(statsIds)
   const followersCount = statsById[id ?? '']?.followersCount
+
+  // #636 §4: `program_selected` no tenía denominador — se sabía cuánta gente
+  // elige un programa, pero no cuánta lo mira y pasa de él.
+  useEffect(() => {
+    if (!program) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programViewed, {
+      surface: 'program', source: 'program_screen',
+      program_id: id,
+      is_active: isActive,
+      followers_count: followersCount,
+      day_count: days?.length,
+    })
+    // Solo por programa: inscribirse recarga la ficha y no es una vista nueva.
+  }, [id, !!program]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por programa
 
   const [selecting, setSelecting] = useState(false)
   const [error, setError] = useState('')

@@ -12,6 +12,7 @@ import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { fetchMonthActivity, emptyMonthActivity } from '@calistenia/core/lib/monthActivity'
 import type { MonthActivity } from '@calistenia/core/lib/monthActivity'
 import type { SessionDone, WeekDay } from '@calistenia/core/types'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 function getMonthDays(year: number, month: number) {
   const first = new Date(year, month, 1)
@@ -161,6 +162,14 @@ export default function CalendarPage() {
   }, [progress, cardioSessions, circuitSessions])
 
   const selectedSessions = selectedDate ? sessionsByDate[selectedDate] || [] : []
+
+  // #636 §4: el calendario tampoco emitía nada. Una vista por visita, no por
+  // mes navegado: cambiar de mes es la misma sesión mirando lo mismo.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.calendarViewed, {
+      surface: 'calendar', source: 'calendar_page',
+    })
+  }, [])
 
   // Stats for current month
   const monthStats = useMemo(() => {

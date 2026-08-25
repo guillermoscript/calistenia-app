@@ -16,7 +16,7 @@ import Animated, { FadeInRight } from 'react-native-reanimated'
 
 import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
@@ -116,6 +116,17 @@ export function OnboardingFlow() {
     if (s === personalizingStep) return 'personalizing'
     return `step_${s}`
   }
+
+  // `onboarding_step_viewed` solo se emite al AVANZAR, así que el primer paso
+  // no lo emitía nadie y no se sabía cuánta gente llega a ver el onboarding
+  // (#636 §4). Sin esto, `onboarding_completed` no tiene denominador.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.onboardingStarted, {
+      surface: 'onboarding', source: 'onboarding_mobile',
+      total_steps: totalSteps,
+      needs_profile: needsProfile,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vez por onboarding
 
   const goToStep = (s: number) => {
     haptics.light()

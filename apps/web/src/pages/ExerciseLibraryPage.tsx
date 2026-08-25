@@ -282,6 +282,14 @@ export default function ExerciseLibraryPage() {
 
   const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
 
+  // #636 §4: el listado no emitía nada, así que `exercise_viewed` no tenía
+  // denominador. Espeja el de la pantalla nativa.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseCatalogViewed, {
+      surface: 'exercise_catalog', source: 'exercise_library',
+    })
+  }, [])
+
   // Debounced search tracking
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const trackSearch = useCallback((term: string) => {

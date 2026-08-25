@@ -253,6 +253,13 @@ export function useAuth(): UseAuthReturn {
   const signInWithGoogle = useCallback(async () => {
     setAuthError(null)
     setIsLoading(true)
+    // #636 §4: solo existían los `*_completed`, así que la parte de ARRIBA del
+    // embudo de registro estaba a ciegas: no se sabía cuánta gente lo intenta
+    // ni cuánta se queda por el camino. El mensaje del error NO viaja: puede
+    // llevar el correo dentro (§6).
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginStarted, {
+      surface: 'auth', source: 'auth_screen', method: 'google',
+    })
     try {
       const result = await loginWithOAuth2('google')
       // If this is a newly created user (no referral_code yet), trigger post-registration
@@ -264,6 +271,10 @@ export function useAuth(): UseAuthReturn {
       }
     } catch (err: any) {
       if (err?.isAbort) return // user closed popup
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginFailed, {
+        surface: 'auth', source: 'auth_screen', method: 'google',
+        status: err?.status ?? 0,
+      })
       setAuthError(err?.message || i18n.t('auth.googleError'))
     } finally {
       setIsLoading(false)
@@ -274,11 +285,18 @@ export function useAuth(): UseAuthReturn {
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     setAuthError(null)
     setIsLoading(true)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginStarted, {
+      surface: 'auth', source: 'auth_screen', method: 'email',
+    })
     try {
       await pb.collection('users').authWithPassword(email, password)
       discardCapturedReferralCode()
       op.track('login_completed', { method: 'email' })
     } catch (err: any) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginFailed, {
+        surface: 'auth', source: 'auth_screen', method: 'email',
+        status: err?.status ?? 0,
+      })
       setAuthError(err?.message || i18n.t('auth.loginError'))
     } finally {
       setIsLoading(false)
@@ -289,6 +307,9 @@ export function useAuth(): UseAuthReturn {
   const signUpWithEmail = useCallback(async (email: string, password: string, displayName: string) => {
     setAuthError(null)
     setIsLoading(true)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.signupStarted, {
+      surface: 'auth', source: 'auth_screen', method: 'email',
+    })
     try {
       await pb.collection('users').create({
         email,
@@ -302,6 +323,10 @@ export function useAuth(): UseAuthReturn {
         registrationMethod.current = 'email'
       }
     } catch (err: any) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.signupFailed, {
+        surface: 'auth', source: 'auth_screen', method: 'email',
+        status: err?.status ?? 0,
+      })
       setAuthError(err?.message || i18n.t('auth.signupError'))
     } finally {
       setIsLoading(false)
