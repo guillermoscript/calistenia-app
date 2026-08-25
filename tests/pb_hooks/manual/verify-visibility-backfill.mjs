@@ -1,6 +1,6 @@
 /**
  * Verificación manual del backfill de `programs.visibility`
- * (migración 1784900000_programs_visibility.js, #603).
+ * (migración 1785000000_programs_visibility.js, #603).
  *
  * POR QUÉ NO ES UN TEST NORMAL: `run.mjs` levanta PocketBase una sola vez y las
  * migraciones corren al arrancar, con la base vacía — el backfill siempre vería
@@ -31,7 +31,7 @@ import net from "node:net"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 const BIN = process.env.PB_BINARY || join(ROOT, "pocketbase")
-const MIGRATION = "1784900000_programs_visibility.js"
+const MIGRATION = "1785000000_programs_visibility.js"
 const SU_EMAIL = "visibility@test.local"
 const SU_PASS = "TestSuper123!"
 

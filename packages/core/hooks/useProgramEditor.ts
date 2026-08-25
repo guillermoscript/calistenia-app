@@ -506,7 +506,7 @@ export function useProgramEditor() {
           durationWeeks: program.duration_weeks || 26,
           isOfficial: program.is_official || false,
           // Las filas anteriores a #603 traen el campo vacío. El backfill de
-          // 1784900000 las dejó en `public`, así que un vacío aquí solo puede
+          // 1785000000 las dejó en `public`, así que un vacío aquí solo puede
           // venir de un cliente viejo que creó el programa sin mandarlo: se
           // trata como privado, que es la dirección segura.
           visibility: (program.visibility as ProgramVisibility) || 'private',

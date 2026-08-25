@@ -180,7 +180,7 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   // Solo lo publicado y lo propio (#603). Los borradores del autor tienen que
   // seguir saliendo: este catálogo es la ÚNICA lista de programas de la app, y
   // filtrar a `visibility = "public"` a secas los dejaría inalcanzables.
-  // El servidor ya recorta lo ajeno privado (las reglas de 1784900000 devuelven
+  // El servidor ya recorta lo ajeno privado (las reglas de 1785000000 devuelven
   // 0 filas, no 403); este filtro es lo que hace que TÚ veas tus borradores.
   const visibilityFilter = userId
     ? pb.filter('(visibility = "public" || created_by = {:uid})', { uid: userId })
