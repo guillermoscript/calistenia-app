@@ -112,6 +112,16 @@ function categoryForType(type) {
     case "friend_joined": return "friend_workouts"
     case "friend_streak": return "friend_streaks"
     case "friend_achievement": return "friend_achievements"
+    // Sin categoría A PROPÓSITO (#633). `program_deleted` avisa al inscrito de que
+    // el programa que estaba siguiendo ya no existe: es un aviso transaccional
+    // sobre SUS datos, no contenido social de otro usuario, y sin él se queda otra
+    // vez sin «hoy toca» y sin explicación —que es justo el fallo que cierra #633—.
+    // Ninguna de las nueve categorías encaja, y la menos mala (`own_milestones`,
+    // «Tus logros y rachas») significaría que quien silencia sus rachas deja de
+    // enterarse. Devolver "" lo deja siempre entregable: prefAllows() no bloquea
+    // con categoría vacía. Va escrito como `case` y no cayéndose por el `default`
+    // para que la decisión sea explícita y salga al grepear el tipo.
+    case "program_deleted": return ""
     default: return ""
   }
 }
