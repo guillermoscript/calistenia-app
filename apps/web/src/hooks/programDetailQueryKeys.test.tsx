@@ -168,7 +168,7 @@ describe('usePrograms + useProgramDetail sobre el mismo programa (#606)', () => 
     expect(detail).not.toBe(detailView)
 
     // Y cada una tiene exactamente los campos de su hook, ninguno del otro.
-    expect(Object.keys(detail).sort()).toEqual(['cardioDayConfigs', 'phases', 'weekDays', 'workoutsMap'])
+    expect(Object.keys(detail).sort()).toEqual(['cardioDayConfigs', 'circuitDayConfigs', 'phases', 'weekDays', 'workoutsMap'])
     expect(Object.keys(detailView).sort()).toEqual(['days', 'program'])
   })
 
