@@ -266,13 +266,22 @@ export default function ProgramDetailPage({
       // Fetch last session per workout day (for history context)
       if (userId) {
         try {
-          const sessionsRes = await pb.collection('sessions').getList(1, 200, {
+          // `getFullList` con `fields` recortado, no `getList(1, 200)` (#614).
+          // De cada sesión aquí solo se usan tres columnas, así que antes se
+          // descargaban 200 registros enteros para quedarse con la fecha — y aun
+          // así quien pasara de 200 sesiones en el programa perdía la última fecha
+          // de los días que entrena poco, que son justo los que interesa recordar.
+          // Con `fields` acotado traerlas todas sale más barato que traer 200
+          // completas, y deja de haber un tope que miente.
+          const sessions = await pb.collection('sessions').getFullList({
+            batch: 500,
             filter: pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
             sort: '-completed_at',
+            fields: 'workout_key,completed_at,created',
             $autoCancel: false,
           })
           const sessionMap: Record<string, string> = {}
-          sessionsRes.items.forEach((s: RecordModel) => {
+          sessions.forEach((s: RecordModel) => {
             const key = s.workout_key as string
             if (key && !sessionMap[key]) {
               sessionMap[key] = s.completed_at || s.created
