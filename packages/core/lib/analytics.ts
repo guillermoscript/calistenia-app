@@ -2,7 +2,54 @@
  * Facade de analytics — misma API op.track/identify/clear en web y mobile.
  * La implementación real (OpenPanel web o react-native) se inyecta vía initCore().
  */
-import { getPlatform, storage, type CoreAnalytics } from '../platform'
+import { getClientInfo, getPlatform, storage, type CoreAnalytics } from '../platform'
+
+/** Valor de la propiedad `platform` en los eventos: web y móvil, sin distinguir SO. */
+export type AnalyticsPlatform = 'web' | 'mobile' | 'unknown'
+
+/**
+ * Plataforma para las propiedades de evento, derivada de la identidad del
+ * cliente que ya declara cada app en `initCore()`. Evita tener que inyectar
+ * `platform` hook a hook: sin esto, los eventos emitidos desde core solo lo
+ * llevaban si la app se acordaba de pasarlo, y la web no lo pasaba (#636).
+ */
+export function analyticsPlatform(): AnalyticsPlatform {
+  try {
+    switch (getClientInfo().platform) {
+      case 'web': return 'web'
+      case 'ios':
+      case 'android': return 'mobile'
+      default: return 'unknown'
+    }
+  } catch {
+    // `getPlatform()` revienta si nadie llamó a `initCore()`. Un evento sin
+    // plataforma vale más que un throw en mitad de un `track()`.
+    return 'unknown'
+  }
+}
+
+/**
+ * Programa activo del usuario, para las propiedades de los eventos del funnel
+ * de entreno.
+ *
+ * Es una variable de módulo y NO un contexto de React a propósito. El valor
+ * vive en `useWorkoutState()`, que cambia en CADA serie registrada; suscribir a
+ * él al `ActiveSessionProvider` —que envuelve a toda la app— re-renderizaría el
+ * árbol entero cada vez que alguien apunta una serie, que es exactamente la
+ * regresión que costó el #475. Aquí solo se lee en el momento de emitir.
+ *
+ * Es legítimamente global: hay un único programa activo por usuario. Lo escribe
+ * el `WorkoutProvider` de cada app, que ya tiene `activeProgram` en la mano.
+ */
+let analyticsProgramId: string | null = null
+
+export function setAnalyticsProgramId(programId: string | null): void {
+  analyticsProgramId = programId
+}
+
+export function getAnalyticsProgramId(): string | null {
+  return analyticsProgramId
+}
 
 /** Canonical growth-loop events shared by web and mobile. */
 export const CANONICAL_ANALYTICS_EVENTS = {
@@ -47,7 +94,18 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   raceCreated: 'race_created',
   raceJoined: 'race_joined',
   raceStarted: 'race_started',
+  /**
+   * La CARRERA se cerró: una sola vez por carrera, desde el cliente del creador.
+   * No confundir con `raceParticipantFinished`, que es por corredor (#636).
+   */
   raceCompleted: 'race_completed',
+  /**
+   * UN CORREDOR terminó su carrera: una vez por participante, con sus stats.
+   * Se llamaba `race_finished` y convivía con `race_completed` sin que ningún
+   * informe pudiera distinguirlos — el numerador y el denominador del ratio de
+   * finalización de carreras eran el mismo nombre a ojo (#636).
+   */
+  raceParticipantFinished: 'race_participant_finished',
   raceShared: 'race_shared',
   /** Collaborative circuit battles (`battles` collection). Never races. */
   battleCreated: 'battle_created',
@@ -99,14 +157,20 @@ export interface ShareCardAnalyticsProperties extends CanonicalAnalyticsProperti
 }
 
 /**
- * Remove unset values and stamp the payload with the contract version.
- * Keeping this pure makes the cross-platform contract easy to test.
+ * Remove unset values and stamp the payload with the contract version and the
+ * platform.
+ *
+ * `platform` va DELANTE del spread a propósito: es un valor por defecto, no una
+ * imposición. `share_card_shared` ya usaba esa propiedad con otro significado
+ * —el destino del compartir, `whatsapp`— y su valor explícito tiene que seguir
+ * ganando. Fuera de ese evento, `platform` es web/móvil (#636).
  */
 export function normalizeCanonicalAnalyticsProperties(
   properties: CanonicalAnalyticsProperties,
 ): Record<string, unknown> {
   return Object.fromEntries([
     ['event_version', 1],
+    ['platform', analyticsPlatform()],
     ...Object.entries(properties),
   ].filter(([, value]) => value !== undefined && value !== null))
 }

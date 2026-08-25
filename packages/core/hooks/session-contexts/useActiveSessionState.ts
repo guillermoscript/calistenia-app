@@ -15,6 +15,16 @@
  *
  * Como en el resto del #482, el `createContext` se queda en cada app: aquí solo
  * baja el estado.
+ *
+ * ## Dueño único del desenlace de la sesión (#636)
+ *
+ * Este hook decide con qué evento TERMINA una sesión, y garantiza que sea
+ * exactamente uno. Antes la decisión estaba repartida entre tres sitios que no
+ * se hablaban —`workout_completed` en `useProgressMutations`, un
+ * `workout_abandoned` colgado del `beforeunload` de la web y un `endSession()`
+ * mudo—, así que había sesiones sin ningún evento terminal (salir a propósito,
+ * y TODO el móvil) y sesiones con dos (completar y cerrar la pestaña desde el
+ * panel de celebración). Sin eso no se puede calcular una tasa de finalización.
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Exercise, Workout } from '../../types'
