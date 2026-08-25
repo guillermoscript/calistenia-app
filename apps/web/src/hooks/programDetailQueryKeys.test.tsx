@@ -38,7 +38,15 @@ const fx = vi.hoisted(() => {
     PROGRAM_ID,
     // Las dos consultas apuntan al MISMO programa, que es la precondición del
     // bug: la ficha se abre sobre el programa que `usePrograms` tiene activo.
-    ENROLLMENT: { id: 'e1', program: PROGRAM_ID },
+    // Lleva `expand.program` porque el programa está VIVO y eso es lo que
+    // devuelve PocketBase: desde #605 `fetchActiveEnrollment` pide
+    // `expand: 'program'` y trata una inscripción sin él como huérfana (su
+    // programa fue borrado), es decir «sin programa activo».
+    ENROLLMENT: {
+      id: 'e1',
+      program: PROGRAM_ID,
+      expand: { program: { id: PROGRAM_ID, name: 'Programa en la ficha' } },
+    },
     // Nombre distinto en el catálogo y en el `getOne` de la ficha: así se ve de
     // qué consulta viene cada dato, y no basta con que "haya algo" en la caché.
     CATALOG_ROW: { id: PROGRAM_ID, name: 'Programa en el catálogo', duration_weeks: 8 },
