@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import type { EditorDay, EditorExercise, EditorPhase } from '@calistenia/core/hooks/useProgramEditor'
 import { DAY_IDS, PRIORITY_OPTIONS } from './constants'
+import { ExerciseMediaEditor } from './ExerciseMediaEditor'
 
 const LIME = 'hsl(74 90% 45%)'
 const SECTIONS = ['warmup', 'main', 'cooldown'] as const
@@ -300,6 +301,12 @@ export function StepExercises({
                                 />
                               </View>
                             </View>
+
+                            {/* Media propia del ejercicio (#618): gana al catálogo. */}
+                            <ExerciseMediaEditor
+                              exercise={ex}
+                              onChange={data => updateExercise(dayKey, i, data)}
+                            />
                           </View>
                         )}
                       </CardContent>

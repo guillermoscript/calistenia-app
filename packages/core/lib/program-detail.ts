@@ -47,6 +47,7 @@ export interface ProgramRow {
   visibility?: string
   difficulty?: string
   days_per_week?: number
+  instructions?: TranslatableField
 }
 
 const DEFAULT_DAY_COLOR = '#888899'
@@ -71,6 +72,9 @@ export function toProgramMeta(row: ProgramRow, locale: string): ProgramMeta {
     difficulty: row.difficulty || undefined,
     discipline: 'calistenia',
     days_per_week: typeof row.days_per_week === 'number' ? row.days_per_week : undefined,
+    // «Cómo seguir este programa» (#618). Siempre string, aunque sea vacío: la
+    // ficha distingue «no cargado» (undefined) de «el autor no escribió nada».
+    instructions: localize(row.instructions, locale),
   } as ProgramMeta
 }
 

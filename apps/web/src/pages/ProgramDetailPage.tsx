@@ -181,6 +181,11 @@ export default function ProgramDetailPage({
         description: localize(progRecord.description, locale),
         duration_weeks: progRecord.duration_weeks,
         created_by: progRecord.created_by || undefined,
+        // «Cómo seguir este programa» (#618). Se lee del registro crudo, que es
+        // de donde ya salían nombre y descripción; `localize` es obligatorio
+        // porque el campo es un `json` `{ es, en }` y pintarlo tal cual daría
+        // «[object Object]».
+        instructions: localize(progRecord.instructions, locale),
       }
       setProgram(meta)
 
@@ -467,6 +472,23 @@ export default function ProgramDetailPage({
         )}
         {program.description && (
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>{program.description}</p>
+        )}
+
+        {/* «Cómo seguir este programa» (#618): las notas del autor sobre cómo
+            llevarlo. Van aparte de la descripción porque esa es la frase corta
+            que se pinta en la tarjeta del catálogo. */}
+        {program.instructions?.trim() && (
+          <section
+            className="max-w-2xl mb-6 rounded-lg border border-border bg-card/40 px-4 py-3.5 motion-safe:animate-fade-in"
+            style={{ animationDelay: '115ms', animationFillMode: 'both' }}
+          >
+            <h2 className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground mb-2">
+              {t('programDetail.howToFollow')}
+            </h2>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+              {program.instructions}
+            </p>
+          </section>
         )}
 
         {/* Progreso: solo del programa en el que el usuario está inscrito (#616). */}

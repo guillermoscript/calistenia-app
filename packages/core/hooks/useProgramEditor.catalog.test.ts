@@ -47,6 +47,11 @@ function makeInfo(overrides: Partial<ProgramEditorState['info']> = {}): ProgramE
     daysPerWeek: null,
     equipmentRequired: [],
     contraindications: [],
+    instructions: '',
+    coverImage: '',
+    coverUrl: null,
+    coverFile: null,
+    coverRemoved: false,
     ...overrides,
   }
 }

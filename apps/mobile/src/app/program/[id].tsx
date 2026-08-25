@@ -92,6 +92,18 @@ export default function ProgramDetailScreen() {
               </CardContent>
             </Card>
 
+            {/* «Cómo seguir este programa» (#618): las notas del autor sobre
+                cómo llevarlo. Van aparte de la descripción porque esa es la
+                frase corta que se pinta en la tarjeta del catálogo. */}
+            {!!program.instructions?.trim() && (
+              <Card>
+                <CardContent className="gap-2 py-4">
+                  <Kicker>{t('programDetail.howToFollow')}</Kicker>
+                  <Text className="text-sm leading-5 text-foreground/90">{program.instructions}</Text>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Semana tipo */}
             <View className="gap-2">
               <Kicker>
