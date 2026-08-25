@@ -8,8 +8,8 @@
  *
  * Cae a los workouts hardcodeados cuando no hay programa/PB. Forma pública
  * estable (programs, activeProgram, phases, weekDays, cardioDayConfigs,
- * getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram,
- * refreshPrograms, programsReady).
+ * circuitDayConfigs, getWorkout, selectProgram, abandonProgram,
+ * duplicateProgram, deleteProgram, refreshPrograms, programsReady).
  */
 
 import { useCallback, useRef } from 'react'
@@ -28,7 +28,7 @@ import { programSelectionEvents } from '../lib/program-selection-events'
 import { getPlatform } from '../platform'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
-import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
+import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType, CircuitDefinition, CircuitExercise } from '../types'
 import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
 
@@ -45,6 +45,50 @@ function buildPhases(phaseRecords: RecordModel[]): Phase[] {
       color: p.color,
       bg:    p.bg_color,
     }))
+}
+
+/**
+ * Filas de `program_exercises` → `CircuitExercise[]` (#625).
+ *
+ * `exercise_name` viaja CRUDO (es el `json {es,en}` de PB, que es justo lo que
+ * `CircuitDefinition.name` espera): localizarlo aquí lo congelaría en el idioma
+ * que hubiera al construir el detalle del programa.
+ *
+ * `rest_seconds` NO se mapea a `restSecondsOverride` a propósito. Es el descanso
+ * entre series de un ejercicio de fuerza (90 s típicos); como override de
+ * circuito destrozaría la cadencia. El descanso de un circuito se configura a
+ * nivel de día (`circuit_rest_between_exercises` / `circuit_rest_seconds`).
+ */
+export function toCircuitExercises(exerciseRecords: RecordModel[]): CircuitExercise[] {
+  return exerciseRecords.map(r => {
+    const exercise: CircuitExercise = {
+      exerciseId: r.exercise_id,
+      name: r.exercise_name,
+    }
+    if (r.reps) exercise.reps = r.reps
+    // Un ejercicio por tiempo guarda su duración en `timer_seconds`; en modo
+    // `timed` es exactamente el trabajo de esa estación.
+    if (r.is_timer && r.timer_seconds) exercise.workSecondsOverride = r.timer_seconds
+    return exercise
+  })
+}
+
+/** Una fila de `program_day_config` de tipo `circuit` → `CircuitDefinition`. */
+function toCircuitDefinition(dayConfig: RecordModel, exerciseRecords: RecordModel[]): CircuitDefinition {
+  const rows = exerciseRecords.filter(
+    r => r.day_id === dayConfig.day_id && r.phase_number === dayConfig.phase_number,
+  )
+  return {
+    id: `${dayConfig.day_id}_circuit`,
+    name: { es: 'Circuito', en: 'Circuit' },
+    mode: dayConfig.circuit_mode ?? 'circuit',
+    exercises: toCircuitExercises(rows),
+    rounds: dayConfig.circuit_rounds ?? 3,
+    restBetweenExercises: dayConfig.circuit_rest_between_exercises ?? 0,
+    restBetweenRounds: dayConfig.circuit_rest_between_rounds ?? 60,
+    workSeconds: dayConfig.circuit_work_seconds,
+    restSeconds: dayConfig.circuit_rest_seconds,
+  }
 }
 
 function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordModel[] = []): WeekDay[] {
@@ -69,17 +113,11 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
         }
       }
       if (dc.day_type === 'circuit') {
-        day.circuitConfig = {
-          id: `${dc.day_id}_circuit`,
-          name: { es: 'Circuito', en: 'Circuit' },
-          mode: dc.circuit_mode ?? 'circuit',
-          exercises: [],
-          rounds: dc.circuit_rounds ?? 3,
-          restBetweenExercises: dc.circuit_rest_between_exercises ?? 0,
-          restBetweenRounds: dc.circuit_rest_between_rounds ?? 60,
-          workSeconds: dc.circuit_work_seconds,
-          restSeconds: dc.circuit_rest_seconds,
-        }
+        // `exercises` sale de `program_exercises` de ESTA fase: un día de
+        // circuito con ejercicios genera esas filas igual que uno de fuerza
+        // (`useProgramEditor` solo se salta el cardio). Hasta #625 se dejaba
+        // vacío y el runner no tenía nada que ejecutar.
+        day.circuitConfig = toCircuitDefinition(dc, exerciseRecords)
       }
       seen[dc.day_id] = day
     }
@@ -122,6 +160,28 @@ function buildCardioDayConfigs(dayConfigRecords: RecordModel[]): Record<string, 
         targetDurationMin: dc.cardio_target_duration_min || undefined,
       }
     }
+  })
+  return configs
+}
+
+/**
+ * Circuitos del programa indexados por `p{fase}_{día}` (#625).
+ *
+ * Existe por el mismo motivo que `buildCardioDayConfigs`: `weekDays` es plano y
+ * no tiene fase, así que `weekDays[].circuitConfig` se queda con la fila de la
+ * fase más baja. Un día que es circuito en la fase 1 y en la fase 2 con
+ * distintas rondas necesita que quien arranca (que SÍ sabe la fase) pida la
+ * suya. Este mapa es la fuente de la verdad para arrancar; el `circuitConfig`
+ * del `WeekDay` se queda para pintar la semana.
+ */
+export function buildCircuitDayConfigs(
+  dayConfigRecords: RecordModel[],
+  exerciseRecords: RecordModel[],
+): Record<string, CircuitDefinition> {
+  const configs: Record<string, CircuitDefinition> = {}
+  dayConfigRecords.forEach(dc => {
+    if (dc.day_type !== 'circuit') return
+    configs[`p${dc.phase_number}_${dc.day_id}`] = toCircuitDefinition(dc, exerciseRecords)
   })
   return configs
 }
@@ -236,6 +296,7 @@ export interface ProgramDetail {
   weekDays: WeekDay[]
   workoutsMap: WorkoutsMap
   cardioDayConfigs: Record<string, CardioDayConfig>
+  circuitDayConfigs: Record<string, CircuitDefinition>
 }
 
 /**
@@ -266,6 +327,7 @@ export async function fetchProgramDetail(programId: string): Promise<ProgramDeta
     weekDays: buildWeekDays(exercises, dayConfigs),
     workoutsMap: buildWorkoutsMap(exercises),
     cardioDayConfigs: buildCardioDayConfigs(dayConfigs),
+    circuitDayConfigs: buildCircuitDayConfigs(dayConfigs, exercises),
   }
 }
 
@@ -315,6 +377,8 @@ interface UseProgramsReturn {
   phases: Phase[]
   weekDays: WeekDay[]
   cardioDayConfigs: Record<string, CardioDayConfig>
+  /** Circuitos del programa por `p{fase}_{día}`. Vacío sin programa activo (#625). */
+  circuitDayConfigs: Record<string, CircuitDefinition>
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<boolean>
   abandonProgram: (programId: string) => Promise<boolean>
@@ -372,6 +436,8 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const weekDays = detail?.weekDays?.length ? detail.weekDays : FALLBACK_WEEK_DAYS
   const workoutsMap = detail?.workoutsMap ?? {}
   const cardioDayConfigs = detail?.cardioDayConfigs ?? {}
+  // `?? {}` también cubre la caché en disco previa a #625, que no tiene el campo.
+  const circuitDayConfigs = detail?.circuitDayConfigs ?? {}
 
   const programsReady = !userId
     ? true
@@ -648,6 +714,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     phases,
     weekDays,
     cardioDayConfigs,
+    circuitDayConfigs,
     getWorkout,
     selectProgram,
     abandonProgram,
