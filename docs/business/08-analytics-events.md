@@ -159,6 +159,12 @@ Two caveats worth knowing when reading the numbers:
   to last save), but the event timestamp is not the moment of abandonment.
 - **A session abandoned on a device that is never opened again is never
   counted.** All five outcomes are client-side.
+- **Restarting the same workout from scratch mid-session counts as nothing.**
+  Starting a session whose `workout_key` matches the open one is treated as
+  resuming, because that is what the repeat button and the resume paths do. The
+  discarded first attempt therefore produces no terminal event. This
+  under-counts abandonment in a narrow case, which is the safer direction: the
+  alternative would have labelled every repeat-after-completion an abandonment.
 
 ### Shared properties
 
