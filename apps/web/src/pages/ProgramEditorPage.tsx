@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { cn } from '../lib/utils'
 import { useTranslation } from 'react-i18next'
-import { useProgramEditor, type EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
+import { useProgramEditor, deriveDaysPerWeek, type EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { Button } from '../components/ui/button'
@@ -30,6 +30,11 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     updateDay, addExercise, removeExercise, updateExercise, moveExercise,
     loadProgram, saveProgram, validate, resetEditor,
   } = useProgramEditor()
+
+  // Lo que enseña el modo automático de «días por semana» (#613). Se calcula
+  // aquí y no dentro de `StepInfo` para que el paso 1 siga recibiendo solo
+  // `info` y no tenga que conocer la forma de `state.days`.
+  const derivedDaysPerWeek = useMemo(() => deriveDaysPerWeek(state.days), [state.days])
 
   const { refreshPrograms } = useWorkoutActions()
 
@@ -190,6 +195,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               updateInfo={updateInfo}
               redistributeWeeks={redistributeWeeks}
               canPublishOfficial={canPublishOfficial}
+              derivedDaysPerWeek={derivedDaysPerWeek}
             />
           )}
           {state.step === 2 && (
