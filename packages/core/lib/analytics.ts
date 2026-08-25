@@ -121,6 +121,67 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   battleResultsViewed: 'battle_results_viewed',
   /** A rematch created a new battle from a closed one (#357). */
   battleRematchCreated: 'battle_rematch_created',
+
+  // ── Paridad web ↔ móvil (#636 §5) ──────────────────────────────────────────
+  // Estos seis existían ya, pero cada uno en UNA sola plataforma y por el
+  // camino legacy (`op.track` a pelo), así que no llevaban `event_version` ni
+  // `surface`. El nombre no cambia —los informes guardados siguen casando— y
+  // ahora los emiten las dos apps con el mismo bloque de propiedades.
+  /**
+   * Se tocó una notificación push. En web llega desde el service worker; en
+   * móvil, del tap nativo, que no se medía: los recordatorios push son la
+   * palanca de retención principal y su efecto era invisible.
+   */
+  notificationClicked: 'notification_clicked',
+  leaderboardViewed: 'leaderboard_viewed',
+  cardioDetailViewed: 'cardio_detail_viewed',
+  exerciseSearched: 'exercise_searched',
+  /** Una racha alcanzó un hito y el usuario cerró el aviso. */
+  streakMilestone: 'streak_milestone',
+  /** Error de render que llegó al límite de la app. */
+  pageError: 'page_error',
+  /**
+   * Se guardó un programa propio en el editor. Vive en el hook compartido, no
+   * en cada app: mientras solo lo emitía el móvil, la mitad de los guardados no
+   * se contaba.
+   */
+  programEditorSaved: 'program_editor_saved',
+
+  // ── Superficies que no emitían nada (#636 §4) ──────────────────────────────
+  /** El muro de actividad se abrió. */
+  feedViewed: 'feed_viewed',
+  /** Una reacción se puso o se quitó; `result` dice cuál de las dos. */
+  feedReactionToggled: 'feed_reaction_toggled',
+  /** Se publicó un comentario. El texto NUNCA viaja (§6). */
+  feedCommentAdded: 'feed_comment_added',
+  /** Pantallas de historial y progreso, hasta ahora mudas en las dos apps. */
+  progressViewed: 'progress_viewed',
+  calendarViewed: 'calendar_viewed',
+  historyViewed: 'history_viewed',
+  sessionDetailViewed: 'session_detail_viewed',
+  /** Catálogo de ejercicios: el listado y la ficha. */
+  exerciseCatalogViewed: 'exercise_catalog_viewed',
+  exerciseViewed: 'exercise_viewed',
+  /**
+   * La ficha de un programa. Es el denominador que le faltaba a
+   * `program_selected`, que hasta ahora no tenía contra qué medirse.
+   */
+  programViewed: 'program_viewed',
+  /**
+   * La pantalla de acceso. Sin ella y sin los cuatro de abajo, la parte de
+   * arriba del embudo de registro estaba a ciegas.
+   */
+  authViewed: 'auth_viewed',
+  signupStarted: 'signup_started',
+  signupFailed: 'signup_failed',
+  loginStarted: 'login_started',
+  loginFailed: 'login_failed',
+  /**
+   * El onboarding arrancó. `onboarding_step_viewed` solo se emite al AVANZAR,
+   * así que el primer paso no lo emitía nadie y no se sabía en qué punto se
+   * cae la gente.
+   */
+  onboardingStarted: 'onboarding_started',
 } as const
 
 export type CanonicalAnalyticsEvent = typeof CANONICAL_ANALYTICS_EVENTS[keyof typeof CANONICAL_ANALYTICS_EVENTS]

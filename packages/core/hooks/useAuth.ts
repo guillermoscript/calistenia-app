@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
-import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, analyticsPlatform, op, trackCanonicalEvent } from '../lib/analytics'
 import { syncUserTimezone } from '../lib/timezone-sync'
 import { clearUserStorage } from '../lib/storage-keys'
 import { qk } from '../lib/query-keys'
@@ -47,7 +47,15 @@ export async function completeNewUserRegistration(
   user: AuthUser,
   method: 'email' | 'google',
 ): Promise<void> {
-  op.identify({ profileId: user.id, firstName: user.display_name || user.name || '', email: user.email, properties: { tier: 'free', role: 'user' } })
+  op.identify({
+    profileId: user.id,
+    firstName: user.display_name || user.name || '',
+    email: user.email,
+    // `platform` lo mandaba solo el móvil, así que todo perfil identificado
+    // desde web quedaba con la propiedad vacía y los dos proyectos de OpenPanel
+    // no se podían cruzar por ella (#636 §5).
+    properties: { tier: 'free', role: 'user', platform: analyticsPlatform() },
+  })
   op.track('signup_completed', { method })
 
   const displayName = user.display_name || user.name || user.email?.split('@')[0] || 'USER'
@@ -132,7 +140,11 @@ export function identifyUser(u: { id: string; display_name?: unknown; name?: unk
     profileId: u.id,
     firstName: String(u.display_name || u.name || ''),
     email: u.email as string | undefined,
-    properties: { tier: (u.tier as string) || 'free', role: (u.role as string) || 'user' },
+    properties: {
+      tier: (u.tier as string) || 'free',
+      role: (u.role as string) || 'user',
+      platform: analyticsPlatform(),
+    },
   })
 }
 /** Olvida el último id identificado (logout y tests). */

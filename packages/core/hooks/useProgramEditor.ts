@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { getPlatform } from '../platform'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
 import i18n from 'i18next'
 import { localize, toTranslatable } from '../lib/i18n-db'
@@ -1413,6 +1414,16 @@ export function useProgramEditor() {
       // useProgramDetail, #606) y la caché de edición, que es un dominio aparte.
       qc.invalidateQueries({ queryKey: qk.programs.all })
       if (programId) qc.invalidateQueries({ queryKey: qk.programEditor(programId) })
+      // #636 §5: esto solo lo emitía el móvil, así que la mitad de los
+      // guardados no se contaba. Vive aquí, en el hook que comparten las dos
+      // apps, para que no vuelva a depender de que cada pantalla se acuerde.
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programEditorSaved, {
+        surface: 'program_editor', source: 'editor_save',
+        program_id: programId ?? undefined,
+        is_new: !state.programId,
+        visibility: state.info.visibility,
+        day_count: Object.keys(state.days).length,
+      })
       return programId
     } catch (e: any) {
       console.error('useProgramEditor: saveProgram error', e)

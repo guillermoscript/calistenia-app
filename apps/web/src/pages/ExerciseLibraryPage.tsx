@@ -19,7 +19,7 @@ import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calisten
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -288,7 +288,9 @@ export default function ExerciseLibraryPage() {
     clearTimeout(searchTimerRef.current)
     if (term.length >= 2) {
       searchTimerRef.current = setTimeout(() => {
-        op.track('exercise_searched', { query: term })
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseSearched, {
+          surface: 'exercise_catalog', source: 'exercise_library', query: term,
+        })
       }, 1500)
     }
   }, [])
