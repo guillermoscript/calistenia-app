@@ -64,6 +64,47 @@ describe('buildProgressMap', () => {
     expect(prog[`done_${DAY}_p1_mie`]).toMatchObject({ cardioSessionId: 'c1' })
   })
 
+  // #640: un circuito de programa terminado tiene que poner el check del día.
+  // La fila es la real que deja el arranque del #625: `program_day_key` con el
+  // formato p{fase}_{día} y su `started_at`.
+  it('marca el día hecho con un circuito de programa, etiquetado circuitSessionId', () => {
+    const prog = buildProgressMap(
+      [],
+      [],
+      [],
+      [{ id: 'q1', program_day_key: 'p1_mie', started_at: AT, note: 'brutal' }],
+    )
+    expect(prog[`done_${DAY}_p1_mie`]).toMatchObject({
+      done: true, workoutKey: 'p1_mie', note: 'brutal', circuitSessionId: 'q1',
+    })
+  })
+
+  it('ignora circuitos sueltos (sin program_day_key) y sin fecha usable', () => {
+    const prog = buildProgressMap(
+      [],
+      [],
+      [],
+      [
+        { id: 'q1', started_at: AT, note: '' },
+        { id: 'q2', program_day_key: 'p1_jue', note: '' },
+      ],
+    )
+    expect(Object.keys(prog)).toEqual([])
+  })
+
+  // El marcador de `sessions` lleva count/timings y sí alimenta estadísticas:
+  // el del circuito no debe pisarlo si ambos caen el mismo día+clave.
+  it('no pisa el marcador de una sesión de fuerza del mismo día y clave', () => {
+    const prog = buildProgressMap(
+      [sessionRow({ workout_key: 'p1_mie', note: 'fuerza' })],
+      [],
+      [],
+      [{ id: 'q1', program_day_key: 'p1_mie', started_at: AT, note: 'circuito' }],
+    )
+    expect(prog[`done_${DAY}_p1_mie`]).toMatchObject({ note: 'fuerza', count: 1 })
+    expect(prog[`done_${DAY}_p1_mie`]).not.toHaveProperty('circuitSessionId')
+  })
+
   it('acumula el conteo cuando el mismo entreno se repite el mismo día', () => {
     const prog = buildProgressMap([sessionRow(), sessionRow({ id: 's2' })], [], [])
     expect((prog[`done_${DAY}_p1_lun`] as any).count).toBe(2)
