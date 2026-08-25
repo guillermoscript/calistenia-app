@@ -2725,6 +2725,17 @@
   "day.activeWalk": "Active walk",
   "day.totalRest": "Full rest",
 
+  "programEditor.defaultPhase1": "Base & Activation",
+  "programEditor.defaultPhase2": "Foundational Strength",
+  "programEditor.defaultPhase3": "Intensity & Skills",
+  "programEditor.defaultPhase4": "Peak & Consolidation",
+  "programEditor.phaseNumbered": "Phase {{n}}",
+  "programEditor.dayFocusPush": "Push + Core",
+  "programEditor.dayFocusPull": "Pull + Mobility",
+  "programEditor.dayFocusLumbar": "Lower Back + Stretching",
+  "programEditor.dayFocusLegs": "Legs + Glutes",
+  "programEditor.dayFocusFull": "Full Body + Core",
+
   "programEditor.nameRequired": "Program name is required",
   "programEditor.minOneWeek": "Duration must be at least 1 week",
   "programEditor.phaseNeedsName": "Phase {{n}} needs a name",

@@ -303,12 +303,37 @@ export function buildProgramCatalogFields(
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
 
-const DEFAULT_PHASES: EditorPhase[] = [
-  { name: 'Base & Activación',     weeks: '1-6',   color: '#c8f542', bgColor: 'rgba(200,245,66,0.08)' },
-  { name: 'Fuerza Fundamental',    weeks: '7-13',  color: '#42c8f5', bgColor: 'rgba(66,200,245,0.08)' },
-  { name: 'Intensidad & Skills',   weeks: '14-20', color: '#f542c8', bgColor: 'rgba(245,66,200,0.08)' },
-  { name: 'Peak & Consolidación',  weeks: '21-26', color: '#f5c842', bgColor: 'rgba(245,200,66,0.08)' },
+/**
+ * Las cuatro fases con las que arranca un programa nuevo.
+ *
+ * Aquí solo vive lo que NO depende del idioma —semanas y colores— más la clave
+ * i18n del nombre. Resolver el texto en el top-level del módulo es el bug de
+ * #588: `useProgramEditor` se importa antes de que i18next esté inicializado, y
+ * entonces `t()` no devuelve la traducción. Y como una constante de módulo se
+ * evalúa UNA vez, el valor malo se quedaría congelado para toda la vida del
+ * proceso: cambiar de idioma después tampoco lo arreglaría.
+ */
+const DEFAULT_PHASE_DEFS: { nameKey: string; weeks: string; color: string; bgColor: string }[] = [
+  { nameKey: 'programEditor.defaultPhase1', weeks: '1-6',   color: '#c8f542', bgColor: 'rgba(200,245,66,0.08)' },
+  { nameKey: 'programEditor.defaultPhase2', weeks: '7-13',  color: '#42c8f5', bgColor: 'rgba(66,200,245,0.08)' },
+  { nameKey: 'programEditor.defaultPhase3', weeks: '14-20', color: '#f542c8', bgColor: 'rgba(245,66,200,0.08)' },
+  { nameKey: 'programEditor.defaultPhase4', weeks: '21-26', color: '#f5c842', bgColor: 'rgba(245,200,66,0.08)' },
 ]
+
+/**
+ * Las fases por defecto con el nombre ya traducido.
+ *
+ * Se llama en runtime —dentro de un callback o de `createInitialState()`—, que
+ * es cuando i18next ya está vivo. Nunca en el top-level del módulo.
+ */
+export function defaultPhases(): EditorPhase[] {
+  return DEFAULT_PHASE_DEFS.map(p => ({
+    name: i18n.t(p.nameKey),
+    weeks: p.weeks,
+    color: p.color,
+    bgColor: p.bgColor,
+  }))
+}
 
 // Color palette for phases beyond the 4 defaults
 const EXTRA_PHASE_COLORS: Array<{ color: string; bgColor: string }> = [
@@ -320,20 +345,54 @@ const EXTRA_PHASE_COLORS: Array<{ color: string; bgColor: string }> = [
 
 const MAX_PHASES = 8
 
-const DAY_DEFAULTS: { dayId: string; dayName: string; focus: string; type: string; color: string }[] = [
-  { dayId: 'lun', dayName: 'Lunes',     focus: 'Empuje + Core',       type: 'push',   color: '#c8f542' },
-  { dayId: 'mar', dayName: 'Martes',    focus: 'Tirón + Movilidad',   type: 'pull',   color: '#42c8f5' },
-  { dayId: 'mie', dayName: 'Miércoles', focus: 'Lumbar + Stretching', type: 'lumbar', color: '#f54242' },
-  { dayId: 'jue', dayName: 'Jueves',    focus: 'Piernas + Glúteos',   type: 'legs',   color: '#f542c8' },
-  { dayId: 'vie', dayName: 'Viernes',   focus: 'Full Body + Core',    type: 'full',   color: '#f5c842' },
-  { dayId: 'sab', dayName: i18n.t('day.saturday'),    focus: i18n.t('day.activeWalk'),     type: 'rest',   color: '#888899' },
-  { dayId: 'dom', dayName: i18n.t('day.sunday'),   focus: i18n.t('day.totalRest'),      type: 'rest',   color: '#888899' },
+/**
+ * Los siete días con los que se rellena una fase nueva — la parte ESTRUCTURAL.
+ *
+ * El reparto en dos constantes es deliberado. Aquí solo hay id, tipo, color y
+ * las claves i18n: nada que dependa del idioma, así que es seguro evaluarlo en
+ * el top-level del módulo. `dayDefaults()` es quien resuelve el texto.
+ *
+ * Y no es solo higiene. `saveProgram` recorre esta lista para armar las claves
+ * `${fase}_${dayId}` y no mira ni el nombre ni el foco; leyendo la constante
+ * estructural se ahorra traducir 7 días × N fases en cada guardado para tirar
+ * el resultado a la basura.
+ *
+ * Los nombres reutilizan las claves `day.*` que ya existían; los focos son
+ * nuevos porque hasta ahora eran literales en español dentro de core.
+ */
+const DAY_DEFAULTS: { dayId: string; type: string; color: string; nameKey: string; focusKey: string }[] = [
+  { dayId: 'lun', type: 'push',   color: '#c8f542', nameKey: 'day.lun', focusKey: 'programEditor.dayFocusPush' },
+  { dayId: 'mar', type: 'pull',   color: '#42c8f5', nameKey: 'day.mar', focusKey: 'programEditor.dayFocusPull' },
+  { dayId: 'mie', type: 'lumbar', color: '#f54242', nameKey: 'day.mie', focusKey: 'programEditor.dayFocusLumbar' },
+  { dayId: 'jue', type: 'legs',   color: '#f542c8', nameKey: 'day.jue', focusKey: 'programEditor.dayFocusLegs' },
+  { dayId: 'vie', type: 'full',   color: '#f5c842', nameKey: 'day.vie', focusKey: 'programEditor.dayFocusFull' },
+  { dayId: 'sab', type: 'rest',   color: '#888899', nameKey: 'day.sab', focusKey: 'day.activeWalk' },
+  { dayId: 'dom', type: 'rest',   color: '#888899', nameKey: 'day.dom', focusKey: 'day.totalRest' },
 ]
+
+/** Un día por defecto ya montado: lo estructural más el texto traducido. */
+export type DefaultDay = Omit<EditorDay, 'exercises'>
+
+/**
+ * Los días por defecto con nombre y foco ya traducidos.
+ *
+ * Igual que `defaultPhases()`: se llama en runtime, nunca en el top-level.
+ */
+export function dayDefaults(): DefaultDay[] {
+  return DAY_DEFAULTS.map(d => ({
+    dayId: d.dayId,
+    dayName: i18n.t(d.nameKey),
+    focus: i18n.t(d.focusKey),
+    type: d.type,
+    color: d.color,
+  }))
+}
 
 function buildDefaultDays(phaseCount: number): Record<string, EditorDay> {
   const days: Record<string, EditorDay> = {}
+  const defaults = dayDefaults()
   for (let pi = 0; pi < phaseCount; pi++) {
-    for (const d of DAY_DEFAULTS) {
+    for (const d of defaults) {
       days[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
     }
   }
@@ -352,7 +411,7 @@ function createInitialState(): ProgramEditorState {
       instructions: '',
       coverImage: '', coverUrl: null, coverFile: null, coverRemoved: false,
     },
-    phases: [...DEFAULT_PHASES],
+    phases: defaultPhases(),
     days: buildDefaultDays(4),
     isDirty: false,
     isSaving: false,
@@ -414,17 +473,24 @@ export function useProgramEditor() {
   const addPhase = useCallback(() => {
     setState(s => {
       if (s.phases.length >= MAX_PHASES) return s
-      const extraIdx = Math.max(0, s.phases.length - DEFAULT_PHASES.length) % EXTRA_PHASE_COLORS.length
-      const { color, bgColor } = s.phases.length < DEFAULT_PHASES.length
-        ? DEFAULT_PHASES[s.phases.length]
+      const phaseDefs = DEFAULT_PHASE_DEFS
+      const extraIdx = Math.max(0, s.phases.length - phaseDefs.length) % EXTRA_PHASE_COLORS.length
+      const { color, bgColor } = s.phases.length < phaseDefs.length
+        ? phaseDefs[s.phases.length]
         : EXTRA_PHASE_COLORS[extraIdx]
-      const newPhase: EditorPhase = { name: `Fase ${s.phases.length + 1}`, weeks: '', color, bgColor }
+      // El nombre de una fase añadida a mano se numera; el texto sale del locale
+      // porque este hook lo comparte web con móvil y antes decía «Fase N» en
+      // español pasara lo que pasara.
+      const newPhase: EditorPhase = {
+        name: i18n.t('programEditor.phaseNumbered', { n: s.phases.length + 1 }),
+        weeks: '', color, bgColor,
+      }
       const newPhases = [...s.phases, newPhase]
       const ranges = distributeWeeks(s.info.durationWeeks, newPhases.length)
       const redistributed = newPhases.map((p, i) => ({ ...p, weeks: ranges[i] }))
       const newDays = { ...s.days }
       const pi = newPhases.length - 1
-      for (const d of DAY_DEFAULTS) {
+      for (const d of dayDefaults()) {
         newDays[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
       }
       return { ...s, phases: redistributed, days: newDays, isDirty: true }
@@ -440,9 +506,10 @@ export function useProgramEditor() {
       // Rebuild days: remove old phase's days and re-index
       const newDays: Record<string, EditorDay> = {}
       let newIdx = 0
+      const defaults = dayDefaults()
       for (let i = 0; i < s.phases.length; i++) {
         if (i === index) continue
-        for (const d of DAY_DEFAULTS) {
+        for (const d of defaults) {
           const oldKey = `${i}_${d.dayId}`
           const newKey = `${newIdx}_${d.dayId}`
           newDays[newKey] = s.days[oldKey] || { ...d, exercises: [] }
@@ -604,8 +671,9 @@ export function useProgramEditor() {
 
       const days: Record<string, EditorDay> = {}
       // Pre-fill all days
+      const dayFallbacks = dayDefaults()
       for (let pi = 0; pi < loadedPhases.length; pi++) {
-        for (const d of DAY_DEFAULTS) {
+        for (const d of dayFallbacks) {
           days[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
         }
       }
@@ -721,7 +789,7 @@ export function useProgramEditor() {
           coverFile: null,
           coverRemoved: false,
         },
-        phases: loadedPhases.length > 0 ? loadedPhases : [...DEFAULT_PHASES],
+        phases: loadedPhases.length > 0 ? loadedPhases : defaultPhases(),
         days,
         isDirty: false,
         isSaving: false,
