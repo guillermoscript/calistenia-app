@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import type { EditorDay, EditorExercise, EditorPhase } from '@calistenia/core/hooks/useProgramEditor'
+import { copyDayTargets } from '@calistenia/core/hooks/useProgramEditor'
+import { CopyToSheet, type CopyTargetOption } from './CopyToSheet'
 import { DAY_IDS, PRIORITY_OPTIONS } from './constants'
 import { ExerciseMediaEditor } from './ExerciseMediaEditor'
 
@@ -31,18 +33,29 @@ interface StepExercisesProps {
   removeExercise: (dayKey: string, index: number) => void
   moveExercise: (dayKey: string, index: number, direction: 'up' | 'down') => void
   addExercise: (dayKey: string, exercise: EditorExercise) => void
+  copyDay: (fromKey: string, toKey: string) => void
   onOpenCatalog: (section: Section) => void
 }
 
 export function StepExercises({
   phases, days, selectedPhaseTab, onSelectPhaseTab, selectedDayId, onSelectDayId,
-  updateExercise, removeExercise, moveExercise, addExercise, onOpenCatalog,
+  updateExercise, removeExercise, moveExercise, addExercise, copyDay, onOpenCatalog,
 }: StepExercisesProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState<number | null>(null)
+  const [copyOpen, setCopyOpen] = useState(false)
 
   const dayKey = `${selectedPhaseTab}_${selectedDayId}`
   const day = days[dayKey]
+
+  const copyTargets: CopyTargetOption[] = copyOpen
+    ? copyDayTargets(days, phases.length, dayKey).map(target => ({
+        id: target.key,
+        label: t(`day.${target.dayId}`),
+        group: `${target.phaseIndex + 1} · ${phases[target.phaseIndex]?.name || t('programEditor.phaseNumbered', { n: target.phaseIndex + 1 })}`,
+        exerciseCount: target.exerciseCount,
+      }))
+    : []
 
   const handleAddCustom = () => {
     haptics.light()
@@ -113,6 +126,23 @@ export function StepExercises({
           )
         })}
       </ScrollView>
+
+      {day && (
+        <View className="flex-row items-center justify-between">
+          <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+            {t(`day.${selectedDayId}`)}
+          </Text>
+          <Pressable
+            onPress={() => { haptics.light(); setCopyOpen(true) }}
+            className="rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 active:opacity-70"
+            accessibilityRole="button"
+          >
+            <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+              {t('programEditor.copy.dayCta')}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {!day || day.type === 'rest' ? (
         <Card>
@@ -329,6 +359,16 @@ export function StepExercises({
           })}
         </View>
       )}
+
+      <CopyToSheet
+        visible={copyOpen}
+        kicker={t('programEditor.copy.dayCta')}
+        title={t('programEditor.copy.dayTitle', { day: t(`day.${selectedDayId}`) })}
+        description={t('programEditor.copy.dayDesc')}
+        targets={copyTargets}
+        onClose={() => setCopyOpen(false)}
+        onSelect={toKey => copyDay(dayKey, toKey)}
+      />
     </View>
   )
 }

@@ -41,6 +41,7 @@ export default function ProgramEditorScreen() {
   const {
     state, setStep, updateInfo, redistributeWeeks, addPhase, removePhase, updatePhase,
     updateDay, addExercise, removeExercise, updateExercise, moveExercise,
+    copyDay, copyPhase,
     loadProgram, saveProgram, validate, resetEditor,
   } = useProgramEditor()
 
@@ -195,6 +196,8 @@ export default function ProgramEditorScreen() {
                 selectedPhaseTab={selectedPhase}
                 onSelectPhaseTab={setSelectedPhaseTab}
                 updateDay={updateDay}
+                copyDay={copyDay}
+                copyPhase={copyPhase}
               />
             )}
             {step === 4 && (
@@ -209,6 +212,7 @@ export default function ProgramEditorScreen() {
                 removeExercise={removeExercise}
                 moveExercise={moveExercise}
                 addExercise={addExercise}
+                copyDay={copyDay}
                 onOpenCatalog={section => { setCatalogSection(section); setShowCatalog(true) }}
               />
             )}
