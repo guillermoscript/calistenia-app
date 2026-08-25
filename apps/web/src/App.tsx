@@ -85,6 +85,7 @@ import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './componen
 import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { consumePendingSharedProgram } from '@calistenia/core/lib/sharedProgramHandoff'
 import { cn } from './lib/utils'
 import { Toaster, toast } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
@@ -686,6 +687,22 @@ function AppInner() {
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- solo al cambiar de usuario; `user` entero re-dispararía en cada authRefresh
 
   useEffect(() => { return setupAutoSync(pb, () => queryClient.invalidateQueries()) }, [])
+
+  /**
+   * Cierra el embudo del enlace compartido (#604): quien llega a `/shared/:id`
+   * sin cuenta, pulsa «Regístrate para usar este programa» y completa el alta,
+   * aterrizaba en el dashboard sin rastro del programa que venía a ver. La
+   * landing guarda el id antes de mandar a `/auth` y aquí se recoge.
+   *
+   * `consumePendingSharedProgram` es de un solo uso, así que este efecto puede
+   * correr en cada render sin secuestrar la navegación: a partir de la segunda
+   * vez no hay nada que consumir.
+   */
+  useEffect(() => {
+    if (!userId) return
+    const pendingProgram = consumePendingSharedProgram()
+    if (pendingProgram) navigate(`/programs/${pendingProgram}`)
+  }, [userId, navigate])
 
   useEffect(() => {
     const handler = (e: Event) => {

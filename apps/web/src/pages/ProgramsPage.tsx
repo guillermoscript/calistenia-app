@@ -14,35 +14,27 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '@calistenia/core/types'
 import { ShareIcon, PlusIcon, EditIcon, SearchIcon } from '../components/icons/nav-icons'
 import i18n from '../lib/i18n'
+import { shareProgram } from '../lib/share'
 import { toast } from 'sonner'
 
 // ── Share helper ───────────────────────────────────────────────────────────
 
-async function shareProgram(programId: string, programName: string) {
-  const url = `${window.location.origin}/shared/${programId}`
-  const shareData = {
-    title: programName,
-    text: i18n.t('programs.shareText', { name: programName }),
-    url,
-  }
-
-  if (navigator.share && navigator.canShare?.(shareData)) {
-    try {
-      await navigator.share(shareData)
-      return
-    } catch {
-      // User cancelled or share failed — fall through to clipboard
-    }
-  }
-
-  // Fallback: copy to clipboard
-  try {
-    await navigator.clipboard.writeText(url)
-    alert(i18n.t('programs.linkCopied'))
-  } catch {
-    // Last resort
-    prompt(i18n.t('programs.copyThisLink'), url)
-  }
+/**
+ * Compartir un programa vive en `lib/share.ts` sobre el constructor de core
+ * (#604). Aquí había una copia propia que armaba el enlace con
+ * `window.location.origin`: en desarrollo generaba
+ * `http://localhost:5173/shared/…`, que no le abre a nadie más. Y era esta la
+ * que colgaba del botón de las tarjetas, así que la de `lib/share.ts` —la que
+ * sí usaba `WEB_BASE_URL`— llevaba sin llamarse desde ninguna parte.
+ *
+ * El aviso solo sale por el camino del portapapeles, igual que antes: la hoja
+ * nativa ya es su propia confirmación, y `navigator.share` no distingue un
+ * envío hecho de uno cancelado.
+ */
+async function handleShareProgram(programId: string, programName: string) {
+  const willCopy = !navigator.share
+  const ok = await shareProgram(programName, programId)
+  if (ok && willCopy) toast.success(i18n.t('programs.linkCopied'))
 }
 
 // ── Program Card ───────────────────────────────────────────────────────────
@@ -400,7 +392,7 @@ export default function ProgramsPage() {
                 canEdit={isAdmin || program.created_by === userId}
                 isActive={program.id === activeProgram?.id}
                 onSelect={() => onSelectProgram(program.id)}
-                onShare={() => shareProgram(program.id, program.name)}
+                onShare={() => handleShareProgram(program.id, program.name)}
                 onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
                 onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
                 onView={onViewProgram ? () => onViewProgram(program.id) : undefined}
@@ -443,7 +435,7 @@ export default function ProgramsPage() {
                 canEdit={isAdmin || program.created_by === userId}
                 isActive={program.id === activeProgram?.id}
                 onSelect={() => onSelectProgram(program.id)}
-                onShare={() => shareProgram(program.id, program.name)}
+                onShare={() => handleShareProgram(program.id, program.name)}
                 onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
                 onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
                 onView={onViewProgram ? () => onViewProgram(program.id) : undefined}

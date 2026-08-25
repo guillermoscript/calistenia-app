@@ -2291,6 +2291,7 @@
   "programs.phaseUnit_other": "phases",
   "programs.phaseUnit": "phase",
   "programs.sharedBadge": "Shared program",
+  "programs.sharedBy": "Created by {{name}}",
   "programs.notFound": "Program not found",
   "programs.closeUpper": "CLOSE",
   "programs.editUpper": "EDIT",
