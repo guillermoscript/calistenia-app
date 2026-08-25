@@ -175,7 +175,9 @@ describe('buildProgramCatalogFields — days_per_week', () => {
     expect(fields.days_per_week).toBe(3)
   })
 
-  it('manda null en vez de 0: el campo es min:1 y un 0 tumbaría la escritura entera', () => {
+  // PB aceptaría también el 0 (el campo no es `required`, así que se salta el
+  // `min: 1`), pero `null` es lo que distingue «no lo sé» de «entrena 0 días».
+  it('manda null en vez de 0 cuando no hay ni un día de entrenamiento', () => {
     const allRest = makeDays(0, ['rest', 'rest', 'rest', 'rest', 'rest', 'rest', 'rest'])
     const fields = buildProgramCatalogFields(makeInfo(), allRest)
     expect(fields.days_per_week).toBeNull()

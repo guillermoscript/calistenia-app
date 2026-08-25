@@ -214,10 +214,14 @@ export function buildProgramCatalogFields(
 
   const explicit = info.daysPerWeek
   const value = explicit === null ? deriveDaysPerWeek(days) : explicit
-  // Un 0 no se manda como número: el campo es `min: 1` y el 400 se llevaría por
-  // delante la escritura ENTERA del programa, no solo este campo. Se manda
-  // `null` para dejarlo vacío, que es la respuesta honesta cuando la fase 1 no
-  // tiene un solo día de entrenamiento.
+  // Por debajo del mínimo se manda `null` y no el número: «no lo sé» y «entrena
+  // 0 días» no son lo mismo, y solo `null` deja el campo vacío de verdad.
+  //
+  // Comprobado contra PocketBase: el campo es `min: 1` pero NO es `required`, y
+  // para un número opcional el 0 es el valor cero, así que PB se salta el `min`
+  // y acepta tanto el 0 como el `null` — los dos acaban guardados como vacío.
+  // O sea que el 0 no reventaría la escritura; simplemente miente sobre lo que
+  // sabemos. `null` dice lo que hay.
   fields.days_per_week = value >= MIN_DAYS_PER_WEEK
     ? Math.min(value, MAX_DAYS_PER_WEEK)
     : null
