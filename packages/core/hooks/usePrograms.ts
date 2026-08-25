@@ -225,6 +225,83 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
   return map
 }
 
+// ─── topes y lotes (#614) ───────────────────────────────────────────────────
+
+/**
+ * Tamaño de página con el que `getFullList` recorre las listas de catálogo.
+ * No es un tope: `getFullList` sigue pidiendo páginas hasta agotar el filtro.
+ */
+const CATALOG_PAGE_SIZE = 500
+
+/**
+ * Cuántos ids de programa caben en un mismo `OR` antes de partir la consulta.
+ * El filtro viaja en la query string, así que sin trocear el catálogo acabaría
+ * generando una URL que el servidor rechaza (414) o que un proxy trunca.
+ */
+const DISCIPLINE_ID_CHUNK = 50
+
+/**
+ * Altas por petición batch. Tiene que ir igual o por debajo del
+ * `batch.maxRequests` del servidor —1000, fijado en
+ * `pb_migrations/1785100000_enable_batch_api.js`—: un lote más largo lo rechaza
+ * PocketBase entero con un 400, no lo recorta.
+ */
+const BATCH_MAX_REQUESTS = 1000
+
+interface BatchCreate {
+  collection: string
+  data: Record<string, unknown>
+}
+
+/**
+ * El servidor no tiene la API batch habilitada. Se distingue del resto de
+ * errores porque tiene arreglo desde el cliente: quien la reciba puede caer al
+ * camino secuencial en vez de fallar.
+ */
+class BatchUnavailableError extends Error {
+  constructor() { super('PocketBase batch API is disabled (POST /api/batch → 403)') }
+}
+
+/**
+ * Un PocketBase con `batch.enabled = false` responde **403** «Batch requests are
+ * not allowed.» — comprobado contra el binario, no deducido: el 404 que uno
+ * esperaría de un endpoint apagado no es lo que manda.
+ *
+ * Y 403 es una señal limpia porque el otro fallo posible del batch tiene OTRO
+ * código: una sub-petición que no pasa la create rule devuelve **400** con
+ * `batch_request_failed` y el detalle por petición. Así que aquí un 403 solo
+ * puede significar «este servidor no tiene la migración aplicada».
+ */
+function isBatchDisabled(e: any): boolean {
+  return e?.status === 403
+}
+
+/**
+ * Crea todas las filas pedidas usando la API batch de PocketBase.
+ *
+ * Cada lote es UNA petición y UNA transacción de servidor: dentro de un lote, o
+ * entran todas las filas o no entra ninguna. Entre lotes no hay transacción —
+ * por eso quien llama tiene que saber deshacer lo ya escrito (en `duplicateProgram`
+ * el rollback es borrar el programa nuevo, que cascadea sobre las hijas).
+ *
+ * El 403 solo se traduce a `BatchUnavailableError` en el PRIMER lote. Si llega en
+ * el tercero, la API estaba habilitada hace un segundo y el 403 significa otra
+ * cosa: se propaga tal cual en vez de disfrazarse de «no está habilitada».
+ */
+async function createAllInBatches(creates: BatchCreate[]): Promise<void> {
+  for (let i = 0; i < creates.length; i += BATCH_MAX_REQUESTS) {
+    const slice = creates.slice(i, i + BATCH_MAX_REQUESTS)
+    const batch = pb.createBatch()
+    for (const c of slice) batch.collection(c.collection).create(c.data)
+    try {
+      await batch.send({ $autoCancel: false })
+    } catch (e: any) {
+      if (i === 0 && isBatchDisabled(e)) throw new BatchUnavailableError()
+      throw e
+    }
+  }
+}
+
 /** Catálogo (+ disciplina por programa) desde PB. */
 async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   // Guard: sin token válido, el listRule `@request.auth.id != ""` de PocketBase
@@ -245,22 +322,35 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   const visibilityFilter = userId
     ? pb.filter('(visibility = "public" || created_by = {:uid})', { uid: userId })
     : 'visibility = "public"'
-  const catalogRes = await pb.collection('programs').getList(1, 100, {
+  // `getFullList` y no `getList(1, 100)` (#614): el tope de 100 no daba error al
+  // alcanzarse, devolvía los primeros 100 y se callaba. Este catálogo es la ÚNICA
+  // lista de programas de la app y no tiene scroll infinito, así que el programa
+  // 101 sencillamente no existía para nadie. Con 7 programas en la base el tope no
+  // mordía todavía; el problema era que el día que mordiera nadie se iba a enterar.
+  const catalogItems = await pb.collection('programs').getFullList({
+    batch: CATALOG_PAGE_SIZE,
     filter: `is_active = true && ${visibilityFilter}`,
     sort: 'name', expand: 'created_by', $autoCancel: false,
   })
   const locale = i18n.language
-  const programIds = catalogRes.items.map(p => p.id)
-  let allDayConfigs: RecordModel[] = []
-  if (programIds.length > 0) {
-    try {
-      const dcRes = await pb.collection('program_day_config').getList(1, 2000, {
-        filter: programIds.map(id => pb.filter('program = {:id}', { id })).join(' || '),
-        fields: 'program,day_type', $autoCancel: false,
-      })
-      allDayConfigs = dcRes.items
-    } catch { /* discipline defaults to calistenia */ }
+  const programIds = catalogItems.map(p => p.id)
+  // Un `OR` con TODOS los ids del catálogo va en la query string, así que crece
+  // con el catálogo hasta chocar contra el límite de longitud de URL (un 414, o
+  // peor, un proxy que trunca). Se trocea: cada trozo es su propia consulta y van
+  // en paralelo. `fields` deja el cuerpo en dos columnas — de esto solo se saca
+  // si el programa es de yoga o de calistenia.
+  const idChunks: string[][] = []
+  for (let i = 0; i < programIds.length; i += DISCIPLINE_ID_CHUNK) {
+    idChunks.push(programIds.slice(i, i + DISCIPLINE_ID_CHUNK))
   }
+  const dayConfigChunks = await Promise.all(idChunks.map(chunk =>
+    pb.collection('program_day_config').getFullList({
+      batch: CATALOG_PAGE_SIZE,
+      filter: chunk.map(id => pb.filter('program = {:id}', { id })).join(' || '),
+      fields: 'program,day_type', $autoCancel: false,
+    }).catch(() => [] as RecordModel[]), // la disciplina cae a calistenia
+  ))
+  const allDayConfigs: RecordModel[] = dayConfigChunks.flat()
   const disciplineByProgram = new Map<string, 'yoga' | 'calistenia'>()
   for (const pid of programIds) {
     const days = allDayConfigs.filter(dc => dc.program === pid)
@@ -268,7 +358,7 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     disciplineByProgram.set(pid, nonRest.length > 0 && nonRest.every(dc => dc.day_type === 'yoga') ? 'yoga' : 'calistenia')
   }
 
-  return catalogRes.items.map(p => ({
+  return catalogItems.map(p => ({
     id:             p.id,
     name:           localize(p.name, locale),
     description:    localize(p.description, locale),
@@ -563,6 +653,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const duplicateProgram = useCallback(async (programId: string): Promise<string | null> => {
     if (!userId) return null
+    // El id de la copia se guarda fuera del `try` porque es lo que hace falta para
+    // deshacerla si algo revienta a medias (#614): borrar el programa nuevo
+    // cascadea sobre fases, day-configs y ejercicios, así que un solo DELETE
+    // limpia lo que hubiera entrado. Antes no había rollback ninguno y un fallo a
+    // mitad del bucle dejaba una copia incompleta y viva en el catálogo.
+    let newProgramId: string | null = null
     try {
       const original = await pb.collection('programs').getOne(programId)
       const newProgramData: Record<string, unknown> = {
@@ -576,27 +672,45 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       newProgramData.visibility = 'private'
       if (original.difficulty) newProgramData.difficulty = original.difficulty
       const newProgram = await pb.collection('programs').create(newProgramData)
+      newProgramId = newProgram.id
 
-      const phasesRes = await pb.collection('program_phases').getList(1, 20, {
-        filter: pb.filter('program = {:pid}', { pid: programId }), sort: 'sort_order',
-      })
-      for (const p of phasesRes.items) {
-        await pb.collection('program_phases').create({
-          program: newProgram.id, phase_number: p.phase_number, name: p.name,
-          weeks: p.weeks, color: p.color, bg_color: p.bg_color, sort_order: p.sort_order,
-        })
-      }
+      // Las tres colecciones hijas se leen enteras y en paralelo. `getFullList`
+      // en vez de los `getList(1, 20 / 200 / 2000)` de antes: eran topes mudos,
+      // y un programa que los pasara se habría duplicado incompleto sin decirlo.
+      const srcFilter = pb.filter('program = {:pid}', { pid: programId })
+      const [srcPhases, srcDayConfigs, srcExercises] = await Promise.all([
+        pb.collection('program_phases').getFullList({
+          batch: CATALOG_PAGE_SIZE, filter: srcFilter, sort: 'sort_order', $autoCancel: false,
+        }),
+        // `program_day_config` se añadió después que el resto: un 404 aquí es
+        // «este servidor no tiene la colección», no un error que deba abortar.
+        pb.collection('program_day_config').getFullList({
+          batch: CATALOG_PAGE_SIZE, filter: srcFilter, sort: 'phase_number,sort_order', $autoCancel: false,
+        }).catch(() => [] as RecordModel[]),
+        pb.collection('program_exercises').getFullList({
+          batch: CATALOG_PAGE_SIZE, filter: srcFilter, sort: 'phase_number,sort_order', $autoCancel: false,
+        }),
+      ])
 
-      try {
-        const dayConfigRes = await pb.collection('program_day_config').getList(1, 200, {
-          filter: pb.filter('program = {:pid}', { pid: programId }), sort: 'phase_number,sort_order',
-        })
-        for (const dc of dayConfigRes.items) {
+      // El orden importa: fases, luego day-configs, luego ejercicios. Es el que
+      // tenía el código secuencial y el que conserva la API batch dentro del lote.
+      const creates: BatchCreate[] = [
+        ...srcPhases.map(p => ({
+          collection: 'program_phases',
+          data: {
+            program: newProgram.id, phase_number: p.phase_number, name: p.name,
+            weeks: p.weeks, color: p.color, bg_color: p.bg_color, sort_order: p.sort_order,
+          } as Record<string, unknown>,
+        })),
+        ...srcDayConfigs.map(dc => {
           const data: Record<string, unknown> = {
             program: newProgram.id, phase_number: dc.phase_number, day_id: dc.day_id,
             day_name: dc.day_name, day_type: dc.day_type, day_focus: dc.day_focus,
             day_color: dc.day_color, sort_order: dc.sort_order,
           }
+          // Los campos de cardio y de circuito solo se copian si venían puestos:
+          // mandar un `circuit_rounds: 0` o un `cardio_activity_type: ''` no es lo
+          // mismo que no mandarlo, y PocketBase rechaza el vacío en los enums.
           if (dc.cardio_activity_type) data.cardio_activity_type = dc.cardio_activity_type
           if (dc.cardio_target_distance_km) data.cardio_target_distance_km = dc.cardio_target_distance_km
           if (dc.cardio_target_duration_min) data.cardio_target_duration_min = dc.cardio_target_duration_min
@@ -606,22 +720,32 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           if (dc.circuit_rest_seconds) data.circuit_rest_seconds = dc.circuit_rest_seconds
           if (dc.circuit_rest_between_exercises) data.circuit_rest_between_exercises = dc.circuit_rest_between_exercises
           if (dc.circuit_rest_between_rounds) data.circuit_rest_between_rounds = dc.circuit_rest_between_rounds
-          await pb.collection('program_day_config').create(data)
-        }
-      } catch { /* no day config to copy */ }
+          return { collection: 'program_day_config', data }
+        }),
+        ...srcExercises.map(e => ({
+          collection: 'program_exercises',
+          data: {
+            program: newProgram.id, phase_number: e.phase_number, day_id: e.day_id,
+            day_name: e.day_name, day_focus: e.day_focus, day_type: e.day_type, day_color: e.day_color,
+            exercise_id: e.exercise_id, exercise_name: e.exercise_name, sets: e.sets, reps: e.reps,
+            rest_seconds: e.rest_seconds, muscles: e.muscles, note: e.note, youtube: e.youtube,
+            priority: e.priority, is_timer: e.is_timer, timer_seconds: e.timer_seconds,
+            workout_title: e.workout_title, sort_order: e.sort_order, section: e.section || 'main',
+          } as Record<string, unknown>,
+        })),
+      ]
 
-      const exercisesRes = await pb.collection('program_exercises').getList(1, 2000, {
-        filter: pb.filter('program = {:pid}', { pid: programId }), sort: 'phase_number,sort_order',
-      })
-      for (const e of exercisesRes.items) {
-        await pb.collection('program_exercises').create({
-          program: newProgram.id, phase_number: e.phase_number, day_id: e.day_id,
-          day_name: e.day_name, day_focus: e.day_focus, day_type: e.day_type, day_color: e.day_color,
-          exercise_id: e.exercise_id, exercise_name: e.exercise_name, sets: e.sets, reps: e.reps,
-          rest_seconds: e.rest_seconds, muscles: e.muscles, note: e.note, youtube: e.youtube,
-          priority: e.priority, is_timer: e.is_timer, timer_seconds: e.timer_seconds,
-          workout_title: e.workout_title, sort_order: e.sort_order, section: e.section || 'main',
-        })
+      try {
+        await createAllInBatches(creates)
+      } catch (e) {
+        if (!(e instanceof BatchUnavailableError)) throw e
+        // Servidor sin `pb_migrations/1785100000_enable_batch_api.js` aplicada
+        // (`/api/batch` devolvió 403 «Batch requests are not allowed.»).
+        // Se copia como se copiaba antes —lento y sin transacción—, porque un
+        // duplicado lento es mejor que un botón que no funciona. El rollback del
+        // `catch` de fuera sigue cubriendo el fallo a mitad.
+        console.warn('usePrograms: batch API disabled, falling back to sequential copy')
+        for (const c of creates) await pb.collection(c.collection).create(c.data)
       }
 
       // Refrescamos el catálogo para incluir la copia.
@@ -629,6 +753,15 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       return newProgram.id
     } catch (e) {
       console.error('usePrograms: duplicateProgram error', e)
+      if (newProgramId) {
+        try {
+          await pb.collection('programs').delete(newProgramId)
+        } catch (cleanupError) {
+          // Si ni el rollback sale, se registra: queda una copia a medias en el
+          // catálogo y sin esta línea nadie sabría de dónde salió.
+          console.error('usePrograms: duplicateProgram rollback failed, orphan program left behind', newProgramId, cleanupError)
+        }
+      }
       return null
     }
   }, [userId, qc])
@@ -636,18 +769,19 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const deleteProgram = useCallback(async (programId: string): Promise<boolean> => {
     if (!userId) return false
     try {
-      try {
-        const exercises = await pb.collection('program_exercises').getList(1, 2000, { filter: pb.filter('program = {:pid}', { pid: programId }) })
-        for (const e of exercises.items) await pb.collection('program_exercises').delete(e.id)
-      } catch { /* no exercises */ }
-      try {
-        const dayConfigs = await pb.collection('program_day_config').getList(1, 200, { filter: pb.filter('program = {:pid}', { pid: programId }) })
-        for (const dc of dayConfigs.items) await pb.collection('program_day_config').delete(dc.id)
-      } catch { /* no day config */ }
-      try {
-        const phasesR = await pb.collection('program_phases').getList(1, 20, { filter: pb.filter('program = {:pid}', { pid: programId }) })
-        for (const p of phasesR.items) await pb.collection('program_phases').delete(p.id)
-      } catch { /* no phases */ }
+      // Los ejercicios, los day-configs y las fases NO se borran desde aquí (#614).
+      // Las tres colecciones declaran `program` como relación con
+      // `cascadeDelete: true` —`1773251039_created_program_exercises.js:26`,
+      // `1773251039_created_program_phases.js:26`,
+      // `1774378002_created_program_day_config.js:28`, y ninguna migración
+      // posterior lo cambia—, así que PocketBase ya se las lleva por delante
+      // dentro de la transacción del DELETE del padre.
+      //
+      // Los bucles que había aquí (uno por fila: ~760 peticiones en el programa
+      // más grande de la base) re-borraban filas que el servidor iba a borrar de
+      // todas formas, y eran ELLOS los que abrían la ventana de «programa a medio
+      // borrar»: si el navegador se cerraba a mitad, las hijas ya no estaban y el
+      // padre seguía en el catálogo. Sin bucles no hay ventana que cerrar.
       try {
         const userProgs = await pb.collection('user_programs').getList(1, 100, { requestKey: null, filter: pb.filter('program = {:pid}', { pid: programId }) })
         for (const up of userProgs.items) await pb.collection('user_programs').delete(up.id)
