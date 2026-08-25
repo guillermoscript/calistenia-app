@@ -19,7 +19,7 @@ import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calisten
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,13 +282,23 @@ export default function ExerciseLibraryPage() {
 
   const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
 
+  // #636 §4: el listado no emitía nada, así que `exercise_viewed` no tenía
+  // denominador. Espeja el de la pantalla nativa.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseCatalogViewed, {
+      surface: 'exercise_catalog', source: 'exercise_library',
+    })
+  }, [])
+
   // Debounced search tracking
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const trackSearch = useCallback((term: string) => {
     clearTimeout(searchTimerRef.current)
     if (term.length >= 2) {
       searchTimerRef.current = setTimeout(() => {
-        op.track('exercise_searched', { query: term })
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseSearched, {
+          surface: 'exercise_catalog', source: 'exercise_library', query: term,
+        })
       }, 1500)
     }
   }, [])

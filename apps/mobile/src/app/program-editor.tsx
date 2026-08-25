@@ -19,7 +19,6 @@ import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramEditor, deriveDaysPerWeek, type EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
-import { op } from '@calistenia/core/lib/analytics'
 
 import { STEP_LABEL_KEYS } from '@/components/program-editor/constants'
 import { StepInfo } from '@/components/program-editor/StepInfo'
@@ -110,7 +109,8 @@ export default function ProgramEditorScreen() {
     const savedId = await saveProgram(userId)
     if (savedId) {
       haptics.success()
-      op.track('program_editor_saved', { program_id: savedId, is_new: !programId })
+      // El evento lo emite ahora `saveProgram` de core, que es el único punto
+      // por el que pasan las dos apps (#636 §5).
       await refreshPrograms()
       router.replace({ pathname: '/program/[id]', params: { id: savedId } })
     } else {

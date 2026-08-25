@@ -29,6 +29,7 @@ import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { ExerciseLog, ExerciseTiming, Workout } from '@calistenia/core/types'
 import { ExerciseTimingTracker } from '@calistenia/core/lib/exerciseTiming'
+import { TRAINING_FUNNEL_EVENTS } from '@calistenia/core/lib/session-funnel'
 import { quickReps } from '@calistenia/core/lib/exercise-format'
 import {
   buildSteps,
@@ -85,6 +86,7 @@ export default function SessionView({
     getRestForExercise,
     setRestForExercise,
     setSectionStartTime,
+    trackFunnelStep,
     skipWarmup,
     skipCooldown,
   } = useActiveSession()
@@ -242,12 +244,42 @@ export default function SessionView({
     if (prEvent) {
       setPrCelebration({ event: prEvent, exerciseName: currentStep.exercise.name })
     }
+    // Mismas propiedades que en web a propósito (#636 §3): el embudo tiene que
+    // poder segmentarse por plataforma, y para eso las dos tienen que mandar lo
+    // mismo. `note` NUNCA sale de aquí: es texto libre del usuario (§6).
+    trackFunnelStep(TRAINING_FUNNEL_EVENTS.setLogged, {
+      sets_logged: getProgressSnapshot().setsCount + 1,
+      exercise_id: currentStep.exercise.id,
+      section: currentStep.section,
+      set_number: currentStep.setNumber,
+      set_total: currentStep.totalSets,
+      is_pr: !!prEvent,
+    })
+    if (currentStep.setNumber === currentStep.totalSets) {
+      trackFunnelStep(TRAINING_FUNNEL_EVENTS.exerciseCompleted, {
+        sets_logged: getProgressSnapshot().setsCount + 1,
+        exercise_id: currentStep.exercise.id,
+        section: currentStep.section,
+        set_total: currentStep.totalSets,
+        exercise_index: currentExerciseIndex + 1,
+        exercise_total: exerciseBoundaries.length,
+      })
+    }
     dispatch({ type: 'log-set' })
-  }, [currentStep, onLogSet, workoutKey])
+  }, [currentStep, onLogSet, workoutKey, trackFunnelStep, getProgressSnapshot, currentExerciseIndex, exerciseBoundaries.length])
 
   const handleRestDone = useCallback(() => {
     dispatch({ type: 'rest-done' })
   }, [])
+
+  /** Solo el corte a mano: el descanso que se agota entra por `handleRestDone`. */
+  const handleRestManualSkip = useCallback((secondsRemaining: number) => {
+    trackFunnelStep(TRAINING_FUNNEL_EVENTS.restSkipped, {
+      exercise_id: currentStep?.exercise.id,
+      section: currentStep?.section,
+      seconds_remaining: secondsRemaining,
+    })
+  }, [trackFunnelStep, currentStep])
 
   const handleSectionContinue = useCallback(() => {
     setSectionStartTime(Date.now())
@@ -347,6 +379,7 @@ export default function SessionView({
                 exerciseId={currentStep?.exercise.id}
                 nextStep={nextStep}
                 onSkip={handleRestDone}
+                onManualSkip={handleRestManualSkip}
                 savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
                 onAdjust={setRestForExercise ? (id, secs) => { setRestForExercise(id, secs) } : undefined}
               />

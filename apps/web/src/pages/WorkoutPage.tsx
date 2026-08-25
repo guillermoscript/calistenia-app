@@ -10,6 +10,7 @@ import { localize } from '@calistenia/core/lib/i18n-db'
 import { DAY_BY_INDEX, pickTrainingDay, nextTrainingDay } from '@calistenia/core/lib/training-day'
 import { useAuthState } from '../contexts/AuthContext'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
+import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
@@ -114,6 +115,26 @@ export default function WorkoutPage() {
     // `userId` fuera a propósito: si el auth se restaura después de montar, el
     // tour se relanzaría una segunda vez sobre la misma pantalla. (#484)
   }, [hasWorkout]) // eslint-disable-line react-hooks/exhaustive-deps -- el tour se lanza una vez por día seleccionado
+
+  // Denominador del embudo (#636 §3): quién MIRA el día de entreno, para poder
+  // medir cuánta gente lo abre y no arranca. Va por `workoutKey` y no por el
+  // montaje porque esta pantalla es un selector: cambiar de día no la remonta.
+  //
+  // Los días de circuito quedan fuera a propósito: llevan su propio ciclo
+  // (`circuit_started` / `circuit_completed`) y meterlos aquí mezclaría dos
+  // embudos con tasas de finalización distintas.
+  useEffect(() => {
+    if (!workout || !workoutKey || circuitConfig) return
+    trackWorkoutDayViewed({
+      workoutKey,
+      source: 'program',
+      exerciseCount: workout.exercises.length,
+      plannedSets: plannedSetCount(workout.exercises),
+      alreadyDone: isDone,
+    })
+    // `isDone` fuera de las deps: marcar el día como hecho al terminar el
+    // entreno no es una vista nueva del día.
+  }, [workoutKey]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por día seleccionado
 
   const handleStartSession = useCallback(() => {
     if (!workout || !workoutKey) return

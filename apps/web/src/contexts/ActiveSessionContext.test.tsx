@@ -514,4 +514,103 @@ describe('ActiveSessionContext', () => {
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
     })
   })
+
+  // #636 §3: los pasos de EN MEDIO del embudo (serie, ejercicio, descanso,
+  // calentamiento). A diferencia de los desenlaces no son excluyentes, pero sí
+  // tienen que llevar el mismo bloque de propiedades o el embudo no se puede
+  // segmentar por programa ni por plataforma.
+  describe('pasos intermedios del embudo', () => {
+    beforeEach(() => {
+      mockTrack.mockClear()
+      activeProgramId.current = null
+      localStorage.clear()
+    })
+
+    function startedSession(exercises = [makeExercise({ section: 'main', sets: 2 })]) {
+      const { result } = renderHook(
+        () => ({ ...useActiveSession(), progress: useActiveSessionProgress() }),
+        { wrapper: ActiveSessionProvider },
+      )
+      act(() => { result.current.startSession(makeWorkout(exercises), 'p2_mie', 'program') })
+      mockTrack.mockClear()
+      return result
+    }
+
+    it('un paso intermedio lleva el mismo bloque que los desenlaces', () => {
+      activeProgramId.current = 'prog123'
+      const result = startedSession()
+
+      act(() => { result.current.trackFunnelStep('set_logged', { exercise_id: 'ex' }) })
+
+      expect(mockTrack).toHaveBeenCalledWith('set_logged', expect.objectContaining({
+        event_version: 1,
+        platform: 'web',
+        surface: 'session',
+        workout_key: 'p2_mie',
+        source: 'program',
+        phase: 2,
+        day_id: 'mie',
+        program_id: 'prog123',
+        exercise_count: 1,
+        exercise_id: 'ex',
+      }))
+    })
+
+    // La serie que dispara el evento todavía no ha llegado al progreso del
+    // contexto: sin el override, la PRIMERA serie de cada entreno saldría con
+    // `sets_logged: 0`, que es justo el paso que el embudo quiere contar.
+    it('un sets_logged explícito manda y vuelve a derivar completion_pct', () => {
+      const result = startedSession()
+
+      act(() => { result.current.trackFunnelStep('set_logged', { sets_logged: 1 }) })
+
+      expect(mockTrack).toHaveBeenCalledWith('set_logged', expect.objectContaining({
+        sets_logged: 1,
+        completion_pct: 50, // 1 de 2 series planificadas
+      }))
+    })
+
+    // Un descanso que termina después de cerrar la sesión emitiría un evento con
+    // `workout_key` vacío, que en OpenPanel es un entreno fantasma.
+    it('sin sesión activa no emite nada', () => {
+      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+
+      act(() => { result.current.trackFunnelStep('rest_skipped') })
+
+      expect(mockTrack).not.toHaveBeenCalled()
+    })
+
+    it('saltar el calentamiento emite una vez, aunque se llame dos veces', () => {
+      const result = startedSession([makeExercise({ section: 'warmup', sets: 1 })])
+
+      act(() => { result.current.skipWarmup() })
+      act(() => { result.current.skipWarmup() })
+
+      const warmups = mockTrack.mock.calls.filter(([name]) => name === 'warmup_skipped')
+      expect(warmups).toHaveLength(1)
+      expect(warmups[0][1]).toMatchObject({ workout_key: 'p2_mie', surface: 'session' })
+    })
+
+    it('el enfriamiento distingue saltarlo entero de saltar lo que queda', () => {
+      const result = startedSession([makeExercise({ section: 'cooldown', sets: 1 })])
+
+      act(() => { result.current.skipRemainingCooldown() })
+
+      const cooldowns = mockTrack.mock.calls.filter(([name]) => name === 'cooldown_skipped')
+      expect(cooldowns).toHaveLength(1)
+      expect(cooldowns[0][1]).toMatchObject({ scope: 'remaining' })
+    })
+
+    it('saltar el enfriamiento y luego lo que queda no cuenta dos veces', () => {
+      const result = startedSession([makeExercise({ section: 'cooldown', sets: 1 })])
+
+      act(() => { result.current.skipCooldown() })
+      act(() => { result.current.skipRemainingCooldown() })
+
+      const cooldowns = mockTrack.mock.calls.filter(([name]) => name === 'cooldown_skipped')
+      expect(cooldowns).toHaveLength(1)
+      expect(cooldowns[0][1]).toMatchObject({ scope: 'full' })
+    })
+  })
+
 })

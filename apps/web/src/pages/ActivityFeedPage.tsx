@@ -11,6 +11,7 @@ import { Loader } from '../components/ui/loader'
 import { EmptyState } from '../components/ui/empty-state'
 import { Button } from '../components/ui/button'
 import { feedItemHref, shareFeedItem } from '../lib/feed-routes'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 interface ActivityFeedPageProps {
   userId: string
@@ -41,6 +42,16 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { load() }, [load])
+
+  // El muro entero (#588) no emitía un solo evento: ni verlo, ni reaccionar, ni
+  // comentar (#636 §4). Desacoplado de `load` para que sea una vista por visita
+  // y no una por render, que es la regresión del #578.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.feedViewed, {
+      surface: 'feed', source: 'feed_page',
+      deep_link: !!sessionParam,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   // Deep-link → llevar al post y resaltarlo. Si está en el feed: scroll + flash y
   // (tras ~1s) abrir comentarios. Si no (p.ej. muy antiguo): abrir comentarios

@@ -15,6 +15,14 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 
+// La página emite `workout_day_viewed` (#636 §3). Solo se sustituye el emisor:
+// `plannedSetCount` sigue siendo el real, que es lo que la página le pasa.
+const mockDayViewed = vi.hoisted(() => vi.fn())
+vi.mock('@calistenia/core/lib/session-funnel', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@calistenia/core/lib/session-funnel')>()),
+  trackWorkoutDayViewed: mockDayViewed,
+}))
+
 const h = vi.hoisted(() => ({
   todayIndex: 1, // lunes
   weekDays: [] as unknown[],

@@ -5,6 +5,10 @@ import { identifyUser, resetIdentifiedUser } from './useAuth'
 vi.mock('../platform', () => ({
   storage: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
   lifecycle: { onForeground: vi.fn(() => vi.fn()) },
+  // #636 §5: `identifyUser` sella `platform` en el perfil. Sin esto,
+  // `analyticsPlatform()` cae en su try/catch y devuelve 'unknown', que es
+  // justo lo que el fix arregla.
+  getClientInfo: () => ({ version: '1.0.0', build: 0, platform: 'web' as const }),
 }))
 vi.mock('../lib/pocketbase', () => ({
   pb: { authStore: { onChange: vi.fn(() => vi.fn()) }, collection: vi.fn() },
@@ -25,7 +29,12 @@ describe('identifyUser (usuarios anónimos en OpenPanel)', () => {
   it('manda profileId = id de PB con nombre, email y tier/role por defecto', () => {
     identifyUser({ id: 'u1', display_name: 'Ana', email: 'a@x.test' })
     expect(op.identify).toHaveBeenCalledWith({
-      profileId: 'u1', firstName: 'Ana', email: 'a@x.test', properties: { tier: 'free', role: 'user' },
+      profileId: 'u1',
+      firstName: 'Ana',
+      email: 'a@x.test',
+      // `platform` lo mandaba solo el móvil: sin él, cruzar los dos proyectos
+      // de OpenPanel por el mismo `profileId` era imposible (#636 §5).
+      properties: { tier: 'free', role: 'user', platform: 'web' },
     })
   })
 
