@@ -7,6 +7,7 @@ import { CANONICAL_ANALYTICS_EVENTS, emitOnce, op, trackCanonicalEvent } from '.
 import { qk } from '../lib/query-keys'
 import { pickAffectedChallenges } from '../lib/challenge-scoring'
 import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
+import { TRAINING_FUNNEL_EVENTS, sessionFunnelProperties } from '../lib/session-funnel'
 import { persistOrQueue, newClientId, cancelLastQueuedByTempId } from '../lib/offlineQueue'
 import { emitProgramMilestoneIfCompleted } from '../lib/program-milestone'
 import { patchProgressData, patchSettingsData, type ProgressData } from '../lib/progress-cache'
@@ -166,7 +167,23 @@ export function useProgressMutations(userId: string | null = null, activeProgram
     }
 
     const isFree = isFreeSessionKey(workoutKey)
-    op.track('workout_completed', { workout_key: workoutKey, is_free_session: isFree })
+    // #636: `workout_completed` es el numerador de la tasa de finalización y
+    // `session_started` el denominador, así que tienen que poder cruzarse por
+    // las mismas dimensiones. Antes este evento llevaba solo dos propiedades y
+    // el embudo no se podía segmentar ni por programa ni por plataforma.
+    //
+    // `exercise_count`/`completion_pct` no salen: aquí solo se sabe lo que se
+    // REGISTRÓ, no lo que el entreno tenía planificado — eso lo sabe el contexto
+    // de la sesión activa, que es quien las manda en los otros tres eventos.
+    const loggedEntries = Object.values(qc.getQueryData<ProgressData>(key)?.progress ?? {})
+      .filter((entry: any) => Array.isArray(entry?.sets) && entry.workoutKey === workoutKey && entry.date === d)
+    op.track(TRAINING_FUNNEL_EVENTS.workoutCompleted, sessionFunnelProperties({
+      workoutKey,
+      source: isFree ? 'free' : 'program',
+      programId: activeProgramId,
+      durationSeconds: timing?.durationSeconds ?? yogaMeta?.duration_seconds,
+      setsLogged: loggedEntries.reduce((n, entry: any) => n + entry.sets.length, 0),
+    }))
 
     if (!isFree && activeProgramId) {
       // emitOnce guarda 'true'; el timestamp que se guardaba antes no lo leía nadie.

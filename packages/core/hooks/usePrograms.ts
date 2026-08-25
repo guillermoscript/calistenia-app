@@ -12,7 +12,7 @@
  * duplicateProgram, deleteProgram, refreshPrograms, programsReady).
  */
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb } from '../lib/pocketbase'
@@ -26,7 +26,7 @@ import { fetchProgramDetailRows } from '../lib/programDetailQuery'
 import { normalizeProgramDayIds, type DayRowLike } from '../lib/program-day-ids'
 import { programSelectionEvents } from '../lib/program-selection-events'
 import { getPlatform } from '../platform'
-import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, setAnalyticsProgramId, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType, CircuitDefinition, CircuitExercise } from '../types'
 import i18n from 'i18next'
@@ -511,6 +511,15 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const activeEnrollment = enrollmentQuery.data ?? null
   const activeProgramId = activeEnrollment?.program ?? null
+
+  // Espejo del programa activo para los eventos del embudo de entreno (#636).
+  // Se escribe aquí porque este hook es el único dueño del dato en las dos
+  // apps; el contexto de la sesión activa lo LEE en el momento de emitir, sin
+  // suscribirse a nada — suscribir el provider que envuelve toda la app a un
+  // valor que cambia en cada serie es la regresión del #475.
+  useEffect(() => {
+    setAnalyticsProgramId(activeProgramId)
+  }, [activeProgramId])
 
   const detailQuery = useQuery({
     queryKey: qk.programs.detail(activeProgramId),

@@ -9,6 +9,7 @@ vi.mock('../platform', () => ({
     removeItem: (k: string) => { mem.delete(k) },
   },
   getPlatform: () => ({ analytics: { track: vi.fn(), identify: vi.fn(), clear: vi.fn() } }),
+  getClientInfo: () => ({ version: '1.0.0', build: 0, platform: 'web' as const }),
 }))
 
 import {
@@ -21,7 +22,11 @@ describe('canonical analytics contract', () => {
   it('defines the versioned growth-loop event set without duplicate names', () => {
     const events = Object.values(CANONICAL_ANALYTICS_EVENTS)
 
-    expect(events).toHaveLength(32)
+    expect(events).toHaveLength(33)
+    // #636: el final de UN corredor y el cierre de LA carrera son dos eventos
+    // distintos. Antes `race_finished` y `race_completed` se leían igual.
+    expect(events).toContain('race_participant_finished')
+    expect(events).toContain('race_completed')
     expect(new Set(events).size).toBe(events.length)
     expect(events).toContain('featured_challenge_viewed')
     expect(events).toContain('post_workout_action_viewed')
@@ -74,7 +79,7 @@ describe('canonical analytics contract', () => {
     }
   })
 
-  it('adds the contract version and removes unset properties', () => {
+  it('adds the contract version and the platform, and removes unset properties', () => {
     expect(normalizeCanonicalAnalyticsProperties({
       surface: 'post_workout',
       source: undefined,
@@ -82,9 +87,20 @@ describe('canonical analytics contract', () => {
       result: null as unknown as string,
     })).toEqual({
       event_version: 1,
+      platform: 'web',
       surface: 'post_workout',
       workout_id: 'p1_lun',
     })
+  })
+
+  // #636: `share_card_shared` ya usaba `platform` con OTRO significado — el
+  // destino del compartir. El sello es un valor por defecto, no una imposición:
+  // si el evento trae el suyo, gana el suyo.
+  it('lets an explicit platform win over the stamped one', () => {
+    expect(normalizeCanonicalAnalyticsProperties({
+      surface: 'share_card',
+      platform: 'whatsapp',
+    })).toMatchObject({ platform: 'whatsapp' })
   })
 })
 
