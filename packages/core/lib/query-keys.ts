@@ -89,6 +89,16 @@ export const qk = {
     /** `useProgramDetail`: `{ program, days }` de CUALQUIER programa (ficha / deep-link). */
     detailView: (programId: string | null) =>
       ['programs', 'detailView', programId] as const,
+    /**
+     * `usePublicProgramPreview`: la vista previa ANÓNIMA de `/shared/:id` (#604).
+     * Es el tercer consumidor del mismo programa y por eso lleva clave propia,
+     * como avisa el comentario de arriba: viene de otro endpoint
+     * (`/api/programs/{id}/public`, no de la colección), trae menos campos y la
+     * pide gente sin sesión. Compartir clave con `detailView` haría que la ficha
+     * completa de quien sí ha entrado se sirviera desde el recorte público.
+     */
+    publicPreview: (programId: string | null) =>
+      ['programs', 'publicPreview', programId] as const,
   },
   programEditor: (programId: string | null) =>
     ['programEditor', programId] as const,
