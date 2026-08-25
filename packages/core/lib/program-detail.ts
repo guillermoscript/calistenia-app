@@ -14,6 +14,7 @@
  */
 
 import { localize } from './i18n-db'
+import { authorDisplayName } from './author-name'
 import type { ProgramMeta } from '../types'
 import type { TranslatableField } from './i18n-db'
 
@@ -48,6 +49,18 @@ export interface ProgramRow {
   difficulty?: string
   days_per_week?: number
   instructions?: TranslatableField
+  /** Id del programa original (#620). Vacío si es un original o si aquel se borró. */
+  forked_from?: string
+  /**
+   * `expand` de PocketBase. Solo llega cuando quien pide la fila lo pidió; la
+   * ficha de un programa lo hace, el editor no.
+   */
+  expand?: {
+    forked_from?: {
+      name?: TranslatableField
+      expand?: { created_by?: { display_name?: unknown; name?: unknown; email?: unknown } }
+    }
+  }
 }
 
 const DEFAULT_DAY_COLOR = '#888899'
@@ -75,6 +88,15 @@ export function toProgramMeta(row: ProgramRow, locale: string): ProgramMeta {
     // «Cómo seguir este programa» (#618). Siempre string, aunque sea vacío: la
     // ficha distingue «no cargado» (undefined) de «el autor no escribió nada».
     instructions: localize(row.instructions, locale),
+    // Crédito del remix (#620). El nombre pasa por `localize` porque en PB es un
+    // `json {es,en}`: interpolarlo crudo pintaría «[object Object]».
+    forked_from: row.forked_from || undefined,
+    forked_from_name: row.expand?.forked_from
+      ? localize(row.expand.forked_from.name, locale) || undefined
+      : undefined,
+    forked_from_author: row.expand?.forked_from
+      ? authorDisplayName(row.expand.forked_from.expand?.created_by) || undefined
+      : undefined,
   } as ProgramMeta
 }
 

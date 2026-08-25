@@ -31,6 +31,7 @@ import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType, CircuitDefinition, CircuitExercise } from '../types'
 import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
+import { authorDisplayName } from '../lib/author-name'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -327,10 +328,22 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   // lista de programas de la app y no tiene scroll infinito, así que el programa
   // 101 sencillamente no existía para nadie. Con 7 programas en la base el tope no
   // mordía todavía; el problema era que el día que mordiera nadie se iba a enterar.
+  // `sort: 'name'` y no `'-created'`: `programs` no tiene autodate, así que
+  // ordenar por `created` devuelve 400. El orden por seguidores que pide #620
+  // para la sección Comunidad se hace en cliente, sobre este catálogo ya
+  // completo, porque los conteos viven en otra colección (`view_program_stats`)
+  // y PocketBase no sabe ordenar una lista por una columna que no es suya.
+  //
+  // `forked_from.created_by` en el expand: el crédito «basado en X de Y»
+  // necesita el nombre del programa original Y el de su autor, y son dos saltos
+  // de relación. PocketBase los resuelve en la misma petición; pedirlos aparte
+  // serían dos viajes más por cada duplicado del catálogo.
   const catalogItems = await pb.collection('programs').getFullList({
     batch: CATALOG_PAGE_SIZE,
     filter: `is_active = true && ${visibilityFilter}`,
-    sort: 'name', expand: 'created_by', $autoCancel: false,
+    sort: 'name',
+    expand: 'created_by,forked_from,forked_from.created_by',
+    $autoCancel: false,
   })
   const locale = i18n.language
   const programIds = catalogItems.map(p => p.id)
@@ -358,13 +371,29 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     disciplineByProgram.set(pid, nonRest.length > 0 && nonRest.every(dc => dc.day_type === 'yoga') ? 'yoga' : 'calistenia')
   }
 
-  return catalogItems.map(p => ({
+  return catalogItems.map(p => {
+    // El original del que salió esta copia (#620). Puede faltar por tres vías
+    // distintas y ninguna es un error: el programa es un original, es un
+    // duplicado anterior a #620 (el vínculo no se guardaba), o su original se
+    // borró y PocketBase vació la relación no-cascade.
+    const forkedFrom = (p.expand as any)?.forked_from
+    return {
     id:             p.id,
     name:           localize(p.name, locale),
     description:    localize(p.description, locale),
     duration_weeks: p.duration_weeks,
     created_by:     p.created_by || undefined,
-    created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
+    // `display_name || name || email` y no solo `display_name` (#620): quien se
+    // dio de alta con Google llega con `name` y sin `display_name`, y salía sin
+    // nombre. Los tres campos son los que sobreviven al recorte de #411.
+    created_by_name: authorDisplayName((p.expand as any)?.created_by) || undefined,
+    forked_from:      p.forked_from || undefined,
+    // `localize` es obligatorio: el nombre es un `json {es,en}` y meterlo crudo
+    // en la frase del crédito pintaría «Basado en [object Object]».
+    forked_from_name: forkedFrom ? localize(forkedFrom.name, locale) || undefined : undefined,
+    forked_from_author: forkedFrom
+      ? authorDisplayName(forkedFrom.expand?.created_by) || undefined
+      : undefined,
     is_official:    p.is_official || false,
     is_featured:    p.is_featured || false,
     visibility:     p.visibility || undefined,
@@ -378,7 +407,8 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
     equipment_required: Array.isArray(p.equipment_required) ? p.equipment_required : undefined,
     contraindications:  Array.isArray(p.contraindications) ? p.contraindications : undefined,
-  }))
+    }
+  })
 }
 
 export interface ProgramDetail {
@@ -679,6 +709,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       // La copia nace privada aunque el original fuera público (#603): duplicar
       // el programa de otra persona no debe republicarlo a tu nombre.
       newProgramData.visibility = 'private'
+      // De dónde salió (#620). Se guarda el id del programa que se está
+      // copiando, NO su `forked_from`: una copia de una copia acredita a su
+      // fuente directa, que es la que esa persona vio y eligió. Encadenar hasta
+      // el original convertiría el crédito en una genealogía que nadie pidió y
+      // borraría del mapa a quien de verdad hizo el trabajo intermedio.
+      newProgramData.forked_from = programId
       if (original.difficulty) newProgramData.difficulty = original.difficulty
       const newProgram = await pb.collection('programs').create(newProgramData)
       newProgramId = newProgram.id

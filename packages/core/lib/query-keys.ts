@@ -99,6 +99,24 @@ export const qk = {
      */
     publicPreview: (programId: string | null) =>
       ['programs', 'publicPreview', programId] as const,
+    /**
+     * `useProgramStats`: los conteos de `view_program_stats` (#620), indexados
+     * por id de programa.
+     *
+     * La clave lleva la LISTA de ids y no el usuario: dos pantallas que pidan
+     * los mismos programas comparten caché aunque una sea el catálogo y la otra
+     * la ficha de uno solo. Los ids van ordenados en `useProgramStats` antes de
+     * llegar aquí — sin eso, el mismo conjunto en distinto orden serían dos
+     * entradas de caché distintas y una petición de más.
+     *
+     * No lleva `userId` a pesar de que la view filtra por visibilidad: lo que
+     * devuelve para un id dado o es el conteo o es nada, nunca el conteo de otro
+     * programa, así que no hay filtración posible entre cuentas del mismo
+     * dispositivo. Lo peor que puede pasar es que a la cuenta B le falte una
+     * fila que la A sí veía, y eso la UI ya lo trata como «no cargado».
+     */
+    stats: (programIds: readonly string[]) =>
+      ['programs', 'stats', programIds] as const,
   },
   programEditor: (programId: string | null) =>
     ['programEditor', programId] as const,
