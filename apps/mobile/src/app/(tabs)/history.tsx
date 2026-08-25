@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useEffect, useMemo } from 'react'
 import { useCountUp } from '@/lib/use-count-up'
 import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -20,6 +20,7 @@ import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr } from '@calistenia/core/lib/dateUtils'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // Fila unificada del historial: entreno (fuerza/yoga) o sesión de cardio GPS.
 // `title` se resuelve al construir la fila (una sola vez), no al pintarla: antes
@@ -97,6 +98,16 @@ export default function HistoryScreen() {
   const totalSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
   const weeklyDone = useMemo(() => getWeeklyDoneCount(), [getWeeklyDoneCount])
   const longestStreak = useMemo(() => getLongestStreak(), [getLongestStreak])
+
+  // #636 §4: el historial no emitía nada, así que no se sabía si la gente
+  // vuelve a mirar lo que ha hecho.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.historyViewed, {
+      surface: 'history', source: 'history_tab',
+      total_sessions: totalSessions,
+      streak: longestStreak,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   const openCardio = useCallback((id: string) => router.push(`/cardio/${id}`), [router])
   const openStrength = useCallback(

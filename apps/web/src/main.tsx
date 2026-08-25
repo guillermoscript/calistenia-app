@@ -9,7 +9,7 @@ import { I18nextProvider } from 'react-i18next'
 import { registerSW } from 'virtual:pwa-register'
 import { toast } from 'sonner'
 import i18n from './lib/i18n'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import App from './App'
 import './index.css'
 
@@ -60,7 +60,10 @@ window.addEventListener('vite:preloadError', (event) => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'NOTIFICATION_CLICKED') {
-      op.track('notification_clicked', { url: event.data.url, title: event.data.title })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.notificationClicked, {
+        surface: 'notification', source: 'service_worker',
+        url: event.data.url, title: event.data.title,
+      })
     }
   })
 }
@@ -68,7 +71,10 @@ if ('serviceWorker' in navigator) {
 const trackAndHandleError = (type: string) => {
   const sentryHandler = reactErrorHandler()
   return (error: unknown, errorInfo: ErrorInfo) => {
-    op.track('page_error', { error_type: type, message: error instanceof Error ? error.message : String(error) })
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.pageError, {
+      surface: 'app', source: 'react_root', error_type: type,
+      message: error instanceof Error ? error.message : String(error),
+    })
     sentryHandler(error, errorInfo)
   }
 }

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { assessTrackQuality } from '@calistenia/core/lib/geo'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import { useAuthState } from '../contexts/AuthContext'
 import CardioSessionStatsPanel from '../components/cardio/CardioSessionStatsPanel'
@@ -92,7 +92,9 @@ export default function CardioSessionDetailPage() {
 
   useEffect(() => {
     if (sessionLoaded && id) {
-      op.track('cardio_detail_viewed', { own: isOwn })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.cardioDetailViewed, {
+        surface: 'cardio', source: 'cardio_detail', own: isOwn,
+      })
     }
   }, [id, isOwn, sessionLoaded])
 

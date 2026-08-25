@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { View, FlatList, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -16,6 +16,7 @@ import { localize } from '@calistenia/core/lib/i18n-db'
 import { EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { MUSCLE_GROUPS, getMuscleGroupLabelKey } from '@calistenia/core/lib/muscles'
 import type { DifficultyLevel } from '@calistenia/core/types'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const DIFFICULTIES: DifficultyLevel[] = ['beginner', 'intermediate', 'advanced']
 
@@ -45,6 +46,31 @@ export default function LibraryScreen() {
     matchMuscles: true,
     debounceMs: 200,
   })
+
+  // `exercise_searched` existía solo en web (#636 §5). El debounce de 1500 ms
+  // es el mismo que allí a propósito: con el de 200 ms del filtrado, teclear
+  // «dominadas» mandaría nueve eventos y el informe de búsquedas contaría
+  // prefijos en vez de búsquedas.
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => {
+    clearTimeout(searchTimerRef.current)
+    if (query.trim().length < 2) return
+    searchTimerRef.current = setTimeout(() => {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseSearched, {
+        surface: 'exercise_catalog', source: 'library_screen',
+        query: query.trim(), result_count: filtered.length,
+      })
+    }, 1500)
+    return () => clearTimeout(searchTimerRef.current)
+  }, [query, filtered.length])
+
+  // El listado del catálogo tampoco emitía nada (#636 §4): sin esto,
+  // `exercise_viewed` no tiene denominador.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseCatalogViewed, {
+      surface: 'exercise_catalog', source: 'library_screen',
+    })
+  }, [])
 
   const openExercise = useCallback(
     (id: string) => router.push({ pathname: '/exercise/[id]', params: { id } }),

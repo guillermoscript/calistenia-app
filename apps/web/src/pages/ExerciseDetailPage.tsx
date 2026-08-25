@@ -21,6 +21,7 @@ import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -202,6 +203,20 @@ export default function ExerciseDetailPage() {
   const [imageIndex, setImageIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('descripcion')
   const { getChainForExercise, loading: progressionsLoading } = useProgressions()
+
+  // #636 §4: la ficha de ejercicio no emitía nada, así que no se sabía qué
+  // ejercicios mira la gente. Va sobre el ejercicio YA cargado (la carga es
+  // asíncrona), y por `exercise.id` para que sea una vista por ficha.
+  const exerciseId = exercise?.id
+  useEffect(() => {
+    if (!exerciseId || !exercise) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseViewed, {
+      surface: 'exercise_catalog', source: 'exercise_detail',
+      exercise_id: exerciseId,
+      category: exercise.category,
+      difficulty: exercise.difficulty,
+    })
+  }, [exerciseId]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por ficha
 
   // Fetch exercise
   useEffect(() => {

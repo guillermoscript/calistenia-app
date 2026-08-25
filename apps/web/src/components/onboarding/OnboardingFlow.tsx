@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { AuthUser } from '@calistenia/core/types'
 import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
 import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import type { ProgramMeta } from '@calistenia/core/types'
@@ -105,6 +105,17 @@ export default function OnboardingFlow({
     if (s === personalizingStep) return 'personalizing'
     return `step_${s}`
   }
+
+  // `onboarding_step_viewed` solo se emite al AVANZAR, así que el primer paso
+  // no lo emitía nadie y no se sabía cuánta gente llega a ver el onboarding
+  // (#636 §4). Sin esto, `onboarding_completed` no tiene denominador.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.onboardingStarted, {
+      surface: 'onboarding', source: 'onboarding_web',
+      total_steps: totalSteps,
+      needs_profile: needsProfile,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vez por onboarding
 
   const goToStep = (s: number) => {
     setSaveError(false)

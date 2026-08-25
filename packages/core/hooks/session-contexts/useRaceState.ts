@@ -328,7 +328,10 @@ export function useRaceState({
   const join = useCallback(async (displayName: string) => {
     try {
       await apiJoinRace(raceId, displayName)
-      track('race_joined', { race_id: raceId })
+      // Un solo envío. Hasta el #636 había además un `track('race_joined')`
+      // legacy al lado de esta llamada: mismo nombre de evento, mismo clic, dos
+      // envíos, así que TODO conteo de carreras unidas estaba x2 desde el #356.
+      // La legacy no llevaba nada que no esté ya aquí.
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceJoined, {
         surface: 'race', source: 'race_lobby', race_id: raceId,
         participant_count: participants.length + 1, result: 'joined',
@@ -337,7 +340,7 @@ export function useRaceState({
       setError('push', (err as Error).message)
       throw err
     }
-  }, [raceId, participants.length, setError, track])
+  }, [raceId, participants.length, setError])
 
   const markReadyAction = useCallback(async () => {
     if (!meId) return
@@ -351,11 +354,9 @@ export function useRaceState({
   const startCountdownAction = useCallback(async () => {
     try {
       await apiStartCountdown(raceId)
-      track('race_started', {
-        race_id: raceId,
-        participants: participants.length,
-        mode: raceMode,
-      })
+      // Igual que en `join`: el `track('race_started')` legacy que iba aquí
+      // duplicaba el evento (#636). Sus dos propiedades exclusivas ya viajan en
+      // la canónica — `participants` como `participant_count`, y `mode` igual.
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceStarted, {
         surface: 'race', source: 'race_lobby', race_id: raceId,
         participant_count: participants.length, result: 'started', mode: raceMode,
@@ -364,7 +365,7 @@ export function useRaceState({
       setError('push', (err as Error).message)
       throw err
     }
-  }, [raceId, participants.length, raceMode, setError, track])
+  }, [raceId, participants.length, raceMode, setError])
 
   const cancelRaceAction = useCallback(async () => {
     try {
@@ -387,12 +388,16 @@ export function useRaceState({
     }
     clearRaceSnapshot()
     const stats = latestStatsRef.current
-    track('race_finished', {
-      race_id: raceId,
-      my_distance_km: stats?.distance_km ?? 0,
-      my_duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
+    // UN corredor terminó: uno por participante. El cierre de la CARRERA es
+    // `race_completed`, que emite solo el creador una vez. Se llamaba
+    // `race_finished`, nombre que ningún informe podía distinguir del otro
+    // (#636); renombrarlo es una ruptura deliberada y documentada.
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceParticipantFinished, {
+      surface: 'race', source: 'race_active', race_id: raceId, result: 'finished',
+      distance_km: stats?.distance_km ?? 0,
+      duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
     })
-  }, [raceId, finishSelf, endRace, setError, track, clearRaceSnapshot])
+  }, [raceId, finishSelf, endRace, setError, clearRaceSnapshot])
 
   const leaveAction = useCallback(async () => {
     const current = meRef.current

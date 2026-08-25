@@ -68,6 +68,12 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
     case 'friend_joined':
       return n.actorId ? `/u/${n.actorId}` : '/social'
 
+    case 'program_deleted':
+      // `referenceId` lleva el id del programa borrado como rastro, pero NO se
+      // navega a él: el registro ya no existe y `/program/[id]` daría un 404.
+      // El catálogo es la acción útil que le queda al usuario: buscarse otro.
+      return '/programs'
+
     default:
       // Tipo desconocido: al menos abrir la lista en vez de no hacer nada.
       return '/notifications'

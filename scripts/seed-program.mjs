@@ -18,6 +18,7 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { normalizePriority, resolveSection } from "./lib/program-exercise-fields.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -63,14 +64,23 @@ async function main() {
   const authH = { Authorization: `Bearer ${token}` };
   console.log("  ✓ Authenticated");
 
-  // 2. Check if program already exists (search by i18n name)
-  const existing = await api(`/api/collections/programs/records?perPage=100`, {
-    headers: authH,
-  });
-  const found = existing.items?.find(p => {
-    const name = typeof p.name === 'object' ? (p.name.es || p.name.en || '') : (p.name || '')
-    return name.includes('Intermedio') || name.includes('Balance Total')
-  });
+  // 2. ¿Existe ya ESTE programa? Se pregunta al servidor por el nombre exacto.
+  //
+  // Antes se traía la primera página del catálogo y buscaba con
+  // `name.includes('Intermedio')`, que casaba con CUALQUIER programa que
+  // llevara esa palabra. En cuanto la migración de siembra (#615) metió
+  // «Intermedio · Definición» e «Intermedio · Hipertrofia», el guard saltaba y
+  // Balance Total no se creaba nunca — en CI eso son los dos smoke E2E
+  // fallando por un programa que nadie había borrado.
+  //
+  // De paso desaparece el `perPage=100`: la comparación la hace PocketBase, así
+  // que el catálogo puede crecer sin que este script empiece a duplicar.
+  const wanted = data.program.name;
+  const existing = await api(
+    `/api/collections/programs/records?perPage=1&filter=${encodeURIComponent(`name.es = ${JSON.stringify(wanted)}`)}`,
+    { headers: authH },
+  );
+  const found = existing.items?.[0];
   if (found) {
     console.log(`  ⚠ Program "${data.program.name}" already exists (${found.id}). Skipping.`);
     console.log(`  💡 To re-seed, run: node scripts/repair-program-data.mjs ${PB_URL} ${SU_EMAIL} <PASSWORD>`);
@@ -90,6 +100,9 @@ async function main() {
       is_active: true,
       is_official: true,
       is_featured: true,
+      // Explícito desde #603: sin esto la fila nace con `visibility` vacío,
+      // se trata como privada y el smoke e2e no la encuentra en el catálogo.
+      visibility: "public",
     }),
   });
   console.log(`  ✓ Program created: ${prog.id}`);
@@ -132,10 +145,13 @@ async function main() {
             muscles: i18n(ex.muscles || ""),
             note: i18n(ex.note || ""),
             youtube: ex.youtube || "",
-            priority: ex.priority || "primary",
+            priority: normalizePriority(ex.priority, ex.name?.es || ex.name),
             is_timer: ex.is_timer || false,
             timer_seconds: ex.timer_seconds || 0,
             sort_order: ex.sort_order,
+            // Sin esto las filas nacían con `section` vacío: así se colaron las 90
+            // de «Intermedio – Balance Total» que arregla la migración de #607.
+            section: resolveSection(ex),
           }),
         });
       }

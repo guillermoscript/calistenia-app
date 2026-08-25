@@ -21,6 +21,7 @@ import { FeedCard } from '@/components/social/FeedCard'
 import { CommentsSheet, type CommentsSheetMethods } from '@/components/social/CommentsSheet'
 import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
 import type { EmojiReactions } from '@calistenia/core/hooks/useReactions'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function SocialScreen() {
   const { t } = useTranslation()
@@ -58,6 +59,15 @@ export default function SocialScreen() {
   useEffect(() => {
     load()
   }, [load])
+
+  // El muro no emitía nada en ninguna de las dos apps (#636 §4). Desacoplado de
+  // `load` para que sea una vista por visita, no una por render.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.feedViewed, {
+      surface: 'feed', source: 'social_screen',
+      deep_link: !!sessionParam,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   // Deep-link de notificación → llevar al post y resaltarlo.
   // Si el post está en el feed: scroll + flash y, tras el flash (~1s), abrir sus

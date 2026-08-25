@@ -16,9 +16,10 @@ import WgerResultCard from '../components/WgerResultCard'
 import type { Priority, DifficultyLevel } from '@calistenia/core/types'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
+import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,13 @@ const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string
   mobility:         { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   skills:           { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
   yoga:             { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/20' },
+  // Las claves de arriba son los ids de los botones de esta página. Desde el
+  // #609 `mapCatalogRecord()` emite la categoría ya normalizada al vocabulario
+  // del catálogo, así que estos tres alias son los que ve una tarjeta. (Los
+  // botones siguen buscando por su id, de ahí que convivan las dos formas.)
+  lumbar:           { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+  movilidad:        { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  skill:            { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
 }
 
 const PRIORITY_DOT: Record<Priority, string> = {
@@ -214,6 +222,7 @@ function CategoryIcon({ category }: { category: string }) {
         </svg>
       )
     case 'glutes_lower_back':
+    case 'lumbar':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3c0 0-3 4-3 9s3 9 3 9" /><path d="M12 3c0 0 3 4 3 9s-3 9-3 9" />
@@ -226,12 +235,14 @@ function CategoryIcon({ category }: { category: string }) {
         </svg>
       )
     case 'skills':
+    case 'skill':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2l2.5 7H22l-6 4.5 2.5 7L12 16l-6.5 4.5 2.5-7L2 9h7.5z" />
         </svg>
       )
     case 'mobility':
+    case 'movilidad':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="5" r="2" /><path d="M8 22l2-7 2 3 2-3 2 7" /><path d="M6 12c2-1 4-2 6-2s4 1 6 2" />
@@ -271,13 +282,23 @@ export default function ExerciseLibraryPage() {
 
   const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
 
+  // #636 §4: el listado no emitía nada, así que `exercise_viewed` no tenía
+  // denominador. Espeja el de la pantalla nativa.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseCatalogViewed, {
+      surface: 'exercise_catalog', source: 'exercise_library',
+    })
+  }, [])
+
   // Debounced search tracking
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const trackSearch = useCallback((term: string) => {
     clearTimeout(searchTimerRef.current)
     if (term.length >= 2) {
       searchTimerRef.current = setTimeout(() => {
-        op.track('exercise_searched', { query: term })
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseSearched, {
+          surface: 'exercise_catalog', source: 'exercise_library', query: term,
+        })
       }, 1500)
     }
   }, [])
@@ -632,20 +653,29 @@ export default function ExerciseLibraryPage() {
               >
                 {/* Thumbnail or category placeholder */}
                 <div className="relative">
-                  {ex.demoImages && ex.demoImages.length > 0 ? (
-                    <div className="h-36 bg-muted overflow-hidden">
-                      <img
-                        src={ex.demoImages[0]}
-                        alt={l(ex.name)}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className={cn('h-24 flex items-center justify-center', catStyle.bg || 'bg-muted/50')}>
-                      <CategoryIcon category={ex.category} />
-                    </div>
-                  )}
+                  {/* Miniatura por el resolutor canónico (#608). `demoImages` aquí son
+                      los `default_images` de `exercises_catalog` —nombres de fichero
+                      crudos— salvo en el camino de respaldo del catálogo empaquetado,
+                      donde ya son URLs absolutas de wger; el resolutor distingue los dos.
+                      La media estática se indexa por `slug` (identidad canónica), no por
+                      el id aleatorio de PocketBase, que es lo que direcciona el fichero. */}
+                  <ExerciseThumbnail
+                    exercise={{ id: ex.id, youtube: ex.youtube }}
+                    catalogKey={ex.slug || ex.id}
+                    catalogRecord={{
+                      pbRecordId: ex.id,
+                      defaultImages: ex.demoImages,
+                      defaultVideo: ex.demoVideo,
+                    }}
+                    alt={l(ex.name)}
+                    className="h-36 bg-muted overflow-hidden"
+                    imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fallback={
+                      <div className={cn('h-24 flex items-center justify-center', catStyle.bg || 'bg-muted/50')}>
+                        <CategoryIcon category={ex.category} />
+                      </div>
+                    }
+                  />
                   {/* Favorite star */}
                   <span
                     role="button"

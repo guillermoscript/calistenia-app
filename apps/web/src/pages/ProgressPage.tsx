@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
@@ -29,6 +29,7 @@ import BattleHistory from '../components/progress/BattleHistory'
 import { Input } from '../components/ui/input'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 function ChartsExerciseList({ exerciseLogs, t }: { exerciseLogs: Record<string, ExerciseLog[]>; t: (key: string) => string }) {
   const [search, setSearch] = useState('')
@@ -81,7 +82,7 @@ interface SessionLog {
 
 export default function ProgressPage() {
   const { t } = useTranslation()
-  const { progress, settings, activeProgram } = useWorkoutState()
+  const { progress, settings, activeProgram, programProgress } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
   const { userId } = useAuthState()
   const navigate = useNavigate()
@@ -93,7 +94,8 @@ export default function ProgressPage() {
     : 'resumen'
   const { weights } = useWeight(userId || null)
   const { photos, getPhotosByPhase, uploadPhotos } = useBodyPhotos(userId || null)
-  const currentPhase = settings.phase || 1
+  // #616: fase derivada del programa activo, no del entero global.
+  const currentPhase = programProgress.currentPhase || 1
 
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)
@@ -134,6 +136,19 @@ export default function ProgressPage() {
     })
     return logs
   }, [progress])
+
+  // #636 §4: la pantalla de progreso no emitía nada, así que no se sabía si
+  // alguien vuelve a mirar lo que ha hecho — que es la señal de retención más
+  // barata que tiene el producto.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.progressViewed, {
+      surface: 'progress', source: 'progress_page',
+      tab: initialTab,
+      session_count: allLogs.length,
+      phase: currentPhase,
+      has_program: !!activeProgram,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   const programName = activeProgram?.name || null
   const freeLogCount = allLogs.filter(l => l.isFree).length

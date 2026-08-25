@@ -1,35 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../components/ui/button'
 import type { ProgramMeta } from '@calistenia/core/types'
-import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
-import type { RecordModel } from 'pocketbase'
+import { usePublicProgramPreview } from '@calistenia/core/hooks/usePublicProgramPreview'
+import { capturePendingSharedProgram } from '@calistenia/core/lib/sharedProgramHandoff'
 import ProgramDetailPage from './ProgramDetailPage'
 import { ArrowLeftIcon } from '../components/icons/nav-icons'
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-/**
- * Los campos de texto de PocketBase son `TranslatableField`: o un string plano
- * (registros antiguos) o un `{es, en}`. Se guardan en crudo y se traducen al
- * pintar, para que un cambio de idioma no exija volver a consultar (#474).
- */
-interface PreviewExercise {
-  name: TranslatableField
-  sets: number | string
-  reps: string
-  muscles: TranslatableField
-}
-
-interface PreviewProgram {
-  id: string
-  name: TranslatableField
-  description?: TranslatableField
-  duration_weeks: number
-  created_by?: string
-}
 
 // ── SharedProgramPage ──────────────────────────────────────────────────────
 
@@ -90,60 +67,26 @@ function SharedLanding({
 }) {
   const { t } = useTranslation()
   const l = useLocalize()
-  const [program, setProgram] = useState<PreviewProgram | null>(null)
-  const [exercises, setExercises] = useState<PreviewExercise[]>([])
-  const [loading, setLoading] = useState(true)
-  const [phaseCount, setPhaseCount] = useState(0)
 
-  const fetchPreview = useCallback(async () => {
-    setLoading(true)
-    try {
-      const available = await isPocketBaseAvailable()
-      if (!available) {
-        setLoading(false)
-        return
-      }
+  /**
+   * Los datos NO salen de `pb.collection('programs')`. El `viewRule` exige
+   * sesión, así que quien llega por el enlace compartido —el destinatario
+   * entero de esta página— recibía 404 y veía siempre «Programa no encontrado»
+   * (#604). Vienen de `GET /api/programs/{id}/public`, la ruta de `pb_hooks`
+   * que sirve un recorte de campos solo si el programa es `link` o `public`.
+   */
+  const { program, loading } = usePublicProgramPreview(programId)
+  const exercises = program?.exercises ?? []
 
-      const progRecord = await pb.collection('programs').getOne(programId)
-      setProgram({
-        id: progRecord.id,
-        name: progRecord.name ?? '',
-        description: progRecord.description ?? '',
-        duration_weeks: progRecord.duration_weeks,
-        created_by: progRecord.created_by || undefined,
-      })
-
-      // Fetch phases count
-      try {
-        const phasesRes = await pb.collection('program_phases').getList(1, 1, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-        })
-        setPhaseCount(phasesRes.totalItems)
-      } catch { /* ok */ }
-
-      // Fetch first few exercises for preview
-      try {
-        const exRes = await pb.collection('program_exercises').getList(1, 8, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-          sort: 'phase_number,sort_order',
-        })
-        setExercises(exRes.items.map((r: RecordModel) => ({
-          name: r.exercise_name ?? '',
-          sets: r.sets,
-          reps: r.reps,
-          muscles: r.muscles ?? '',
-        })))
-      } catch { /* ok */ }
-    } catch {
-      // Program not found
-    } finally {
-      setLoading(false)
-    }
-  }, [programId])
-
-  useEffect(() => {
-    fetchPreview()
-  }, [fetchPreview])
+  /**
+   * El id se guarda ANTES de mandar a registrarse. Sin esto, quien completa el
+   * alta desde aquí aterriza en el dashboard y pierde el programa que venía a
+   * ver, que es el último paso del embudo que este enlace existe para abrir.
+   */
+  const handleLogin = useCallback(() => {
+    capturePendingSharedProgram(programId)
+    onLogin()
+  }, [programId, onLogin])
 
   if (loading) {
     return (
@@ -195,32 +138,40 @@ function SharedLanding({
       {/* Program name */}
       <h1 className="font-bebas text-4xl md:text-7xl leading-none tracking-wide mb-4">{l(program.name)}</h1>
 
+      {program.authorName && (
+        <p className="text-[11px] font-mono tracking-widest text-muted-foreground uppercase mb-4">
+          {t('programs.sharedBy', { name: program.authorName })}
+        </p>
+      )}
+
       {l(program.description) && (
         <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mb-6">{l(program.description)}</p>
       )}
 
       {/* Stats */}
       <div className="flex items-center gap-4 flex-wrap mb-10">
-        {program.duration_weeks > 0 && (
+        {program.durationWeeks > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-lime-400 font-bebas text-xl">{program.duration_weeks}</span>
+            <span className="text-lime-400 font-bebas text-xl">{program.durationWeeks}</span>
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programs.weeks')}</span>
           </div>
         )}
-        {phaseCount > 0 && (
+        {program.phaseCount > 0 && (
           <>
             <div className="w-px h-5 bg-muted" />
             <div className="flex items-center gap-2">
-              <span className="text-lime-400 font-bebas text-xl">{phaseCount}</span>
-              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programs.phaseUnit', { count: phaseCount })}</span>
+              <span className="text-lime-400 font-bebas text-xl">{program.phaseCount}</span>
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programs.phaseUnit', { count: program.phaseCount })}</span>
             </div>
           </>
         )}
-        {exercises.length > 0 && (
+        {program.exerciseCount > 0 && (
           <>
             <div className="w-px h-5 bg-muted" />
             <div className="flex items-center gap-2">
-              <span className="text-lime-400 font-bebas text-xl">{exercises.length}+</span>
+              {/* El total real, no el tamaño de la vista previa: la ruta manda
+                  los 8 primeros ejercicios pero cuenta todos. */}
+              <span className="text-lime-400 font-bebas text-xl">{program.exerciseCount}</span>
               <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('common.exercises')}</span>
             </div>
           </>
@@ -255,14 +206,14 @@ function SharedLanding({
       <div className="flex flex-col sm:flex-row gap-3">
         <Button
           variant="limeSolid"
-          onClick={onLogin}
+          onClick={handleLogin}
           className="font-bebas text-lg tracking-widest px-8 h-12 shadow-lg shadow-lime-400/10"
         >
           {t('programs.signUpToUse')}
         </Button>
         <Button
           variant="outline"
-          onClick={onLogin}
+          onClick={handleLogin}
           className="font-mono text-[11px] tracking-widest h-12 px-6 border-border hover:border-muted-foreground hover:text-foreground"
         >
           {t('programs.alreadyHaveAccount')}

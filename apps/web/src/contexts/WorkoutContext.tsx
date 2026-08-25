@@ -1,7 +1,9 @@
 import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms } from '@calistenia/core/hooks/usePrograms'
-import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, ExerciseTiming } from '@calistenia/core/types'
+import { useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
+import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
+import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, CircuitDefinition, ExerciseTiming } from '@calistenia/core/types'
 
 // ── Context interface (state + actions + meta) ──────────────────────────────
 
@@ -17,7 +19,11 @@ interface WorkoutState {
   phases: Phase[]
   weekDays: WeekDay[]
   cardioDayConfigs: Record<string, CardioDayConfig>
+  /** Circuitos del programa por `p{fase}_{día}` (#625). */
+  circuitDayConfigs: Record<string, CircuitDefinition>
   programsReady: boolean
+  /** Progreso dentro del programa activo: semana X de Y, fase real, «hoy toca» (#616). */
+  programProgress: ProgramProgress
 }
 
 interface WorkoutActions {
@@ -44,6 +50,8 @@ interface WorkoutActions {
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
+  /** Override manual de fase, guardado en `user_programs` (no en settings). */
+  setPhaseOverride: (phase: number | null) => Promise<boolean>
 }
 
 interface WorkoutContextValue {
@@ -79,7 +87,7 @@ interface WorkoutProviderProps {
 
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
-    programs, activeProgram, phases, weekDays, cardioDayConfigs, getWorkout,
+    programs, activeProgram, activeEnrollment, phases, weekDays, cardioDayConfigs, circuitDayConfigs, getWorkout,
     selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
@@ -91,6 +99,11 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     getLastSessionDate, checkAndUpdatePR,
   } = useProgress(userId, activeProgram?.id ?? null)
 
+  const { programProgress, setPhaseOverride } = useProgramProgress({
+    userId, activeProgram, activeEnrollment, phases, weekDays, progress,
+    settingsPhase: settings.phase,
+  })
+
   // Wrap logSet to auto-detect PRs
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string): Promise<PREvent | null> => {
     await rawLogSet(exerciseId, workoutKey, setData, date)
@@ -100,8 +113,8 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
 
   const state = useMemo<WorkoutState>(() => ({
     progress, settings, usePB, pbReady,
-    programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady,
-  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady])
+    programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress,
+  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress])
 
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
@@ -109,12 +122,14 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
+    setPhaseOverride,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
+    setPhaseOverride,
   ])
 
   const value = useMemo(() => ({ state, actions }), [state, actions])

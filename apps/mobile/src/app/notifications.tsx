@@ -17,6 +17,8 @@ import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import type { FollowRequest } from '@calistenia/core/hooks/useFollows'
 import type { AppNotification, NotificationType } from '@calistenia/core/hooks/useNotifications'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { getNotifRoute } from '@/lib/notification-route'
 import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 
@@ -27,8 +29,18 @@ import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 /** Separador de fila estable (a nivel de módulo: no se remonta en cada render). */
 const NotifSeparator = () => <View className="mx-4 h-px bg-border/40" />
 
-/** Mensaje localizado para cada tipo de notificación */
-function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record<string, unknown>) => string): string {
+/**
+ * Mensaje localizado para cada tipo de notificación.
+ *
+ * `l` resuelve los campos i18n que llegan dentro de `data` como mapa `{es, en}`
+ * (#633), que es distinto de `t`: `t` traduce el copy de la app, `l` elige el
+ * idioma de un texto que escribió un usuario y guardó PocketBase.
+ */
+function getNotificationMessage(
+  n: AppNotification,
+  t: (k: string, opts?: Record<string, unknown>) => string,
+  l: (field: TranslatableField | undefined | null) => string,
+): string {
   const name = n.actorName || '?'
   switch (n.type as NotificationType) {
     case 'follow':
@@ -86,6 +98,11 @@ function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record
       return t('notif.friendWorkout', { name })
     case 'friend_joined':
       return t('notif.friendJoined', { name })
+    // El nombre del programa viaja como mapa i18n `{es, en}` (#633): el servidor
+    // no sabe en qué idioma tiene la app quien lo recibe, así que lo resuelve
+    // aquí `l`. Puede venir vacío (programa sin `name`) y el copy se sostiene.
+    case 'program_deleted':
+      return t('notif.programDeleted', { name: l(n.data?.programName) })
     default:
       return `${name} te envió una notificación`
   }
@@ -182,6 +199,7 @@ interface NotificationRowProps {
 
 function NotificationRow({ item, onPress, requestId, onAccept, onReject }: NotificationRowProps) {
   const { t } = useTranslation()
+  const l = useLocalize()
   const isUnread = !item.read
 
   return (
@@ -212,7 +230,7 @@ function NotificationRow({ item, onPress, requestId, onAccept, onReject }: Notif
             isUnread ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          {getNotificationMessage(item, t)}
+          {getNotificationMessage(item, t, l)}
         </Text>
         <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground/60">
           {timeAgoShort(item.created)}

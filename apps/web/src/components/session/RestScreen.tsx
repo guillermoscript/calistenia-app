@@ -15,11 +15,17 @@ interface RestScreenProps {
   exerciseId?: string
   nextStep: Step | null
   onSkip: () => void
+  /**
+   * Solo el corte MANUAL del descanso (botón o swipe). El descanso que se agota
+   * solo llama a `onSkip` pero NO a esto: sin la distinción, `rest_skipped`
+   * contaría cada descanso completado como saltado (#636 §3).
+   */
+  onManualSkip?: (secondsRemaining: number) => void
   savedRest?: number
   onAdjust?: (exerciseId: string, seconds: number) => void
 }
 
-export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, savedRest, onAdjust }: RestScreenProps) {
+export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, onManualSkip, savedRest, onAdjust }: RestScreenProps) {
   const { t } = useTranslation()
   const initialSeconds = savedRest || defaultSeconds
   const touchStartX = useRef<number | null>(null)
@@ -60,9 +66,14 @@ export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextSt
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- sonido y aviso de inicio de descanso, una vez al montar
 
+  const handleManualSkip = (): void => {
+    onManualSkip?.(remaining)
+    onSkip()
+  }
+
   const handleTouchStart = (e: React.TouchEvent): void => { touchStartX.current = e.touches[0].clientX }
   const handleTouchEnd   = (e: React.TouchEvent): void => {
-    if (touchStartX.current !== null && e.changedTouches[0].clientX - touchStartX.current > 60) onSkip()
+    if (touchStartX.current !== null && e.changedTouches[0].clientX - touchStartX.current > 60) handleManualSkip()
     touchStartX.current = null
   }
 
@@ -166,7 +177,7 @@ export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextSt
 
       <Button
         variant="lime"
-        onClick={onSkip}
+        onClick={handleManualSkip}
         className="font-mono text-[11px] tracking-[2px] px-8"
       >
         {t('session.skipRest')}
