@@ -1174,6 +1174,7 @@
   "notif.friendAchievement": "{{name}} unlocked {{achievement}} 🏅",
   "notif.friendWorkout": "{{name}} worked out today 💪",
   "notif.friendJoined": "{{name}} started training 🎉",
+  "notif.programDeleted": "Your enrollment ended: the author deleted the program {{name}}",
   "notifSettings.title": "Notifications",
   "notifSettings.subtitle": "Choose what you want to receive",
   "notifSettings.pushMaster": "Push notifications",
