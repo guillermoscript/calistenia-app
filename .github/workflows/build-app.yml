@@ -42,10 +42,26 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      sentry-release: ${{ steps.sentry.outputs.release }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # `sentry-cli releases set-commits --auto` deriva los commits del árbol
+          # de git local. Con el checkout somero de por defecto (fetch-depth: 1)
+          # no ve historia y no asocia nada.
+          fetch-depth: 0
+
+      - name: Compute Sentry release
+        id: sentry
+        # `calistenia-app@<version>+<sha corto>`, mismo formato que móvil. La
+        # versión da legibilidad en la UI de Sentry; el sha la hace única por
+        # deploy, que es lo que hacía falta.
+        run: |
+          VERSION=$(node -p "require('./apps/web/package.json').version")
+          echo "release=calistenia-app@${VERSION}+${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -82,8 +98,43 @@ jobs:
             VITE_POCKETBASE_URL=${{ secrets.VITE_POCKETBASE_URL }}
             VITE_AI_API_URL=${{ secrets.VITE_AI_API_URL }}
             VITE_VAPID_PUBLIC_KEY=${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+            SENTRY_RELEASE=${{ steps.sentry.outputs.release }}
+          # Secret, no build-arg: un build-arg se queda en los metadatos de la
+          # imagen y lo lee cualquiera con `docker history`.
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Los source maps ya los subió sentryVitePlugin dentro del build, pero ese
+      # build corre en Docker sin `.git`, así que los COMMITS de la release hay
+      # que asociarlos desde aquí, donde sí está el checkout.
+      #
+      # Esto es lo que hace que `Fixes GYM-GUILLE-21` en un mensaje de commit
+      # cierre el issue solo: Sentry solo lee ese keyword de los commits que
+      # sabe que van en una release. Sin este paso el keyword no se lee nunca.
+      #
+      # --ignore-missing es OBLIGATORIO aquí: mergeamos con squash, así que los
+      # SHA se reescriben y el commit de la release anterior puede no existir ya
+      # en la historia. Sin la bandera, el comando falla.
+      #
+      # continue-on-error: la telemetría no puede tumbar un deploy.
+      - name: Associate commits with the Sentry release
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: guillermoscript
+          SENTRY_PROJECT: gym-guille
+          RELEASE: ${{ steps.sentry.outputs.release }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::warning::SENTRY_AUTH_TOKEN no configurado — se omite la asociación de commits"
+            exit 0
+          fi
+          npx --yes @sentry/cli@2.58.6 releases new "$RELEASE"
+          npx --yes @sentry/cli@2.58.6 releases set-commits "$RELEASE" --auto --ignore-missing
+          npx --yes @sentry/cli@2.58.6 releases finalize "$RELEASE"
 
   deploy:
     name: Deploy App
@@ -98,3 +149,20 @@ jobs:
           if [ -n "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}" ]; then
             curl -sSf -X POST "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}"
           fi
+
+      # Marca la release como desplegada a producción. Es lo que puebla el
+      # "deployed X ago" de la UI de Sentry y lo que da fecha a un
+      # «resolver en la próxima versión».
+      - name: Mark the Sentry release as deployed
+        continue-on-error: true
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: guillermoscript
+          SENTRY_PROJECT: gym-guille
+          RELEASE: ${{ needs.build-app.outputs.sentry-release }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::warning::SENTRY_AUTH_TOKEN no configurado — se omite el marcador de deploy"
+            exit 0
+          fi
+          npx --yes @sentry/cli@2.58.6 deploys new -e production -r "$RELEASE"

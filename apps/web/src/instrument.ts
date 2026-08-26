@@ -7,7 +7,10 @@ const isSpanish = detectedLang.startsWith("es");
 Sentry.init({
   dsn: "https://45325daff5446587024f972577dbbb70@o4507789962706944.ingest.us.sentry.io/4511134403723264",
   environment: import.meta.env.MODE,
-  release: `calistenia-app@${__APP_VERSION__}`,
+  // Única por deploy (ver __SENTRY_RELEASE__ en vite.config.js). NO uses
+  // __APP_VERSION__ aquí: es el semver de package.json y no cambia entre
+  // deploys, que es lo que tenía las releases de Sentry inservibles.
+  release: __SENTRY_RELEASE__,
 
   sendDefaultPii: true,
 

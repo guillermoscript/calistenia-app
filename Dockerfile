@@ -32,7 +32,22 @@ ENV VITE_AI_API_URL=$VITE_AI_API_URL
 ARG VITE_VAPID_PUBLIC_KEY=""
 ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
 
-RUN pnpm --filter @calistenia/web build
+# Release de Sentry, única por deploy: `calistenia-app@<version>+<sha corto>`.
+# Es solo un identificador, no un secreto, así que ARG normal. Vacío en un build
+# local → vite.config.js cae al semver de package.json.
+ARG SENTRY_RELEASE=""
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
+
+# El token va como SECRET de buildkit, NO como ARG: un build-arg queda escrito
+# en los metadatos de la imagen y `docker history` lo enseña. Montado así solo
+# existe durante este RUN y no toca ninguna capa.
+#
+# `|| true` porque en un build sin el secreto (local, o un PR de un fork) el
+# fichero no existe: el build debe seguir, y sentryVitePlugin se apaga solo al
+# no ver token. Subir source maps NUNCA debe poder tumbar un deploy.
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
+    pnpm --filter @calistenia/web build
 
 # ─────────────────────────────────────────────
 # Stage 2: Download PocketBase
