@@ -14,6 +14,7 @@ import 'dayjs/locale/es'
 import 'dayjs/locale/en'
 import i18n from 'i18next'
 import { addDaysIn, diffDaysIn, localMidnightAsUTCIn, todayStrIn, utcToLocalDateStrIn } from './tzDate'
+import { safeLocale } from './i18n-safe'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -189,7 +190,7 @@ export function timeAgo(dateStr: string): string {
   const d = parsed.isAfter(now) ? now : parsed
   const diffDaysVal = now.diff(d, 'day')
   if (diffDaysVal > 7) {
-    return d.tz(_tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+    return d.tz(_tz).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short' })
   }
   return d.tz(_tz).from(now)
 }
@@ -213,7 +214,7 @@ export function timeAgoShort(dateStr: string): string {
   const diffD = Math.floor(diffH / 24)
   if (diffD === 1) return i18n.t('feed.yesterday')
   if (diffD <= 7) return i18n.t('feed.daysAgo', { count: diffD })
-  return d.tz(_tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+  return d.tz(_tz).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short' })
 }
 
 /** Human-friendly relative date label (Today, Yesterday, N days ago, or short date). */
@@ -224,7 +225,7 @@ export function relativeDate(dateStr: string): string {
   if (dateStr === yesterday) return i18n.t('common.yesterday')
   const diff = dayjs.tz(today, _tz).diff(dayjs.tz(dateStr, _tz), 'day')
   if (diff >= 2 && diff <= 7) return i18n.t('common.daysAgo', { count: diff })
-  return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+  return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short' })
 }
 
 /**
@@ -233,7 +234,6 @@ export function relativeDate(dateStr: string): string {
  * cached formatter would have to be invalidated on every language change.
  */
 function rangeFormatter(withYear: boolean): Intl.DateTimeFormat {
-  const locale = i18n.language || 'es'
   const options: Intl.DateTimeFormatOptions = {
     day: 'numeric',
     month: 'short',
@@ -241,12 +241,10 @@ function rangeFormatter(withYear: boolean): Intl.DateTimeFormat {
     timeZone: 'UTC',
     ...(withYear ? { year: 'numeric' as const } : {}),
   }
-  try {
-    return new Intl.DateTimeFormat(locale, options)
-  } catch {
-    // The browser language detector can hand us a tag Intl rejects.
-    return new Intl.DateTimeFormat('es', options)
-  }
+  // `safeLocale` ya garantiza una etiqueta que Intl acepta (antes esto era un
+  // try/catch local; el mismo fallo reventaba en otros formateadores que no lo
+  // tenían — ver `safeLocale` en i18n-safe.ts).
+  return new Intl.DateTimeFormat(safeLocale(), options)
 }
 
 /**
