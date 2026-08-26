@@ -2488,7 +2488,8 @@
   "motivation.quote19": "No se trata de ser el mejor. Se trata de ser mejor que ayer.",
   "motivation.author19": "Desconocido",
 
-  "media.noMedia": "Sin media disponible",
+  "media.noMedia": "Sin demo aún",
+  "media.noDemoYet": "Sin demo aún",
   "media.searchYouTube": "Buscar en YouTube",
   "media.searchGoogle": "Buscar en Google",
   "media.copyToClipboard": "Copiar al portapapeles",

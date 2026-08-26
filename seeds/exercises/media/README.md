@@ -1,67 +1,95 @@
-# seeds/exercises/media — Drop-in Demo Media
+# seeds/exercises/media — media estática de ejercicios
 
-This directory holds demo images and videos for exercises in the catalog.
-Files dropped here are uploaded automatically to `exercises_catalog.default_images`
-and `exercises_catalog.default_video` when you run the seed script.
+Aquí se sueltan las imágenes de demostración de cada ejercicio. **Soltar el
+fichero es todo lo que hay que hacer**: el constructor del catálogo lo descubre
+solo (#619). No hay que editar ningún JSON a mano.
 
-## Drop-in Workflow
-
-1. **Add files here** using the naming convention below.
-2. **Reference them** in the seed JSON file (`image_files` / `video_file` fields).
-3. **Run the seed script** — it will upload the files automatically:
-
-   ```sh
-   node scripts/seed-exercises.mjs <PB_URL> <EMAIL> <PASSWORD>
-   ```
-
-   Files that don't exist on disk are silently skipped (no error).
-
-## Naming Convention
+## Cómo se deja media
 
 ```
-seeds/exercises/media/<slug>-1.jpg    # first demo image
-seeds/exercises/media/<slug>-2.jpg    # second demo image
-seeds/exercises/media/<slug>-3.jpg    # third demo image
-seeds/exercises/media/<slug>.mp4      # demo video
+seeds/exercises/media/<slug>/sequence.webp     # demo del movimiento (2-3 fases)
+seeds/exercises/media/<slug>/muscles.webp      # mapa de músculos trabajados
+seeds/exercises/media/<slug>/thumbnail.webp    # miniatura para listas y tarjetas
+seeds/exercises/media/<slug>/video.webm        # opcional: clip en bucle
 ```
 
-Where `<slug>` matches the `slug` field in the exercise's seed JSON entry.
+Y luego, una vez:
 
-### Example
-
-For the push-up exercise with `"slug": "push_up"`:
-
-```
-seeds/exercises/media/push_up-1.jpg
-seeds/exercises/media/push_up-2.jpg
-seeds/exercises/media/push_up.mp4
+```sh
+pnpm exercises:media
 ```
 
-And in `seeds/exercises/push.json`:
+Eso reconstruye el catálogo (engancha lo que encuentre), copia todo a
+`apps/web/public/exercise-media/` y te imprime qué falta todavía.
 
-```json
-{
-  "slug": "push_up",
-  "image_files": ["push_up-1.jpg", "push_up-2.jpg"],
-  "video_file": "push_up.mp4"
-}
-```
+### El nombre del fichero es lo que manda
 
-## Media Spec
-
-- Images: JPEG or PNG, max 1 MB each, max 3 per exercise (1200 × 900 px recommended)
-- Video: MP4 (H.264), max 10 MB, 30 fps, landscape (16:9)
-- No media committed to git — this directory is intentionally empty except for this README.
-  Add an entry in `.gitignore` if you want to keep downloaded media out of version control.
-
-## Resolver
-
-Once uploaded to PocketBase, the media is served via the canonical resolver at
-`packages/core/lib/exerciseMedia.ts` with a 4-level fallback hierarchy:
+El nombre **sin extensión** decide el hueco: `sequence`, `muscles`, `thumbnail`
+o `video`. Cualquier otro nombre se ignora a propósito, así que puedes dejar los
+originales al lado sin que acaben en el bundle:
 
 ```
-(a) program override  → program_exercises.demo_images / demo_video
-(b) catalog default   → exercises_catalog.default_images / default_video  ← uploaded here
-(c) curated video URL
-(d) YouTube search    ← always available
+seeds/exercises/media/strict-pull-up/
+  sequence.webp      ← entra al catálogo
+  muscles.webp       ← entra al catálogo
+  _sequence.psd      ← ignorado (empieza por "_")
+  notas.txt          ← ignorado (nombre no reconocido)
 ```
+
+Extensiones aceptadas:
+
+| Hueco       | Extensiones                                |
+|-------------|--------------------------------------------|
+| `sequence`  | `.webp` `.avif` `.png` `.jpg` `.jpeg` `.gif` |
+| `muscles`   | `.webp` `.avif` `.png` `.jpg` `.jpeg`      |
+| `thumbnail` | `.webp` `.avif` `.png` `.jpg` `.jpeg`      |
+| `video`     | `.webm` `.mp4`                             |
+
+### Qué slug le toca a cada ejercicio
+
+No lo adivines — pregúntaselo al informe:
+
+```sh
+pnpm exercises:media:status
+```
+
+Imprime, por orden de impacto, qué ejercicios de los 15 programas oficiales
+siguen sin media y **la ruta exacta** donde dejarla. `--all` los lista todos,
+`--role sequence` filtra por hueco, `--json` escupe la lista para tooling.
+
+El slug sale del `seed_slug` del catálogo cuando existe, y si no se deriva del id
+cambiando `_` por `-` (`australian_pullup` → `australian-pullup`). Si dos
+ejercicios se pelearan por la misma carpeta, el build avisa y descarta al que no
+tiene seed propio, en vez de dejar que uno pise al otro en silencio.
+
+## Por dónde empezar
+
+El issue #619 manda priorizar los ejercicios que usan los 15 programas oficiales
+—137 ejercicios distintos, no los 1.578 del catálogo—. El informe ya los ordena
+por número de apariciones, que es lo que decide el impacto real: `deep_breathing`
+sale 72 veces en los programas y `dragon_flag` una.
+
+## Licencias — lo que NO se puede usar
+
+La media de ExerciseDB **no está licenciada** para redistribuir ni hotlinkear
+(ver #117), pese a que 1.271 ejercicios llevan un `exercisedb_media_id`. Lo que
+entra aquí tiene que ser grabación propia o llevar licencia compatible.
+
+## Qué pasa cuando falta
+
+Nada roto: la UI dice «Sin demo aún» en el hueco de la miniatura y en el visor,
+y el enlace de búsqueda en YouTube sigue estando siempre. La jerarquía completa
+del resolutor (`packages/core/lib/exerciseMedia.ts`) es:
+
+```
+(a) override del programa  → program_exercises.demo_images / demo_video
+(b) media estática         → /exercise-media/<slug>/…        ← lo de esta carpeta
+(c) vídeo curado           → URL directa en el catálogo
+(d) búsqueda en YouTube    ← siempre disponible
+```
+
+## Subir también a PocketBase (opcional)
+
+Para que el móvil no dependa del bundle web, `scripts/seed-exercises.mjs` puede
+subir ficheros a `exercises_catalog.default_images` / `default_video`. Es un
+camino aparte del de esta carpeta y hoy no lo usa nadie: hay 0 filas con media.

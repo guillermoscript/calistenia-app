@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-02T13:52:46.110Z",
+  "generated_at": "2026-08-26T17:20:25.979Z",
   "total_count": 1578,
   "local_count": 148,
   "wger_count": 22,
@@ -42957,11 +42957,6 @@
             "es": "Dominada con agarre prono a la anchura de los hombros. Sube hasta que la barbilla pase la barra sin balanceo.",
             "en": "Pull-up with pronated grip at shoulder width. Pull until your chin clears the bar without swinging."
           },
-          "media": {
-            "sequence": "/exercise-media/strict-pull-up/sequence.webp",
-            "muscles": "/exercise-media/strict-pull-up/muscles.webp",
-            "thumbnail": "/exercise-media/strict-pull-up/thumbnail.webp"
-          },
           "seed_slug": "strict-pull-up",
           "tempo": {
             "pauseTop": 1
@@ -42979,7 +42974,12 @@
             "antebrazos",
             "espalda"
           ],
-          "family": "pull_up"
+          "family": "pull_up",
+          "media": {
+            "muscles": "/exercise-media/strict-pull-up/muscles.webp",
+            "sequence": "/exercise-media/strict-pull-up/sequence.webp",
+            "thumbnail": "/exercise-media/strict-pull-up/thumbnail.webp"
+          }
         },
         {
           "id": "barbell_pullover_to_press",
