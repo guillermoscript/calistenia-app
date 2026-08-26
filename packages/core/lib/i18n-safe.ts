@@ -40,3 +40,44 @@ export function currentLanguage(): string {
     return 'es'
   }
 }
+
+/**
+ * Normaliza una etiqueta de idioma a un BCP-47 que `Intl` acepte, o `null`.
+ *
+ * `navigator.language` NO siempre es BCP-47. iOS/macOS con la región puesta en
+ * modo POSIX devuelve `en-US@posix`, y hay Androids que sueltan `es_ES.UTF-8`.
+ * i18next se limita a propagar lo detectado a `i18n.language`, y de ahí acaba
+ * en `toLocaleDateString(locale)` / `new Intl.DateTimeFormat(locale)`, que
+ * lanzan **RangeError: Invalid language tag** y tumban el árbol de React entero
+ * hasta el ErrorBoundary (así reventaba el dashboard: GYM-GUILLE-21).
+ *
+ * Se limpian los añadidos POSIX (`@modificador`, `.codeset`, `_` por `-`) y se
+ * valida con `Intl.getCanonicalLocales`, que es el mismo validador que usan los
+ * constructores de `Intl`. La región se conserva siempre que se pueda
+ * (`en-US@posix` → `en-US`); solo si lo limpiado sigue sin colar se cae a la
+ * subetiqueta primaria (`en-u-` → `en`).
+ */
+export function toBcp47(tag: string | null | undefined): string | null {
+  if (!tag) return null
+  const cleaned = tag.trim().split('@')[0].split('.')[0].replace(/_/g, '-')
+  if (!cleaned) return null
+  for (const candidate of [cleaned, cleaned.split('-')[0]]) {
+    try {
+      const [canonical] = Intl.getCanonicalLocales(candidate)
+      if (canonical) return canonical
+    } catch {
+      /* etiqueta inválida: probamos la siguiente, o caemos a null */
+    }
+  }
+  return null
+}
+
+/**
+ * Locale seguro para pasar a cualquier API de `Intl`.
+ *
+ * Sin argumento usa el idioma activo de i18next. Nunca lanza y nunca devuelve
+ * algo que `Intl` rechace: el peor caso es el idioma por defecto de la app.
+ */
+export function safeLocale(tag?: string | null): string {
+  return toBcp47(tag === undefined ? currentLanguage() : tag) ?? 'es'
+}
