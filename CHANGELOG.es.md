@@ -9,6 +9,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.12.0] - 2026-08-26
+
+_La versión de los programas de entrenamiento: los creas y los editas de principio a fin, los compartes o los remezclas con crédito al autor, y la app te dice en qué semana vas y cuántas repeticiones tocan hoy._
+
+### Añadido
+
+- **Crea y edita programas completos desde el móvil** — El editor cubre el programa entero: fases, días, ejercicios y sus campos de catálogo, con validación en los pasos 3 y 4 para que no publiques un programa a medias. Puedes copiar un día o una fase entera, subir la portada y una imagen o vídeo por ejercicio, y desde la ficha editar, duplicar, abandonar o borrar el programa.
+- **Progresión automática: la app te dice cuánto toca hoy** — Cada ejercicio del programa mira lo que hiciste la última vez y te sugiere las repeticiones o los segundos de hoy. Cuando te quedas corto con una variante, te propone la siguiente para seguir subiendo sin tener que llevar la cuenta tú.
+- **Sabes en qué semana vas y en qué fase estás** — El programa muestra «semana X de Y» y cambia de fase solo según avanzas, sin que tengas que tocar ningún ajuste. El progreso se calcula de lo que realmente has entrenado.
+- **Comparte tus programas y remezcla los de otros** — Cada programa elige si es privado, accesible con enlace o público, y el enlace abre una página que se ve sin cuenta. Si partes del programa de alguien, la copia lleva el crédito «basado en X de @autor» y cada programa enseña cuánta gente lo sigue.
+- **Estadísticas de entrenamiento** — Una vista nueva con los músculos que más trabajas, tus ejercicios más frecuentes, tus récords personales y la tendencia de las últimas semanas.
+
+### Corregido
+
+- **Los días de circuito por fin funcionan** — Un día de tipo circuito arranca un circuito de verdad y, al terminarlo, marca el día como hecho y cuenta para el hito del programa — antes se quedaba bloqueado para siempre. Además, si el autor borra un programa al que estabas inscrito, ahora te avisamos en vez de dejarte con una inscripción muerta.
+
 ## [1.11.1] - 2026-08-23
 
 _El historial de cardio estrena filtros por tipo, abre el detalle desde la propia fila y trae buscador de competencias. Además, la app ahora solo pide a Health Connect los datos que de verdad usa._
@@ -346,7 +362,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...HEAD
+[1.12.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...mobile-v1.12.0
 [1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1
 [1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
 [1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2

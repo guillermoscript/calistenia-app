@@ -1,6 +1,297 @@
 {
-  "generated": "2026-08-23T23:56:43.310Z",
+  "generated": "2026-08-26T19:24:56.306Z",
   "versions": [
+    {
+      "version": "1.12.0",
+      "date": "2026-08-26",
+      "summary": {
+        "es": "La versión de los programas de entrenamiento: los creas y los editas de principio a fin, los compartes o los remezclas con crédito al autor, y la app te dice en qué semana vas y cuántas repeticiones tocan hoy.",
+        "en": "The training-programs release: build and edit them end to end, share or remix them with credit to the author, and the app tells you which week you are on and how many reps you owe today. Training stats also land, and circuit days finally work."
+      },
+      "highlights": [
+        {
+          "icon": "🏋️",
+          "type": "feat",
+          "title": {
+            "es": "Crea y edita programas completos desde el móvil",
+            "en": "Build and edit full programs from your phone"
+          },
+          "body": {
+            "es": "El editor cubre el programa entero: fases, días, ejercicios y sus campos de catálogo, con validación en los pasos 3 y 4 para que no publiques un programa a medias. Puedes copiar un día o una fase entera, subir la portada y una imagen o vídeo por ejercicio, y desde la ficha editar, duplicar, abandonar o borrar el programa.",
+            "en": "The editor covers the whole program: phases, days, exercises and their catalog fields, with validation on steps 3 and 4 so you never publish a half-finished program. You can copy a day or an entire phase, upload the cover and an image or video per exercise, and from the program page edit, duplicate, leave or delete it."
+          }
+        },
+        {
+          "icon": "📈",
+          "type": "feat",
+          "title": {
+            "es": "Progresión automática: la app te dice cuánto toca hoy",
+            "en": "Auto progression: the app tells you what to do today"
+          },
+          "body": {
+            "es": "Cada ejercicio del programa mira lo que hiciste la última vez y te sugiere las repeticiones o los segundos de hoy. Cuando te quedas corto con una variante, te propone la siguiente para seguir subiendo sin tener que llevar la cuenta tú.",
+            "en": "Each program exercise looks at what you did last time and suggests today’s reps or seconds. When a variation gets too easy it proposes the next one, so you keep progressing without tracking it yourself."
+          }
+        },
+        {
+          "icon": "🧭",
+          "type": "feat",
+          "title": {
+            "es": "Sabes en qué semana vas y en qué fase estás",
+            "en": "You always know which week and phase you are on"
+          },
+          "body": {
+            "es": "El programa muestra «semana X de Y» y cambia de fase solo según avanzas, sin que tengas que tocar ningún ajuste. El progreso se calcula de lo que realmente has entrenado.",
+            "en": "The program shows “week X of Y” and moves to the next phase on its own as you advance, with no setting to touch. Progress is computed from what you actually trained."
+          }
+        },
+        {
+          "icon": "🔗",
+          "type": "feat",
+          "title": {
+            "es": "Comparte tus programas y remezcla los de otros",
+            "en": "Share your programs and remix other people’s"
+          },
+          "body": {
+            "es": "Cada programa elige si es privado, accesible con enlace o público, y el enlace abre una página que se ve sin cuenta. Si partes del programa de alguien, la copia lleva el crédito «basado en X de @autor» y cada programa enseña cuánta gente lo sigue.",
+            "en": "Every program picks whether it is private, link-only or public, and the link opens a page anyone can see without an account. If you start from someone else’s program, your copy carries a “based on X by @author” credit, and each program shows how many people follow it."
+          }
+        },
+        {
+          "icon": "📊",
+          "type": "feat",
+          "title": {
+            "es": "Estadísticas de entrenamiento",
+            "en": "Training stats"
+          },
+          "body": {
+            "es": "Una vista nueva con los músculos que más trabajas, tus ejercicios más frecuentes, tus récords personales y la tendencia de las últimas semanas.",
+            "en": "A new view with the muscles you train most, your most frequent exercises, your personal records and the trend over recent weeks."
+          }
+        },
+        {
+          "icon": "🔁",
+          "type": "fix",
+          "title": {
+            "es": "Los días de circuito por fin funcionan",
+            "en": "Circuit days finally work"
+          },
+          "body": {
+            "es": "Un día de tipo circuito arranca un circuito de verdad y, al terminarlo, marca el día como hecho y cuenta para el hito del programa — antes se quedaba bloqueado para siempre. Además, si el autor borra un programa al que estabas inscrito, ahora te avisamos en vez de dejarte con una inscripción muerta.",
+            "en": "A circuit day now starts an actual circuit and, once finished, marks the day done and counts toward the program milestone — before it stayed blocked forever. And if the author deletes a program you were enrolled in, we now tell you instead of leaving you with a dead enrollment."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Progresión automática — sugerir reps/segundos y la siguiente variante (#617) (#653)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "5ee8e43"
+            },
+            {
+              "description": "Estadísticas de entrenamiento (músculos, ejercicios, récords, tendencia) (#597)",
+              "scope": null,
+              "breaking": false,
+              "hash": "070e5d5"
+            },
+            {
+              "description": "Editar, duplicar, abandonar, borrar y portada del programa (#611, #612) (#631)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "90dcad4"
+            },
+            {
+              "description": "Valida los pasos 3 y 4 del editor de programas (#610) (#630)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "b56c035"
+            },
+            {
+              "description": "El embudo de entreno completo, paridad web↔móvil y las superficies mudas (#636) (#652)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "166e852"
+            },
+            {
+              "description": "Avisar al inscrito cuando su programa es eliminado (#633) (#643)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "f3529a5"
+            },
+            {
+              "description": "Copiar día/fase en el editor y arrastrar ejercicios en web (#621) (#651)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "41aad55"
+            },
+            {
+              "description": "Remix con crédito («basado en X de @autor») y contador «N personas lo siguen» (#620) (#650)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "00dd15b"
+            },
+            {
+              "description": "Subir portada e imágenes/vídeo por ejercicio desde el editor (#618) (#642)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "845037e"
+            },
+            {
+              "description": "El editor expone los campos de catálogo del «PARA TI» (#613) (#638)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "12103dd"
+            },
+            {
+              "description": "Landing pública de /shared/:id vía pb_hooks (#604) (#637)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "91a96cc"
+            },
+            {
+              "description": "Visibilidad privado / con enlace / público (#603) (#635)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "c0567bc"
+            },
+            {
+              "description": "Progreso dentro del programa — semana X de Y y fase automática (#616) (#629)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "61752d9"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Las releases de Sentry de la web no servían para nada (#655)",
+              "scope": "ci,web",
+              "breaking": false,
+              "hash": "c754ebc"
+            },
+            {
+              "description": "Un idioma POSIX del navegador tumbaba el dashboard (#654)",
+              "scope": "core,web",
+              "breaking": false,
+              "hash": "7f90759"
+            },
+            {
+              "description": "Borrar un programa cierra las inscripciones de todos (#605) (#632)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "948d2c2"
+            },
+            {
+              "description": "Los eventos de carrera se duplicaban y el embudo de entreno no se podía medir (#636) (#649)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "768f7d9"
+            },
+            {
+              "description": "Un circuito de programa marca el día hecho y cuenta para el hito (#640) (#648)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "2a94fba"
+            },
+            {
+              "description": "Una foto que el navegador no sabe leer colgaba el análisis de comida (#646)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "caca9c7"
+            },
+            {
+              "description": "El caché persistido viejo tumbaba el dashboard (#644)",
+              "scope": "core,web,mobile",
+              "breaking": false,
+              "hash": "1a5c285"
+            },
+            {
+              "description": "Un día de tipo circuit arranca un circuito de verdad (#625) (#639)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "2241cdb"
+            },
+            {
+              "description": "Los dos pickers de ejercicios consumen el catálogo de core (#609) (#634)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "7722823"
+            },
+            {
+              "description": "Las miniaturas de ejercicio pasan por el resolutor de media (#628)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "8bca4df"
+            },
+            {
+              "description": "Comentarios con avatar y fecha real en el sheet nativo (#598)",
+              "scope": "social",
+              "breaking": false,
+              "hash": "5f1b443"
+            },
+            {
+              "description": "Normaliza priority al enum y rellena section en program_exercises (#626)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "eb8b423"
+            },
+            {
+              "description": "Clave de caché propia para useProgramDetail (#606) (#627)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "a5e9a44"
+            },
+            {
+              "description": "Campos de circuito en program_day_config (#601)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "949a01e"
+            },
+            {
+              "description": "Guardas de is_official/is_featured/created_by en las API rules (#623)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "ff057e8"
+            },
+            {
+              "description": "Duplicar un programa conserva el nombre i18n (#622)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "a9e8d1f"
+            },
+            {
+              "description": "Reintentar el 504 del historial y dejar de pintarlo como vacío (#595)",
+              "scope": "cardio",
+              "breaking": false,
+              "hash": "6392ae1"
+            }
+          ]
+        },
+        {
+          "label": "Rendimiento",
+          "emoji": "⚡",
+          "type": "perf",
+          "items": [
+            {
+              "description": "El catálogo y el detalle sin topes, duplicar en un batch (#614) (#641)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "adfe12a"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.11.1",
       "date": "2026-08-23",
