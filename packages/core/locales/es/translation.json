@@ -4891,5 +4891,13 @@
   "programProgress.notStarted": "Aún no empieza",
   "programProgress.programCompleted": "Programa completado",
   "programProgress.thisWeek": "{{done}} de {{planned}} esta semana",
-  "programProgress.weekDone": "Semana completada"
+  "programProgress.weekDone": "Semana completada",
+  "progression.suggestedReps": "Sugerido: {{sets}}×{{reps}}",
+  "progression.suggestedSeconds": "Sugerido: {{sets}}×{{seconds}} s",
+  "progression.tryVariant": "Prueba: {{name}}",
+  "progression.accept": "Aceptar",
+  "progression.accepted": "Aplicado",
+  "progression.failed": "No se pudo guardar",
+  "progression.optInLabel": "Progresión automática",
+  "progression.optInHint": "Sugiere subir repeticiones o cambiar de variante cuando cumples el objetivo dos sesiones seguidas."
 }

@@ -18,6 +18,7 @@ import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import ProgramProgressBar from '../components/programs/ProgramProgressBar'
+import AutoProgressToggle from '../components/programs/AutoProgressToggle'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
@@ -558,6 +559,12 @@ export default function ProgramDetailPage({
             <ProgramProgressBar progress={programProgress} />
           </div>
         )}
+
+        {/* Opt-in de la progresión automática (#617). Va bajo la misma condición
+            que el progreso —solo el programa en el que uno está inscrito—, y
+            además el componente se calla si no hay inscripción: eso lo protege
+            en la vista pública `/shared/:id`, que se pinta sin WorkoutProvider. */}
+        {activeProgram?.id === programId && <AutoProgressToggle />}
 
         {/* Meta stats */}
         <div className="flex items-center gap-4 flex-wrap mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>

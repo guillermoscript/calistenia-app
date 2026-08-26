@@ -2,7 +2,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
-import { usePrograms } from '@calistenia/core/hooks/usePrograms'
+import { usePrograms, type ActiveEnrollment } from '@calistenia/core/hooks/usePrograms'
 import { useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
 import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
@@ -27,6 +27,12 @@ interface WorkoutState {
   programsReady: boolean
   /** Progreso dentro del programa activo: semana X de Y, fase real, «hoy toca» (#616). */
   programProgress: ProgramProgress
+  /**
+   * La inscripción activa. Se expone —y no solo el programa— porque el opt-in
+   * de la progresión automática (`auto_progress`, #617) vive en ella: es por
+   * INSCRIPCIÓN, no por usuario ni por programa.
+   */
+  activeEnrollment: ActiveEnrollment | null
 }
 
 interface WorkoutActions {
@@ -115,7 +121,8 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const state = useMemo<WorkoutState>(() => ({
     progress, settings, usePB, pbReady,
     programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress,
-  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress])
+    activeEnrollment,
+  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, circuitDayConfigs, programsReady, programProgress, activeEnrollment])
 
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,

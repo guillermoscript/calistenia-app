@@ -117,6 +117,18 @@ export const qk = {
      */
     stats: (programIds: readonly string[]) =>
       ['programs', 'stats', programIds] as const,
+    /**
+     * `useProgramOverrides`: lo que ESTE usuario ha aceptado sobre ESE programa
+     * (#617), de `user_program_overrides`.
+     *
+     * Lleva los dos ids porque la fila es de la pareja: el mismo programa tiene
+     * overrides distintos para cada persona, y la misma persona tiene overrides
+     * distintos en cada programa. Con solo el programa, el caché de disco (24h)
+     * le serviría a la siguiente cuenta del dispositivo las progresiones de la
+     * anterior — el mismo fallo que arregló #603 en `catalog`.
+     */
+    overrides: (userId: string | null, programId: string | null) =>
+      ['programs', 'overrides', userId, programId] as const,
   },
   programEditor: (programId: string | null) =>
     ['programEditor', programId] as const,

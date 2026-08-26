@@ -12,7 +12,7 @@
  * duplicateProgram, deleteProgram, refreshPrograms, programsReady).
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb } from '../lib/pocketbase'
@@ -32,6 +32,8 @@ import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId
 import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
 import { authorDisplayName } from '../lib/author-name'
+import { applyOverrides } from '../lib/programOverrides'
+import { useProgramOverrides } from './useAutoProgression'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -465,6 +467,8 @@ export interface ActiveEnrollment {
   status: 'active' | 'completed' | 'abandoned' | ''
   /** Override manual de fase. 0 = automática (derivada de `started_at`). */
   current_phase: number
+  /** Opt-in de la progresión automática (#617). Apagado salvo que se pida. */
+  auto_progress: boolean
 }
 
 function toEnrollment(rec: RecordModel): ActiveEnrollment {
@@ -474,6 +478,7 @@ function toEnrollment(rec: RecordModel): ActiveEnrollment {
     started_at: (rec.started_at as string) || '',
     status: (rec.status as ActiveEnrollment['status']) || '',
     current_phase: typeof rec.current_phase === 'number' ? rec.current_phase : 0,
+    auto_progress: rec.auto_progress === true,
   }
 }
 
@@ -591,11 +596,26 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     ? true
     : catalogQuery.isFetched && enrollmentQuery.isFetched && (!activeProgramId || detailQuery.isFetched)
 
+  // La progresión aceptada sobre un programa AJENO no está en `program_exercises`
+  // —no se puede escribir ahí— sino en `user_program_overrides` (#617). Se
+  // superpone aquí, en el único sitio por el que pasan todos los consumidores
+  // del día: hacerlo en cada pantalla habría dejado la sesión progresando y las
+  // tarjetas del programa mostrando lo viejo.
+  //
+  // `applyOverrides` devuelve el MISMO mapa si no hay nada que aplicar, que es
+  // el caso normal, así que este `useMemo` no invalida nada para quien no ha
+  // aceptado ninguna sugerencia.
+  const { overrides } = useProgramOverrides(userId, activeProgramId)
+  const effectiveWorkouts = useMemo(
+    () => applyOverrides(workoutsMap, overrides),
+    [workoutsMap, overrides],
+  )
+
   const getWorkout = useCallback((phaseNumber: number, dayId: string): Workout | null => {
     const key = `p${phaseNumber}_${dayId}`
-    if (Object.keys(workoutsMap).length > 0) return workoutsMap[key] || null
+    if (Object.keys(effectiveWorkouts).length > 0) return effectiveWorkouts[key] || null
     return fallbackGetWorkout(phaseNumber, dayId as any)
-  }, [workoutsMap])
+  }, [effectiveWorkouts])
 
   const selectProgram = useCallback(async (programId: string): Promise<boolean> => {
     if (!userId) return false

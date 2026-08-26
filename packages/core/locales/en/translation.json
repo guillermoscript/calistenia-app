@@ -4891,5 +4891,13 @@
   "programProgress.notStarted": "Not started yet",
   "programProgress.programCompleted": "Program completed",
   "programProgress.thisWeek": "{{done}} of {{planned}} this week",
-  "programProgress.weekDone": "Week complete"
+  "programProgress.weekDone": "Week complete",
+  "progression.suggestedReps": "Suggested: {{sets}}×{{reps}}",
+  "progression.suggestedSeconds": "Suggested: {{sets}}×{{seconds}}s",
+  "progression.tryVariant": "Try: {{name}}",
+  "progression.accept": "Accept",
+  "progression.accepted": "Applied",
+  "progression.failed": "Could not save",
+  "progression.optInLabel": "Auto progression",
+  "progression.optInHint": "Suggests more reps or a harder variant once you hit the target two sessions in a row."
 }
