@@ -5,6 +5,7 @@ import type { ExerciseLog, SetData } from '@calistenia/core/types'
 import type { Step } from '@calistenia/core/lib/session-machine'
 import { formatTempo, quickReps } from '@calistenia/core/lib/exercise-format'
 import { useExerciseMedia, hasResolvedMedia } from '@calistenia/core/hooks/useExerciseMedia'
+import ProgressionChip from './ProgressionChip'
 import YoutubeModal from '../YoutubeModal'
 import MediaViewer from '../MediaViewer'
 import Timer from '../Timer'
@@ -117,6 +118,10 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
             </span>
           </div>
         </div>
+
+        {/* Progresión automática (#617): solo con el opt-in encendido y algo
+            seguro que proponer — el propio chip decide si se pinta. */}
+        <ProgressionChip exercise={exercise} logs={logs} />
 
         {/* Superset badge */}
         {exercise.supersetGroup && (

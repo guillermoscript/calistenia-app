@@ -15,6 +15,7 @@ import { formatTempo, quickReps } from '@calistenia/core/lib/exercise-format'
 import type { ExerciseLog, SetData } from '@calistenia/core/types'
 import type { Step } from '@calistenia/core/lib/session-machine'
 import { ExerciseTimer } from '@/components/session/TimerScreen'
+import ProgressionChip from '@/components/session/ProgressionChip'
 
 interface ExerciseScreenProps {
   step: Step
@@ -95,6 +96,10 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           <Text className="font-mono text-[10px] tracking-wide text-muted-foreground">{exercise.muscles}</Text>
         </View>
       </View>
+
+      {/* Progresión automática (#617): solo con el opt-in encendido y algo
+          seguro que proponer — el propio chip decide si se pinta. */}
+      <ProgressionChip exercise={exercise} logs={logs} />
 
       {/* Dots de series */}
       <View className="mb-5 flex-row items-center gap-2">
