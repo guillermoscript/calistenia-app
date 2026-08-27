@@ -180,8 +180,8 @@ importers:
         specifier: ^4.2.6
         version: 4.2.6(react-native-reanimated@4.5.3(react-native-worklets@0.11.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native-safe-area-context@5.8.1(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native-svg@15.15.5(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)(tailwindcss@3.4.19(yaml@2.9.0))
       pocketbase:
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.28.0
+        version: 0.28.0
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -415,8 +415,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       pocketbase:
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.28.0
+        version: 0.28.0
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -554,8 +554,8 @@ importers:
         specifier: ^26.4.0
         version: 26.4.0(typescript@6.0.3)
       pocketbase:
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.28.0
+        version: 0.28.0
       react-i18next:
         specifier: ^17.0.12
         version: 17.0.12(i18next@26.4.0(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
@@ -7081,8 +7081,8 @@ packages:
     resolution: {integrity: sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w==}
     engines: {node: '>=4.0.0'}
 
-  pocketbase@0.27.3:
-    resolution: {integrity: sha512-n2rtQrg3kTF44066B+2eVvQdiYRGZ+RI7isIZqmAptfElLCSDIZrEKLhSrIQA2k5pvQM29Gx5JqGv5n+gtm6dg==}
+  pocketbase@0.28.0:
+    resolution: {integrity: sha512-aCrab5XPPQ40iKIKicQLdUvrAvJQCHZ3cwZD5i22A8PVM/EcemUta7WFw0x4G6WQEOBMa/8kioqCR62ozk4KvQ==}
 
   points-on-curve@0.2.0:
     resolution: {integrity: sha512-0mYKnYYe9ZcqMCWhUjItv/oHjvgEsfKvnUTg8sAtnHr3GVy7rGkXCb6d5cSyqrWqL4k81b9CPg3urd+T7aop3A==}
@@ -11302,7 +11302,9 @@ snapshots:
       metro-runtime: 0.84.5
     transitivePeerDependencies:
       - '@babel/core'
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.89': {}
 
@@ -16611,7 +16613,7 @@ snapshots:
 
   pngjs@3.4.0: {}
 
-  pocketbase@0.27.3: {}
+  pocketbase@0.28.0: {}
 
   points-on-curve@0.2.0: {}
 

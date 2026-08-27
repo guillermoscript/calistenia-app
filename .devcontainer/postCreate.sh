@@ -2,7 +2,7 @@
 # Codespace one-time setup: pnpm deps + Linux PocketBase binary + .env seed.
 set -euo pipefail
 
-PB_VERSION="0.36.8"
+PB_VERSION="0.40.1"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
