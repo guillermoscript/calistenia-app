@@ -30,8 +30,6 @@ interface DailyCacheRow {
   id: string
   date: string
   steps?: number
-  active_calories?: number
-  resting_hr?: number
   sleep_minutes?: number
   sleep_quality?: number
   weight_kg?: number
@@ -217,54 +215,34 @@ function hrStatsInWindow(hr: hc.HrSample[], startMs: number, endMs: number): { a
   return n > 0 ? { avg: Math.round(sum / n), max: Math.round(max), n } : { avg: 0, max: 0, n: 0 }
 }
 
-/** kcal of energy records overlapping [startMs, endMs] (prorated by overlap). */
-function kcalInWindow(energy: hc.EnergySample[], startMs: number, endMs: number): number {
-  let kcal = 0
-  for (const e of energy) {
-    const s = new Date(e.startTime).getTime()
-    const en = new Date(e.endTime).getTime()
-    if (en > s) {
-      const overlap = Math.min(en, endMs) - Math.max(s, startMs)
-      if (overlap > 0) kcal += e.kcal * (overlap / (en - s))
-    } else if (s >= startMs && s <= endMs) {
-      kcal += e.kcal // registro instantáneo dentro de la ventana
-    }
-  }
-  return kcal
-}
-
 interface SessionWindow { id: string; start: number; end: number; hasHr: boolean }
 
-/** Write hr_avg/hr_max/calories_actual onto sessions whose window has HR/energy. */
+/**
+ * Write hr_avg/hr_max onto sessions whose window has HR samples.
+ * `calories_actual` ya NO se escribe: READ_ACTIVE_CALORIES_BURNED se retiró en
+ * v1.12.1 (segundo rechazo de Play por acceso mínimo a datos). El campo sigue
+ * existiendo en PB para las sesiones que ya lo tenían.
+ */
 async function applySessionMetrics(
   collection: string,
   sessions: SessionWindow[],
   hr: hc.HrSample[],
-  active: hc.EnergySample[],
 ): Promise<number> {
   let written = 0
   for (const s of sessions) {
     if (s.hasHr) continue // ya importado en una sync previa — no re-escribir
     if (!(s.end > s.start)) continue
     const { avg, max, n } = hrStatsInWindow(hr, s.start, s.end)
-    const kcal = kcalInWindow(active, s.start, s.end)
-    const payload: Record<string, number> = {}
-    if (n > 0) {
-      payload.hr_avg = avg
-      payload.hr_max = max
-    }
-    if (kcal > 0) payload.calories_actual = Math.round(kcal)
-    if (Object.keys(payload).length === 0) continue
-    await pb.collection(collection).update(s.id, payload)
+    if (n === 0) continue
+    await pb.collection(collection).update(s.id, { hr_avg: avg, hr_max: max })
     written++
   }
   return written
 }
 
 /**
- * Casa la serie de frecuencia cardíaca (+ calorías activas) del reloj con la
- * ventana temporal de cada sesión de entreno y rellena hr_avg/hr_max/
- * calories_actual. Tres colecciones:
+ * Casa la serie de frecuencia cardíaca del reloj con la ventana temporal de
+ * cada sesión de entreno y rellena hr_avg/hr_max. Tres colecciones:
  *   - cardio_sessions / circuit_sessions: tienen started_at + finished_at (ISO).
  *   - sessions (fuerza): solo completed_at + duration_seconds → ventana
  *     aproximada [completed_at - duration, completed_at].
@@ -274,9 +252,8 @@ async function mergeSessionMetrics(
   userId: string,
   rangeStartISO: string,
   hr: hc.HrSample[],
-  active: hc.EnergySample[],
 ): Promise<void> {
-  if (hr.length === 0 && active.length === 0) return
+  if (hr.length === 0) return
 
   // cardio + circuit: ventana exacta por started_at/finished_at (texto ISO)
   for (const coll of ['cardio_sessions', 'circuit_sessions']) {
@@ -294,7 +271,7 @@ async function mergeSessionMetrics(
         end: new Date(r.finished_at).getTime(),
         hasHr: !!r.hr_avg,
       }))
-    await applySessionMetrics(coll, windows, hr, active)
+    await applySessionMetrics(coll, windows, hr)
   }
 
   // fuerza/yoga: ventana aproximada con completed_at - duration_seconds
@@ -310,7 +287,7 @@ async function mergeSessionMetrics(
       const end = new Date(r.completed_at).getTime()
       return { id: r.id, start: end - r.duration_seconds * 1000, end, hasHr: !!r.hr_avg }
     })
-  await applySessionMetrics('sessions', strengthWindows, hr, active)
+  await applySessionMetrics('sessions', strengthWindows, hr)
 }
 
 /**
@@ -327,10 +304,8 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
   const imported: Partial<Record<HealthDataType, number>> = {}
 
   try {
-    const [steps, active, resting, weight, bodyFat, sleep, heartRate] = await Promise.all([
+    const [steps, weight, bodyFat, sleep, heartRate] = await Promise.all([
       hc.readSteps(range),
-      hc.readActiveCalories(range),
-      hc.readRestingHeartRate(range),
       hc.readWeight(range),
       hc.readBodyFat(range),
       hc.readSleep(range),
@@ -338,15 +313,12 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     ])
 
     imported.steps = steps.length
-    imported.active_calories = active.length
-    imported.resting_hr = resting.length
+    imported.heart_rate = heartRate.length
     imported.weight = weight.length
     imported.body_fat = bodyFat.length
     imported.sleep = sleep.length
 
     const stepsByDay = sumByDay(steps, (s) => localDay(s.startTime), (s) => s.count)
-    const activeByDay = sumByDay(active, (s) => localDay(s.startTime), (s) => s.kcal)
-    const restingByDay = latestByDay(resting, (s) => s.bpm)
     const weightByDay = latestByDay(weight, (s) => s.kg)
     const bodyFatByDay = latestByDay(bodyFat, (s) => s.pct)
 
@@ -359,8 +331,6 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
 
     const dates = new Set<string>([
       ...Object.keys(stepsByDay),
-      ...Object.keys(activeByDay),
-      ...Object.keys(restingByDay),
       ...Object.keys(weightByDay),
       ...Object.keys(bodyFatByDay),
       ...Object.keys(sleepByDay),
@@ -381,8 +351,6 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
           user: opts.userId,
           date,
           steps: stepsByDay[date] != null ? Math.round(stepsByDay[date]) : undefined,
-          active_calories: activeByDay[date] != null ? Math.round(activeByDay[date]) : undefined,
-          resting_hr: restingByDay[date] != null ? Math.round(restingByDay[date]) : undefined,
           weight_kg: weightByDay[date],
           body_fat_pct: bodyFatByDay[date],
           sleep_minutes: sleepByDay[date] != null ? Math.round(sleepByDay[date]) : undefined,
@@ -408,7 +376,7 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
       /* merge peso best-effort */
     }
     try {
-      await mergeSessionMetrics(opts.userId, range.startTime, heartRate, active)
+      await mergeSessionMetrics(opts.userId, range.startTime, heartRate)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_session_metrics' } })
       /* merge HR→sesiones best-effort */
@@ -430,8 +398,6 @@ export async function readDailyCache(userId: string, date: string): Promise<Dail
       id: r.id,
       date: r.date,
       steps: r.steps || undefined,
-      active_calories: r.active_calories || undefined,
-      resting_hr: r.resting_hr || undefined,
       sleep_minutes: r.sleep_minutes || undefined,
       sleep_quality: r.sleep_quality || undefined,
       weight_kg: r.weight_kg || undefined,

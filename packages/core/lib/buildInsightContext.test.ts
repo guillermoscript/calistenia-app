@@ -91,7 +91,7 @@ describe('buildDayRows', () => {
     lumbarByDate: {},
   } as unknown as MonthActivity
   const strengthByDate = { '2026-06-26': { workouts: 1, workoutMinutes: 45 } }
-  const watchByDate = { '2026-06-27': { steps: 8000, restingHr: 58 } }
+  const watchByDate = { '2026-06-27': { steps: 8000 } }
 
   const rows = buildDayRows({ activity: merged, strengthByDate, watchByDate, start: '2026-06-25', end: '2026-07-01', tz: TZ })
   const byDate = new Map(rows.map((r) => [r.date, r]))
@@ -116,7 +116,6 @@ describe('buildDayRows', () => {
     const day = byDate.get('2026-06-27')!
     expect(day.circuitSessions).toBe(1)
     expect(day.steps).toBe(8000)
-    expect(day.restingHr).toBe(58)
   })
 
   it('carries nutrition, water, sleep and weight through unchanged', () => {
@@ -213,7 +212,7 @@ describe('summarizeRows', () => {
       bedtimeConsistencyMin: 0,
     })
     expect(summary.weight).toEqual({ firstKg: null, lastKg: null, deltaKg: null })
-    expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null })
+    expect(summary.watch).toEqual({ available: false, avgSteps: null })
     expect(summary.streaks).toEqual({ currentTrainingStreak: 0, longestTrainingStreak: 0 })
   })
 
@@ -226,8 +225,8 @@ describe('summarizeRows', () => {
       { date: '2026-06-25', workouts: 1, workoutMinutes: 32, waterMl: 2500 },
       { date: '2026-06-26', workouts: 1, workoutMinutes: 28, sleepMinutes: 400, sleepQuality: 3 },
       { date: '2026-06-27', meals: 2, calories: 1800 }, // gap: sin entrenamiento
-      { date: '2026-06-28', workouts: 1, workoutMinutes: 50, steps: 9000, restingHr: 55 },
-      { date: '2026-07-05', workouts: 1, workoutMinutes: 40, weightKg: 80.0, steps: 11000, restingHr: 52 },
+      { date: '2026-06-28', workouts: 1, workoutMinutes: 50, steps: 9000 },
+      { date: '2026-07-05', workouts: 1, workoutMinutes: 40, weightKg: 80.0, steps: 11000 },
     ]
 
     const summary = summarizeRows(rows, { days: 10, end: '2026-07-05', tz: TZ, watchAvailable: true })
@@ -250,13 +249,13 @@ describe('summarizeRows', () => {
       bedtimeConsistencyMin: 0,
     })
     expect(summary.weight).toEqual({ firstKg: 82.0, lastKg: 80.0, deltaKg: -2 })
-    expect(summary.watch).toEqual({ available: true, avgSteps: 10000, avgRestingHr: 54 }) // round((55+52)/2)
+    expect(summary.watch).toEqual({ available: true, avgSteps: 10000 })
   })
 
   it('gates watch averages behind watchAvailable even if steps happen to be present', () => {
     const rows: InsightDayRow[] = [{ date: '2026-07-01', steps: 5000 }]
     const summary = summarizeRows(rows, { days: 7, end: '2026-07-01', tz: TZ, watchAvailable: false })
-    expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null })
+    expect(summary.watch).toEqual({ available: false, avgSteps: null })
   })
 
   it('aggregates awakenings/caffeine/screen/stress/bedtime-consistency across logged sleep days', () => {

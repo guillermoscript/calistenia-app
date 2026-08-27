@@ -87,10 +87,12 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
     android: {
       channelId: CHANNEL_ID,
       asForegroundService: true,
-      // FGS de entreno = dataSync (no location). El service de notifee es
-      // compartido y su tipo de manifest incluye location; sin especificar tipo
-      // acá, notifee arrancaría con location y crashea sin permiso de ubicación.
-      foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_DATA_SYNC],
+      // FGS de entreno = health (tipo de Android para "exercise trackers"; ver
+      // plugins/with-notifee-location-fgs.js). No location: el service de
+      // notifee es compartido y su tipo de manifest incluye location; sin
+      // especificar tipo acá, notifee arrancaría con location y crashea sin
+      // permiso de ubicación.
+      foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_HEALTH],
       ongoing: true,
       onlyAlertOnce: true,
       // Silueta de marca (status bar) en vez del círculo genérico; logo a color como large icon

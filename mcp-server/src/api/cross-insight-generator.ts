@@ -96,7 +96,7 @@ function buildUserText(ctx: InsightContext): string {
     lines.push(`- Grasa corporal estimada (método Navy, cinta métrica): ${n1(s.bodyFat.firstPct)}% → ${n1(s.bodyFat.lastPct)}% (Δ ${s.bodyFat.deltaPct == null ? "?" : n1(s.bodyFat.deltaPct)} pts).`);
   }
   if (watchAvailable) {
-    lines.push(`- Reloj: ~${n0(s.watch.avgSteps)} pasos/día · FC reposo ~${n0(s.watch.avgRestingHr)} bpm.`);
+    lines.push(`- Reloj: ~${n0(s.watch.avgSteps)} pasos/día.`);
   } else {
     lines.push(`- Reloj: sin datos (no hay reloj conectado). NO inventes correlaciones de pasos/FC/HRV.`);
   }
@@ -152,7 +152,6 @@ function buildUserText(ctx: InsightContext): string {
     if (r.waistCm != null) parts.push(`cintura ${n1(r.waistCm)}cm`);
     if (r.bodyFatPct != null) parts.push(`grasa ${n1(r.bodyFatPct)}%`);
     if (r.steps != null) parts.push(`${n0(r.steps)}pasos`);
-    if (r.restingHr != null) parts.push(`FC ${n0(r.restingHr)}`);
     if (parts.length) lines.push(`- ${r.date}: ${parts.join(", ")}`);
   }
 

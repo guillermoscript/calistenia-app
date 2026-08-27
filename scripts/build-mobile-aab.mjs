@@ -60,6 +60,12 @@ const VERSION = appJson.expo.version
 const CODE = appJson.expo.android.versionCode
 const PKG = appJson.expo.android.package
 const HEALTH_PERMS = (appJson.expo.android.permissions || []).filter((p) => p.includes('.health.')).sort()
+const BLOCKED_PERMS = appJson.expo.android.blockedPermissions || []
+const FGS_PERMS = (appJson.expo.android.permissions || [])
+  .filter((p) => p.includes('.FOREGROUND_SERVICE') && !BLOCKED_PERMS.includes(p))
+  .sort()
+const BUILD_PROPS = (appJson.expo.plugins || []).find((p) => Array.isArray(p) && p[0] === 'expo-build-properties')?.[1]
+const TARGET_SDK = BUILD_PROPS?.android?.targetSdkVersion
 const DEST = resolve(homedir(), `Desktop/calistenia-v${VERSION}-vc${CODE}.aab`)
 const BUILT = resolve(ANDROID, 'app/build/outputs/bundle/release/app-release.aab')
 
@@ -114,6 +120,36 @@ function verify(aabPath) {
     }
     console.log('    → android/ está desincronizado. Regenéralo:')
     console.log('      pnpm --filter @calistenia/mobile exec expo prebuild --platform android')
+  }
+
+  // 1c. targetSdkVersion: Play exige API 36 desde el 2026-08-30. Misma trampa
+  //     que arriba: sale de android/gradle.properties, no de app.json.
+  const gotTarget = grab('android:targetSdkVersion')
+  if (TARGET_SDK == null) {
+    warn('app.json no fija targetSdkVersion (expo-build-properties)')
+  } else if (gotTarget === String(TARGET_SDK)) {
+    ok(`targetSdkVersion ${gotTarget}`)
+  } else {
+    fail(`targetSdkVersion ${gotTarget} ≠ ${TARGET_SDK} (app.json) → edita android/gradle.properties`)
+  }
+
+  // 1d. Permisos de foreground service: exactamente los de app.json (menos los
+  //     bloqueados). Play revisa la declaración de FGS tipo por tipo (vc35 fue
+  //     rechazado por dataSync); un tipo de más en el manifiesto = otro rechazo.
+  const aabFgs = [...new Set(manifest.match(/android\.permission\.FOREGROUND_SERVICE[A-Z_]*/g) || [])].sort()
+  const fgsMissing = FGS_PERMS.filter((p) => !aabFgs.includes(p))
+  const fgsExtra = aabFgs.filter((p) => !FGS_PERMS.includes(p))
+  if (fgsMissing.length === 0 && fgsExtra.length === 0) {
+    ok(`permisos FGS idénticos a app.json: ${aabFgs.map((p) => p.replace('android.permission.', '')).join(', ')}`)
+  } else {
+    if (fgsExtra.length) fail(`el AAB declara FGS que NO están en app.json: ${fgsExtra.join(', ')}`)
+    if (fgsMissing.length) fail(`faltan en el AAB permisos FGS de app.json: ${fgsMissing.join(', ')}`)
+  }
+  const fgsTypes = [...manifest.matchAll(/android:foregroundServiceType="([^"]+)"/g)].map((m) => m[1])
+  if (fgsTypes.some((t) => t.split('|').includes('dataSync'))) {
+    fail(`algún <service> sigue con foregroundServiceType dataSync (${fgsTypes.join(' / ')}) — Play lo rechazó en vc35`)
+  } else {
+    ok(`foregroundServiceType de los services: ${fgsTypes.join(' / ') || '(ninguno)'}`)
   }
 
   // 2. Firma: tiene que ser la upload key registrada en Play.

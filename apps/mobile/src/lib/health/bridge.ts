@@ -29,21 +29,21 @@ import type { HealthHubStatus } from '@calistenia/core/types'
  * (política de acceso mínimo a datos de Health Connect de Google Play).
  *
  * Cada entrada tiene una función visible detrás:
- *   Steps / ActiveCaloriesBurned / RestingHeartRate → pantalla "Reloj y salud"
- *   ActiveCaloriesBurned                            → balance calórico en Nutrición
- *   HeartRate + ActiveCaloriesBurned                → FC media/máx y kcal del entreno
- *   SleepSession                                    → registro de sueño y calendario
- *   Weight / BodyFat                                → seguimiento de peso y composición
+ *   Steps        → pantalla "Reloj y salud"
+ *   HeartRate    → FC media/máx de cada entreno (detalle de sesión)
+ *   SleepSession → registro de sueño y calendario
+ *   Weight       → seguimiento de peso
+ *   BodyFat      → composición corporal (junto al peso)
  *
  * NO añadas un tipo aquí sin una función que lo muestre al usuario: aparece en
  * el diálogo de permisos y Google rechaza la release por acceso excesivo.
+ * Historial de recortes: v1.11.1 quitó Distance/Exercise/TotalCalories/HRV/VO2;
+ * v1.12.1 quitó RestingHeartRate y ActiveCaloriesBurned (segundo rechazo).
  */
 const READ_RECORD_TYPES = [
   'Steps',
   'SleepSession',
   'HeartRate',
-  'RestingHeartRate',
-  'ActiveCaloriesBurned',
   'Weight',
   'BodyFat',
 ] as const
@@ -160,7 +160,6 @@ async function read<T>(recordType: (typeof READ_RECORD_TYPES)[number], range: Ti
 interface RawMetadata { id?: string }
 interface RawInstant { time: string; metadata?: RawMetadata }
 interface RawInterval { startTime: string; endTime: string; metadata?: RawMetadata }
-interface RawEnergy { inKilocalories?: number }
 interface RawMass { inKilograms?: number }
 
 interface RawSteps extends RawInterval { count?: number }
@@ -168,8 +167,6 @@ interface RawSleepStage { stage: number; startTime: string; endTime: string }
 interface RawSleepSession extends RawInterval { stages?: RawSleepStage[] }
 interface RawHeartRateSample { time: string; beatsPerMinute: number }
 interface RawHeartRate extends RawInterval { samples?: RawHeartRateSample[] }
-interface RawRestingHeartRate extends RawInstant { beatsPerMinute: number }
-interface RawCalories extends RawInterval { energy?: RawEnergy }
 interface RawWeight extends RawInstant { weight?: RawMass }
 interface RawBodyFat extends RawInstant { percentage?: number }
 
@@ -197,17 +194,6 @@ export async function readHeartRate(range: TimeRange): Promise<HrSample[]> {
   return recs.flatMap((r) =>
     (r.samples ?? []).map((s) => ({ time: s.time, bpm: s.beatsPerMinute })),
   )
-}
-
-export async function readRestingHeartRate(range: TimeRange): Promise<HrSample[]> {
-  const recs = await read<RawRestingHeartRate>('RestingHeartRate', range)
-  return recs.map((r) => ({ time: r.time, bpm: r.beatsPerMinute }))
-}
-
-export interface EnergySample { startTime: string; endTime: string; kcal: number }
-export async function readActiveCalories(range: TimeRange): Promise<EnergySample[]> {
-  const recs = await read<RawCalories>('ActiveCaloriesBurned', range)
-  return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
 }
 
 export interface WeightSample { time: string; kg: number; id?: string }
