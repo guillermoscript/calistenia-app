@@ -9,6 +9,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.12.2] - 2026-08-27
+
+_Arreglo urgente: la 1.12.1 no arrancaba en Android. Incluye todo lo de la 1.12.1 (Health Connect con menos datos, notificación del entreno y Android 16)._
+
+### Corregido
+
+- **La app vuelve a arrancar** — Una actualización de la librería de fechas dejaba la fecha de hoy inválida en Android y el cálculo de la racha tumbaba la app al abrirla. Se fija la versión buena y la racha ya no puede romper el arranque.
+
 ## [1.12.1] - 2026-08-27
 
 _Actualización de cumplimiento con Google Play: menos datos de salud, la notificación del entreno con el tipo de servicio correcto y soporte de Android 16._
@@ -371,7 +379,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...HEAD
+[1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2
 [1.12.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...mobile-v1.12.1
 [1.12.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...mobile-v1.12.0
 [1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1

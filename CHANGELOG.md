@@ -9,6 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.12.2] - 2026-08-27
+
+_Hotfix: 1.12.1 did not start on Android. Includes everything from 1.12.1 (leaner Health Connect access, workout notification and Android 16)._
+
+### Fixed
+
+- **The app starts again** — A date-library update produced an invalid 'today' on Android and the streak calculation crashed the app on launch. The good version is pinned and the streak can no longer break startup.
+
 ## [1.12.1] - 2026-08-27
 
 _Google Play compliance update: fewer health data types, the workout notification on the right service type, and Android 16 support._
@@ -371,7 +379,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...HEAD
+[1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2
 [1.12.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...mobile-v1.12.1
 [1.12.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...mobile-v1.12.0
 [1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1

@@ -2,6 +2,28 @@
   "generated": "2026-08-26T19:24:56.306Z",
   "versions": [
     {
+      "version": "1.12.2",
+      "date": "2026-08-27",
+      "summary": {
+        "es": "Arreglo urgente: la 1.12.1 no arrancaba en Android. Incluye todo lo de la 1.12.1 (Health Connect con menos datos, notificación del entreno y Android 16).",
+        "en": "Hotfix: 1.12.1 did not start on Android. Includes everything from 1.12.1 (leaner Health Connect access, workout notification and Android 16)."
+      },
+      "highlights": [
+        {
+          "icon": "🩹",
+          "type": "fix",
+          "title": {
+            "es": "La app vuelve a arrancar",
+            "en": "The app starts again"
+          },
+          "body": {
+            "es": "Una actualización de la librería de fechas dejaba la fecha de hoy inválida en Android y el cálculo de la racha tumbaba la app al abrirla. Se fija la versión buena y la racha ya no puede romper el arranque.",
+            "en": "A date-library update produced an invalid 'today' on Android and the streak calculation crashed the app on launch. The good version is pinned and the streak can no longer break startup."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.12.1",
       "date": "2026-08-27",
       "summary": {

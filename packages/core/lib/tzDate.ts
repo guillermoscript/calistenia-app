@@ -20,9 +20,24 @@ import timezone from 'dayjs/plugin/timezone'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-/** Hoy como YYYY-MM-DD en la zona `tz`. */
+const YMD = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Hoy como YYYY-MM-DD en la zona `tz`.
+ *
+ * Blindado: si el plugin timezone devuelve una fecha inválida, cae a la hora
+ * local del host en vez de propagar «Invalid Date». Pasó con dayjs 1.11.22+
+ * en Hermes (Android): el nuevo cálculo de offset parsea
+ * `Intl.DateTimeFormat().formatToParts` y sale NaN → `computeCurrentStreak`
+ * hacía `new Date(NaN).toISOString()` → RangeError → la app no arrancaba
+ * (v1.12.1/vc37). dayjs está pineado a 1.11.21 por eso; esto es la red.
+ */
 export function todayStrIn(tz: string): string {
-  return dayjs().tz(tz).format('YYYY-MM-DD')
+  const s = dayjs().tz(tz).format('YYYY-MM-DD')
+  if (YMD.test(s)) return s
+  const local = dayjs().format('YYYY-MM-DD')
+  console.warn(`[tzDate] todayStrIn(${tz}) devolvió «${s}»; usando hora local ${local}`)
+  return local
 }
 
 /** Desplaza una fecha YYYY-MM-DD `offset` días (en la zona `tz`) y devuelve YYYY-MM-DD. */
