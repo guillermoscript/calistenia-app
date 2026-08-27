@@ -145,8 +145,11 @@ function verify(aabPath) {
     if (fgsExtra.length) fail(`el AAB declara FGS que NO están en app.json: ${fgsExtra.join(', ')}`)
     if (fgsMissing.length) fail(`faltan en el AAB permisos FGS de app.json: ${fgsMissing.join(', ')}`)
   }
+  // bundletool vuelca el atributo como máscara hex (0x00000108 = health|location);
+  // dataSync es el bit 0x1.
   const fgsTypes = [...manifest.matchAll(/android:foregroundServiceType="([^"]+)"/g)].map((m) => m[1])
-  if (fgsTypes.some((t) => t.split('|').includes('dataSync'))) {
+  const usesDataSync = (t) => (/^0x[0-9a-f]+$/i.test(t) ? (parseInt(t, 16) & 0x1) !== 0 : t.split('|').includes('dataSync'))
+  if (fgsTypes.some(usesDataSync)) {
     fail(`algún <service> sigue con foregroundServiceType dataSync (${fgsTypes.join(' / ')}) — Play lo rechazó en vc35`)
   } else {
     ok(`foregroundServiceType de los services: ${fgsTypes.join(' / ') || '(ninguno)'}`)

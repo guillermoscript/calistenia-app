@@ -199,6 +199,44 @@ Health Connect y un reloj con datos reales.
 
 ---
 
+## 4b. Lo que se aprendió al abrir los formularios (2026-08-27)
+
+- **Play construye la lista de permisos «detectados» con la UNIÓN de los
+  bundles de TODOS los tracks activos.** Con alpha en vc31 y beta en vc32, el
+  formulario de Health Connect listaba los 12 permisos viejos (DISTANCE,
+  EXERCISE, HRV, VO2…) aunque internal/prod ya iban con 7. Por eso el revisor
+  «veía» HRV y VO₂. Hay que promover el vc recortado a **todos** los tracks:
+  `pnpm play:promote --track alpha` / `--track beta` (script nuevo; reutiliza
+  un versionCode ya subido sin volver a subir el AAB).
+- **El API rechaza el commit del edit con 403 «You must let us know whether your
+  app uses any Foreground Service permissions»** mientras la declaración de FGS
+  esté incompleta. `play:publish` borra el edit al fallar → el AAB NO queda
+  subido (el mensaje de «service account sin permiso» del script es engañoso en
+  este caso). Orden obligatorio: **declaración de FGS guardada → publish**.
+- **La declaración de FGS exige un enlace de vídeo por cada tarea marcada**;
+  el botón «Guardar» está deshabilitado sin él. No se puede guardar a medias.
+  El formulario no ofrece «no uso este permiso»: cada permiso detectado hay que
+  justificarlo. Para los que solo viven en bundles viejos (DATA_SYNC hasta
+  vc35, MEDIA_PLAYBACK hasta vc20), marcar «Otras tareas → Otro», poner el mismo
+  vídeo y explicar que el permiso está eliminado en vc37 y solo queda en tracks
+  que se están retirando.
+- La declaración de Health Connect (Aplicaciones de salud, 3 pasos) **sí se
+  guardó** el 2026-08-27 con las justificaciones de la sección 2 para los 5
+  permisos y con «Gestión del sueño» añadido a las funciones. Queda en
+  «Resumen de publicación» sin enviar.
+- El aviso de targetSdk en Play Console da de plazo hasta el **1 de noviembre
+  de 2026** (no el 30 de agosto que decía el correo genérico).
+
+### Texto para DATA_SYNC (solo bundles viejos)
+
+> Este permiso se usaba para la notificación persistente del entrenamiento en
+> curso (ejercicio actual, serie y cronómetro de descanso). Reconocemos que
+> dataSync no era el tipo adecuado: en la versión 1.12.1 (código 37) se ha
+> ELIMINADO FOREGROUND_SERVICE_DATA_SYNC del manifiesto y ese servicio pasa a
+> ser de tipo health (FOREGROUND_SERVICE_HEALTH). El permiso solo permanece en
+> versiones anteriores que estamos retirando de todos los canales al promover
+> el código 37. No hay ninguna tarea de sincronización de datos en la app.
+
 ## 6. Runbook de resubmisión
 
 1. **Mergear el PR** de esta rama (`fix/play-rejection-hc-fgs-sdk36`).
@@ -209,13 +247,26 @@ Health Connect y un reloj con datos reales.
    node scripts/extract-changelog-entry.mjs 1.12.1 --lang es --format play | wc -c   # ≤ 500
    git push && git push origin mobile-v1.12.1
    ```
-3. **Construir y subir**:
+3. **Construir**: `pnpm build:aab` (verifica vc37, 5 permisos de salud, FGS
+   health|location, targetSdk 36). Hecho el 2026-08-27:
+   `~/Desktop/calistenia-v1.12.1-vc37.aab`.
+4. **Grabar el vídeo** (sección 5) con ese build instalado por bundletool, y
+   subirlo a YouTube (no listado) o Drive con enlace público.
+5. **Play Console → App content → Foreground service permissions**: marcar
+   «Otras tareas → Otro» en LOCATION (texto de la sección 4) y en DATA_SYNC
+   (texto de 4b), pegar el enlace del vídeo en ambos y **Guardar**. Sin esto el
+   paso siguiente falla con 403.
+6. **Subir y promover**:
    ```
-   pnpm build:aab        # verifica vc37, 5 permisos de salud, FGS health|location, targetSdk 36
-   pnpm play:publish     # sube a internal
+   pnpm play:publish                 # sube vc37 a internal
+   pnpm play:promote --track alpha   # retira los bundles viejos con 12 permisos
+   pnpm play:promote --track beta
    pnpm play:status
    ```
-4. **QA en dispositivo antes de mandar a revisión**:
+   Tras subir vc37, volver a la declaración de FGS: aparecerá
+   FOREGROUND_SERVICE_HEALTH → «Otras tareas → Otro» con el texto de la sección
+   4 y el mismo vídeo, y DATA_SYNC desaparecerá cuando ningún track lo tenga.
+7. **QA en dispositivo antes de mandar a revisión**:
    - Revocar los permisos viejos en Health Connect y volver a conectar: el
      diálogo lista **exactamente 5 tipos**.
    - Empezar un entrenamiento, bloquear pantalla, comprobar que la notificación
@@ -223,19 +274,14 @@ Health Connect y un reloj con datos reales.
    - Empezar un cardio y comprobar la ruta con la pantalla apagada.
    - Revisión visual de barras de estado/navegación: con targetSdk 36 Android
      16 fuerza edge-to-edge y ya no admite el opt-out.
-5. **Grabar el vídeo** de la sección 5 con ese build.
-6. **Play Console (solo Guillermo)**:
-   - App content → **Health Connect**: dejar solo los 5 tipos y pegar la
-     sección 2. Quitar explícitamente HRV, VO₂ máx, calorías activas y FC en
-     reposo.
-   - App content → **Foreground service permissions**: quitar `dataSync`;
-     declarar `health` y `location` con los textos de la sección 4 y el enlace
-     del vídeo.
-   - Store listing → descripción larga: añadir el bloque de la sección 4.
+8. **Play Console**:
+   - App content → **Health Connect**: ya guardado (4b); revisar que tras
+     promover solo queden 5 permisos.
+   - Store listing → descripción larga: bloque de la sección 4.
    - App access → confirmar que las **credenciales de prueba** siguen válidas
      (el rechazo del FGS pide «valid testing credentials»).
-   - Promover vc37 a **producción** (el requisito de targetSdk 36 solo se
-     cumple con una versión en producción) y **enviar a revisión**.
+   - `pnpm play:promote --track production`, y en **Resumen de publicación**
+     → **Enviar a revisión** (el targetSdk 36 solo cuenta en producción).
 
 ---
 

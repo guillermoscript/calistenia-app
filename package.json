@@ -24,6 +24,7 @@
     "build:aab": "node scripts/build-mobile-aab.mjs",
     "play:status": "node scripts/play-status.mjs",
     "play:publish": "node scripts/publish-play.mjs",
+    "play:promote": "node scripts/play-promote.mjs",
     "validate:catalog": "node scripts/validate-exercise-catalog.mjs packages/core/data/exercise-catalog.json",
     "test:catalog": "node scripts/test-validate-exercise-catalog.mjs",
     "build:catalog": "node scripts/build-exercise-catalog.mjs",
