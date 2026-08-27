@@ -40,19 +40,55 @@ export function todayStrIn(tz: string): string {
   return local
 }
 
-/** Desplaza una fecha YYYY-MM-DD `offset` días (en la zona `tz`) y devuelve YYYY-MM-DD. */
+/**
+ * `dayjs.tz(str, tz)` con una cadena que dayjs no puede parsear NO devuelve un
+ * dayjs inválido: el plugin llama a `Intl.DateTimeFormat().formatToParts(new
+ * Date(NaN))` y eso LANZA `RangeError: Invalid time value` (tumbó la Home en
+ * la v1.12.2 con un startDate «Invalid Date» rehidratado de caché). Se parsea
+ * primero en UTC, que sí devuelve un dayjs inválido sin lanzar.
+ */
+function parseIn(dateStr: string, tz: string): dayjs.Dayjs | null {
+  if (typeof dateStr !== 'string' || !dateStr) return null
+  if (!dayjs.utc(dateStr).isValid()) return null
+  return dayjs.tz(dateStr, tz)
+}
+
+function warnInvalid(fn: string, value: unknown): void {
+  console.warn(`[tzDate] ${fn}: fecha inválida «${String(value)}»`)
+}
+
+/**
+ * Desplaza una fecha YYYY-MM-DD `offset` días (en la zona `tz`) y devuelve
+ * YYYY-MM-DD. Con una fecha inválida devuelve la entrada tal cual.
+ */
 export function addDaysIn(dateStr: string, offset: number, tz: string): string {
-  return dayjs.tz(dateStr, tz).add(offset, 'day').format('YYYY-MM-DD')
+  const d = parseIn(dateStr, tz)
+  if (!d) {
+    warnInvalid('addDaysIn', dateStr)
+    return dateStr
+  }
+  return d.add(offset, 'day').format('YYYY-MM-DD')
 }
 
-/** Días entre dos YYYY-MM-DD (a - b), en la zona `tz`. */
+/** Días entre dos YYYY-MM-DD (a - b), en la zona `tz`. Con una fecha inválida devuelve 0. */
 export function diffDaysIn(a: string, b: string, tz: string): number {
-  return dayjs.tz(a, tz).diff(dayjs.tz(b, tz), 'day')
+  const da = parseIn(a, tz)
+  const db = parseIn(b, tz)
+  if (!da || !db) {
+    warnInvalid('diffDaysIn', !da ? a : b)
+    return 0
+  }
+  return da.diff(db, 'day')
 }
 
-/** Timestamp UTC (formato PocketBase o ISO) → YYYY-MM-DD en la zona `tz`. */
+/** Timestamp UTC (formato PocketBase o ISO) → YYYY-MM-DD en la zona `tz`. Inválido → ''. */
 export function utcToLocalDateStrIn(utcTimestamp: string, tz: string): string {
-  return dayjs.utc(utcTimestamp).tz(tz).format('YYYY-MM-DD')
+  const d = dayjs.utc(utcTimestamp)
+  if (!utcTimestamp || !d.isValid()) {
+    warnInvalid('utcToLocalDateStrIn', utcTimestamp)
+    return ''
+  }
+  return d.tz(tz).format('YYYY-MM-DD')
 }
 
 /**
@@ -61,5 +97,10 @@ export function utcToLocalDateStrIn(utcTimestamp: string, tz: string): string {
  * "2026-03-24 05:00:00".
  */
 export function localMidnightAsUTCIn(dateStr: string, tz: string): string {
-  return dayjs.tz(dateStr, tz).utc().format('YYYY-MM-DD HH:mm:ss')
+  const d = parseIn(dateStr, tz)
+  if (!d) {
+    warnInvalid('localMidnightAsUTCIn', dateStr)
+    return ''
+  }
+  return d.utc().format('YYYY-MM-DD HH:mm:ss')
 }
