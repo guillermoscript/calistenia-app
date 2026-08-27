@@ -2,6 +2,40 @@
   "generated": "2026-08-26T19:24:56.306Z",
   "versions": [
     {
+      "version": "1.12.1",
+      "date": "2026-08-27",
+      "summary": {
+        "es": "Actualización de cumplimiento con Google Play: menos datos de salud, la notificación del entreno con el tipo de servicio correcto y soporte de Android 16.",
+        "en": "Google Play compliance update: fewer health data types, the workout notification on the right service type, and Android 16 support."
+      },
+      "highlights": [
+        {
+          "icon": "🔒",
+          "type": "fix",
+          "title": {
+            "es": "Health Connect pide solo lo que muestra",
+            "en": "Health Connect asks only for what it shows"
+          },
+          "body": {
+            "es": "La app ya no lee calorías activas ni frecuencia cardíaca en reposo. Quedan pasos, frecuencia cardíaca de tus entrenos, sueño, peso y grasa corporal. Si ya estabas conectado, vuelve a conectar desde Reloj y salud para que el diálogo refleje los 5 tipos.",
+            "en": "The app no longer reads active calories or resting heart rate. Steps, workout heart rate, sleep, weight and body fat remain. If you were already connected, reconnect from Watch & health so the dialog reflects the 5 types."
+          }
+        },
+        {
+          "icon": "⏱️",
+          "type": "fix",
+          "title": {
+            "es": "Notificación del entreno y Android 16",
+            "en": "Workout notification and Android 16"
+          },
+          "body": {
+            "es": "El cronómetro del entreno en curso corre ahora como servicio de salud, el tipo que Android reserva para apps de ejercicio, y la app apunta a Android 16.",
+            "en": "The live workout timer now runs as a health service, the type Android reserves for exercise apps, and the app now targets Android 16."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.12.0",
       "date": "2026-08-26",
       "summary": {

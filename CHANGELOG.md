@@ -9,6 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.12.1] - 2026-08-27
+
+_Google Play compliance update: fewer health data types, the workout notification on the right service type, and Android 16 support._
+
+### Fixed
+
+- **Health Connect asks only for what it shows** — The app no longer reads active calories or resting heart rate. Steps, workout heart rate, sleep, weight and body fat remain. If you were already connected, reconnect from Watch & health so the dialog reflects the 5 types.
+- **Workout notification and Android 16** — The live workout timer now runs as a health service, the type Android reserves for exercise apps, and the app now targets Android 16.
+
 ## [1.12.0] - 2026-08-26
 
 _The training-programs release: build and edit them end to end, share or remix them with credit to the author, and the app tells you which week you are on and how many reps you owe today. Training stats also land, and circuit days finally work._
@@ -362,7 +371,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...HEAD
+[1.12.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...mobile-v1.12.1
 [1.12.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...mobile-v1.12.0
 [1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1
 [1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
