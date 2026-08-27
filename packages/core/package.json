@@ -9,10 +9,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "dayjs": "^1.11.21",
-    "i18next": "^26.3.6",
-    "pocketbase": "^0.27.1",
-    "react-i18next": "^17.0.11"
+    "dayjs": "^1.11.23",
+    "i18next": "^26.4.0",
+    "pocketbase": "^0.27.3",
+    "react-i18next": "^17.0.12"
   },
   "peerDependencies": {
     "@tanstack/query-sync-storage-persister": "^5",
@@ -21,12 +21,12 @@
     "react": ">=18"
   },
   "devDependencies": {
-    "@tanstack/query-sync-storage-persister": "^5.101.4",
-    "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-query-persist-client": "^5.101.4",
+    "@tanstack/query-sync-storage-persister": "^5.102.6",
+    "@tanstack/react-query": "^5.102.6",
+    "@tanstack/react-query-persist-client": "^5.102.6",
     "@types/react": "^19.2.18",
     "react": "^19.2.8",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
