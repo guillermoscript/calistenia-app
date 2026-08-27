@@ -1,6 +1,6 @@
 FROM alpine:3.19
 
-ARG PB_VERSION=0.36.8
+ARG PB_VERSION=0.40.1
 
 RUN apk add --no-cache curl unzip ca-certificates \
     && curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \

@@ -78,7 +78,7 @@ jobs:
     name: E2E smoke (signup → primera sesión)
     runs-on: ubuntu-latest
     env:
-      PB_VERSION: 0.36.8 # mantener en sync con Dockerfile.pb-dev
+      PB_VERSION: 0.40.1 # mantener en sync con Dockerfile.pb-dev
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
