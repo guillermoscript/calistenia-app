@@ -22,9 +22,7 @@ export type HealthSource = 'health_connect' | 'healthkit' | 'manual'
  */
 export type HealthDataType =
   | 'steps'
-  | 'active_calories'
   | 'heart_rate'
-  | 'resting_hr'
   | 'sleep'
   | 'weight'
   | 'body_fat'
@@ -45,24 +43,28 @@ export interface HealthSample {
   metadata?: Record<string, unknown>
 }
 
-/** Resumen diario — espejo de la colección PB `daily_health_cache`. */
+/**
+ * Resumen diario — espejo de la colección PB `daily_health_cache`.
+ * La colección conserva columnas que ya no se escriben (active_calories,
+ * resting_hr, hrv_ms, vo2max, total_calories): sus permisos se retiraron por
+ * la política de acceso mínimo de Play y los datos viejos se dejan sin borrar.
+ */
 export interface DailyHealthSummary {
   id?: string
   /** YYYY-MM-DD local */
   date: string
   steps?: number
-  active_calories?: number
-  resting_hr?: number
   sleep_minutes?: number
   sleep_quality?: number
   weight_kg?: number
   body_fat_pct?: number
 }
 
-/** FC/calorías medidas por el reloj, adjuntas a una sesión (sessions/cardio/circuit). */
+/** FC medida por el reloj, adjunta a una sesión (sessions/cardio/circuit). */
 export interface SessionHealthMetrics {
   hr_avg?: number
   hr_max?: number
+  /** Legado: dejó de escribirse en v1.12.1 (sin READ_ACTIVE_CALORIES_BURNED); se muestra si existe. */
   calories_actual?: number
 }
 

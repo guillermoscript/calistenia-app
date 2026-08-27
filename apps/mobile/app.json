@@ -77,15 +77,14 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.FOREGROUND_SERVICE_HEALTH",
+        "android.permission.HIGH_SAMPLING_RATE_SENSORS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_SLEEP",
         "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_RESTING_HEART_RATE",
-        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
         "android.permission.health.READ_WEIGHT",
         "android.permission.health.READ_BODY_FAT"
       ],
@@ -253,7 +252,7 @@
           "android": {
             "minSdkVersion": 26,
             "compileSdkVersion": 36,
-            "targetSdkVersion": 35,
+            "targetSdkVersion": 36,
             "enablePngCrunchInReleaseBuilds": false
           }
         }

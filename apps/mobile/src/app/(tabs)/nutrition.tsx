@@ -43,7 +43,6 @@ import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality
 import { op } from '@calistenia/core/lib/analytics'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { useDayRollover } from '@/lib/use-day-rollover'
-import { useDailyHealth } from '@/lib/health/useDailyHealth'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import { BadgeCelebrationDialog } from '@/components/nutrition/BadgeCelebrationDialog'
@@ -272,28 +271,19 @@ export default function NutritionTab() {
     return missed.length >= 2
   }, [weeklyHistory, goals])
 
-  // ─── Calorías activas del reloj (Health Connect) para este día ───────────────
-  // El reloj quemó X kcal → amplían el budget de calorías del día (modelo
-  // "comes lo que quemas"). OJO: el TDEE ya incluye un multiplicador de actividad,
-  // así que sumar esto puede doble-contar si el usuario eligió un nivel alto.
-  const dailyHealth = useDailyHealth(selectedDate)
-  const activeCalories = Math.max(0, Math.round(dailyHealth?.active_calories ?? 0))
-
   // ─── Remaining macros (siempre de HOY: alimentan el plan IA en PLANIFICAR,
   // que planifica el día en curso aunque se esté inspeccionando otra fecha) ────
   const todayTotals = useMemo(() => getDailyTotals(todayStr()), [getDailyTotals])
   const todayEntries = useMemo(() => getEntriesForDate(todayStr()), [getEntriesForDate])
   const remaining = useMemo(() => {
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    // activeCalories viene del health del día seleccionado; solo aplica si es hoy.
-    const extra = selectedDate === todayStr() ? activeCalories : 0
     return {
-      calories: goals.dailyCalories + extra - todayTotals.calories,
+      calories: goals.dailyCalories - todayTotals.calories,
       protein: goals.dailyProtein - todayTotals.protein,
       carbs: goals.dailyCarbs - todayTotals.carbs,
       fat: goals.dailyFat - todayTotals.fat,
     }
-  }, [goals, todayTotals, activeCalories, selectedDate])
+  }, [goals, todayTotals])
 
   const loggedMealTypes = useMemo(
     () => [...new Set(todayEntries.map(e => e.mealType))],
@@ -627,7 +617,6 @@ export default function NutritionTab() {
               onEditEntry={handleEditEntry}
               selectedDate={selectedDate}
               dailyQualityScore={dailyQualityScore}
-              activeCalories={activeCalories}
               spend={spendData?.summary}
               entryCosts={spendData?.costByEntry}
             />
