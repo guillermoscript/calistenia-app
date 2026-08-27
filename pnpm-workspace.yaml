@@ -24,3 +24,5 @@ patchedDependencies:
 overrides:
   linkify-it: ^5.0.2
   react-native-css-interop: 0.2.6
+  # dayjs 1.11.22+ rompe .tz() en Hermes (iamkun/dayjs#3174) → RangeError al arrancar (v1.12.1)
+  dayjs: 1.11.21

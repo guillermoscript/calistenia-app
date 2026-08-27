@@ -63,6 +63,9 @@ export function computeCurrentStreak(doneDates: Iterable<string>, today: string)
   if (set.size === 0) return 0
 
   const todayNum = toDayNumber(today)
+  // `today` inválido ('Invalid Date', '') → NaN → toDateStr lanzaría RangeError
+  // y tumbaría el WorkoutProvider entero. Sin hoy no hay racha viva: 0.
+  if (!Number.isFinite(todayNum)) return 0
   let cursor = set.has(today) ? todayNum : todayNum - 1
   if (!set.has(toDateStr(cursor))) return 0
 

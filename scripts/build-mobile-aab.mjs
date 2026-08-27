@@ -20,16 +20,7 @@
 
 import { execSync, execFileSync } from 'child_process'
 import { createHash } from 'crypto'
-import {
-  copyFileSync,
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from 'fs'
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'fs'
 import { homedir, tmpdir } from 'os'
 import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
@@ -289,6 +280,18 @@ if (existsSync(SENTRY_ENV)) {
 } else {
   warn('sin .env.sentry-build-plugin → sourcemaps sin subir')
   env.SENTRY_DISABLE_AUTO_UPLOAD = 'true'
+}
+
+// El bundle JS lo genera la tarea gradle createBundleReleaseJsAndAssets, cuyos
+// inputs son los fuentes de apps/mobile: un cambio SOLO en packages/core (o en
+// node_modules) la deja UP-TO-DATE y el AAB sale con el bundle VIEJO (v1.12.2:
+// el hotfix de dayjs no entró y el AAB seguía crasheando). Se purga siempre.
+step('Purgando el bundle JS generado (fuerza re-bundling)')
+for (const dir of [resolve(ANDROID, 'app/build/generated'), resolve(process.env.TMPDIR || '/tmp', 'metro-cache')]) {
+  if (existsSync(dir)) {
+    rmSync(dir, { recursive: true, force: true })
+    ok(`borrado ${dir}`)
+  }
 }
 
 step('gradlew :app:bundleRelease  (6-25 min, paciencia)')

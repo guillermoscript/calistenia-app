@@ -85,7 +85,9 @@ export function setupOnlineManager(): void {
  * Coste de subirla: los usuarios pierden UNA vez el caché offline y la primera
  * carga tras el deploy va a red. Barato al lado de un dashboard en blanco.
  */
-export const PERSIST_BUSTER = 'v2-feed-588'
+// v3: la v1.12.1 (vc37) persistió settings.startDate = «Invalid Date» (dayjs
+// roto en Hermes); rehidratarlo tumbaba la Home. Se desecha esa caché.
+export const PERSIST_BUSTER = 'v3-dayjs-660'
 
 /** Persister sobre el storage síncrono inyectado (localStorage / MMKV). */
 export function createCorePersister() {

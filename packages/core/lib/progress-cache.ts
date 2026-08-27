@@ -32,8 +32,20 @@ export const lsGetSettings = (): Settings => {
 export const lsSetSettings = (d: Settings): void => { storage.setItem(SETTINGS_LS_KEY, JSON.stringify(d)) }
 
 /** Garantiza startDate en settings local (igual que loadFromLS previo). */
+const YMD = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Garantiza un `startDate` YYYY-MM-DD válido. También REPARA uno inválido:
+ * la v1.12.1 (vc37) corría con un dayjs que devolvía «Invalid Date» en Hermes
+ * y lo dejó persistido en localStorage y en la caché de React Query; al
+ * rehidratarlo, `diffDays(todayStr(), 'Invalid Date')` tumbaba la Home.
+ */
 export const ensureStartDate = (s: Settings): Settings => {
-  if (!s.startDate) { s.startDate = todayStr(); lsSetSettings(s) }
+  if (!s.startDate || !YMD.test(s.startDate)) {
+    const today = todayStr()
+    s.startDate = YMD.test(today) ? today : new Date().toISOString().slice(0, 10)
+    lsSetSettings(s)
+  }
   return s
 }
 
