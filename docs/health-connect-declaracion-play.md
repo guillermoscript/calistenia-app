@@ -220,6 +220,13 @@ Health Connect y un reloj con datos reales.
   vc35, MEDIA_PLAYBACK hasta vc20), marcar «Otras tareas → Otro», poner el mismo
   vídeo y explicar que el permiso está eliminado en vc37 y solo queda en tracks
   que se están retirando.
+- **Bundle nuevo con un FGS nuevo = círculo vicioso con el API**: el formulario
+  no lista `FOREGROUND_SERVICE_HEALTH` hasta que Play conoce un bundle que lo
+  pida, y el API no commitea ese bundle sin declararlo. Se rompe subiendo el
+  AAB **por la consola** (Prueba interna → Crear nueva versión → arrastrar el
+  .aab → Guardar como borrador → Guardar y publicar): la consola sí lo acepta,
+  el permiso aparece en el formulario, se declara, y a partir de ahí
+  `play:promote` funciona por API. Hecho así el 2026-08-27 con vc37.
 - La declaración de Health Connect (Aplicaciones de salud, 3 pasos) **sí se
   guardó** el 2026-08-27 con las justificaciones de la sección 2 para los 5
   permisos y con «Gestión del sueño» añadido a las funciones. Queda en
