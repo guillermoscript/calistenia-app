@@ -244,7 +244,19 @@ function RootLayout() {
       readyRef.current = true
       if (!cancelled) setReady(true)
     }
-    boot()
+    // El boot NUNCA puede dejar el splash colgado (#661): si algo de aquí
+    // rechaza, `setReady(true)` no se llamaba nunca, `SplashScreen.hideAsync()`
+    // tampoco y la app se quedaba en negro para siempre. Pasó con una clave de
+    // AsyncStorage de más de 2 MB (CursorWindow de Android). Arrancar en
+    // degradado —sin caché, sin tema guardado— siempre es mejor que no arrancar.
+    boot().catch((e) => {
+      console.error('[boot] falló, se arranca en degradado:', e)
+      Sentry.captureException(e, { tags: { boot_stage: 'bootstrap' } })
+      // readyRef también: es lo que habilita el kick a /login cuando el
+      // authStore se limpia en caliente. Sin él la app quedaría sin esa salida.
+      readyRef.current = true
+      if (!cancelled) setReady(true)
+    })
     return () => {
       cancelled = true
     }
