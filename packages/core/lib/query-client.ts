@@ -89,11 +89,59 @@ export function setupOnlineManager(): void {
 // roto en Hermes); rehidratarlo tumbaba la Home. Se desecha esa caché.
 export const PERSIST_BUSTER = 'v3-dayjs-660'
 
+/** Clave única donde el persister serializa TODA la caché de queries. */
+export const PERSIST_KEY = 'calistenia_rq_cache'
+
+/**
+ * Tope de tamaño del caché persistido, en caracteres.
+ *
+ * Por qué existe (#661): en Android AsyncStorage es SQLite y una fila no puede
+ * superar el CursorWindow (~2 MB); al leerla salta
+ * «Row too big to fit into CursorWindow» y se lleva por delante la lectura
+ * entera del storage — y con ella el arranque de la app. Como el persister mete
+ * toda la caché en UNA clave y el gcTime es de 24 h, esa clave crecía sin techo
+ * (catálogo + programas + muro + detalles de sesión) hasta cruzar el límite.
+ *
+ * El tope se cuenta en CARACTERES, no en bytes: `String.length` está siempre
+ * disponible (Hermes y navegador) y no obliga a un TextEncoder. 600k caracteres
+ * son ~600 KB en JSON ASCII y ~1,2 MB en el peor caso de texto acentuado —
+ * holgado por debajo de los 2 MB en ambos.
+ */
+export const PERSIST_MAX_CHARS = 600_000
+
+/**
+ * Storage del persister con guard de tamaño. Exportado para poder testear el
+ * descarte sin montar un persister entero. Si el caché serializado se pasa
+ * del tope no se escribe y además se BORRA el anterior: dejar en disco una
+ * versión vieja significaría rehidratar datos rancios indefinidamente, porque
+ * ya nunca se sobrescribiría.
+ */
+export const cappedStorage = {
+  getItem: (key: string) => storage.getItem(key),
+  removeItem: (key: string) => storage.removeItem(key),
+  setItem: (key: string, value: string) => {
+    if (key === PERSIST_KEY && value.length > PERSIST_MAX_CHARS) {
+      storage.removeItem(key)
+      try {
+        getPlatform().reportError?.(
+          new Error(
+            `[query-client] caché persistido descartado: ${value.length} caracteres > ${PERSIST_MAX_CHARS}`
+          )
+        )
+      } catch {
+        /* informar de un descarte no puede tumbar la escritura */
+      }
+      return
+    }
+    storage.setItem(key, value)
+  },
+}
+
 /** Persister sobre el storage síncrono inyectado (localStorage / MMKV). */
 export function createCorePersister() {
   return createSyncStoragePersister({
-    storage,
-    key: 'calistenia_rq_cache',
+    storage: cappedStorage,
+    key: PERSIST_KEY,
     throttleTime: 1000,
   })
 }
