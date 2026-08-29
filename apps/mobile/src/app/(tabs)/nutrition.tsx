@@ -90,7 +90,7 @@ export default function NutritionTab() {
   const [showGoalSetup, setShowGoalSetup] = useState(false)
   const [pendingGoal, setPendingGoal] = useState<NutritionGoalType | null>(null)
   // Prefill del wizard desde `users` (peso/altura/actividad/ritmo/objetivo).
-  const profileData = useNutritionProfilePrefill(userId)
+  const { profile: profileData, loaded: profileLoaded } = useNutritionProfilePrefill(userId)
 
   // ─── Core hooks ─────────────────────────────────────────────────────────────
   const nutrition = useNutrition(userId)
@@ -412,7 +412,10 @@ export default function NutritionTab() {
   }
 
   // ─── Loading skeleton ────────────────────────────────────────────────────────
-  if (!isReady) {
+  // Solo se espera al perfil cuando toca estrenar el wizard: congela sus props
+  // en `useState`, así que montarlo antes lo deja vacío para siempre. En modo
+  // edición el pre-relleno sale de `goals`, ya cargado.
+  if (!isReady || (!goals && !profileLoaded)) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={['top']}>
         <View className="px-4 pt-4 pb-2">

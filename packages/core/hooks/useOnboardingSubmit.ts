@@ -7,9 +7,12 @@
  * cada app) y `onSaveError` (haptics en móvil).
  */
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
 import { parseDecimal } from '../lib/bmi'
+import { inferNutritionGoalType, ONBOARDING_ACTIVITY_TO_NUTRITION } from '../lib/nutritionGoal'
+import { seedAutoNutritionGoal } from '../lib/nutrition-profile'
 import { upsertUserHealth } from './useUserHealth'
 import type { BasicsValues, GoalsValues, HealthValues, TrainingValues } from '../types/onboarding'
 
@@ -22,6 +25,7 @@ export interface OnboardingSubmitOptions {
 }
 
 export function useOnboardingSubmit({ userId, captureException, onSaveError }: OnboardingSubmitOptions) {
+  const queryClient = useQueryClient()
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingGoals, setSavingGoals] = useState(false)
   const [savingHealth, setSavingHealth] = useState(false)
@@ -39,9 +43,9 @@ export function useOnboardingSubmit({ userId, captureException, onSaveError }: O
     if (!userId) return false
     setSavingProfile(true)
     try {
-      // Edad/sexo ya no existen en `users` (PII; viven en `nutrition_goals`,
-      // que el wizard de nutrición pide al crear el objetivo). Aquí solo se
-      // usan para las heurísticas del propio flujo.
+      // Edad/sexo no van aquí: en `users` son PII borrada (1781800000) y viven
+      // en `nutrition_goals`. Los persiste `seedNutritionGoal` al guardar las
+      // metas, que es el primer punto del flujo con todos los datos a mano.
       await pb.collection('users').update(userId, {
         weight: parseDecimal(basics.weight),
         height: parseDecimal(basics.height),
@@ -55,7 +59,42 @@ export function useOnboardingSubmit({ userId, captureException, onSaveError }: O
     return true
   }
 
-  const saveGoals = async (goals: GoalsValues): Promise<boolean> => {
+  /**
+   * Con los básicos (peso/altura/edad/sexo) y las metas (actividad, objetivo,
+   * ritmo) ya está todo lo que necesita la fórmula de macros, así que aquí se
+   * siembra el objetivo de nutrición en vez de que el wizard de `/nutrition`
+   * vuelva a preguntar lo mismo. Es también lo que salva edad y sexo: `users`
+   * ya no los guarda (PII borrada en 1781800000) y su sitio es la fila de
+   * `nutrition_goals`.
+   *
+   * Best-effort: si faltan datos (pasos omitidos) o la escritura falla, no se
+   * siembra nada y el wizard sigue siendo el camino, ahora pre-rellenado.
+   */
+  const seedNutritionGoal = async (basics: BasicsValues, goals: GoalsValues): Promise<void> => {
+    if (!userId) return
+    const weight = parseDecimal(basics.weight)
+    const height = parseDecimal(basics.height)
+    const age = parseInt(basics.age, 10)
+    const sex = basics.sex
+    if (!weight || !height || !age || (sex !== 'male' && sex !== 'female')) return
+
+    const activityLevel = goals.activity_level
+      ? ONBOARDING_ACTIVITY_TO_NUTRITION[goals.activity_level]
+      : undefined
+    if (!activityLevel) return
+
+    const goalType = inferNutritionGoalType(weight, parseDecimal(goals.goal_weight) ?? undefined, goals.primary_goal)
+    if (!goalType) return
+
+    await seedAutoNutritionGoal(userId, {
+      weight, height, age, sex,
+      activityLevel,
+      goal: goalType,
+      pace: goals.pace || undefined,
+    }, queryClient)
+  }
+
+  const saveGoals = async (goals: GoalsValues, basics?: BasicsValues): Promise<boolean> => {
     if (!userId) return false
     setSavingGoals(true)
     const waist = parseDecimal(goals.waist)
@@ -84,6 +123,7 @@ export function useOnboardingSubmit({ userId, captureException, onSaveError }: O
         console.warn('Failed to save waist measurement:', e)
       }
     }
+    if (basics) await seedNutritionGoal(basics, goals)
     setSavingGoals(false)
     return true
   }

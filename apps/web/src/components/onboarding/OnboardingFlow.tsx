@@ -138,7 +138,9 @@ export default function OnboardingFlow({
   }
 
   const handleSaveGoals = async () => {
-    if (await saveGoals(goals)) goToStep(healthStep)
+    // `basics` va con las metas para sembrar el objetivo de nutrición: es el
+    // primer momento con peso/altura/edad/sexo Y actividad/objetivo/ritmo.
+    if (await saveGoals(goals, basics)) goToStep(healthStep)
   }
 
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
