@@ -10,6 +10,7 @@ import {
   listProgramPhases,
   listProgramExercises,
   listProgramOverrides,
+  listProgramStats,
 } from "../api/repos/index.js";
 import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
 import { resolveProgramExercises, toProgramOverrides } from "../api/program-overrides-server.js";
@@ -48,6 +49,11 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           }),
         ]);
 
+        // Cuánta gente sigue cada uno (#669). Va después de la lista porque
+        // se filtra por los ids que acaba de devolver, y nunca tumba la tool:
+        // un despliegue sin la migración de #620 devuelve 404 en la view.
+        const stats = await listProgramStats(pb, programs.map((p) => p.id));
+
         const activeIds = new Set(userPrograms.filter((up) => up.is_current).map((up) => up.program));
         const selectedIds = new Set(userPrograms.map((up) => up.program));
 
@@ -69,6 +75,10 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             is_selected: selectedIds.has(p.id),
             forked_from: (p.forked_from as string) || null,
             forked_from_name: p.forked_from ? nameById.get(p.forked_from as string) ?? null : null,
+            // `null` = no se sabe (la view no está o no se puede leer), que no
+            // es lo mismo que 0 = todavía no lo sigue nadie. Ver `listProgramStats`.
+            followers_count: stats[p.id]?.followers_count ?? null,
+            athletes_count: stats[p.id]?.athletes_count ?? null,
           })),
         };
 
@@ -83,6 +93,12 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             lines.push(`- **ID**: \`${p.id}\``);
             lines.push(`- **Duration**: ${p.duration_weeks} weeks`);
             lines.push(`- **Description**: ${p.description || "N/A"}`);
+            // Sin dato no se escribe la línea: un "0 followers" inventado a
+            // partir de un fallo de permisos es perfectamente creíble y falso.
+            if (p.followers_count !== null) {
+              const athletes = p.athletes_count ? `, ${p.athletes_count} training it` : "";
+              lines.push(`- **Followers**: ${p.followers_count}${athletes}`);
+            }
             if (p.forked_from) {
               lines.push(`- **Based on**: ${p.forked_from_name ?? `\`${p.forked_from}\``}`);
             }
@@ -140,7 +156,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // Load phases and exercises
         const programId = program.id as string;
-        const [phases, exercises, overrideRows, active] = await Promise.all([
+        const [phases, exercises, overrideRows, active, stats] = await Promise.all([
           listProgramPhases(pb, programId),
           listProgramExercises(pb, programId, { sort: "priority" }),
           listProgramOverrides(pb, userId, programId),
@@ -148,6 +164,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           // entero global `settings.phase`. Se le pasa el `current` que ya
           // tenemos para que no vuelva a leer la inscripción.
           resolveActiveProgramProgress(pb, userId, tz, today(tz), { current }),
+          // Cuánta gente más lo sigue (#620/#669). Nunca lanza y `undefined`
+          // significa «no se sabe», no «cero»: ver `listProgramStats`.
+          listProgramStats(pb, [programId]),
         ]);
         const overrides = toProgramOverrides(overrideRows);
 
@@ -171,6 +190,8 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             duration_weeks: program.duration_weeks,
             instructions: localize(program.instructions as string) || null,
             forked_from: (program.forked_from as string) || null,
+            followers_count: stats[programId]?.followers_count ?? null,
+            athletes_count: stats[programId]?.athletes_count ?? null,
           },
           started_at: userProgram.started_at,
           // El estado de la inscripción, que es donde viven las dos cosas que
@@ -230,6 +251,12 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
                 `${p.is_completed ? " · **program finished**" : ""}`
               : "",
             output.enrollment.auto_progress ? `_Auto-progression is ON for this enrollment._` : "",
+            // Sin dato no se escribe la línea: un «0 followers» sacado de un
+            // fallo de permisos es creíble y falso (#669).
+            output.program.followers_count !== null
+              ? `_${output.program.followers_count} people follow this program` +
+                `${output.program.athletes_count ? `, ${output.program.athletes_count} have trained it` : ""}._`
+              : "",
             "",
             output.program.description ? `> ${output.program.description}\n` : "",
           ];

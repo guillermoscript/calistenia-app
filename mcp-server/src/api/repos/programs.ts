@@ -141,3 +141,77 @@ export async function listProgramOverrides<T extends RecordModel = RecordModel>(
     })
     .catch(() => [] as T[]);
 }
+
+/**
+ * Cuánta gente sigue cada programa, de `view_program_stats` (#620, #669).
+ *
+ * Los conteos los agrega la view en el servidor; hacerlos aquí costaría una
+ * consulta por programa del catálogo. La definición está en
+ * `pb_migrations/1786200000_program_forked_from_and_stats.js` y el `id` de la
+ * view ES el del programa, así que se filtra por los mismos ids que la tool ya
+ * tiene en la mano.
+ *
+ * TRES COSAS QUE EL CLIENTE YA APRENDIÓ (`packages/core/hooks/useProgramStats.ts`)
+ * Y QUE AQUÍ VALEN IGUAL:
+ *
+ * 1. **El filtro se trocea.** Viaja en la query string, y un catálogo entero en
+ *    un solo `OR` genera una URL que el servidor rechaza (414) o que un proxy
+ *    trunca. 50 ids por consulta, el mismo tamaño que usa `fetchCatalog`.
+ * 2. **Nunca lanza.** Un despliegue sin la migración aplicada devuelve 404 en
+ *    esta colección, y el contador es prueba social: sin él la tool tiene que
+ *    seguir respondiendo igual que antes de #620.
+ * 3. **Ausente NO es cero.** Si la regla de lectura de la view no casa,
+ *    PocketBase devuelve 0 filas SIN error (#422): un programa que no vuelve
+ *    puede ser «no lo sigue nadie» o «no puedes verlo», y desde aquí son
+ *    indistinguibles. Se deja fuera del mapa en vez de meterlo a 0, para que el
+ *    llamante pueda distinguir «no se sabe» de «nadie todavía». Rellenar con
+ *    ceros convertiría un fallo de permisos en un «0 personas lo siguen»
+ *    perfectamente creíble.
+ */
+export interface ProgramStats {
+  active_count: number;
+  completed_count: number;
+  /** Activos + completados: el «N personas lo siguen» que pinta la app. */
+  followers_count: number;
+  /** Gente DISTINTA con al menos una sesión de este programa. */
+  athletes_count: number;
+}
+
+/** Cuántos ids caben en un mismo `OR` antes de partir la consulta. */
+const STATS_ID_CHUNK = 50;
+
+export async function listProgramStats(
+  pb: PB,
+  programIds: readonly string[],
+): Promise<Record<string, ProgramStats>> {
+  const ids = [...new Set(programIds)].filter(Boolean);
+  if (ids.length === 0) return {};
+
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += STATS_ID_CHUNK) chunks.push(ids.slice(i, i + STATS_ID_CHUNK));
+
+  const pages = await Promise.all(
+    chunks.map((chunk) =>
+      pb
+        .collection("view_program_stats")
+        .getFullList<RecordModel>({
+          filter: chunk.map((id) => pb.filter("id = {:id}", { id })).join(" || "),
+          requestKey: null,
+        })
+        .catch(() => [] as RecordModel[]),
+    ),
+  );
+
+  const byId: Record<string, ProgramStats> = {};
+  for (const row of pages.flat()) {
+    // `Number(x) || 0`: SQLite devuelve los COUNT como números, pero un campo
+    // que no viniera daría `NaN` y saldría impreso tal cual.
+    byId[row.id] = {
+      active_count: Number(row.active_count) || 0,
+      completed_count: Number(row.completed_count) || 0,
+      followers_count: Number(row.followers_count) || 0,
+      athletes_count: Number(row.athletes_count) || 0,
+    };
+  }
+  return byId;
+}
