@@ -33,6 +33,24 @@
  *
  * Nunca lanza por datos incompletos: sin programa activo devuelve `null` y el
  * llamante decide qué decir.
+ *
+ * POR QUÉ ESTE FICHERO AÑADIÓ `i18next` A package.json
+ * ----------------------------------------------------
+ * `programProgress` → `community-programs` → `dateUtils`, y ese último importa
+ * `i18next` para formatear. El bundle de `mcp-use build` inlinea el código de
+ * core, así que la dependencia tiene que estar en el árbol de `mcp-server`: en
+ * local pnpm la encontraba subiendo a la raíz del monorepo y el build pasaba,
+ * pero el job de CI hace `npm ci` DENTRO de mcp-server y enlaza
+ * `packages/core/node_modules` a ese mismo árbol, donde no estaba → el build
+ * moría al evaluar la entrada. Es la misma razón por la que `dayjs` y
+ * `pocketbase` ya estaban declarados ahí (ver el comentario de
+ * .github/workflows/build-ai-api.yml).
+ *
+ * De esa cadena solo se usa `addDays`, que es aritmética de calendario sobre
+ * `YYYY-MM-DD`: depende del `_tz` singleton de core, que en este proceso es el
+ * del contenedor, pero sumar días a una fecha sin hora da el mismo día en
+ * cualquier zona. Las horas de verdad pasan por `utcToLocalDay`, que sí recibe
+ * el `tz` del usuario.
  */
 
 import {
