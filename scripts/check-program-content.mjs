@@ -133,9 +133,7 @@ function patternOf(entry) {
 
 // ── Comprobación de un programa ──────────────────────────────────────────────
 
-function checkProgram(file) {
-  const slug = basename(file, '.json')
-  const doc = JSON.parse(readFileSync(file, 'utf8'))
+export function checkProgram(slug, doc) {
   const errors = []
   const warnings = []
   const err = m => errors.push(m)
@@ -167,7 +165,12 @@ function checkProgram(file) {
     const ids = new Set()
 
     for (const day of phase.days ?? []) {
-      for (const ex of day.exercises ?? []) {
+      // El id del ejercicio anterior EN ORDEN, para la comprobación 2b.
+      let previousId = null
+
+      for (const ex of [...(day.exercises ?? [])].sort(
+        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+      )) {
         totalExercises++
         const where = `fase ${pn} · ${day.day_id} · #${ex.sort_order}`
 
@@ -187,6 +190,24 @@ function checkProgram(file) {
         if (resolved !== ex.exercise_id) {
           warn(`${where}: "${ex.exercise_id}" resuelve a "${resolved}" — escribe el id canónico`)
         }
+
+        // 2b — Nunca el mismo ejercicio dos veces SEGUIDAS en un día.
+        //
+        // Sembrar el id real del catálogo (en vez de la clave de hueco
+        // `dia_fase_orden`, que era única por construcción) hace que dos filas
+        // contiguas puedan compartir id. `computeExerciseBoundaries` en
+        // `packages/core/lib/session-machine.ts` marca el inicio de un ejercicio
+        // comparando SOLO con la fila anterior: dos ids iguales seguidos se
+        // fusionan en un único bloque y la navegación anterior/siguiente se
+        // salta uno. La misma igualdad rompe la `key` de React en WorkoutPage.
+        //
+        // Por eso mira lo contiguo y no el día entero: repetir movilidad de
+        // muñeca en el calentamiento y otra vez en la vuelta a la calma es
+        // legítimo y no toca ninguna frontera.
+        if (resolved === previousId) {
+          err(`${where}: "${resolved}" repetido justo después de sí mismo — fusiona el bloque de navegación de la sesión`)
+        }
+        previousId = resolved
 
         // 3 — El nombre es lo que se pinta en pantalla.
         const name = textOf(ex.name)
@@ -300,35 +321,48 @@ function checkProgram(file) {
   return { slug, errors, warnings, totalExercises }
 }
 
+/** Lee y comprueba un `programs/<slug>.json` del disco. */
+function checkProgramFile(file) {
+  const slug = basename(file, '.json')
+  const doc = JSON.parse(readFileSync(file, 'utf8'))
+  return checkProgram(slug, doc)
+}
+
 // ── Ejecución ────────────────────────────────────────────────────────────────
+// Solo corre cuando el fichero se invoca como script (no cuando un test lo
+// importa por `checkProgram`) — así el runner no dispara la CLI de rebote.
 
-const args = process.argv.slice(2)
-const asJson = args.includes('--json')
-const filters = args.filter(a => !a.startsWith('--'))
+const isMain = import.meta.url === `file://${process.argv[1]}`
 
-const files = readdirSync(join(ROOT, 'programs'))
-  .filter(f => f.endsWith('.json'))
-  .filter(f => !filters.length || filters.some(x => basename(f, '.json').includes(x.replace(/\*/g, ''))))
-  .map(f => join(ROOT, 'programs', f))
-  .sort()
+if (isMain) {
+  const args = process.argv.slice(2)
+  const asJson = args.includes('--json')
+  const filters = args.filter(a => !a.startsWith('--'))
 
-const results = files.map(checkProgram)
+  const files = readdirSync(join(ROOT, 'programs'))
+    .filter(f => f.endsWith('.json'))
+    .filter(f => !filters.length || filters.some(x => basename(f, '.json').includes(x.replace(/\*/g, ''))))
+    .map(f => join(ROOT, 'programs', f))
+    .sort()
 
-if (asJson) {
-  console.log(JSON.stringify(results, null, 2))
-} else {
-  let nErr = 0
-  let nWarn = 0
-  for (const r of results) {
-    nErr += r.errors.length
-    nWarn += r.warnings.length
-    const mark = r.errors.length ? '✗' : r.warnings.length ? '!' : '✓'
-    console.log(`\n${mark} ${r.slug}  (${r.totalExercises} ejercicios)`)
-    for (const e of r.errors) console.log(`    ERROR  ${e}`)
-    for (const w of r.warnings) console.log(`    aviso  ${w}`)
+  const results = files.map(checkProgramFile)
+
+  if (asJson) {
+    console.log(JSON.stringify(results, null, 2))
+  } else {
+    let nErr = 0
+    let nWarn = 0
+    for (const r of results) {
+      nErr += r.errors.length
+      nWarn += r.warnings.length
+      const mark = r.errors.length ? '✗' : r.warnings.length ? '!' : '✓'
+      console.log(`\n${mark} ${r.slug}  (${r.totalExercises} ejercicios)`)
+      for (const e of r.errors) console.log(`    ERROR  ${e}`)
+      for (const w of r.warnings) console.log(`    aviso  ${w}`)
+    }
+    console.log(
+      `\n${'─'.repeat(70)}\n${results.length} programas · ${nErr} errores · ${nWarn} avisos\n`,
+    )
+    if (nErr) process.exit(1)
   }
-  console.log(
-    `\n${'─'.repeat(70)}\n${results.length} programas · ${nErr} errores · ${nWarn} avisos\n`,
-  )
-  if (nErr) process.exit(1)
 }

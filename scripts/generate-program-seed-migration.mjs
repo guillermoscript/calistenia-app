@@ -13,6 +13,21 @@
  * copia `pb_migrations/` y `pb_hooks/`, así que `programs/` no existe dentro del
  * contenedor. El contenido tiene que viajar DENTRO del fichero de migración.
  *
+ * ## `exercise_id` tiene que ser el id del catálogo
+ *
+ * Hasta esta versión el generador sembraba `program_exercises.exercise_id` con
+ * una CLAVE DE HUECO propia (`${day_id}_${phase_number}_${sort_order}`, p.ej.
+ * `lun_1_4`) y tiraba el id de catálogo real que trae cada ejercicio del JSON
+ * (`pushup_std`, `pike_pushup`...). Esa clave nunca resolvía contra
+ * `resolveExerciseId()` (`packages/core/lib/resolveExerciseId.ts`), así que
+ * `useAutoProgression` (#617) jamás encontraba variantes del catálogo para el
+ * ejercicio y la sugerencia `kind: 'variant'` —pasar de flexión de rodillas a
+ * flexión completa— no se disparaba NUNCA en ningún programa oficial; la media
+ * del catálogo tampoco resolvía. Ahora se siembra el id canónico, resuelto con
+ * la misma lógica que `resolveExerciseId.ts` (ver `resolveCatalogExerciseId`
+ * más abajo), y un id que no resuelve hace fallar la generación en vez de
+ * colarse silenciosamente.
+ *
  * ## Por qué un generador y no una migración escrita a mano
  *
  * Toda la normalización se hace aquí, en Node, con los helpers que ya tienen
@@ -78,6 +93,98 @@ const REST_DAY_NAME = {
 const REST_FOCUS = { es: 'Descanso', en: 'Rest' }
 const REST_COLOR = '#888899'
 
+const CATALOG_PATH = resolve(ROOT, 'packages/core/data/exercise-catalog.json')
+
+/**
+ * Mismo normalizador que `packages/core/lib/catalogIndex.ts::normalizeForLookup`.
+ * Deliberadamente NO se importa ese fichero (es TypeScript, y este script corre
+ * como Node plano sin transpilar): se copia la función, de tres líneas, para no
+ * arrastrar un paso de build a un generador que hoy no lo necesita.
+ */
+function normalizeForLookup(s) {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+}
+
+/**
+ * Índice del catálogo para resolver `exercise_id`, espejo EXACTO de
+ * `buildCatalogIndex()` en `packages/core/lib/catalogIndex.ts` — mismos tres
+ * mapas (`ids`, `bySeedSlug`, `byName`) y misma regla de ambigüedad: un nombre
+ * normalizado que apunte a más de un id de catálogo no se indexa, para no
+ * arriesgar una resolución equivocada.
+ */
+function buildCatalogResolver() {
+  const raw = JSON.parse(readFileSync(CATALOG_PATH, 'utf-8'))
+  const ids = new Set()
+  const bySeedSlug = new Map()
+  const nameCounts = new Map()
+
+  for (const catName of Object.keys(raw.categories || {})) {
+    for (const ex of raw.categories[catName]?.exercises || []) {
+      ids.add(ex.id)
+      if (ex.seed_slug) bySeedSlug.set(ex.seed_slug, ex.id)
+
+      for (const n of [ex.name?.es, ex.name?.en]) {
+        if (!n) continue
+        const norm = normalizeForLookup(n)
+        if (!norm) continue
+        const seen = nameCounts.get(norm)
+        if (seen) seen.add(ex.id)
+        else nameCounts.set(norm, new Set([ex.id]))
+      }
+    }
+  }
+
+  const byName = new Map()
+  for (const [norm, idSet] of nameCounts) {
+    if (idSet.size === 1) byName.set(norm, idSet.values().next().value)
+    // Ambiguo: se salta en silencio, igual que el índice de runtime.
+  }
+
+  return { ids, bySeedSlug, byName }
+}
+
+const catalogResolver = buildCatalogResolver()
+
+/**
+ * Resuelve el `exercise_id` de un ejercicio del JSON contra el id canónico del
+ * catálogo. Mismo orden que el paso a paso de `resolveExerciseId()`: id exacto
+ * → `seed_slug` (crudo y normalizado) → nombre normalizado es/en sin
+ * ambigüedad. La única diferencia deliberada con el resolver de runtime: ahí un
+ * fallo devuelve el input intacto (es un resolver conservador para el
+ * navegador, donde reventar sería peor que no traducir); aquí un fallo LANZA.
+ * Sembrar una clave inventada en la migración es justo el bug que este cambio
+ * corrige — dejarlo pasar en silencio lo reintroduciría.
+ *
+ * @param {string} input   `exercise_id` tal cual viene del JSON de contenido.
+ * @param {string} context describe programa/fase/día/ejercicio, para el error.
+ */
+function resolveCatalogExerciseId(input, context) {
+  if (!input) {
+    throw new Error(`${context}: falta "exercise_id" en el JSON de origen.`)
+  }
+  if (catalogResolver.ids.has(input)) return input
+
+  const slugHit = catalogResolver.bySeedSlug.get(input)
+  if (slugHit) return slugHit
+
+  const norm = normalizeForLookup(input)
+  const normSlugHit = catalogResolver.bySeedSlug.get(norm)
+  if (normSlugHit) return normSlugHit
+
+  const nameHit = catalogResolver.byName.get(norm)
+  if (nameHit) return nameHit
+
+  throw new Error(
+    `${context}: exercise_id "${input}" no resuelve contra el catálogo ` +
+    `(packages/core/data/exercise-catalog.json). Ni id exacto, ni seed_slug, ` +
+    `ni nombre es/en casan con ninguna entrada.`
+  )
+}
+
 /**
  * Envuelve un valor suelto en la forma `{es, en}` que usan los campos json de
  * PocketBase. Espejo del helper de `update-program-content.mjs`: si el JSON ya
@@ -89,8 +196,12 @@ function i18n(value) {
   return { es: value }
 }
 
-/** Lee y normaliza los `programs/*.json`, ordenados por el orden del catálogo. */
-function loadPrograms() {
+/**
+ * Lee y normaliza los `programs/*.json`, ordenados por el orden del catálogo.
+ * Exportada junto a `buildPayload` para que los tests (y esta verificación
+ * manual) puedan recorrer los programas uno a uno sin pasar por `main()`.
+ */
+export function loadPrograms() {
   const files = readdirSync(PROGRAMS_DIR).filter(f => f.endsWith('.json'))
   const slugs = files.map(f => basename(f, '.json'))
 
@@ -121,8 +232,9 @@ function loadPrograms() {
 /**
  * Traduce un programa a la forma exacta que la migración escribirá en
  * PocketBase: nada de campos crudos del JSON, nada que decidir en goja.
+ * Exportada para los tests (ver `loadPrograms`).
  */
-function buildPayload({ entry, file, data }) {
+export function buildPayload({ entry, file, data }) {
   const program = {
     name: entry.name,
     description: entry.description,
@@ -143,6 +255,13 @@ function buildPayload({ entry, file, data }) {
   // los demás metería una cadena vacía en un `select` opcional.
   if (entry.skill) program.skill = entry.skill
 
+  // «Cómo seguir este programa» (#618, campo añadido en
+  // 1786000000_add_program_instructions.js). `i18n()` ya cubre el caso de que
+  // el JSON no lo traiga todavía: `undefined` cae a `{ es: '' }`, así que no
+  // hace falta un default aparte ni falla mientras el contenido se termina de
+  // rellenar en paralelo.
+  program.instructions = i18n(data.instructions)
+
   const phases = data.phases.map(phase => {
     const byId = new Map(phase.days.map(d => [d.day_id, d]))
 
@@ -160,23 +279,30 @@ function buildPayload({ entry, file, data }) {
         sort_order: i + 1,
       }
 
-      const exercises = (day?.exercises || []).map(ex => ({
-        day_type: day.day_type,
-        workout_title: i18n(day.workout_title),
-        exercise_id: `${day.day_id}_${phase.phase_number}_${ex.sort_order}`,
-        exercise_name: i18n(ex.name),
-        sets: ex.sets,
-        reps: ex.reps || '',
-        rest_seconds: ex.rest_seconds || 0,
-        muscles: i18n(ex.muscles || ''),
-        note: i18n(ex.note || ''),
-        youtube: ex.youtube || '',
-        priority: normalizePriority(ex.priority, ex.name?.es || ex.name),
-        is_timer: ex.is_timer || false,
-        timer_seconds: ex.timer_seconds || 0,
-        sort_order: ex.sort_order,
-        section: resolveSection(ex),
-      }))
+      const exercises = (day?.exercises || []).map(ex => {
+        const context = `${file}: fase ${phase.phase_number}, día ${day.day_id}, ` +
+          `ejercicio "${ex.name?.es || ex.name || '(sin nombre)'}" (sort_order ${ex.sort_order})`
+        return {
+          day_type: day.day_type,
+          workout_title: i18n(day.workout_title),
+          // Id CANÓNICO del catálogo, no la clave de hueco `día_fase_orden` que
+          // se sembraba antes (ver cabecera del fichero). Revienta si no
+          // resuelve: ver `resolveCatalogExerciseId`.
+          exercise_id: resolveCatalogExerciseId(ex.exercise_id, context),
+          exercise_name: i18n(ex.name),
+          sets: ex.sets,
+          reps: ex.reps || '',
+          rest_seconds: ex.rest_seconds || 0,
+          muscles: i18n(ex.muscles || ''),
+          note: i18n(ex.note || ''),
+          youtube: ex.youtube || '',
+          priority: normalizePriority(ex.priority, ex.name?.es || ex.name),
+          is_timer: ex.is_timer || false,
+          timer_seconds: ex.timer_seconds || 0,
+          sort_order: ex.sort_order,
+          section: resolveSection(ex),
+        }
+      })
 
       return { config, exercises }
     })

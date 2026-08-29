@@ -69,6 +69,21 @@ jobs:
       - name: Seed de programas al día (programs/*.json vs migración)
         run: pnpm programs:seed:check
 
+      # Test del guardarraíl de contenido antes de dejarlo bloquear el merge de
+      # cualquiera: prueba checkProgram() contra fixtures en memoria (id que no
+      # resuelve, nombre-slug, patrón a 0 series, instructions vacío, programa
+      # correcto). `scripts/` no es un workspace de pnpm, así que `pnpm -r test`
+      # no lo alcanza — se pide explícitamente prestado el vitest de core.
+      - name: Test del validador de contenido de programas
+        run: pnpm test:program-content
+
+      # Guardarraíl de CONTENIDO de los 15 programas oficiales: ids que no
+      # resuelven contra el catálogo, slugs colados en `name`, material de
+      # gimnasio, un patrón de movimiento entero a 0 series... nada de esto lo
+      # ve un test de esquema. Falla el build ante un ERROR (avisos no cortan).
+      - name: Contenido de los programas oficiales (programs/*.json)
+        run: pnpm programs:content:check
+
   # Smoke E2E del golden path (#145): signup → primera sesión de entrenamiento.
   # Corre contra un PocketBase efímero recién migrado (sin seeds — el flujo usa
   # los workouts de fallback) + el dev server de Vite que levanta Playwright.
