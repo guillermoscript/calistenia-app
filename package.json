@@ -32,7 +32,9 @@
     "build:media": "node scripts/sync-exercise-media.mjs",
     "programs:seed": "node scripts/generate-program-seed-migration.mjs",
     "programs:seed:check": "node scripts/generate-program-seed-migration.mjs --check",
-    "programs:clean-test": "node scripts/clean-test-programs.mjs"
+    "programs:clean-test": "node scripts/clean-test-programs.mjs",
+    "programs:content:check": "node scripts/check-program-content.mjs",
+    "test:program-content": "pnpm --filter @calistenia/core exec vitest run ../../scripts/check-program-content.test.mjs --root ../../scripts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

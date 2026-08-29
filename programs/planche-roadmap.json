@@ -1,19 +1,29 @@
 {
   "program": {
     "name": "Planche Roadmap",
-    "description": "Progresión hacia planche. Tuck → straddle → full. Requiere base avanzada de empuje y fuerza de brazo recto.",
+    "description": "Progresión de brazo recto hacia el planche: de la báscula (lean) al tuck planche y los primeros intentos de advanced tuck. Straddle y full planche son metas de años, no de este bloque.",
     "difficulty": "advanced",
     "duration_weeks": 16,
     "days_per_week": 4,
+    "goal_type": "skill",
+    "skill": "planche",
+    "intensity": "intense",
     "equipment": [
-      "Paralelas"
+      "Paralelas",
+      "Barra de dominadas",
+      "Liga de resistencia",
+      "Lastre (opcional)"
     ],
     "contraindications": [
       "Muñeca",
       "Hombro",
       "Codo"
     ],
-    "notes": "Programa de skill avanzado. Desarrollo de fuerza de brazo recto con progresión escalonada en 4 fases. Requiere base sólida de empuje (dips, flexiones, HSPU)."
+    "notes": "Programa de skill avanzado. Desarrollo de fuerza de brazo recto con progresión escalonada en 4 fases. Requiere base sólida de empuje (dips, flexiones, HSPU).",
+    "instructions": {
+      "es": "Prerrequisito (esto es un programa AVANZADO, no lo empieces sin cumplirlo): 20-30 flexiones estrictas, 10-15 fondos en paralelas completos, hollow hold de 30-60s con forma limpia, y pino contra la pared de 30s. Si te falta cualquiera de los cuatro, este roadmap te va a lesionar la muñeca o el hombro antes de enseñarte nada — construye esa base primero. Progresión honesta: fase 1 (semanas 1-4) planche lean y base de empuje; fase 2 (semanas 5-8) tuck planche isométrico; fase 3 (semanas 9-12) tuck planche con más tiempo bajo tensión; fase 4 (semanas 13-16) primeros intentos de advanced tuck. Los plazos reales del planche completo no caben en 16 semanas: tuck planche sólido son 6-12 meses de trabajo, straddle planche 2-3 años, y full planche 3-5 años — cuando llega. Este roadmap te deja en el umbral del advanced tuck, no en el straddle ni el full; sigue progresando después con paciencia. Descarga: baja el volumen a la mitad 5-7 días cada 4-6 semanas — la muñeca, el hombro y el codo son los que primero avisan cuando toca parar. Este roadmap es un BLOQUE de especialización en brazo recto: el tirón (dominadas, face pull) es solo para mantener el hombro sano, no una rutina de espalda completa.",
+      "en": "Prerequisite (this is an ADVANCED program, don't start without it): 20-30 strict push-ups, 10-15 full parallel-bar dips, a 30-60s hollow hold with clean form, and a 30s wall handstand. Missing any of these four means this roadmap will hurt your wrist or shoulder before it teaches you anything — build that base first. Honest progression: phase 1 (weeks 1-4) planche lean and pushing base; phase 2 (weeks 5-8) isometric tuck planche; phase 3 (weeks 9-12) tuck planche with more time under tension; phase 4 (weeks 13-16) first advanced-tuck attempts. The real timeline for a full planche doesn't fit in 16 weeks: a solid tuck planche takes 6-12 months of work, straddle planche 2-3 years, and full planche 3-5 years — if it ever comes. This roadmap leaves you at the threshold of advanced tuck, not straddle or full; keep progressing patiently after it. Deload: cut volume in half for 5-7 days every 4-6 weeks — the wrist, shoulder, and elbow are the first to signal it's time. This roadmap is a straight-arm SPECIALIZATION BLOCK: the pulling work (pull-ups, face pulls) is only there to keep the shoulder healthy, not a complete back routine."
+    }
   },
   "phases": [
     {
@@ -1034,6 +1044,18 @@
             },
             {
               "sort_order": 7,
+              "name": "Retracción escapular",
+              "exercise_id": "scap_retract",
+              "muscles": "Trapecio bajo, romboides, dorsal",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "No lo saltes esta fase: el hombro en protracción máxima del tuck planche necesita este antagonista, no es opcional."
+            },
+            {
+              "sort_order": 8,
               "name": "Skin the cat",
               "exercise_id": "skin_the_cat",
               "muscles": "Hombros, dorsales, core",
@@ -1045,7 +1067,7 @@
               "note": "Más rango que en fase 1. Busca la posición de german hang."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Tuck planche pushup",
               "exercise_id": "tuck_planche_pushup",
               "muscles": "Hombros, pecho, tríceps, core",
@@ -1057,7 +1079,7 @@
               "note": "En tuck planche, baja y sube. Si no puedes, haz negativas lentas (5s)."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "name": "Dead bug avanzado",
               "exercise_id": "dead_bug_adv",
               "muscles": "Core, estabilidad lumbar",
@@ -1069,7 +1091,7 @@
               "note": "Extensión completa de brazo y pierna opuestos. Lumbar en el suelo."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento de pike",
               "exercise_id": "pike_stretch",
               "muscles": "Isquiotibiales",
@@ -1082,7 +1104,7 @@
               "note": "Flexibilidad para futuro straddle planche."
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales",
@@ -1095,7 +1117,7 @@
               "note": "Relaja los dorsales después del trabajo de front lever."
             },
             {
-              "sort_order": 12,
+              "sort_order": 13,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma, sistema nervioso",
@@ -1221,6 +1243,18 @@
             },
             {
               "sort_order": 9,
+              "name": "Face pull",
+              "exercise_id": "face_pull",
+              "muscles": "Deltoides posterior, manguito rotador",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga a la altura de la cara. Esta semana no tiene día de tirón vertical — este es el único antagonista de hombro que te queda, no lo saltes."
+            },
+            {
+              "sort_order": 10,
               "name": "Glute bridge march",
               "exercise_id": "glute_bridge_march",
               "muscles": "Glúteos, cadena posterior, estabilidad",
@@ -1232,7 +1266,7 @@
               "note": "En puente, alterna elevación de piernas. Estabilidad de cadera."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento de pike",
               "exercise_id": "pike_stretch",
               "muscles": "Isquiotibiales",
@@ -1245,7 +1279,7 @@
               "note": "Trabaja la flexibilidad para straddle."
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -1258,7 +1292,7 @@
               "note": "Ambos brazos. Relajación."
             },
             {
-              "sort_order": 12,
+              "sort_order": 13,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma, sistema nervioso",
@@ -1277,7 +1311,7 @@
     },
     {
       "phase_number": 3,
-      "name": "Fase 3 – Advanced tuck y straddle attempts",
+      "name": "Fase 3 – Tuck planche: más tiempo bajo tensión",
       "weeks": "9-12",
       "color": "#EF4444",
       "days": [
@@ -1918,7 +1952,7 @@
     },
     {
       "phase_number": 4,
-      "name": "Fase 4 – Straddle planche y full planche attempts",
+      "name": "Fase 4 – Intentos de advanced tuck",
       "weeks": "13-16",
       "color": "#8B5CF6",
       "days": [

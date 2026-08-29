@@ -3,7 +3,11 @@
     "name": "Avanzado · Fuerza Total",
     "description": "6 días/sem para mantener niveles altos de fuerza calisténica. Skills + básicos pesados.",
     "difficulty": "advanced",
-    "duration_weeks": 12
+    "duration_weeks": 12,
+    "instructions": {
+      "es": "Progresión: esto es fuerza, no hipertrofia — sube dificultad (más peso, palanca más larga, menos apoyo) antes que series o repeticiones; en cuanto completes el techo de repeticiones con buena técnica en las tres series de un ejercicio, pasa a la siguiente progresión. Descarga: semana 5 y semana 9, baja a 2-3 series por ejercicio en empuje/tirón/piernas/core y a series únicas de mantenimiento en skill — es la única forma de sostener un pico de fuerza 12 semanas sin quemarte. Nivel de entrada: exige dominada lastrada con al menos +20 % de tu peso corporal, fondos lastrados equivalentes y un año mínimo de calistenia estructurada; no es un programa para quien viene de volumen alto reciente.",
+      "en": "Progression: this is strength, not hypertrophy — increase difficulty (more load, a longer lever, less assistance) before sets or reps; once you hit the top of the rep range with good form on all three sets of an exercise, move to the next progression. Deload: week 5 and week 9, drop to 2-3 sets per exercise on push/pull/legs/core and single maintenance sets on skill — it's the only way to hold a strength peak for 12 weeks without burning out. Entry level: you need a weighted pull-up at 20%+ of bodyweight, equivalent weighted dips, and at least a year of structured calisthenics; this isn't a program for someone coming off high-volume training."
+    }
   },
   "phases": [
     {
@@ -62,7 +66,7 @@
               "name": "Flexión a una mano (progresión)",
               "exercise_id": "one_arm_prog",
               "muscles": "Pecho unilateral, tríceps, core",
-              "sets": 5,
+              "sets": 6,
               "reps": "3-5 c/lado",
               "rest_seconds": 180,
               "priority": "primary",
@@ -71,18 +75,6 @@
             },
             {
               "sort_order": 5,
-              "name": "HSPU en pared",
-              "exercise_id": "hspu_wall",
-              "muscles": "Hombros, tríceps, trapecio",
-              "sets": 5,
-              "reps": "3-5",
-              "rest_seconds": 180,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Rango completo: cabeza toca el suelo. Baja 3 seg, sube explosivo. Si no llegas a 3, añade un deficit menor."
-            },
-            {
-              "sort_order": 6,
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho inferior, tríceps, hombros",
@@ -94,7 +86,7 @@
               "note": "Lastradas con mochila o liga si es fácil. Baja hasta 90° mínimo, sube con control."
             },
             {
-              "sort_order": 7,
+              "sort_order": 6,
               "name": "Flexiones archer (nivel 2)",
               "exercise_id": "archer2",
               "muscles": "Pecho, tríceps, estabilizadores",
@@ -106,7 +98,7 @@
               "note": "Brazo extendido totalmente recto. Énfasis en pecho unilateral."
             },
             {
-              "sort_order": 8,
+              "sort_order": 7,
               "name": "Tiger bend push-up",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros, pecho",
@@ -118,7 +110,7 @@
               "note": "De antebrazos a manos. Explosividad controlada. Fuerza de empuje pura."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho, hombros anteriores",
@@ -131,7 +123,7 @@
               "note": "Brazo en marco de puerta, gira el torso. 30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps, hombros",
@@ -144,7 +136,7 @@
               "note": "Codo detrás de la cabeza, presiona con la otra mano. 30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma, sistema nervioso",
@@ -218,15 +210,15 @@
             },
             {
               "sort_order": 5,
-              "name": "Dominada lastrada / pesada",
-              "exercise_id": "weighted_pullup",
-              "muscles": "Dorsales, bíceps, trapecio",
+              "name": "Archer Pull-up",
+              "exercise_id": "archer_pull_up",
+              "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 5,
               "reps": "3-5",
               "rest_seconds": 180,
               "priority": "primary",
               "is_timer": false,
-              "note": "Añade peso con mochila o cinturón. Rango completo: dead hang a barbilla sobre barra."
+              "note": "Sobrecarga unilateral sin lastre externo: casi todo el peso lo mueve un brazo. Progresa acercando cada vez menos el brazo asistente."
             },
             {
               "sort_order": 6,
@@ -564,6 +556,30 @@
             },
             {
               "sort_order": 9,
+              "name": "Hanging Leg Raise",
+              "exercise_id": "hanging_leg_raise",
+              "muscles": "Recto abdominal, flexores de cadera",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Sin balanceo: sube las piernas con control desde el dead hang. Antiflexión lumbar bajo carga."
+            },
+            {
+              "sort_order": 10,
+              "name": "Dragon Flag",
+              "exercise_id": "dragon_flag",
+              "muscles": "Recto abdominal, oblicuos, lumbar",
+              "sets": 3,
+              "reps": "5-6",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Solo los hombros tocan el banco. Baja con control hasta donde puedas frenar sin arquear la lumbar."
+            },
+            {
+              "sort_order": 11,
               "name": "Estiramiento de cuádriceps",
               "exercise_id": "quad_stretch",
               "muscles": "Cuádriceps, flexores de cadera",
@@ -576,7 +592,7 @@
               "note": "De pie, lleva el talón al glúteo. 30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 12,
               "name": "Estiramiento de isquiotibiales",
               "exercise_id": "hamstring_stretch",
               "muscles": "Isquiotibiales",
@@ -589,7 +605,7 @@
               "note": "Pierna en alto sobre silla o banco. Inclínate hacia adelante. 30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 13,
               "name": "Estiramiento de flexor de cadera",
               "exercise_id": "hip_flexor_stretch",
               "muscles": "Flexores de cadera, psoas",
@@ -678,7 +694,7 @@
               "name": "Flexiones archer",
               "exercise_id": "archer_pushup",
               "muscles": "Pecho unilateral, tríceps",
-              "sets": 4,
+              "sets": 5,
               "reps": "5-6 c/lado",
               "rest_seconds": 90,
               "priority": "primary",
@@ -690,7 +706,7 @@
               "name": "Flexiones diamante",
               "exercise_id": "diamond_pushup",
               "muscles": "Tríceps, pecho interior",
-              "sets": 3,
+              "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
@@ -699,18 +715,6 @@
             },
             {
               "sort_order": 8,
-              "name": "Pseudo planche push-up",
-              "exercise_id": "pseudo_planche",
-              "muscles": "Hombros anteriores, pecho, core",
-              "sets": 3,
-              "reps": "5-8",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Manos giradas hacia atrás, inclina adelante. Trabaja el patrón de planche con volumen."
-            },
-            {
-              "sort_order": 9,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho, hombros anteriores",
@@ -723,7 +727,7 @@
               "note": "Marco de puerta, 30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -736,7 +740,7 @@
               "note": "Codo detrás de cabeza, presiona. 30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma, sistema nervioso",
@@ -956,7 +960,7 @@
               "name": "Flexión a una mano (real)",
               "exercise_id": "one_arm_actual",
               "muscles": "Pecho unilateral, tríceps, core total",
-              "sets": 5,
+              "sets": 6,
               "reps": "2-3 c/lado",
               "rest_seconds": 180,
               "priority": "primary",
@@ -965,22 +969,10 @@
             },
             {
               "sort_order": 5,
-              "name": "HSPU en pared",
-              "exercise_id": "hspu_wall",
-              "muscles": "Hombros, tríceps, trapecio",
-              "sets": 5,
-              "reps": "3-5",
-              "rest_seconds": 180,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Déficit con parallettes si puedes 5 reps limpias. Si no, mantén rango completo estándar."
-            },
-            {
-              "sort_order": 6,
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho, tríceps, hombros",
-              "sets": 4,
+              "sets": 5,
               "reps": "4-6",
               "rest_seconds": 150,
               "priority": "primary",
@@ -988,19 +980,7 @@
               "note": "Aumenta lastre respecto a Fase 1. Profundidad máxima."
             },
             {
-              "sort_order": 7,
-              "name": "Tuck planche push-up",
-              "exercise_id": "tuck_planche_pushup",
-              "muscles": "Hombros, pecho, core",
-              "sets": 4,
-              "reps": "3-5",
-              "rest_seconds": 150,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Desde tuck planche, baja y sube. Si no puedes, haz planche lean con pausa abajo."
-            },
-            {
-              "sort_order": 8,
+              "sort_order": 6,
               "name": "Tiger bend push-up",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros",
@@ -1012,7 +992,7 @@
               "note": "De antebrazos a manos. Más potencia que Fase 1."
             },
             {
-              "sort_order": 9,
+              "sort_order": 7,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho, hombros",
@@ -1025,7 +1005,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 8,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -1038,7 +1018,7 @@
               "note": "Codo detrás de cabeza. 30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 9,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma, sistema nervioso",
@@ -1103,7 +1083,7 @@
               "name": "Dominada a una mano (progresión)",
               "exercise_id": "one_arm_pullup_prog",
               "muscles": "Dorsales, bíceps, agarre",
-              "sets": 5,
+              "sets": 6,
               "reps": "2-3 c/lado",
               "rest_seconds": 180,
               "priority": "primary",
@@ -1112,34 +1092,22 @@
             },
             {
               "sort_order": 5,
-              "name": "Dominada lastrada",
-              "exercise_id": "weighted_pullup",
-              "muscles": "Dorsales, bíceps, trapecio",
+              "name": "Archer Pull-up",
+              "exercise_id": "archer_pull_up",
+              "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 5,
               "reps": "3-4",
               "rest_seconds": 180,
               "priority": "primary",
               "is_timer": false,
-              "note": "Más peso que Fase 1. Rango completo obligatorio."
+              "note": "Más peso relativo que en fase 1: acerca aún menos el brazo asistente."
             },
             {
               "sort_order": 6,
-              "name": "Muscle-up real",
-              "exercise_id": "muscleup_real",
-              "muscles": "Dorsales, pecho, tríceps, transición",
-              "sets": 4,
-              "reps": "2-3",
-              "rest_seconds": 180,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Muscle-up estricto o con mínimo kip. Si no puedes 2, haz negativas de 5s desde arriba."
-            },
-            {
-              "sort_order": 7,
               "name": "Dominada L-sit",
               "exercise_id": "lsit_pullup",
               "muscles": "Dorsales, bíceps, core",
-              "sets": 3,
+              "sets": 4,
               "reps": "4-6",
               "rest_seconds": 120,
               "priority": "secondary",
@@ -1147,7 +1115,7 @@
               "note": "Piernas a 90° durante todo el movimiento. Core activo."
             },
             {
-              "sort_order": 8,
+              "sort_order": 7,
               "name": "Face pull con liga",
               "exercise_id": "face_pull",
               "muscles": "Deltoides posterior, romboides",
@@ -1159,7 +1127,7 @@
               "note": "Salud del hombro. Liga más pesada que Fase 1."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales",
@@ -1172,7 +1140,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -1185,7 +1153,7 @@
               "note": "Compensa la tracción."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",
@@ -1459,6 +1427,30 @@
             },
             {
               "sort_order": 9,
+              "name": "Hanging Leg Raise",
+              "exercise_id": "hanging_leg_raise",
+              "muscles": "Recto abdominal, flexores de cadera",
+              "sets": 5,
+              "reps": "10-12",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Sin balanceo, control total en la bajada. Sube el rango antes que las series."
+            },
+            {
+              "sort_order": 10,
+              "name": "Dragon Flag",
+              "exercise_id": "dragon_flag",
+              "muscles": "Recto abdominal, oblicuos, lumbar",
+              "sets": 4,
+              "reps": "6-8",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Baja un poco más que en fase 1 antes de frenar. La lumbar pegada al banco todo el recorrido."
+            },
+            {
+              "sort_order": 11,
               "name": "Estiramiento de cuádriceps",
               "exercise_id": "quad_stretch",
               "muscles": "Cuádriceps",
@@ -1471,7 +1463,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 12,
               "name": "Estiramiento de isquiotibiales",
               "exercise_id": "hamstring_stretch",
               "muscles": "Isquiotibiales",
@@ -1484,7 +1476,7 @@
               "note": "Pierna elevada. 30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 13,
               "name": "Estiramiento de flexor de cadera",
               "exercise_id": "hip_flexor_stretch",
               "muscles": "Flexores de cadera, psoas",
@@ -1546,22 +1538,10 @@
             },
             {
               "sort_order": 4,
-              "name": "HSPU en pared",
-              "exercise_id": "hspu_wall",
-              "muscles": "Hombros, tríceps",
-              "sets": 4,
-              "reps": "5-8",
-              "rest_seconds": 120,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Rango estándar. Más reps, menos descanso que día heavy."
-            },
-            {
-              "sort_order": 5,
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho, tríceps, hombros",
-              "sets": 4,
+              "sets": 5,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
@@ -1569,11 +1549,11 @@
               "note": "Sin lastre. Tempo 2-0-2. Volumen para hipertrofia de empuje."
             },
             {
-              "sort_order": 6,
+              "sort_order": 5,
               "name": "Flexiones archer (nivel 2)",
               "exercise_id": "archer2",
               "muscles": "Pecho, tríceps",
-              "sets": 4,
+              "sets": 5,
               "reps": "6-8 c/lado",
               "rest_seconds": 90,
               "priority": "primary",
@@ -1581,23 +1561,11 @@
               "note": "Más reps que Fase 1. Busca la fatiga muscular."
             },
             {
-              "sort_order": 7,
-              "name": "Pseudo planche push-up",
-              "exercise_id": "pseudo_planche",
-              "muscles": "Hombros anteriores, pecho",
-              "sets": 3,
-              "reps": "6-8",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Inclina más adelante que en Fase 1. Más carga en hombros."
-            },
-            {
-              "sort_order": 8,
+              "sort_order": 6,
               "name": "Flexiones diamante",
               "exercise_id": "diamond_pushup",
               "muscles": "Tríceps, pecho",
-              "sets": 3,
+              "sets": 4,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
@@ -1605,7 +1573,7 @@
               "note": "Finisher de tríceps. Hasta casi fallo."
             },
             {
-              "sort_order": 9,
+              "sort_order": 7,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -1618,7 +1586,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 8,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -1631,7 +1599,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 9,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",
@@ -1693,22 +1661,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Muscle-up flow",
-              "exercise_id": "muscleup_flow",
-              "muscles": "Dorsales, pecho, tríceps",
-              "sets": 4,
-              "reps": "3-5",
-              "rest_seconds": 120,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Muscle-ups consecutivos sin bajar al dead hang. Si no puedes 3, haz singles con descanso arriba."
-            },
-            {
-              "sort_order": 5,
               "name": "Chin-ups",
               "exercise_id": "chinup",
               "muscles": "Bíceps, dorsales",
-              "sets": 4,
+              "sets": 5,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
@@ -1716,11 +1672,11 @@
               "note": "Volumen. Rango completo, baja lento."
             },
             {
-              "sort_order": 6,
+              "sort_order": 5,
               "name": "Dominada ancha",
               "exercise_id": "wide_pullup",
               "muscles": "Dorsales amplias",
-              "sets": 4,
+              "sets": 5,
               "reps": "6-8",
               "rest_seconds": 90,
               "priority": "primary",
@@ -1728,11 +1684,11 @@
               "note": "Pecho a la barra. Amplitud de espalda."
             },
             {
-              "sort_order": 7,
+              "sort_order": 6,
               "name": "Dominada typewriter",
               "exercise_id": "typewriter_pullup",
               "muscles": "Dorsales, estabilizadores",
-              "sets": 3,
+              "sets": 4,
               "reps": "4-5 c/lado",
               "rest_seconds": 90,
               "priority": "secondary",
@@ -1740,7 +1696,7 @@
               "note": "Más reps que Fase 1 heavy. Trabaja la transición lateral."
             },
             {
-              "sort_order": 8,
+              "sort_order": 7,
               "name": "Face pull con liga",
               "exercise_id": "face_pull",
               "muscles": "Deltoides posterior, romboides",
@@ -1752,7 +1708,7 @@
               "note": "Reps altas. Salud del hombro y postura."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales",
@@ -1765,7 +1721,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -1778,7 +1734,7 @@
               "note": "Compensa la tracción."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",
@@ -1851,7 +1807,7 @@
               "name": "Flexión a una mano (real)",
               "exercise_id": "one_arm_actual",
               "muscles": "Pecho, tríceps, core total",
-              "sets": 5,
+              "sets": 6,
               "reps": "3-4 c/lado",
               "rest_seconds": 180,
               "priority": "primary",
@@ -1860,34 +1816,10 @@
             },
             {
               "sort_order": 5,
-              "name": "HSPU en pared",
-              "exercise_id": "hspu_wall",
-              "muscles": "Hombros, tríceps, trapecio",
-              "sets": 5,
-              "reps": "4-6",
-              "rest_seconds": 180,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Con déficit si haces 5+. Máxima profundidad y control."
-            },
-            {
-              "sort_order": 6,
-              "name": "Tuck planche push-up",
-              "exercise_id": "tuck_planche_pushup",
-              "muscles": "Hombros, pecho, core",
-              "sets": 4,
-              "reps": "4-6",
-              "rest_seconds": 150,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Más reps que Fase 2. Si dominas tuck, intenta advanced tuck."
-            },
-            {
-              "sort_order": 7,
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho, tríceps, hombros",
-              "sets": 4,
+              "sets": 5,
               "reps": "4-6",
               "rest_seconds": 150,
               "priority": "primary",
@@ -1895,7 +1827,7 @@
               "note": "Máximo lastre posible. PR de peso."
             },
             {
-              "sort_order": 8,
+              "sort_order": 6,
               "name": "Flexiones archer (nivel 2)",
               "exercise_id": "archer2",
               "muscles": "Pecho, tríceps",
@@ -1907,7 +1839,7 @@
               "note": "Accesorio de consolidación. Mantén calidad."
             },
             {
-              "sort_order": 9,
+              "sort_order": 7,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -1920,7 +1852,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 8,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -1933,7 +1865,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 9,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",
@@ -1998,7 +1930,7 @@
               "name": "Dominada a una mano (progresión)",
               "exercise_id": "one_arm_pullup_prog",
               "muscles": "Dorsales, bíceps, agarre",
-              "sets": 5,
+              "sets": 6,
               "reps": "2-3 c/lado",
               "rest_seconds": 180,
               "priority": "primary",
@@ -2007,34 +1939,22 @@
             },
             {
               "sort_order": 5,
-              "name": "Dominada lastrada",
-              "exercise_id": "weighted_pullup",
-              "muscles": "Dorsales, bíceps, trapecio",
+              "name": "Archer Pull-up (pico)",
+              "exercise_id": "archer_pull_up",
+              "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 5,
               "reps": "3-4",
               "rest_seconds": 180,
               "priority": "primary",
               "is_timer": false,
-              "note": "Máximo peso del ciclo. PR absoluto. Rango completo obligatorio."
+              "note": "Máximo del ciclo: el brazo asistente casi no toca la barra."
             },
             {
               "sort_order": 6,
-              "name": "Muscle-up real",
-              "exercise_id": "muscleup_real",
-              "muscles": "Dorsales, pecho, tríceps",
-              "sets": 5,
-              "reps": "3-4",
-              "rest_seconds": 150,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Busca PR de reps consecutivas. Transición limpia."
-            },
-            {
-              "sort_order": 7,
               "name": "Dominada L-sit",
               "exercise_id": "lsit_pullup",
               "muscles": "Dorsales, bíceps, core",
-              "sets": 3,
+              "sets": 4,
               "reps": "5-6",
               "rest_seconds": 120,
               "priority": "secondary",
@@ -2042,7 +1962,7 @@
               "note": "Piernas a 90° todo el tiempo. Más reps que Fase 2."
             },
             {
-              "sort_order": 8,
+              "sort_order": 7,
               "name": "Face pull con liga",
               "exercise_id": "face_pull",
               "muscles": "Deltoides posterior, romboides",
@@ -2054,7 +1974,7 @@
               "note": "Liga pesada. Salud del hombro."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales",
@@ -2067,7 +1987,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -2080,7 +2000,7 @@
               "note": "Compensa."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",
@@ -2367,6 +2287,30 @@
             },
             {
               "sort_order": 9,
+              "name": "Hanging Leg Raise",
+              "exercise_id": "hanging_leg_raise",
+              "muscles": "Recto abdominal, flexores de cadera",
+              "sets": 6,
+              "reps": "10-12",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Rango completo y control en cada rep. Es el pico del ciclo de core."
+            },
+            {
+              "sort_order": 10,
+              "name": "Dragon Flag",
+              "exercise_id": "dragon_flag",
+              "muscles": "Recto abdominal, oblicuos, lumbar",
+              "sets": 5,
+              "reps": "6-8",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Máxima amplitud que puedas frenar con la lumbar pegada al banco."
+            },
+            {
+              "sort_order": 11,
               "name": "Estiramiento de cuádriceps",
               "exercise_id": "quad_stretch",
               "muscles": "Cuádriceps",
@@ -2379,7 +2323,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 12,
               "name": "Estiramiento de isquiotibiales",
               "exercise_id": "hamstring_stretch",
               "muscles": "Isquiotibiales",
@@ -2392,7 +2336,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 13,
               "name": "Estiramiento de flexor de cadera",
               "exercise_id": "hip_flexor_stretch",
               "muscles": "Flexores de cadera",
@@ -2457,7 +2401,7 @@
               "name": "Pike push-up (progresión HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Hombros, tríceps",
-              "sets": 4,
+              "sets": 5,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
@@ -2469,7 +2413,7 @@
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho, tríceps",
-              "sets": 4,
+              "sets": 5,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
@@ -2481,7 +2425,7 @@
               "name": "Flexiones archer",
               "exercise_id": "archer_pushup",
               "muscles": "Pecho, tríceps",
-              "sets": 4,
+              "sets": 5,
               "reps": "6-8 c/lado",
               "rest_seconds": 90,
               "priority": "primary",
@@ -2490,18 +2434,6 @@
             },
             {
               "sort_order": 7,
-              "name": "Pseudo planche push-up",
-              "exercise_id": "pseudo_planche",
-              "muscles": "Hombros anteriores, pecho",
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Máxima inclinación que permita las reps. Volumen final."
-            },
-            {
-              "sort_order": 8,
               "name": "Flexiones estándar",
               "exercise_id": "pushup_std",
               "muscles": "Pecho, tríceps, hombros",
@@ -2513,7 +2445,7 @@
               "note": "Burnout final. 2 series al fallo con forma perfecta. Cierra el entreno."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -2526,7 +2458,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -2539,7 +2471,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",
@@ -2601,22 +2533,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Muscle-up flow",
-              "exercise_id": "muscleup_flow",
-              "muscles": "Dorsales, pecho, tríceps",
-              "sets": 5,
-              "reps": "4-6",
-              "rest_seconds": 120,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Busca PR de consecutivos. Transiciones limpias, sin kip."
-            },
-            {
-              "sort_order": 5,
               "name": "Chin-ups",
               "exercise_id": "chinup",
               "muscles": "Bíceps, dorsales",
-              "sets": 4,
+              "sets": 5,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
@@ -2624,11 +2544,11 @@
               "note": "Rango completo. Volumen de consolidación."
             },
             {
-              "sort_order": 6,
+              "sort_order": 5,
               "name": "Dominada ancha",
               "exercise_id": "wide_pullup",
               "muscles": "Dorsales amplias",
-              "sets": 4,
+              "sets": 5,
               "reps": "6-8",
               "rest_seconds": 90,
               "priority": "primary",
@@ -2636,11 +2556,11 @@
               "note": "Pecho a la barra. Consolidación de espalda."
             },
             {
-              "sort_order": 7,
+              "sort_order": 6,
               "name": "Dominada commando",
               "exercise_id": "commando_pullup",
               "muscles": "Dorsales, oblicuos",
-              "sets": 3,
+              "sets": 4,
               "reps": "5-6 c/lado",
               "rest_seconds": 90,
               "priority": "secondary",
@@ -2648,7 +2568,7 @@
               "note": "Más reps que fases previas."
             },
             {
-              "sort_order": 8,
+              "sort_order": 7,
               "name": "Dominada con toalla",
               "exercise_id": "towel_pullup",
               "muscles": "Dorsales, agarre",
@@ -2660,7 +2580,7 @@
               "note": "Agarre de hierro. Consolida la fuerza de agarre del ciclo."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales",
@@ -2673,7 +2593,7 @@
               "note": "30s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pecho",
@@ -2686,7 +2606,7 @@
               "note": "Compensa."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Diafragma",

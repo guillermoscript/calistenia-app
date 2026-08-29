@@ -11,7 +11,11 @@
     ],
     "goal_type": "skill",
     "skill": "pull_up",
-    "notes": "Programa de 12 semanas diseñado para construir la fuerza necesaria para tu primera dominada estricta. Cada sesión trabaja directamente hacia la dominada con ejercicios complementarios de empuje para equilibrio muscular."
+    "notes": "Programa de 12 semanas diseñado para construir la fuerza necesaria para tu primera dominada estricta. Cada sesión trabaja directamente hacia la dominada con ejercicios complementarios de empuje para equilibrio muscular.",
+    "instructions": {
+      "es": "Prerrequisito: ninguno — este roadmap parte de cero, solo necesitas poder colgarte de una barra unos segundos. Progresión: fase 1 (semanas 1-4) construye agarre y activación escapular con dead hangs y australianas; fase 2 (semanas 5-8) pasa a negativas lentas de 6-8s y remo invertido; fase 3 (semanas 9-12) mete el intento de dominada estricta y el chin-up asistido hasta consolidarla. Si en fase 3 aún no completas ni una negativa de 6s controlada, repite 2 semanas de fase 2 antes de seguir. Descarga: baja el volumen a la mitad 5-7 días cada 4-6 semanas para dejar que el tendón del codo se recupere — es el punto que más se resiente en principiantes. Este roadmap es un BLOQUE de especialización en tirón vertical, no una rutina completa: el trabajo de empuje (unas 9 series/semana en fase 3) alcanza solo para mantener el equilibrio articular, no para progresar en fuerza de empuje. Si buscas eso, combina con un día de empuje aparte o con el programa de principiante una vez consigas tu primera dominada.",
+      "en": "Prerequisite: none — this roadmap starts from zero, you only need to hang from a bar for a few seconds. Progression: phase 1 (weeks 1-4) builds grip and scapular activation with dead hangs and Australian pull-ups; phase 2 (weeks 5-8) moves to slow 6-8s negatives and inverted rows; phase 3 (weeks 9-12) adds the strict pull-up attempt and assisted chin-ups until it's consistent. If by phase 3 you still can't complete one controlled 6s negative, repeat 2 more weeks of phase 2 before moving on. Deload: cut volume in half for 5-7 days every 4-6 weeks so the elbow tendon can catch up — it's the weak link for beginners. This roadmap is a vertical-pull SPECIALIZATION BLOCK, not a complete routine: the push work (about 9 sets/week in phase 3) is only enough to keep joints balanced, not to build push strength. Pair it with a separate push day, or with the beginner program once you land your first pull-up, if that's your goal."
+    }
   },
   "phases": [
     {
@@ -893,19 +897,19 @@
               "exercise_id": "pullup_strict",
               "name": "Dominada estricta (intento)",
               "muscles": "Dorsal, bíceps, core, antebrazo",
-              "sets": 5,
+              "sets": 3,
               "reps": "1-3",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
-              "note": "EL MOMENTO. Intenta sin asistencia. Desde colgado muerto, deprime escápulas, jala codos hacia abajo. Si logras 1, celebra y descansa. Si no, haz negativa de 8s."
+              "note": "EL MOMENTO. Intenta sin asistencia. Desde colgado muerto, deprime escápulas, jala codos hacia abajo. Si logras 1, celebra y descansa. Si no, haz negativa de 8s. Pocas series, esfuerzo casi máximo: no hace falta más para consolidar el patrón."
             },
             {
               "sort_order": 5,
               "exercise_id": "chinup",
               "name": "Chin-up",
               "muscles": "Dorsal, bíceps, core",
-              "sets": 4,
+              "sets": 3,
               "reps": "3-5",
               "rest_seconds": 120,
               "priority": "primary",
@@ -938,15 +942,15 @@
             },
             {
               "sort_order": 8,
-              "exercise_id": "hanging_knee_raise",
-              "name": "Elevación de rodillas colgado",
-              "muscles": "Core inferior, flexores de cadera, agarre",
+              "exercise_id": "dead_bug",
+              "name": "Dead bug",
+              "muscles": "Core profundo, estabilizadores",
               "sets": 3,
-              "reps": "10-12",
+              "reps": "8 c/lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Core colgado. Sube rodillas al pecho sin balancear. Trabaja agarre y core simultáneamente."
+              "note": "Espalda baja pegada al suelo todo el tiempo. Extiende brazo y pierna contrarios lento. El mismo control de core que necesitas colgado."
             },
             {
               "sort_order": 9,
@@ -1027,19 +1031,19 @@
               "exercise_id": "chinup",
               "name": "Chin-up",
               "muscles": "Dorsal, bíceps, core",
-              "sets": 5,
+              "sets": 3,
               "reps": "3-5",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
-              "note": "Volumen de chin-ups. 5 series, busca acumular 15-25 reps totales. Calidad sobre cantidad."
+              "note": "Volumen de chin-ups. 3 series, busca acumular 10-15 reps totales. Calidad sobre cantidad."
             },
             {
               "sort_order": 5,
               "exercise_id": "close_grip_pullup",
               "name": "Dominada agarre cerrado",
               "muscles": "Dorsal, bíceps, braquial",
-              "sets": 3,
+              "sets": 2,
               "reps": "2-4",
               "rest_seconds": 120,
               "priority": "primary",
@@ -1072,15 +1076,15 @@
             },
             {
               "sort_order": 8,
-              "exercise_id": "glute_bridge",
-              "name": "Puente de glúteos",
-              "muscles": "Glúteos, lumbar, isquiotibiales",
+              "exercise_id": "bird_dog",
+              "name": "Bird dog",
+              "muscles": "Core, lumbar, glúteos",
               "sets": 3,
-              "reps": "15",
+              "reps": "8 c/lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Activa la cadena posterior. Aprieta glúteos 2s arriba. Complemento lumbar importante."
+              "note": "En cuadrupedia, extiende brazo y pierna contrarios. Mantén 3s. Sin rotar la cadera. Estabilidad lumbar para sostener el jalón."
             },
             {
               "sort_order": 9,
@@ -1161,7 +1165,7 @@
               "exercise_id": "pullup_strict",
               "name": "Dominada estricta",
               "muscles": "Dorsal, bíceps, core, antebrazo",
-              "sets": 5,
+              "sets": 3,
               "reps": "1-3",
               "rest_seconds": 120,
               "priority": "primary",
@@ -1173,7 +1177,7 @@
               "exercise_id": "chinup",
               "name": "Chin-up",
               "muscles": "Dorsal, bíceps, core",
-              "sets": 3,
+              "sets": 2,
               "reps": "4-6",
               "rest_seconds": 120,
               "priority": "primary",
