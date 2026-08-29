@@ -2,6 +2,7 @@ import type { AppServer } from "./mcpuse/auth-bridge.js";
 import { getAuthManager } from "./mcpuse/auth-bridge.js";
 import { today, startOfWeek } from "./utils.js";
 import { resolveActiveProgramProgress } from "./api/program-progress-server.js";
+import { resolvePersonalRecords } from "./api/prs-server.js";
 
 export function registerResources(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -34,6 +35,10 @@ export function registerResources(server: AppServer, pbUrl: string) {
       const active = currentProgram
         ? await resolveActiveProgramProgress(pb, auth.getUserId(), tz, today(tz))
         : null;
+      // Los récords de TODOS los ejercicios, recalculados desde `sets_log`
+      // (#666). Los cinco `pr_*` de la fila son espejos heredados y solo
+      // cubren lo que `legacyPrKey` sabe traducir.
+      const prs = settings ? await resolvePersonalRecords(pb, auth.getUserId(), settings) : null;
 
       const profile = {
         user_id: auth.getUserId(),
@@ -46,12 +51,17 @@ export function registerResources(server: AppServer, pbUrl: string) {
               start_date: settings.start_date,
               weekly_goal: settings.weekly_goal,
               personal_records: {
-                pullups: settings.pr_pullups ?? null,
-                pushups: settings.pr_pushups ?? null,
-                l_sit: settings.pr_lsit ?? null,
-                pistol: settings.pr_pistol ?? null,
-                handstand: settings.pr_handstand ?? null,
+                pullups: prs?.legacy.pullups || null,
+                pushups: prs?.legacy.pushups || null,
+                l_sit: prs?.legacy.l_sit || null,
+                pistol: prs?.legacy.pistol_squat || null,
+                handstand: prs?.legacy.handstand || null,
               },
+              // `exercise_id` → mejor marca, de todo lo registrado. En un
+              // ejercicio de temporizador el número son SEGUNDOS.
+              all_records: prs
+                ? { tracked_exercises: prs.tracked_exercises, reps: prs.reps, weight: prs.weight }
+                : null,
             }
           : null,
         current_program: currentProgram
