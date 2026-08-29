@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
 import { getSettings, upsertSettings, listSessions, listWeightEntries } from "../api/repos/index.js";
+import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
 
 export function registerProgressTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -13,7 +14,8 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
       name: "cal_get_settings",
       title: "Get User Settings",
       description:
-        "Get the user's training settings: current phase, start date, weekly workout goal, and personal records (PR) for key exercises.",
+        "Get the user's training settings: start date, weekly workout goal, and personal records (PR) for key exercises. " +
+        "NOTE: `phase` here is a legacy global counter, NOT the phase of the active program \u2014 read that from `cal_get_current_program` (`progress.current_phase`).",
       schema: z
         .object({
           response_format: z
@@ -62,7 +64,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
           const pr = output.personal_records;
           text = [
             `# Training Settings`,
-            `- **Current Phase**: ${output.phase}`,
+            `- **Legacy global phase**: ${output.phase} _(not the active program's phase \u2014 see \`cal_get_current_program\`)_`,
             `- **Start Date**: ${output.start_date}`,
             `- **Weekly Goal**: ${output.weekly_goal} workouts/week`,
             `\n## Personal Records`,
@@ -92,7 +94,14 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
         "Update training settings: phase, start date, weekly goal, or personal records. Only provide fields you want to change.",
       schema: z
         .object({
-          phase: z.number().int().min(1).optional().describe("Current training phase (1, 2, 3, ...)"),
+          phase: z
+            .number()
+            .int()
+            .min(1)
+            .optional()
+            .describe(
+              "Legacy global phase counter. Since #616 the active program's phase lives in `user_programs.current_phase` and is derived from the start date \u2014 changing this does NOT change the program's phase.",
+            ),
           start_date: z.string().optional().describe("Program start date (YYYY-MM-DD)"),
           weekly_goal: z.number().int().min(1).max(7).optional().describe("Target workouts per week (1-7)"),
           pr_pullups: z.string().optional().describe("Pull-up personal record (e.g. '15', '10 strict')"),
@@ -446,7 +455,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
         const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
 
-        const [sessions, weightEntries, lumbarChecks, settings] = await Promise.all([
+        const [sessions, weightEntries, lumbarChecks, settings, active] = await Promise.all([
           listSessions(pb, userId, { from, sort: "completed_at", fields: "id,completed_at" }),
           listWeightEntries(pb, userId, { from, sort: "date" }),
           pb.collection("lumbar_checks").getFullList({
@@ -454,6 +463,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             requestKey: null,
           }),
           getSettings(pb, userId),
+          resolveActiveProgramProgress(pb, userId, tz, today(tz)),
         ]);
 
         // Workout consistency (sessions per week)
@@ -482,7 +492,10 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             total_sessions: sessions.length,
             sessions_per_week: Math.round(sessionsPerWeek * 10) / 10,
             weekly_goal: settings?.weekly_goal ?? null,
-            current_phase: settings?.phase ?? null,
+            // La fase del programa activo, no el entero global (#663).
+            current_phase: active?.progress.currentPhase ?? settings?.phase ?? null,
+            program_week: active?.progress.currentWeek ?? null,
+            program_total_weeks: active?.progress.totalWeeks ?? null,
           },
           weight: weightTrend,
           lumbar: { avg_score: lumbarAvg, checks_count: lumbarChecks.length },
@@ -505,7 +518,10 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             `_${from} → ${today(tz)}_\n`,
             `## Training`,
             `- Sessions: **${sessions.length}** total (avg **${sessionsPerWeek.toFixed(1)}/week**${consistency})`,
-            settings?.phase ? `- Current Phase: **${settings.phase}**` : "",
+            output.training.current_phase ? `- Current Phase: **${output.training.current_phase}**` : "",
+            active?.progress.currentWeek
+              ? `- Program: week **${active.progress.currentWeek}** of ${active.progress.totalWeeks}`
+              : "",
             `\n## Body Weight`,
             `- Trend: **${weightLine}**`,
             weightEntries.length > 0 ? `- Entries: ${weightEntries.length} measurements` : "",

@@ -23,9 +23,12 @@ import {
   listNutritionEntries,
   listTodayNutritionEntries,
   listProgramExercises,
+  listProgramOverrides,
   SET_FIELDS,
   NUTRITION_TOTALS_FIELDS,
 } from "../api/repos/index.js";
+import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
+import { resolveProgramExercises, toProgramOverrides } from "../api/program-overrides-server.js";
 
 export function registerSmartTools(server: AppServer, pbUrl: string) {
 
@@ -257,24 +260,36 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
           0: "dom",
         };
         const todayDayId = dayIds[new Date().getDay()];
-        const currentPhase = (settings?.phase as number) ?? 1;
 
         if (current) {
-          const exercises = await listProgramExercises(pb, current.program.id as string, {
-            phase: currentPhase,
-            dayId: todayDayId,
-            sort: "priority",
-          });
+          const programId = current.program.id as string;
+          // La fase del programa, no `settings.phase` (#663): ese entero es
+          // global del usuario y no se resetea al cambiar de programa, así que
+          // con él este bloque proponía los ejercicios de OTRA fase.
+          const active = await resolveActiveProgramProgress(pb, userId, tz, todayStr, { current });
+          const currentPhase = active?.progress.currentPhase ?? 1;
+
+          const [exercises, overrideRows] = await Promise.all([
+            listProgramExercises(pb, programId, {
+              phase: currentPhase,
+              dayId: todayDayId,
+              sort: "priority",
+            }),
+            listProgramOverrides(pb, userId, programId),
+          ]);
 
           if (exercises.length > 0) {
+            // Con la dosis que el usuario ya aceptó (#617): en un programa
+            // ajeno vive solo en `user_program_overrides`.
+            const resolved = resolveProgramExercises(exercises, toProgramOverrides(overrideRows));
             scheduledWorkout = {
               workout_key: `p${currentPhase}_${todayDayId}`,
               day_name: localize(exercises[0].day_name),
               day_focus: localize(exercises[0].day_focus),
               workout_title: localize(exercises[0].workout_title),
-              exercise_count: exercises.length,
-              exercises: exercises.slice(0, 5).map((e) => ({
-                name: localize(e.exercise_name),
+              exercise_count: resolved.length,
+              exercises: resolved.slice(0, 5).map((e) => ({
+                name: e.name,
                 sets: e.sets,
                 reps: e.reps,
               })),
@@ -531,8 +546,11 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         }
 
         const programId = current.program.id as string;
-        const settings = await getSettings(pb, userId);
-        const currentPhase = (settings?.phase as number) ?? 1;
+        // Misma corrección que en el briefing (#663): analizar la adherencia
+        // contra los ejercicios de una fase equivocada daba un informe que no
+        // se parecía a lo que el usuario tenía delante.
+        const active = await resolveActiveProgramProgress(pb, userId, tz, today(tz), { current });
+        const currentPhase = active?.progress.currentPhase ?? 1;
 
         const [programExercises, sessions, setsLog] = await Promise.all([
           listProgramExercises(pb, programId, { phase: currentPhase, sort: "day_id,priority" }),

@@ -104,3 +104,40 @@ export function listProgramExercises<T extends RecordModel = RecordModel>(
     requestKey: null,
   });
 }
+
+/** Day configuration of a program (`program_day_config`), all phases. */
+export function listProgramDayConfig<T extends RecordModel = RecordModel>(
+  pb: PB,
+  programId: string,
+): Promise<T[]> {
+  return pb.collection("program_day_config").getFullList<T>({
+    filter: pb.filter("program = {:programId}", { programId }),
+    sort: "phase_number,sort_order",
+    requestKey: null,
+  });
+}
+
+/**
+ * The user's accepted auto-progressions for a program (#617).
+ *
+ * These rows only exist for programs the user does NOT own: on an own program
+ * accepting a suggestion writes straight into `program_exercises`. Serving the
+ * prescription without them tells someone already at 3x12 to do 3x10.
+ *
+ * Never throws: the collection is newer than the deployment that may be
+ * running, and a program with no overrides is the normal case, so a failure
+ * here degrades to "no overrides" instead of taking the whole tool down.
+ */
+export async function listProgramOverrides<T extends RecordModel = RecordModel>(
+  pb: PB,
+  userId: string,
+  programId: string,
+): Promise<T[]> {
+  return pb
+    .collection("user_program_overrides")
+    .getFullList<T>({
+      filter: pb.filter("user = {:userId} && program = {:programId}", { userId, programId }),
+      requestKey: null,
+    })
+    .catch(() => [] as T[]);
+}
