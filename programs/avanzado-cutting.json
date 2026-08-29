@@ -333,9 +333,9 @@
             },
             {
               "sort_order": 12,
-              "name": "Estiramiento de bíceps",
+              "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
-              "muscles": "Bíceps, pecho anterior",
+              "muscles": "Pectorales, bíceps",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
