@@ -113,6 +113,18 @@ const SETS = { floor: 4, min: 10, max: 30, hardMax: 45 }
 /** Patrones que un programa generalista no puede dejar a cero. */
 const CORE_PATTERNS = ['push', 'pull', 'legs']
 
+/**
+ * Patrones que se vigilan por dosis pero no se exigen.
+ *
+ * El core entra aquí y no arriba porque un roadmap de skill puede entrenarlo
+ * entero dentro del propio skill (una plancha ES core en línea recta), así que
+ * exigirlo daría falsos positivos. Pero sí conviene avisar cuando se queda en
+ * nada: arreglar un programa con exceso de core recortándolo hasta 6 series
+ * semanales cambia un desequilibrio por el contrario, y sin esta regla pasaba
+ * en silencio.
+ */
+const SOFT_PATTERNS = ['core']
+
 /** Un slug de la base de datos colado en un campo de texto humano. */
 const SLUG_LIKE = /^[a-z0-9]+(_[a-z0-9]+)+$/
 
@@ -234,7 +246,8 @@ export function checkProgram(slug, doc) {
         if (WORK.has(String(ex.priority ?? '').toLowerCase())) {
           const p = patternOf(entry)
           perPattern.set(p, (perPattern.get(p) ?? 0) + (Number(ex.sets) || 0))
-          ids.add(resolved)
+          // Se indexa por FAMILIA, no por id: ver la comprobación 8.
+          ids.add(entry?.family || resolved)
         }
       }
     }
@@ -282,6 +295,15 @@ export function checkProgram(slug, doc) {
       }
     }
 
+    for (const pattern of SOFT_PATTERNS) {
+      const n = perPattern.get(pattern) ?? 0
+      if (n > 0 && n < SETS.min && !isSkillTrack) {
+        warn(`fase ${pn}: ${n} series de ${pattern} — por debajo del rango útil (${SETS.min}-${SETS.max})`)
+      } else if (n > SETS.hardMax) {
+        err(`fase ${pn}: ${n} series de ${pattern} — muy por encima de lo recuperable`)
+      }
+    }
+
     const push = perPattern.get('push') ?? 0
     const pull = perPattern.get('pull') ?? 0
     if (push && pull) {
@@ -294,6 +316,16 @@ export function checkProgram(slug, doc) {
   }
 
   // 8 — Continuidad: sin movimientos que duren, no hay nada que sobrecargar.
+  //
+  // Se mide por FAMILIA del catálogo (`push_up`, `l_sit`, `leg_curl`…) y no por
+  // id, porque contar ids castigaba justo lo que un buen programa hace: pasar de
+  // `pushup_std` a `archer_pushup` en la fase 3 cambia el id pero es EL MISMO
+  // movimiento un escalón más arriba, y ahí sí hay sobrecarga progresiva. Con
+  // ids, un programa ejemplar y otro que salta de un ejercicio a otro cada
+  // cuatro semanas puntuaban igual de mal.
+  //
+  // 1.073 de las 1.578 entradas del catálogo declaran familia; las que no, caen
+  // a su propio id, que es el comportamiento anterior.
   const phases = [...idsByPhase.keys()].sort((a, b) => a - b)
   if (phases.length > 1) {
     const first = idsByPhase.get(phases[0])
@@ -302,9 +334,9 @@ export function checkProgram(slug, doc) {
     const shared = [...first].filter(id => last.has(id)).length
     const pct = union.size ? Math.round((100 * shared) / union.size) : 0
     if (pct < 20) {
-      err(`solo ${pct}% de solape entre la primera fase y la última — no hay movimiento que dure lo bastante para progresar en él`)
+      err(`solo ${pct}% de continuidad entre la primera fase y la última — no hay familia de movimiento que dure lo bastante para progresar en ella`)
     } else if (pct < 30) {
-      warn(`${pct}% de solape entre la primera fase y la última — poca continuidad para sobrecarga progresiva`)
+      warn(`${pct}% de continuidad entre la primera fase y la última — poca base para sobrecarga progresiva`)
     }
   }
 
