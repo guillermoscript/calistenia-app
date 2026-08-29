@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 import { circuitResultPropsSchema } from "../views/circuit-result.schema.js";
+import { toIsoTextDatetime } from "@calistenia/core/lib/pbTextDatetime";
 
 export function registerCircuitTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -43,7 +44,15 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
         const to = to_date ?? today(tz);
 
         const conditions = ["user = {:userId}", "started_at >= {:from}", "started_at <= {:to}"];
-        const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
+        // `circuit_sessions.started_at` es una columna TEXT que guarda ISO-con-T.
+        // Una cota con espacio ordena ANTES de cualquier fila del mismo día, así
+        // que se perdían los circuitos del último día del rango — y como el
+        // rango por defecto acaba hoy, los de hoy no salían nunca (#673).
+        const params: Record<string, unknown> = {
+          userId,
+          from: toIsoTextDatetime(from),
+          to: toIsoTextDatetime(`${to} 23:59:59`),
+        };
         if (mode) {
           conditions.push("mode = {:mode}");
           params.mode = mode;
@@ -368,9 +377,10 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
 
         const result = await pb.collection("circuit_sessions").getFullList({
           filter: pb.filter("user = {:userId} && started_at >= {:from} && started_at <= {:to}", {
+            // Columna TEXT con ISO-con-T: sin la T se pierde el último día (#673).
             userId,
-            from,
-            to: `${to} 23:59:59`,
+            from: toIsoTextDatetime(from),
+            to: toIsoTextDatetime(`${to} 23:59:59`),
           }),
           sort: "-started_at",
           fields: "id,mode,rounds_completed,rounds_target,duration_seconds,started_at",

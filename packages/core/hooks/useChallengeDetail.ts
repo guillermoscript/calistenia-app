@@ -5,6 +5,7 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytic
 import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
 import { parseRepsForPR } from '../lib/pr-utils'
 import { sumExerciseTotal, countWorkouts, sumDistanceKm, compareLeaderboardEntries } from '../lib/cumulative-scoring'
+import { toIsoTextDatetime } from '../lib/pbTextDatetime'
 import { qk } from '../lib/query-keys'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
@@ -291,7 +292,11 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
           $autoCancel: false,
         }),
         pb.collection('public_cardio_sessions').getFullList({
-          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', { uid, start: startStr, end: endStr }),
+          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', {
+            // `cardio_sessions.started_at` es una columna TEXT con ISO-con-T:
+            // una cota con espacio se come el último día en silencio (#673).
+            uid, start: toIsoTextDatetime(startStr), end: toIsoTextDatetime(endStr),
+          }),
           fields: 'id,started_at',
           $autoCancel: false,
         }).catch(() => []),
@@ -300,7 +305,11 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
     }
     case 'total_distance': {
       const cardio = await pb.collection('public_cardio_sessions').getFullList({
-        filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', { uid, start: startStr, end: endStr }),
+        filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', {
+            // `cardio_sessions.started_at` es una columna TEXT con ISO-con-T:
+            // una cota con espacio se come el último día en silencio (#673).
+            uid, start: toIsoTextDatetime(startStr), end: toIsoTextDatetime(endStr),
+          }),
         fields: 'id,distance_km',
         $autoCancel: false,
       }).catch(() => [])
