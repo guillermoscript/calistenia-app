@@ -3,7 +3,26 @@
     "name": "Muscle-up Roadmap",
     "description": "Tu primer muscle up. Requiere pull-ups estrictos y dips profundos.",
     "difficulty": "intermediate",
-    "duration_weeks": 12
+    "duration_weeks": 12,
+    "days_per_week": 4,
+    "goal_type": "skill",
+    "skill": "muscle_up",
+    "intensity": "intense",
+    "equipment": [
+      "Barra de dominadas",
+      "Paralelas",
+      "Liga de resistencia",
+      "Lastre (opcional)"
+    ],
+    "contraindications": [
+      "elbow",
+      "shoulder"
+    ],
+    "notes": "Programa de 12 semanas hacia tu primer muscle-up. 4 días/sem: jalón explosivo, transición y false grip, volumen combinado, y habilidad + core.",
+    "instructions": {
+      "es": "Prerrequisito (no lo saltes, es lo que separa este roadmap de una lesión de hombro): 8-12 dominadas estrictas seguidas y 8-12 fondos en paralelas completos y controlados, ambos con buena técnica. Si no llegas a esas cifras, este NO es tu programa todavía — haz primero el Pull-up Roadmap (y trabaja fondos en paralelas por tu cuenta) hasta cumplir el prerrequisito, luego vuelve aquí. Progresión: fase 1 (semanas 1-4) construye jalón explosivo y fuerza de empuje; fase 2 (semanas 5-8) mete la transición con negativas de muscle-up y trabajo de false grip — aquí es donde falla el 90% de los intentos, así que no te la saltes aunque te aburra; fase 3 (semanas 9-12) junta todo en el muscle-up estricto y añade volumen. Si en fase 2 las negativas de muscle-up no bajan controladas (mínimo 3-4 segundos), repite 1-2 semanas más antes de pasar a fase 3. Descarga: baja el volumen a la mitad 5-7 días cada 4-6 semanas — el codo y el hombro son los que más acusan la transición. Este roadmap es un BLOQUE de especialización en el patrón de transición, no una rutina completa de tirón/empuje.",
+      "en": "Prerequisite (don't skip this, it's what separates this roadmap from a shoulder injury): 8-12 consecutive strict pull-ups and 8-12 full, controlled parallel-bar dips, both with good form. If you're not there yet, this is NOT your program yet — do the Pull-up Roadmap first (and work on dips on your own) until you meet the prerequisite, then come back. Progression: phase 1 (weeks 1-4) builds explosive pulling and pushing strength; phase 2 (weeks 5-8) adds the transition with muscle-up negatives and false-grip work — this is where 90% of attempts get stuck, so don't rush through it even if it feels slow; phase 3 (weeks 9-12) puts it together into the strict muscle-up and adds volume. If by phase 2 your muscle-up negatives aren't landing under control (at least 3-4 seconds), repeat 1-2 more weeks before moving to phase 3. Deload: cut volume in half for 5-7 days every 4-6 weeks — the elbow and shoulder take the brunt of the transition work. This roadmap is a transition-pattern SPECIALIZATION BLOCK, not a complete pull/push routine."
+    }
   },
   "phases": [
     {
