@@ -87,6 +87,20 @@ const EQUIPMENT_MAP = {
 
 const HOUSEHOLD = new Set(['ninguno', 'pared', 'toalla', 'banco', 'escalon', 'silla'])
 
+/**
+ * Material que no cabe en un programa de calistenia.
+ *
+ * El catálogo tiene 1.578 entradas, pero la mayoría vienen de la importación de
+ * ExerciseDB y son de gimnasio: 292 con mancuernas, 178 con barra, 162 de
+ * máquina, 157 de polea. Un id de esos resuelve perfectamente y no lo cazaría
+ * ninguna otra comprobación — así entró la «sentadilla goblet» en un programa
+ * que se anuncia sin material.
+ */
+const GYM_ONLY = new Set([
+  'mancuernas', 'barra', 'maquina', 'polea', 'kettlebell',
+  'fitball', 'bosu', 'balon_medicinal',
+])
+
 // ── Umbrales del baremo ──────────────────────────────────────────────────────
 
 /**
@@ -188,7 +202,11 @@ function checkProgram(file) {
 
         const entry = byId.get(resolved)
         for (const eq of entry?.equipment ?? []) {
-          if (!HOUSEHOLD.has(eq)) usedEquipment.add(eq)
+          if (GYM_ONLY.has(eq)) {
+            err(`${where}: "${resolved}" necesita ${eq} — material de gimnasio en un programa de calistenia`)
+          } else if (!HOUSEHOLD.has(eq)) {
+            usedEquipment.add(eq)
+          }
         }
 
         // 5 — Volumen: solo cuenta el trabajo efectivo.
