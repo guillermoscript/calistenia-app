@@ -256,11 +256,22 @@ export function buildPayload({ entry, file, data }) {
   if (entry.skill) program.skill = entry.skill
 
   // «Cómo seguir este programa» (#618, campo añadido en
-  // 1786000000_add_program_instructions.js). `i18n()` ya cubre el caso de que
-  // el JSON no lo traiga todavía: `undefined` cae a `{ es: '' }`, así que no
-  // hace falta un default aparte ni falla mientras el contenido se termina de
-  // rellenar en paralelo.
-  program.instructions = i18n(data.instructions)
+  // 1786000000_add_program_instructions.js).
+  //
+  // Vive en `data.program`, no en la raíz del documento: leerlo de `data` daba
+  // `undefined`, `i18n()` lo convertía en `{ es: '' }` y los quince programas se
+  // sembraban con el bloque VACÍO sin que nada se quejara. El guardarraíl no lo
+  // veía porque valida el JSON de origen, donde el texto sí está, y el test de
+  // la siembra tampoco lo afirmaba. Salió mirando la API con el contenido ya
+  // sembrado.
+  const instructions = data.program?.instructions
+  if (!instructions || !String(instructions.es ?? instructions).trim()) {
+    throw new Error(
+      `${file}: program.instructions vacío. Es el único sitio donde al usuario ` +
+      `se le explica cómo progresar; sembrarlo vacío deja el programa mudo.`,
+    )
+  }
+  program.instructions = i18n(instructions)
 
   const phases = data.phases.map(phase => {
     const byId = new Map(phase.days.map(d => [d.day_id, d]))
