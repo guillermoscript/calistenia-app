@@ -42,6 +42,7 @@ import {
 } from "@calistenia/core/lib/cumulative-scoring";
 import { parseRepsForPR } from "@calistenia/core/lib/pr-utils";
 import { addDaysIn, localMidnightAsUTCIn, utcToLocalDateStrIn } from "@calistenia/core/lib/tzDate";
+import { toIsoTextDatetime } from "@calistenia/core/lib/pbTextDatetime";
 import { listChallengeParticipants, type PB, type RecordModel } from "./repos/index.js";
 
 /** Lo mínimo que hace falta de un reto para puntuarlo. */
@@ -289,9 +290,11 @@ function publicCardio(
     .collection("public_cardio_sessions")
     .getFullList<RecordModel>({
       filter: pb.filter("user = {:userId} && started_at >= {:start} && started_at <= {:end}", {
+        // `cardio_sessions.started_at` es TEXT con ISO-con-T; una cota con
+        // espacio pierde el último día en silencio (#673).
         userId,
-        start,
-        end,
+        start: toIsoTextDatetime(start),
+        end: toIsoTextDatetime(end),
       }),
       fields,
       requestKey: null,

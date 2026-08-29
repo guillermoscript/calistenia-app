@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { toIsoTextDatetime } from '../lib/pbTextDatetime'
 import { CANONICAL_ANALYTICS_EVENTS, emitOnce, trackCanonicalEvent } from '../lib/analytics'
 import { addDays, localMidnightAsUTC, nowLocalForPB, todayStr, utcToLocalDateStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
@@ -381,7 +382,9 @@ export function useCommunityProgramDetail(programId: string, userId: string | nu
         }).catch(() => [] as any[]),
         pb.collection('cardio_sessions').getFullList({
           filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
-            uid: userId, start: startFilter, end: endFilter,
+            // Columna TEXT con ISO-con-T: la cota tiene que llevar la T o se
+            // pierde el último día sin error (#673).
+            uid: userId, start: toIsoTextDatetime(startFilter), end: toIsoTextDatetime(endFilter),
           }),
           fields: 'id,started_at',
           $autoCancel: false,
