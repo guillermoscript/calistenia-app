@@ -91,7 +91,7 @@ export const SKELETONS = [
     duration_weeks: 12, difficulty: 'beginner', goal_type: 'maintain', intensity: 'light', days_per_week: 4, equipment_required: [], contraindications: [] },
   { slug: 'mujer-fuerza-funcional', name: i18n('Mujer · Fuerza Funcional', 'Women · Functional Strength'),
     description: i18n('Fuerza real para mujeres: dominadas, dips y core fuerte. 4 días/sem. Requiere barra.', 'Real strength for women: pull-ups, dips, strong core. 4 days/week. Requires pull bar.'),
-    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'muscle_gain', intensity: 'moderate', days_per_week: 4, equipment_required: ['pull_bar','bands'], contraindications: [] },
+    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'muscle_gain', intensity: 'moderate', days_per_week: 4, equipment_required: ['pull_bar','bands','parallel_bars'], contraindications: [] },
 ]
 
 /** Índice por slug, para cruzar una entrada con su fichero de contenido. */
