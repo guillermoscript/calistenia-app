@@ -4,6 +4,7 @@ import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
 import { getSettings, upsertSettings, listSessions, listWeightEntries } from "../api/repos/index.js";
 import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
+import { resolvePersonalRecords, topRepRecords } from "../api/prs-server.js";
 
 export function registerProgressTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -14,7 +15,9 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
       name: "cal_get_settings",
       title: "Get User Settings",
       description:
-        "Get the user's training settings: start date, weekly workout goal, and personal records (PR) for key exercises. " +
+        "Get the user's training settings: start date, weekly workout goal, and personal records. "
+        + "PRs are recomputed from the full `sets_log` history, so they cover EVERY exercise the user has logged, not just the five legacy fields. "
+        + "Records for timer exercises (L-sit, plank, handstand) are in SECONDS, because timers store their seconds in `reps`. " +
         "NOTE: `phase` here is a legacy global counter, NOT the phase of the active program \u2014 read that from `cal_get_current_program` (`progress.current_phase`).",
       schema: z
         .object({
@@ -44,16 +47,25 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
           };
         }
 
+        const prs = await resolvePersonalRecords(pb, userId, settings);
+
         const output = {
           phase: settings.phase,
           start_date: settings.start_date,
           weekly_goal: settings.weekly_goal,
+          // Los cinco de siempre, para lo que ya dependía de ellos.
           personal_records: {
-            pullups: settings.pr_pullups ?? null,
-            pushups: settings.pr_pushups ?? null,
-            l_sit: settings.pr_lsit ?? null,
-            pistol_squat: settings.pr_pistol ?? null,
-            handstand: settings.pr_handstand ?? null,
+            pullups: prs.legacy.pullups || null,
+            pushups: prs.legacy.pushups || null,
+            l_sit: prs.legacy.l_sit || null,
+            pistol_squat: prs.legacy.pistol_squat || null,
+            handstand: prs.legacy.handstand || null,
+          },
+          // Y los de verdad: todos los ejercicios con serie registrada (#666).
+          all_records: {
+            tracked_exercises: prs.tracked_exercises,
+            reps: prs.reps,
+            weight: prs.weight,
           },
         };
 
@@ -73,6 +85,19 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             pr.l_sit ? `- L-Sit: **${pr.l_sit}**` : `- L-Sit: not set`,
             pr.pistol_squat ? `- Pistol Squat: **${pr.pistol_squat}**` : `- Pistol Squat: not set`,
             pr.handstand ? `- Handstand: **${pr.handstand}**` : `- Handstand: not set`,
+            ...(prs.tracked_exercises > 0
+              ? [
+                  `\n## All-Time Records (${prs.tracked_exercises} exercises)`,
+                  `_Best set per exercise, from the full \`sets_log\` history. Timer exercises are in seconds._`,
+                  ...topRepRecords(prs).map(({ exercise_id, best }) => {
+                    const w = prs.weight[exercise_id];
+                    return `- \`${exercise_id}\`: **${best}**${w ? ` \u00b7 ${w.weight}kg \u00d7 ${w.reps} (e1RM ${w.e1rm}kg)` : ""}`;
+                  }),
+                  ...(prs.tracked_exercises > 10
+                    ? [`_\u2026 and ${prs.tracked_exercises - 10} more \u2014 read them all from \`all_records.reps\` in JSON format._`]
+                    : []),
+                ]
+              : []),
           ].join("\n");
         }
 
@@ -91,7 +116,9 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
       name: "cal_update_settings",
       title: "Update Training Settings",
       description:
-        "Update training settings: phase, start date, weekly goal, or personal records. Only provide fields you want to change.",
+        "Update training settings: phase, start date, weekly goal, or personal records. Only provide fields you want to change. "
+        + "PRs are numbers, and the app already derives them from logged sets \u2014 only write one to correct a record the user never logged as a set. "
+        + "The L-sit and handstand records are SECONDS held, not reps.",
       schema: z
         .object({
           phase: z
@@ -104,11 +131,15 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             ),
           start_date: z.string().optional().describe("Program start date (YYYY-MM-DD)"),
           weekly_goal: z.number().int().min(1).max(7).optional().describe("Target workouts per week (1-7)"),
-          pr_pullups: z.string().optional().describe("Pull-up personal record (e.g. '15', '10 strict')"),
-          pr_pushups: z.string().optional().describe("Push-up personal record"),
-          pr_lsit: z.string().optional().describe("L-Sit personal record (e.g. '30s')"),
-          pr_pistol: z.string().optional().describe("Pistol squat personal record"),
-          pr_handstand: z.string().optional().describe("Handstand personal record"),
+          // Campos NUMÉRICOS en PocketBase (pb_migrations/1773246964_updated_settings.js).
+          // Estaban declarados como texto con ejemplos tipo '10 strict', valores que
+          // la colección no puede guardar y que rompían el ranking, que los ordena
+          // como números (#666).
+          pr_pullups: z.number().min(0).optional().describe("Pull-up personal record, in reps (e.g. 15)"),
+          pr_pushups: z.number().min(0).optional().describe("Push-up personal record, in reps"),
+          pr_lsit: z.number().min(0).optional().describe("L-Sit personal record, in SECONDS held (e.g. 30)"),
+          pr_pistol: z.number().min(0).optional().describe("Pistol squat personal record, in reps"),
+          pr_handstand: z.number().min(0).optional().describe("Handstand personal record, in SECONDS held"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
