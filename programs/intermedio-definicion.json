@@ -3,7 +3,11 @@
     "name": "Intermedio · Definición",
     "description": "5 días/sem alta intensidad. Para bajar % graso conservando masa magra.",
     "difficulty": "intermediate",
-    "duration_weeks": 12
+    "duration_weeks": 12,
+    "instructions": {
+      "es": "Para quién: nivel intermedio que ya domina la técnica de flexión, fondos y dominada asistida/estricta y quiere bajar % graso conservando masa magra con 5 sesiones semanales.\n\nProgresión: en cada ejercicio principal, cuando completes el tope del rango de repeticiones en TODAS las series durante dos sesiones seguidas, súmale 1 repetición por serie en la siguiente sesión. Cuando llegues al tope del rango con margen de sobra, pasa a la variante más exigente del mismo movimiento (por ejemplo, de flexión estándar a flexión declinada, o de dominada asistida a estricta).\n\nDescarga: descansa 5-7 días cada 4-6 semanas — de forma natural cae tras la semana 4 (fin de la fase 1) y tras la semana 8 (fin de la fase 2). En esa semana, reduce el volumen a la mitad y mantente lejos del fallo muscular.",
+      "en": "Who it's for: intermediate lifters who already have solid push-up, dip and assisted/strict pull-up technique and want to cut body fat while keeping lean mass, training 5 days a week.\n\nProgression: on each main exercise, once you hit the top of the rep range on EVERY set for two sessions in a row, add 1 rep per set the next session. Once you clear the top of the range with room to spare, move to a harder variant of the same movement (e.g. standard push-up to decline push-up, or assisted pull-up to strict).\n\nDeload: rest 5-7 days every 4-6 weeks — it falls naturally after week 4 (end of phase 1) and after week 8 (end of phase 2). That week, cut volume in half and stay away from failure."
+    }
   },
   "phases": [
     {
@@ -20,7 +24,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -28,23 +32,25 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos amplios, alternar dirección"
+              "note": "Círculos amplios, alternar dirección",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "shoulder_dislocates",
-              "muscles": "Hombros, movilidad escapular",
+              "name": "Rotación Torácica",
+              "muscles": "Hombros, columna torácica",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Movimiento lento y controlado"
+              "note": "Brazos extendidos, gira el torso a un lado y al otro sin mover la cadera",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 3,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas, manguito rotador",
               "sets": 1,
               "reps": "",
@@ -52,77 +58,72 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Activar escápulas antes de empuje"
+              "note": "Activar escápulas antes de empuje",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 4,
-              "name": "pushup_std",
+              "name": "Push-up Estándar",
               "muscles": "Pecho, tríceps, deltoides anterior",
               "sets": 4,
               "reps": "15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Rango completo, escápulas retraídas abajo"
+              "note": "Rango completo, escápulas retraídas abajo",
+              "exercise_id": "pushup_std"
             },
             {
               "sort_order": 5,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps, deltoides anterior",
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Inclinarse ligeramente al frente para más pecho"
+              "note": "Inclinarse ligeramente al frente para más pecho",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 6,
-              "name": "diamond_pushup",
+              "name": "Diamond Push-up",
               "muscles": "Tríceps, pecho interno",
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Manos juntas bajo el pecho"
+              "note": "Manos juntas bajo el pecho",
+              "exercise_id": "diamond_pushup"
             },
             {
               "sort_order": 7,
-              "name": "pike_pushup",
-              "muscles": "Deltoides, tríceps",
-              "sets": 3,
-              "reps": "10-12",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Caderas altas, énfasis en hombros"
-            },
-            {
-              "sort_order": 8,
-              "name": "wide_pushup",
-              "muscles": "Pecho externo, deltoides",
-              "sets": 3,
-              "reps": "12-15",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Manos más abiertas que los hombros"
-            },
-            {
-              "sort_order": 9,
-              "name": "mountain_climbers",
+              "name": "Mountain Climbers",
               "muscles": "Core, cardio, hombros",
               "sets": 3,
               "reps": "20 por lado",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Ritmo rápido, finisher cardio"
+              "note": "Ritmo rápido, finisher cardio",
+              "exercise_id": "mountain_climbers"
             },
             {
-              "sort_order": 10,
-              "name": "pectoral_stretch",
+              "sort_order": 8,
+              "name": "Pike Push-up",
+              "muscles": "Deltoides, tríceps",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Caderas altas, énfasis en hombros",
+              "exercise_id": "pike_pushup"
+            },
+            {
+              "sort_order": 9,
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho, deltoides anterior",
               "sets": 1,
               "reps": "",
@@ -130,11 +131,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo en pared, rotar torso"
+              "note": "Brazo en pared, rotar torso",
+              "exercise_id": "pectoral_stretch"
             },
             {
-              "sort_order": 11,
-              "name": "triceps_stretch",
+              "sort_order": 10,
+              "name": "Estiramiento de Tríceps",
               "muscles": "Tríceps",
               "sets": 1,
               "reps": "",
@@ -142,11 +144,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Codo detrás de la cabeza, cada lado"
+              "note": "Codo detrás de la cabeza, cada lado",
+              "exercise_id": "triceps_stretch"
             },
             {
-              "sort_order": 12,
-              "name": "deep_breathing",
+              "sort_order": 11,
+              "name": "Respiración Profunda",
               "muscles": "Recuperación general",
               "sets": 1,
               "reps": "",
@@ -154,7 +157,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Inhalar 4s, sostener 4s, exhalar 6s"
+              "note": "Inhalar 4s, sostener 4s, exhalar 6s",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "push"
@@ -167,7 +171,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -175,11 +179,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Activar hombros antes de jalar"
+              "note": "Activar hombros antes de jalar",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas, dorsal",
               "sets": 1,
               "reps": "",
@@ -187,11 +192,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Retracción y protracción escapular"
+              "note": "Retracción y protracción escapular",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 3,
-              "name": "cat_cow",
+              "name": "Cat-Cow",
               "muscles": "Columna, movilidad torácica",
               "sets": 1,
               "reps": "",
@@ -199,77 +205,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Movimiento fluido entre posiciones"
+              "note": "Movimiento fluido entre posiciones",
+              "exercise_id": "cat_cow"
             },
             {
               "sort_order": 4,
-              "name": "pullup_strict",
+              "name": "Pull-up Estricto",
               "muscles": "Dorsal, bíceps, romboides",
               "sets": 4,
               "reps": "6-8",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Agarre prono, mentón sobre la barra"
+              "note": "Agarre prono, mentón sobre la barra",
+              "exercise_id": "pullup_strict"
             },
             {
               "sort_order": 5,
-              "name": "australian_pullup",
+              "name": "Australian Pull-up",
               "muscles": "Espalda media, bíceps",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pecho a la barra, cuerpo recto"
+              "note": "Pecho a la barra, cuerpo recto",
+              "exercise_id": "australian_pullup"
             },
             {
               "sort_order": 6,
-              "name": "chinup",
+              "name": "Chin-up (agarre supino)",
               "muscles": "Bíceps, dorsal",
               "sets": 3,
               "reps": "6-8",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Agarre supino, enfatizar bíceps"
+              "note": "Agarre supino, enfatizar bíceps",
+              "exercise_id": "chinup"
             },
             {
               "sort_order": 7,
-              "name": "scap_retract",
+              "name": "Retracción Escapular",
               "muscles": "Romboides, trapecio medio",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Colgado en barra, solo retraer escápulas"
+              "note": "Colgado en barra, solo retraer escápulas",
+              "exercise_id": "scap_retract"
             },
             {
               "sort_order": 8,
-              "name": "face_pull",
-              "muscles": "Deltoides posterior, romboides",
+              "name": "Dominadas Escapulares",
+              "muscles": "Trapecio, bíceps, romboides, deltoides posterior",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Con banda o en barra baja, codos altos"
+              "note": "Cuelga de la barra y tira solo con las escápulas hasta que la barbilla roce la barra, sin flexionar mucho el codo",
+              "exercise_id": "scapular_pull_up"
             },
             {
               "sort_order": 9,
-              "name": "hanging_knee_raise",
+              "name": "Hanging Knee Raise",
               "muscles": "Core inferior, flexores de cadera",
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Sin impulso, controlar la bajada"
+              "note": "Sin impulso, controlar la bajada",
+              "exercise_id": "hanging_knee_raise"
             },
             {
               "sort_order": 10,
-              "name": "lat_stretch",
+              "name": "Estiramiento de Dorsal",
               "muscles": "Dorsal, oblicuos",
               "sets": 1,
               "reps": "",
@@ -277,11 +290,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo extendido, inclinarse al lado opuesto"
+              "note": "Brazo extendido, inclinarse al lado opuesto",
+              "exercise_id": "lat_stretch"
             },
             {
               "sort_order": 11,
-              "name": "pectoral_stretch",
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho, bíceps",
               "sets": 1,
               "reps": "",
@@ -289,11 +303,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Estiramiento de pecho y hombro frontal"
+              "note": "Estiramiento de pecho y hombro frontal",
+              "exercise_id": "pectoral_stretch"
             },
             {
               "sort_order": 12,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación general",
               "sets": 1,
               "reps": "",
@@ -301,7 +316,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Respiración diafragmática profunda"
+              "note": "Respiración diafragmática profunda",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "pull"
@@ -314,7 +330,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "hip_circles",
+              "name": "Círculos de Cadera",
               "muscles": "Caderas, movilidad",
               "sets": 1,
               "reps": "",
@@ -322,11 +338,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos amplios en ambas direcciones"
+              "note": "Círculos amplios en ambas direcciones",
+              "exercise_id": "hip_circles"
             },
             {
               "sort_order": 2,
-              "name": "leg_swings",
+              "name": "Leg Swings",
               "muscles": "Isquiotibiales, flexores cadera",
               "sets": 1,
               "reps": "",
@@ -334,11 +351,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Frontal y lateral, cada pierna"
+              "note": "Frontal y lateral, cada pierna",
+              "exercise_id": "leg_swings"
             },
             {
               "sort_order": 3,
-              "name": "glute_bridge_warmup",
+              "name": "Puente de Glúteos (Calentamiento)",
               "muscles": "Glúteos, activación",
               "sets": 1,
               "reps": "",
@@ -346,77 +364,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Apretar glúteos arriba, activar cadena posterior"
+              "note": "Apretar glúteos arriba, activar cadena posterior",
+              "exercise_id": "glute_bridge_warmup"
             },
             {
               "sort_order": 4,
-              "name": "squat_pause",
+              "name": "Squat con Pausa (3s)",
               "muscles": "Cuádriceps, glúteos, core",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pausa de 2s abajo, mantener tensión"
+              "note": "Pausa de 2s abajo, mantener tensión",
+              "exercise_id": "squat_pause"
             },
             {
               "sort_order": 5,
-              "name": "reverse_lunge",
+              "name": "Reverse Lunge",
               "muscles": "Cuádriceps, glúteos, equilibrio",
               "sets": 4,
               "reps": "10 por lado",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Paso largo, rodilla trasera casi al suelo"
+              "note": "Paso largo, rodilla trasera casi al suelo",
+              "exercise_id": "reverse_lunge"
             },
             {
               "sort_order": 6,
-              "name": "nordic_curl",
+              "name": "Nordic Curl (Regresión)",
               "muscles": "Isquiotibiales",
               "sets": 3,
               "reps": "5-6",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Descenso lento y controlado, empujar para subir"
+              "note": "Descenso lento y controlado, empujar para subir",
+              "exercise_id": "nordic_curl"
             },
             {
               "sort_order": 7,
-              "name": "glute_bridge",
+              "name": "Glute Bridge",
               "muscles": "Glúteos, isquiotibiales",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Apretar glúteos arriba 2s"
+              "note": "Apretar glúteos arriba 2s",
+              "exercise_id": "glute_bridge"
             },
             {
               "sort_order": 8,
-              "name": "calf_raise",
+              "name": "Calf Raises",
               "muscles": "Gemelos, sóleo",
               "sets": 3,
               "reps": "20",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Rango completo, pausa arriba"
+              "note": "Rango completo, pausa arriba",
+              "exercise_id": "calf_raise"
             },
             {
               "sort_order": 9,
-              "name": "jump_squat",
+              "name": "Jump Squat",
               "muscles": "Cuádriceps, glúteos, cardio",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher explosivo, aterrizar suave"
+              "note": "Finisher explosivo, aterrizar suave",
+              "exercise_id": "jump_squat"
             },
             {
               "sort_order": 10,
-              "name": "quad_stretch",
+              "name": "Estiramiento de Cuádriceps",
               "muscles": "Cuádriceps",
               "sets": 1,
               "reps": "",
@@ -424,11 +449,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "De pie, talón al glúteo, cada pierna"
+              "note": "De pie, talón al glúteo, cada pierna",
+              "exercise_id": "quad_stretch"
             },
             {
               "sort_order": 11,
-              "name": "hamstring_stretch",
+              "name": "Estiramiento de Isquiotibiales",
               "muscles": "Isquiotibiales",
               "sets": 1,
               "reps": "",
@@ -436,11 +462,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pierna extendida, inclinar torso"
+              "note": "Pierna extendida, inclinar torso",
+              "exercise_id": "hamstring_stretch"
             },
             {
               "sort_order": 12,
-              "name": "hip_flexor_stretch",
+              "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera, psoas",
               "sets": 1,
               "reps": "",
@@ -448,7 +475,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Rodilla en suelo, empujar cadera al frente"
+              "note": "Rodilla en suelo, empujar cadera al frente",
+              "exercise_id": "hip_flexor_stretch"
             }
           ],
           "day_type": "legs"
@@ -461,7 +489,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -469,23 +497,25 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Progresivo: pequeño a grande"
+              "note": "Progresivo: pequeño a grande",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "shoulder_dislocates",
-              "muscles": "Hombros, movilidad",
+              "name": "Activación Escapular",
+              "muscles": "Escápulas, manguito rotador",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Con palo o banda, rango completo"
+              "note": "Activar escápulas antes de tirar",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 3,
-              "name": "thoracic_rotation",
+              "name": "Rotación Torácica",
               "muscles": "Columna torácica, movilidad",
               "sets": 1,
               "reps": "",
@@ -493,77 +523,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Rotación controlada cada lado"
+              "note": "Rotación controlada cada lado",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 4,
-              "name": "pullup_strict",
+              "name": "Pull-up Estricto",
               "muscles": "Dorsal, bíceps",
               "sets": 4,
               "reps": "6-8",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Subir controlado, bajar lento"
+              "note": "Subir controlado, bajar lento",
+              "exercise_id": "pullup_strict"
             },
             {
               "sort_order": 5,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps",
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Rango completo, codos a 90°"
+              "note": "Rango completo, codos a 90°",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 6,
-              "name": "wide_pullup",
+              "name": "Wide Grip Pull-up",
               "muscles": "Dorsal, redondo mayor",
               "sets": 3,
               "reps": "5-7",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Agarre amplio, jalar codos hacia abajo"
+              "note": "Agarre amplio, jalar codos hacia abajo",
+              "exercise_id": "wide_pullup"
             },
             {
               "sort_order": 7,
-              "name": "decline_pushup",
+              "name": "Decline Push-up",
               "muscles": "Pecho superior, deltoides",
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Pies elevados en banco o escalón"
+              "note": "Pies elevados en banco o escalón",
+              "exercise_id": "decline_pushup"
             },
             {
               "sort_order": 8,
-              "name": "inverted_row_pause",
+              "name": "Inverted Row con Pausa",
               "muscles": "Espalda media, bíceps",
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Pausa de 1s arriba, apretar escápulas"
+              "note": "Pausa de 1s arriba, apretar escápulas",
+              "exercise_id": "inverted_row_pause"
             },
             {
               "sort_order": 9,
-              "name": "lsit_prog",
+              "name": "L-sit Progresión",
               "muscles": "Core, flexores cadera, tríceps",
               "sets": 3,
               "reps": "15-20s",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "En paralelas, mantener piernas elevadas"
+              "note": "En paralelas, mantener piernas elevadas",
+              "exercise_id": "lsit_prog"
             },
             {
               "sort_order": 10,
-              "name": "lat_stretch",
+              "name": "Estiramiento de Dorsal",
               "muscles": "Dorsal",
               "sets": 1,
               "reps": "",
@@ -571,11 +608,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado, inclinarse hasta sentir estiramiento"
+              "note": "Cada lado, inclinarse hasta sentir estiramiento",
+              "exercise_id": "lat_stretch"
             },
             {
               "sort_order": 11,
-              "name": "triceps_stretch",
+              "name": "Estiramiento de Tríceps",
               "muscles": "Tríceps",
               "sets": 1,
               "reps": "",
@@ -583,11 +621,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada brazo, 15s por lado"
+              "note": "Cada brazo, 15s por lado",
+              "exercise_id": "triceps_stretch"
             },
             {
               "sort_order": 12,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación general",
               "sets": 1,
               "reps": "",
@@ -595,7 +634,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Bajar ritmo cardíaco, respiración lenta"
+              "note": "Bajar ritmo cardíaco, respiración lenta",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "push"
@@ -608,7 +648,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "jumping_jacks",
+              "name": "Jumping Jacks",
               "muscles": "Cardio, activación general",
               "sets": 1,
               "reps": "",
@@ -616,11 +656,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Subir frecuencia cardíaca progresivamente"
+              "note": "Subir frecuencia cardíaca progresivamente",
+              "exercise_id": "jumping_jacks"
             },
             {
               "sort_order": 2,
-              "name": "inchworm",
+              "name": "Inchworm",
               "muscles": "Cadena posterior, hombros",
               "sets": 1,
               "reps": "",
@@ -628,11 +669,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Caminar manos al frente y volver"
+              "note": "Caminar manos al frente y volver",
+              "exercise_id": "inchworm"
             },
             {
               "sort_order": 3,
-              "name": "hip_circles",
+              "name": "Círculos de Cadera",
               "muscles": "Caderas, movilidad",
               "sets": 1,
               "reps": "",
@@ -640,77 +682,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Abrir caderas para sentadillas"
+              "note": "Abrir caderas para sentadillas",
+              "exercise_id": "hip_circles"
             },
             {
               "sort_order": 4,
-              "name": "pushup_std",
+              "name": "Push-up Estándar",
               "muscles": "Pecho, tríceps",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Ritmo constante, sin descanso extra"
+              "note": "Ritmo constante, sin descanso extra",
+              "exercise_id": "pushup_std"
             },
             {
               "sort_order": 5,
-              "name": "australian_pullup",
+              "name": "Australian Pull-up",
               "muscles": "Espalda, bíceps",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pecho a barra, cuerpo recto"
+              "note": "Pecho a barra, cuerpo recto",
+              "exercise_id": "australian_pullup"
             },
             {
               "sort_order": 6,
-              "name": "squat_pause",
+              "name": "Squat con Pausa (3s)",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pausa 1s abajo, ritmo rápido arriba"
+              "note": "Pausa 1s abajo, ritmo rápido arriba",
+              "exercise_id": "squat_pause"
             },
             {
               "sort_order": 7,
-              "name": "burpees",
+              "name": "Burpees",
               "muscles": "Full body, cardio",
               "sets": 3,
               "reps": "10",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Explosivo, pecho al suelo"
+              "note": "Explosivo, pecho al suelo",
+              "exercise_id": "burpees"
             },
             {
               "sort_order": 8,
-              "name": "v_ups",
+              "name": "V-ups",
               "muscles": "Core, recto abdominal",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Manos a pies, extensión completa abajo"
+              "note": "Manos a pies, extensión completa abajo",
+              "exercise_id": "v_ups"
             },
             {
               "sort_order": 9,
-              "name": "high_knees",
+              "name": "High Knees",
               "muscles": "Cardio, core, flexores cadera",
               "sets": 3,
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher cardio, máxima velocidad"
+              "note": "Finisher cardio, máxima velocidad",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 10,
-              "name": "pike_stretch",
+              "name": "Pike Stretch",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,
               "reps": "",
@@ -718,11 +767,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Piernas rectas, bajar torso"
+              "note": "Piernas rectas, bajar torso",
+              "exercise_id": "pike_stretch"
             },
             {
               "sort_order": 11,
-              "name": "hip_flexor_stretch",
+              "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera",
               "sets": 1,
               "reps": "",
@@ -730,11 +780,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado, empujar cadera al frente"
+              "note": "Cada lado, empujar cadera al frente",
+              "exercise_id": "hip_flexor_stretch"
             },
             {
               "sort_order": 12,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -742,7 +793,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma, 5 respiraciones profundas"
+              "note": "Vuelta a la calma, 5 respiraciones profundas",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "full"
@@ -763,7 +815,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -771,11 +823,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Ambas direcciones"
+              "note": "Ambas direcciones",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas",
               "sets": 1,
               "reps": "",
@@ -783,11 +836,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Activar antes de carga"
+              "note": "Activar antes de carga",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 3,
-              "name": "wrist_mobility",
+              "name": "Wrist Mobility Routine",
               "muscles": "Muñecas, antebrazos",
               "sets": 1,
               "reps": "",
@@ -795,88 +849,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos y flexiones de muñeca"
+              "note": "Círculos y flexiones de muñeca",
+              "exercise_id": "wrist_mobility"
             },
             {
               "sort_order": 4,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con diamond pushup, sin descanso entre ambos"
+              "note": "Superset con diamond pushup, sin descanso entre ambos",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 5,
-              "name": "diamond_pushup",
+              "name": "Diamond Push-up",
               "muscles": "Tríceps, pecho interno",
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Descanso 45s después"
+              "note": "Parte 2 del superset. Descanso 45s después",
+              "exercise_id": "diamond_pushup"
             },
             {
               "sort_order": 6,
-              "name": "pike_pushup",
+              "name": "Pike Push-up",
               "muscles": "Deltoides, tríceps",
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con wide pushup"
+              "note": "Superset con wide pushup",
+              "exercise_id": "pike_pushup"
             },
             {
               "sort_order": 7,
-              "name": "wide_pushup",
-              "muscles": "Pecho externo",
-              "sets": 4,
-              "reps": "12-15",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Parte 2 del superset. Descanso 45s después"
-            },
-            {
-              "sort_order": 8,
-              "name": "decline_pushup",
-              "muscles": "Pecho superior",
-              "sets": 3,
-              "reps": "10-12",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Pies elevados, controlar descenso"
-            },
-            {
-              "sort_order": 9,
-              "name": "plank",
+              "name": "Plank",
               "muscles": "Core, estabilidad",
               "sets": 3,
               "reps": "45s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Apretar glúteos y abdomen"
+              "note": "Apretar glúteos y abdomen",
+              "exercise_id": "plank"
             },
             {
-              "sort_order": 10,
-              "name": "mountain_climbers",
+              "sort_order": 8,
+              "name": "Wide Push-up",
+              "muscles": "Pecho externo",
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 45,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Parte 2 del superset. Descanso 45s después",
+              "exercise_id": "wide_pushup"
+            },
+            {
+              "sort_order": 9,
+              "name": "Mountain Climbers",
               "muscles": "Core, cardio",
               "sets": 3,
               "reps": "30 total",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher cardio, ritmo alto"
+              "note": "Finisher cardio, ritmo alto",
+              "exercise_id": "mountain_climbers"
             },
             {
-              "sort_order": 11,
-              "name": "pectoral_stretch",
+              "sort_order": 10,
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho",
               "sets": 1,
               "reps": "",
@@ -884,11 +934,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado contra pared o marco"
+              "note": "Cada lado contra pared o marco",
+              "exercise_id": "pectoral_stretch"
             },
             {
-              "sort_order": 12,
-              "name": "triceps_stretch",
+              "sort_order": 11,
+              "name": "Estiramiento de Tríceps",
               "muscles": "Tríceps",
               "sets": 1,
               "reps": "",
@@ -896,11 +947,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada brazo"
+              "note": "Cada brazo",
+              "exercise_id": "triceps_stretch"
             },
             {
-              "sort_order": 13,
-              "name": "deep_breathing",
+              "sort_order": 12,
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -908,7 +960,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Recuperar frecuencia cardíaca"
+              "note": "Recuperar frecuencia cardíaca",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "push"
@@ -921,19 +974,20 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "shoulder_dislocates",
-              "muscles": "Hombros, movilidad",
+              "name": "Rotación Torácica",
+              "muscles": "Hombros, columna torácica",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Rango completo con banda o palo"
+              "note": "Brazos extendidos, gira el torso a un lado y al otro sin mover la cadera",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 2,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas",
               "sets": 1,
               "reps": "",
@@ -941,11 +995,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Colgado activo en barra"
+              "note": "Colgado activo en barra",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 3,
-              "name": "cat_cow",
+              "name": "Cat-Cow",
               "muscles": "Columna",
               "sets": 1,
               "reps": "",
@@ -953,77 +1008,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Movilizar columna torácica"
+              "note": "Movilizar columna torácica",
+              "exercise_id": "cat_cow"
             },
             {
               "sort_order": 4,
-              "name": "pullup_strict",
+              "name": "Pull-up Estricto",
               "muscles": "Dorsal, bíceps",
               "sets": 4,
               "reps": "7-9",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con australian pullup"
+              "note": "Superset con australian pullup",
+              "exercise_id": "pullup_strict"
             },
             {
               "sort_order": 5,
-              "name": "australian_pullup",
+              "name": "Australian Pull-up",
               "muscles": "Espalda media, bíceps",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Descanso 45s después"
+              "note": "Parte 2 del superset. Descanso 45s después",
+              "exercise_id": "australian_pullup"
             },
             {
               "sort_order": 6,
-              "name": "close_grip_pullup",
+              "name": "Close Grip Pull-up",
               "muscles": "Bíceps, dorsal interno",
               "sets": 3,
               "reps": "6-8",
-              "rest_seconds": 30,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con face pull"
+              "note": "Superset con face pull",
+              "exercise_id": "close_grip_pullup"
             },
             {
               "sort_order": 7,
-              "name": "face_pull",
-              "muscles": "Deltoides posterior, romboides",
+              "name": "Retracción Escapular",
+              "muscles": "Trapecio medio, deltoides posterior, romboides",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Codos altos"
+              "note": "Colgado de la barra, retrae solo las escápulas sin flexionar el codo",
+              "exercise_id": "scap_retract"
             },
             {
               "sort_order": 8,
-              "name": "inverted_row_pause",
+              "name": "Inverted Row con Pausa",
               "muscles": "Espalda media",
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Pausa 2s arriba, apretar escápulas"
+              "note": "Pausa 2s arriba, apretar escápulas",
+              "exercise_id": "inverted_row_pause"
             },
             {
               "sort_order": 9,
-              "name": "hanging_leg_raise",
+              "name": "Hanging Leg Raise",
               "muscles": "Core inferior, oblicuos",
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Piernas rectas hasta horizontal"
+              "note": "Piernas rectas hasta horizontal",
+              "exercise_id": "hanging_leg_raise"
             },
             {
               "sort_order": 10,
-              "name": "lat_stretch",
+              "name": "Estiramiento de Dorsal",
               "muscles": "Dorsal",
               "sets": 1,
               "reps": "",
@@ -1031,11 +1093,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado, mantener 15s"
+              "note": "Cada lado, mantener 15s",
+              "exercise_id": "lat_stretch"
             },
             {
               "sort_order": 11,
-              "name": "pectoral_stretch",
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho, hombro frontal",
               "sets": 1,
               "reps": "",
@@ -1043,11 +1106,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Compensar jalón con estiramiento frontal"
+              "note": "Compensar jalón con estiramiento frontal",
+              "exercise_id": "pectoral_stretch"
             },
             {
               "sort_order": 12,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -1055,7 +1119,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma"
+              "note": "Vuelta a la calma",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "pull"
@@ -1068,7 +1133,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "hip_circles",
+              "name": "Círculos de Cadera",
               "muscles": "Caderas",
               "sets": 1,
               "reps": "",
@@ -1076,11 +1141,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos amplios ambas direcciones"
+              "note": "Círculos amplios ambas direcciones",
+              "exercise_id": "hip_circles"
             },
             {
               "sort_order": 2,
-              "name": "leg_swings",
+              "name": "Leg Swings",
               "muscles": "Isquiotibiales, caderas",
               "sets": 1,
               "reps": "",
@@ -1088,11 +1154,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Frontal y lateral"
+              "note": "Frontal y lateral",
+              "exercise_id": "leg_swings"
             },
             {
               "sort_order": 3,
-              "name": "glute_bridge_warmup",
+              "name": "Puente de Glúteos (Calentamiento)",
               "muscles": "Glúteos",
               "sets": 1,
               "reps": "",
@@ -1100,88 +1167,96 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Activar glúteos con puente"
+              "note": "Activar glúteos con puente",
+              "exercise_id": "glute_bridge_warmup"
             },
             {
               "sort_order": 4,
-              "name": "goblet_squat",
+              "name": "Sentadilla Goblet",
               "muscles": "Cuádriceps, glúteos, core",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con jump squat. Tempo lento 3-1-1"
+              "note": "Superset con jump squat. Tempo lento 3-1-1",
+              "exercise_id": "goblet_squat"
             },
             {
               "sort_order": 5,
-              "name": "jump_squat",
+              "name": "Jump Squat",
               "muscles": "Cuádriceps, glúteos, potencia",
               "sets": 4,
               "reps": "8",
-              "rest_seconds": 45,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Explosivo arriba"
+              "note": "Parte 2 del superset. Explosivo arriba",
+              "exercise_id": "jump_squat"
             },
             {
               "sort_order": 6,
-              "name": "reverse_lunge",
+              "name": "Reverse Lunge",
               "muscles": "Cuádriceps, glúteos",
               "sets": 4,
               "reps": "12 por lado",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con skaters"
+              "note": "Superset con skaters",
+              "exercise_id": "reverse_lunge"
             },
             {
               "sort_order": 7,
-              "name": "skaters",
+              "name": "Skater Jumps",
               "muscles": "Glúteo medio, equilibrio, cardio",
               "sets": 4,
               "reps": "10 por lado",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Salto lateral controlado"
+              "note": "Parte 2 del superset. Salto lateral controlado",
+              "exercise_id": "skaters"
             },
             {
               "sort_order": 8,
-              "name": "nordic_curl",
+              "name": "Nordic Curl (Regresión)",
               "muscles": "Isquiotibiales",
               "sets": 3,
               "reps": "6-8",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Descenso 3-4s, empujar para subir"
+              "note": "Descenso 3-4s, empujar para subir",
+              "exercise_id": "nordic_curl"
             },
             {
               "sort_order": 9,
-              "name": "calf_raise",
+              "name": "Calf Raises",
               "muscles": "Gemelos",
               "sets": 3,
               "reps": "20",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Pausa arriba 2s, rango completo"
+              "note": "Pausa arriba 2s, rango completo",
+              "exercise_id": "calf_raise"
             },
             {
               "sort_order": 10,
-              "name": "tuck_jumps",
+              "name": "Tuck Jumps",
               "muscles": "Full body, potencia, cardio",
               "sets": 3,
               "reps": "8",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher: rodillas al pecho en el salto"
+              "note": "Finisher: rodillas al pecho en el salto",
+              "exercise_id": "tuck_jumps"
             },
             {
               "sort_order": 11,
-              "name": "quad_stretch",
+              "name": "Estiramiento de Cuádriceps",
               "muscles": "Cuádriceps",
               "sets": 1,
               "reps": "",
@@ -1189,11 +1264,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada pierna 15s"
+              "note": "Cada pierna 15s",
+              "exercise_id": "quad_stretch"
             },
             {
               "sort_order": 12,
-              "name": "hamstring_stretch",
+              "name": "Estiramiento de Isquiotibiales",
               "muscles": "Isquiotibiales",
               "sets": 1,
               "reps": "",
@@ -1201,11 +1277,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pierna elevada o sentado"
+              "note": "Pierna elevada o sentado",
+              "exercise_id": "hamstring_stretch"
             },
             {
               "sort_order": 13,
-              "name": "calf_stretch",
+              "name": "Estiramiento de Pantorrillas",
               "muscles": "Gemelos, sóleo",
               "sets": 1,
               "reps": "",
@@ -1213,7 +1290,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Contra pared, cada pierna"
+              "note": "Contra pared, cada pierna",
+              "exercise_id": "calf_stretch"
             }
           ],
           "day_type": "legs"
@@ -1226,7 +1304,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -1234,11 +1312,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pequeños a grandes, ambas direcciones"
+              "note": "Pequeños a grandes, ambas direcciones",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "thoracic_rotation",
+              "name": "Rotación Torácica",
               "muscles": "Columna torácica",
               "sets": 1,
               "reps": "",
@@ -1246,11 +1325,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Rotación controlada"
+              "note": "Rotación controlada",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 3,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas",
               "sets": 1,
               "reps": "",
@@ -1258,88 +1338,96 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Push-up plus y retracción"
+              "note": "Push-up plus y retracción",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 4,
-              "name": "chinup",
+              "name": "Chin-up (agarre supino)",
               "muscles": "Bíceps, dorsal",
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con dips"
+              "note": "Superset con dips",
+              "exercise_id": "chinup"
             },
             {
               "sort_order": 5,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Descanso 45s después"
+              "note": "Parte 2 del superset. Descanso 45s después",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 6,
-              "name": "wide_pullup",
+              "name": "Wide Grip Pull-up",
               "muscles": "Dorsal, redondo mayor",
               "sets": 3,
               "reps": "5-7",
-              "rest_seconds": 30,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con archer pushup"
+              "note": "Superset con archer pushup",
+              "exercise_id": "wide_pullup"
             },
             {
               "sort_order": 7,
-              "name": "archer_pushup",
+              "name": "Archer Push-up (Regresión)",
               "muscles": "Pecho, tríceps unilateral",
               "sets": 3,
               "reps": "6-8 por lado",
-              "rest_seconds": 45,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Alternar lados"
+              "note": "Parte 2 del superset. Alternar lados",
+              "exercise_id": "archer_pushup"
             },
             {
               "sort_order": 8,
-              "name": "face_pull",
-              "muscles": "Deltoides posterior",
+              "name": "Retracción Escapular",
+              "muscles": "Trapecio medio, deltoides posterior, romboides",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Salud de hombros, codos altos"
+              "note": "Colgado de la barra, retrae solo las escápulas sin flexionar el codo",
+              "exercise_id": "scap_retract"
             },
             {
               "sort_order": 9,
-              "name": "handstand_wall",
+              "name": "Handstand contra Pared",
               "muscles": "Deltoides, trapecios, core",
               "sets": 3,
               "reps": "20-30s",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Panza a la pared, apretar core"
+              "note": "Panza a la pared, apretar core",
+              "exercise_id": "handstand_wall"
             },
             {
               "sort_order": 10,
-              "name": "hollow_rock",
+              "name": "Hollow Body Rock",
               "muscles": "Core, recto abdominal",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Mecerse sin perder forma hollow"
+              "note": "Mecerse sin perder forma hollow",
+              "exercise_id": "hollow_rock"
             },
             {
               "sort_order": 11,
-              "name": "lat_stretch",
+              "name": "Estiramiento de Dorsal",
               "muscles": "Dorsal",
               "sets": 1,
               "reps": "",
@@ -1347,11 +1435,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado"
+              "note": "Cada lado",
+              "exercise_id": "lat_stretch"
             },
             {
               "sort_order": 12,
-              "name": "pectoral_stretch",
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho",
               "sets": 1,
               "reps": "",
@@ -1359,11 +1448,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado contra pared"
+              "note": "Cada lado contra pared",
+              "exercise_id": "pectoral_stretch"
             },
             {
               "sort_order": 13,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -1371,7 +1461,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma"
+              "note": "Vuelta a la calma",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "push"
@@ -1384,7 +1475,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "jumping_jacks",
+              "name": "Jumping Jacks",
               "muscles": "Cardio, activación",
               "sets": 1,
               "reps": "",
@@ -1392,11 +1483,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Subir frecuencia cardíaca"
+              "note": "Subir frecuencia cardíaca",
+              "exercise_id": "jumping_jacks"
             },
             {
               "sort_order": 2,
-              "name": "inchworm",
+              "name": "Inchworm",
               "muscles": "Cadena posterior, hombros",
               "sets": 1,
               "reps": "",
@@ -1404,11 +1496,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Movilizar toda la cadena"
+              "note": "Movilizar toda la cadena",
+              "exercise_id": "inchworm"
             },
             {
               "sort_order": 3,
-              "name": "glute_bridge_warmup",
+              "name": "Puente de Glúteos (Calentamiento)",
               "muscles": "Glúteos",
               "sets": 1,
               "reps": "",
@@ -1416,88 +1509,96 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Activar cadena posterior"
+              "note": "Activar cadena posterior",
+              "exercise_id": "glute_bridge_warmup"
             },
             {
               "sort_order": 4,
-              "name": "burpees",
+              "name": "Burpees",
               "muscles": "Full body, cardio",
               "sets": 4,
               "reps": "10",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con pullup strict"
+              "note": "Superset con pullup strict",
+              "exercise_id": "burpees"
             },
             {
               "sort_order": 5,
-              "name": "pullup_strict",
+              "name": "Pull-up Estricto",
               "muscles": "Dorsal, bíceps",
               "sets": 4,
               "reps": "6-8",
-              "rest_seconds": 45,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Descanso 45s después"
+              "note": "Parte 2 del superset. Descanso 45s después",
+              "exercise_id": "pullup_strict"
             },
             {
               "sort_order": 6,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con jump squat"
+              "note": "Superset con jump squat",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 7,
-              "name": "jump_squat",
+              "name": "Jump Squat",
               "muscles": "Cuádriceps, glúteos, cardio",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Explosivo"
+              "note": "Parte 2 del superset. Explosivo",
+              "exercise_id": "jump_squat"
             },
             {
               "sort_order": 8,
-              "name": "mountain_climbers",
+              "name": "Mountain Climbers",
               "muscles": "Core, cardio",
               "sets": 3,
               "reps": "20 por lado",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Ritmo alto, caderas bajas"
+              "note": "Ritmo alto, caderas bajas",
+              "exercise_id": "mountain_climbers"
             },
             {
               "sort_order": 9,
-              "name": "sit_ups",
+              "name": "Abdominal completo (sit-up)",
               "muscles": "Recto abdominal",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Controlado, no tirar del cuello"
+              "note": "Controlado, no tirar del cuello",
+              "exercise_id": "sit_up"
             },
             {
               "sort_order": 10,
-              "name": "high_knees",
+              "name": "High Knees",
               "muscles": "Cardio, core",
               "sets": 3,
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher final, dar todo"
+              "note": "Finisher final, dar todo",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 11,
-              "name": "pike_stretch",
+              "name": "Pike Stretch",
               "muscles": "Isquiotibiales, espalda",
               "sets": 1,
               "reps": "",
@@ -1505,11 +1606,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Relajar cadena posterior"
+              "note": "Relajar cadena posterior",
+              "exercise_id": "pike_stretch"
             },
             {
               "sort_order": 12,
-              "name": "hip_flexor_stretch",
+              "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera",
               "sets": 1,
               "reps": "",
@@ -1517,11 +1619,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado"
+              "note": "Cada lado",
+              "exercise_id": "hip_flexor_stretch"
             },
             {
               "sort_order": 13,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -1529,7 +1632,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "5 respiraciones profundas, relajar todo"
+              "note": "5 respiraciones profundas, relajar todo",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "full"
@@ -1550,7 +1654,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -1558,11 +1662,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Activar hombros"
+              "note": "Activar hombros",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas",
               "sets": 1,
               "reps": "",
@@ -1570,11 +1675,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Protracción/retracción activa"
+              "note": "Protracción/retracción activa",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 3,
-              "name": "wrist_mobility",
+              "name": "Wrist Mobility Routine",
               "muscles": "Muñecas",
               "sets": 1,
               "reps": "",
@@ -1582,88 +1688,84 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Preparar muñecas para carga"
+              "note": "Preparar muñecas para carga",
+              "exercise_id": "wrist_mobility"
             },
             {
               "sort_order": 4,
-              "name": "clapping_pushup",
+              "name": "Clapping Push-up",
               "muscles": "Pecho, tríceps, potencia",
               "sets": 4,
               "reps": "6-8",
-              "rest_seconds": 30,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con dips. Explosivo, aterrizar suave"
+              "note": "Superset con dips. Explosivo, aterrizar suave",
+              "exercise_id": "clapping_pushup"
             },
             {
               "sort_order": 5,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Rango completo"
+              "note": "Parte 2 del superset. Rango completo",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 6,
-              "name": "archer_pushup",
+              "name": "Archer Push-up (Regresión)",
               "muscles": "Pecho, tríceps unilateral",
               "sets": 4,
               "reps": "6-8 por lado",
-              "rest_seconds": 30,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con pike pushup"
+              "note": "Superset con pike pushup",
+              "exercise_id": "archer_pushup"
             },
             {
               "sort_order": 7,
-              "name": "pike_pushup",
+              "name": "Pike Push-up",
               "muscles": "Deltoides, tríceps",
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Caderas altas"
+              "note": "Parte 2 del superset. Caderas altas",
+              "exercise_id": "pike_pushup"
             },
             {
               "sort_order": 8,
-              "name": "hindu_pushup",
-              "muscles": "Pecho, hombros, movilidad",
-              "sets": 3,
-              "reps": "10-12",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Movimiento fluido de perro a cobra"
-            },
-            {
-              "sort_order": 9,
-              "name": "diamond_pushup",
-              "muscles": "Tríceps",
-              "sets": 3,
-              "reps": "al fallo",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Último set al fallo, quemar tríceps"
-            },
-            {
-              "sort_order": 10,
-              "name": "burpees",
+              "name": "Burpees",
               "muscles": "Full body, cardio",
               "sets": 3,
               "reps": "10",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher cardio, sin parar"
+              "note": "Finisher cardio, sin parar",
+              "exercise_id": "burpees"
             },
             {
-              "sort_order": 11,
-              "name": "pectoral_stretch",
+              "sort_order": 9,
+              "name": "Diamond Push-up",
+              "muscles": "Tríceps",
+              "sets": 3,
+              "reps": "al fallo",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Último set al fallo, quemar tríceps",
+              "exercise_id": "diamond_pushup"
+            },
+            {
+              "sort_order": 10,
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho",
               "sets": 1,
               "reps": "",
@@ -1671,11 +1773,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado contra pared"
+              "note": "Cada lado contra pared",
+              "exercise_id": "pectoral_stretch"
             },
             {
-              "sort_order": 12,
-              "name": "triceps_stretch",
+              "sort_order": 11,
+              "name": "Estiramiento de Tríceps",
               "muscles": "Tríceps",
               "sets": 1,
               "reps": "",
@@ -1683,11 +1786,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada brazo"
+              "note": "Cada brazo",
+              "exercise_id": "triceps_stretch"
             },
             {
-              "sort_order": 13,
-              "name": "deep_breathing",
+              "sort_order": 12,
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -1695,7 +1799,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma total"
+              "note": "Vuelta a la calma total",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "push"
@@ -1708,19 +1813,20 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "shoulder_dislocates",
-              "muscles": "Hombros, movilidad",
+              "name": "Rotación Torácica",
+              "muscles": "Hombros, columna torácica",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Rango completo"
+              "note": "Brazos extendidos, gira el torso a un lado y al otro sin mover la cadera",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 2,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas",
               "sets": 1,
               "reps": "",
@@ -1728,11 +1834,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Colgado activo, activar dorsales"
+              "note": "Colgado activo, activar dorsales",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 3,
-              "name": "thoracic_rotation",
+              "name": "Rotación Torácica",
               "muscles": "Columna torácica",
               "sets": 1,
               "reps": "",
@@ -1740,88 +1847,96 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Movilidad torácica"
+              "note": "Movilidad torácica",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 4,
-              "name": "wide_pullup",
+              "name": "Wide Grip Pull-up",
               "muscles": "Dorsal, redondo mayor",
               "sets": 4,
               "reps": "6-8",
-              "rest_seconds": 30,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con inverted row pause"
+              "note": "Superset con inverted row pause",
+              "exercise_id": "wide_pullup"
             },
             {
               "sort_order": 5,
-              "name": "inverted_row_pause",
+              "name": "Inverted Row con Pausa",
               "muscles": "Espalda media, bíceps",
               "sets": 4,
               "reps": "12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Pausa 2s arriba"
+              "note": "Parte 2 del superset. Pausa 2s arriba",
+              "exercise_id": "inverted_row_pause"
             },
             {
               "sort_order": 6,
-              "name": "chinup",
+              "name": "Chin-up (agarre supino)",
               "muscles": "Bíceps, dorsal",
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con scap retract"
+              "note": "Superset con scap retract",
+              "exercise_id": "chinup"
             },
             {
               "sort_order": 7,
-              "name": "scap_retract",
+              "name": "Retracción Escapular",
               "muscles": "Romboides, trapecio",
               "sets": 4,
               "reps": "12",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Colgado, solo escápulas"
+              "note": "Parte 2 del superset. Colgado, solo escápulas",
+              "exercise_id": "scap_retract"
             },
             {
               "sort_order": 8,
-              "name": "face_pull",
-              "muscles": "Deltoides posterior",
+              "name": "Dominadas Escapulares",
+              "muscles": "Trapecio, bíceps, romboides, deltoides posterior",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Salud de hombros"
+              "note": "Cuelga de la barra y tira solo con las escápulas hasta que la barbilla roce la barra, sin flexionar mucho el codo",
+              "exercise_id": "scapular_pull_up"
             },
             {
               "sort_order": 9,
-              "name": "windshield_wipers",
+              "name": "Windshield Wipers",
               "muscles": "Oblicuos, core rotacional",
               "sets": 3,
               "reps": "8 por lado",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Colgado en barra, piernas lado a lado"
+              "note": "Colgado en barra, piernas lado a lado",
+              "exercise_id": "windshield_wipers"
             },
             {
               "sort_order": 10,
-              "name": "hanging_leg_raise",
+              "name": "Hanging Leg Raise",
               "muscles": "Core inferior",
               "sets": 3,
               "reps": "12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Piernas rectas, sin impulso"
+              "note": "Piernas rectas, sin impulso",
+              "exercise_id": "hanging_leg_raise"
             },
             {
               "sort_order": 11,
-              "name": "lat_stretch",
+              "name": "Estiramiento de Dorsal",
               "muscles": "Dorsal",
               "sets": 1,
               "reps": "",
@@ -1829,11 +1944,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado, mantener 15s"
+              "note": "Cada lado, mantener 15s",
+              "exercise_id": "lat_stretch"
             },
             {
               "sort_order": 12,
-              "name": "pectoral_stretch",
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho, hombro frontal",
               "sets": 1,
               "reps": "",
@@ -1841,11 +1957,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Compensar trabajo de jalón"
+              "note": "Compensar trabajo de jalón",
+              "exercise_id": "pectoral_stretch"
             },
             {
               "sort_order": 13,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -1853,7 +1970,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma"
+              "note": "Vuelta a la calma",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "pull"
@@ -1866,7 +1984,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "hip_circles",
+              "name": "Círculos de Cadera",
               "muscles": "Caderas",
               "sets": 1,
               "reps": "",
@@ -1874,11 +1992,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Abrir caderas"
+              "note": "Abrir caderas",
+              "exercise_id": "hip_circles"
             },
             {
               "sort_order": 2,
-              "name": "leg_swings",
+              "name": "Leg Swings",
               "muscles": "Isquiotibiales, caderas",
               "sets": 1,
               "reps": "",
@@ -1886,11 +2005,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Frontal y lateral, cada pierna"
+              "note": "Frontal y lateral, cada pierna",
+              "exercise_id": "leg_swings"
             },
             {
               "sort_order": 3,
-              "name": "glute_bridge_warmup",
+              "name": "Puente de Glúteos (Calentamiento)",
               "muscles": "Glúteos",
               "sets": 1,
               "reps": "",
@@ -1898,99 +2018,108 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Activar glúteos y cadena posterior"
+              "note": "Activar glúteos y cadena posterior",
+              "exercise_id": "glute_bridge_warmup"
             },
             {
               "sort_order": 4,
-              "name": "squat_pause",
+              "name": "Squat con Pausa (3s)",
               "muscles": "Cuádriceps, glúteos",
               "sets": 4,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con tuck jumps. Pausa 3s abajo"
+              "note": "Superset con tuck jumps. Pausa 3s abajo",
+              "exercise_id": "squat_pause"
             },
             {
               "sort_order": 5,
-              "name": "tuck_jumps",
+              "name": "Tuck Jumps",
               "muscles": "Potencia, cardio",
               "sets": 4,
               "reps": "8",
-              "rest_seconds": 45,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Rodillas al pecho"
+              "note": "Parte 2 del superset. Rodillas al pecho",
+              "exercise_id": "tuck_jumps"
             },
             {
               "sort_order": 6,
-              "name": "reverse_lunge",
+              "name": "Reverse Lunge",
               "muscles": "Cuádriceps, glúteos",
               "sets": 4,
               "reps": "12 por lado",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con skaters"
+              "note": "Superset con skaters",
+              "exercise_id": "reverse_lunge"
             },
             {
               "sort_order": 7,
-              "name": "skaters",
+              "name": "Skater Jumps",
               "muscles": "Glúteo medio, cardio",
               "sets": 4,
               "reps": "12 por lado",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Más volumen que fase 2"
+              "note": "Parte 2 del superset. Más volumen que fase 2",
+              "exercise_id": "skaters"
             },
             {
               "sort_order": 8,
-              "name": "nordic_curl",
+              "name": "Nordic Curl (Regresión)",
               "muscles": "Isquiotibiales",
               "sets": 4,
               "reps": "6-8",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "4 sets, progresión desde fase 2"
+              "note": "4 sets, progresión desde fase 2",
+              "exercise_id": "nordic_curl"
             },
             {
               "sort_order": 9,
-              "name": "good_morning",
+              "name": "Good Morning (sin peso)",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 3,
               "reps": "15",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Hinge controlado, espalda recta"
+              "note": "Hinge controlado, espalda recta",
+              "exercise_id": "good_morning"
             },
             {
               "sort_order": 10,
-              "name": "calf_raise",
+              "name": "Calf Raises",
               "muscles": "Gemelos",
               "sets": 3,
               "reps": "25",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Alto volumen, quemar gemelos"
+              "note": "Alto volumen, quemar gemelos",
+              "exercise_id": "calf_raise"
             },
             {
               "sort_order": 11,
-              "name": "high_knees",
+              "name": "High Knees",
               "muscles": "Cardio, core",
               "sets": 3,
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher cardio final"
+              "note": "Finisher cardio final",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 12,
-              "name": "quad_stretch",
+              "name": "Estiramiento de Cuádriceps",
               "muscles": "Cuádriceps",
               "sets": 1,
               "reps": "",
@@ -1998,11 +2127,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada pierna"
+              "note": "Cada pierna",
+              "exercise_id": "quad_stretch"
             },
             {
               "sort_order": 13,
-              "name": "hamstring_stretch",
+              "name": "Estiramiento de Isquiotibiales",
               "muscles": "Isquiotibiales",
               "sets": 1,
               "reps": "",
@@ -2010,11 +2140,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Relajar isquios"
+              "note": "Relajar isquios",
+              "exercise_id": "hamstring_stretch"
             },
             {
               "sort_order": 14,
-              "name": "calf_stretch",
+              "name": "Estiramiento de Pantorrillas",
               "muscles": "Gemelos, sóleo",
               "sets": 1,
               "reps": "",
@@ -2022,7 +2153,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada pierna contra pared"
+              "note": "Cada pierna contra pared",
+              "exercise_id": "calf_stretch"
             }
           ],
           "day_type": "legs"
@@ -2035,7 +2167,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "arm_circles",
+              "name": "Arm Circles",
               "muscles": "Hombros",
               "sets": 1,
               "reps": "",
@@ -2043,23 +2175,25 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Ambas direcciones"
+              "note": "Ambas direcciones",
+              "exercise_id": "arm_circles"
             },
             {
               "sort_order": 2,
-              "name": "shoulder_dislocates",
-              "muscles": "Hombros, movilidad",
+              "name": "Rotación Torácica",
+              "muscles": "Hombros, columna torácica",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Rango máximo"
+              "note": "Brazos extendidos, gira el torso a un lado y al otro sin mover la cadera",
+              "exercise_id": "thoracic_rotation"
             },
             {
               "sort_order": 3,
-              "name": "scapular_activation",
+              "name": "Activación Escapular",
               "muscles": "Escápulas",
               "sets": 1,
               "reps": "",
@@ -2067,88 +2201,96 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Activación completa"
+              "note": "Activación completa",
+              "exercise_id": "scapular_activation"
             },
             {
               "sort_order": 4,
-              "name": "pullup_strict",
+              "name": "Pull-up Estricto",
               "muscles": "Dorsal, bíceps",
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con clapping pushup"
+              "note": "Superset con clapping pushup",
+              "exercise_id": "pullup_strict"
             },
             {
               "sort_order": 5,
-              "name": "clapping_pushup",
+              "name": "Clapping Push-up",
               "muscles": "Pecho, potencia",
               "sets": 4,
               "reps": "6-8",
-              "rest_seconds": 45,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Explosivo"
+              "note": "Parte 2 del superset. Explosivo",
+              "exercise_id": "clapping_pushup"
             },
             {
               "sort_order": 6,
-              "name": "chinup",
+              "name": "Chin-up (agarre supino)",
               "muscles": "Bíceps, dorsal",
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con archer pushup"
+              "note": "Superset con archer pushup",
+              "exercise_id": "chinup"
             },
             {
               "sort_order": 7,
-              "name": "archer_pushup",
+              "name": "Archer Push-up (Regresión)",
               "muscles": "Pecho unilateral",
               "sets": 4,
               "reps": "6-8 por lado",
-              "rest_seconds": 45,
+              "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Alternar brazos"
+              "note": "Parte 2 del superset. Alternar brazos",
+              "exercise_id": "archer_pushup"
             },
             {
               "sort_order": 8,
-              "name": "handstand_wall",
+              "name": "Handstand contra Pared",
               "muscles": "Deltoides, core",
               "sets": 3,
               "reps": "30-40s",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Más tiempo que fase 2, panza a pared"
+              "note": "Más tiempo que fase 2, panza a pared",
+              "exercise_id": "handstand_wall"
             },
             {
               "sort_order": 9,
-              "name": "lsit_prog",
+              "name": "L-sit Progresión",
               "muscles": "Core, tríceps",
               "sets": 3,
               "reps": "20-30s",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Progresión: mantener más tiempo"
+              "note": "Progresión: mantener más tiempo",
+              "exercise_id": "lsit_prog"
             },
             {
               "sort_order": 10,
-              "name": "crow_pose",
+              "name": "Crow Pose / Frog Stand",
               "muscles": "Core, hombros, equilibrio",
               "sets": 3,
               "reps": "15-20s",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Habilidad + core, mantener posición"
+              "note": "Habilidad + core, mantener posición",
+              "exercise_id": "crow_pose"
             },
             {
               "sort_order": 11,
-              "name": "lat_stretch",
+              "name": "Estiramiento de Dorsal",
               "muscles": "Dorsal",
               "sets": 1,
               "reps": "",
@@ -2156,11 +2298,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado"
+              "note": "Cada lado",
+              "exercise_id": "lat_stretch"
             },
             {
               "sort_order": 12,
-              "name": "pectoral_stretch",
+              "name": "Estiramiento Pectoral",
               "muscles": "Pecho",
               "sets": 1,
               "reps": "",
@@ -2168,11 +2311,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado contra pared"
+              "note": "Cada lado contra pared",
+              "exercise_id": "pectoral_stretch"
             },
             {
               "sort_order": 13,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -2180,7 +2324,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma final"
+              "note": "Vuelta a la calma final",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "push"
@@ -2193,7 +2338,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "jumping_jacks",
+              "name": "Jumping Jacks",
               "muscles": "Cardio, activación",
               "sets": 1,
               "reps": "",
@@ -2201,11 +2346,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Subir frecuencia cardíaca rápido"
+              "note": "Subir frecuencia cardíaca rápido",
+              "exercise_id": "jumping_jacks"
             },
             {
               "sort_order": 2,
-              "name": "inchworm",
+              "name": "Inchworm",
               "muscles": "Cadena posterior, hombros",
               "sets": 1,
               "reps": "",
@@ -2213,11 +2359,12 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Movilizar todo el cuerpo"
+              "note": "Movilizar todo el cuerpo",
+              "exercise_id": "inchworm"
             },
             {
               "sort_order": 3,
-              "name": "hip_circles",
+              "name": "Círculos de Cadera",
               "muscles": "Caderas",
               "sets": 1,
               "reps": "",
@@ -2225,99 +2372,108 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Abrir caderas para movimiento"
+              "note": "Abrir caderas para movimiento",
+              "exercise_id": "hip_circles"
             },
             {
               "sort_order": 4,
-              "name": "burpees",
+              "name": "Burpees",
               "muscles": "Full body, cardio",
               "sets": 4,
               "reps": "12",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con pullup. Pecho al suelo"
+              "note": "Superset con pullup. Pecho al suelo",
+              "exercise_id": "burpees"
             },
             {
               "sort_order": 5,
-              "name": "pullup_strict",
+              "name": "Pull-up Estricto",
               "muscles": "Dorsal, bíceps",
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset"
+              "note": "Parte 2 del superset",
+              "exercise_id": "pullup_strict"
             },
             {
               "sort_order": 6,
-              "name": "dips_parallel",
+              "name": "Dips Paralelas (2 sillas)",
               "muscles": "Pecho, tríceps",
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con jump squat"
+              "note": "Superset con jump squat",
+              "exercise_id": "dips_parallel"
             },
             {
               "sort_order": 7,
-              "name": "jump_squat",
+              "name": "Jump Squat",
               "muscles": "Cuádriceps, glúteos, cardio",
               "sets": 4,
               "reps": "15",
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Parte 2 del superset. Más reps que fase 2"
+              "note": "Parte 2 del superset. Más reps que fase 2",
+              "exercise_id": "jump_squat"
             },
             {
               "sort_order": 8,
-              "name": "bear_crawl",
+              "name": "Bear Crawl",
               "muscles": "Full body, core, cardio",
               "sets": 3,
               "reps": "20m ida y vuelta",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Caderas bajas, movimiento cruzado"
+              "note": "Caderas bajas, movimiento cruzado",
+              "exercise_id": "bear_crawl"
             },
             {
               "sort_order": 9,
-              "name": "mountain_climbers",
+              "name": "Mountain Climbers",
               "muscles": "Core, cardio",
               "sets": 3,
               "reps": "30 por lado",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Máxima velocidad"
+              "note": "Máxima velocidad",
+              "exercise_id": "mountain_climbers"
             },
             {
               "sort_order": 10,
-              "name": "hollow_hold",
+              "name": "Hollow Body Hold",
               "muscles": "Core completo",
               "sets": 3,
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Espalda baja pegada al suelo"
+              "note": "Espalda baja pegada al suelo",
+              "exercise_id": "hollow_hold"
             },
             {
               "sort_order": 11,
-              "name": "high_knees",
+              "name": "High Knees",
               "muscles": "Cardio",
               "sets": 3,
               "reps": "45s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Finisher final del programa. Darlo TODO"
+              "note": "Finisher final del programa. Darlo TODO",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 12,
-              "name": "pike_stretch",
+              "name": "Pike Stretch",
               "muscles": "Isquiotibiales, espalda",
               "sets": 1,
               "reps": "",
@@ -2325,11 +2481,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Relajar cadena posterior"
+              "note": "Relajar cadena posterior",
+              "exercise_id": "pike_stretch"
             },
             {
               "sort_order": 13,
-              "name": "hip_flexor_stretch",
+              "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera",
               "sets": 1,
               "reps": "",
@@ -2337,11 +2494,12 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado"
+              "note": "Cada lado",
+              "exercise_id": "hip_flexor_stretch"
             },
             {
               "sort_order": 14,
-              "name": "deep_breathing",
+              "name": "Respiración Profunda",
               "muscles": "Recuperación",
               "sets": 1,
               "reps": "",
@@ -2349,7 +2507,8 @@
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Vuelta a la calma. Programa completado"
+              "note": "Vuelta a la calma. Programa completado",
+              "exercise_id": "deep_breathing"
             }
           ],
           "day_type": "full"

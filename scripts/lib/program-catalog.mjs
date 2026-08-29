@@ -22,6 +22,26 @@
 
 const i18n = (es, en) => ({ es, en })
 
+/**
+ * Vocabulario de `equipment_required`.
+ *
+ * Sale de cruzar el `equipment` del catálogo de ejercicios con lo que cada
+ * programa usa de verdad; `scripts/check-program-content.mjs` falla si un
+ * programa necesita algo que no declara, que es como catorce de los quince
+ * llegaron a declarar menos material del que pedían.
+ *
+ * `weight` (lastre) es nuevo: lo piden las dominadas lastradas de los roadmaps
+ * de muscle-up y planche. Se declara en vez de esconderlo porque el campo va a
+ * empezar a consumirse — hoy `matchPrograms.ts` lo ignora (`user.equipment` es
+ * un «future field» y la penalización solo se aplica si el usuario ha declarado
+ * su material, cosa que todavía no hace nadie), así que quien encienda esa fase
+ * necesita la lista completa y no una recortada para que cuadre.
+ *
+ * Material de casa —pared, toalla, silla, banco, escalón— NO se declara: no
+ * excluye a nadie y llenar la lista de obviedades la vuelve inútil.
+ */
+export const EQUIPMENT_VOCABULARY = ['pull_bar', 'parallel_bars', 'bands', 'rings', 'weight']
+
 /** Los 15 programas del catálogo curado, en el orden en que se siembran. */
 export const SKELETONS = [
   // level × goal (8 — Balance Total handles intermediate+maintain)
@@ -55,13 +75,13 @@ export const SKELETONS = [
     duration_weeks: 12, difficulty: 'beginner', goal_type: 'skill', skill: 'pull_up', intensity: 'light', days_per_week: 3, equipment_required: ['pull_bar','bands'], contraindications: [] },
   { slug: 'handstand-roadmap', name: i18n('Handstand Roadmap', 'Handstand Roadmap'),
     description: i18n('Pino libre desde cero. Pared, equilibrio y progresión diaria.', 'Freestanding handstand from zero. Wall, balance, and daily progression.'),
-    duration_weeks: 12, difficulty: 'beginner', goal_type: 'skill', skill: 'handstand', intensity: 'moderate', days_per_week: 3, equipment_required: [], contraindications: ['wrist','shoulder'] },
+    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'skill', skill: 'handstand', intensity: 'moderate', days_per_week: 3, equipment_required: ['bands'], contraindications: ['wrist','shoulder'] },
   { slug: 'muscle-up-roadmap', name: i18n('Muscle-up Roadmap', 'Muscle-up Roadmap'),
     description: i18n('Tu primer muscle up. Requiere pull-ups estrictos y dips profundos.', 'Your first muscle-up. Requires strict pull-ups and deep dips.'),
-    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'skill', skill: 'muscle_up', intensity: 'intense', days_per_week: 4, equipment_required: ['pull_bar'], contraindications: ['elbow','shoulder'] },
+    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'skill', skill: 'muscle_up', intensity: 'intense', days_per_week: 4, equipment_required: ['pull_bar','parallel_bars','bands','weight'], contraindications: ['elbow','shoulder'] },
   { slug: 'planche-roadmap', name: i18n('Planche Roadmap', 'Planche Roadmap'),
     description: i18n('Progresión hacia planche. Tuck → straddle → full. Requiere base avanzada.', 'Planche progression. Tuck → straddle → full. Requires advanced baseline.'),
-    duration_weeks: 16, difficulty: 'advanced', goal_type: 'skill', skill: 'planche', intensity: 'intense', days_per_week: 4, equipment_required: ['parallel_bars'], contraindications: ['wrist','shoulder','elbow'] },
+    duration_weeks: 16, difficulty: 'advanced', goal_type: 'skill', skill: 'planche', intensity: 'intense', days_per_week: 4, equipment_required: ['parallel_bars','pull_bar','bands','weight'], contraindications: ['wrist','shoulder','elbow'] },
   // women-focused (3)
   { slug: 'mujer-gluteo-tonificacion', name: i18n('Mujer · Glúteo + Tonificación', 'Women · Glutes + Toning'),
     description: i18n('Programa femenino 4 días/sem. Glúteo, piernas y tonificación de tren superior. Bodyweight + ligas.', '4-day/week program for women. Glutes, legs, and upper-body toning. Bodyweight + bands.'),
@@ -71,7 +91,7 @@ export const SKELETONS = [
     duration_weeks: 12, difficulty: 'beginner', goal_type: 'maintain', intensity: 'light', days_per_week: 4, equipment_required: [], contraindications: [] },
   { slug: 'mujer-fuerza-funcional', name: i18n('Mujer · Fuerza Funcional', 'Women · Functional Strength'),
     description: i18n('Fuerza real para mujeres: dominadas, dips y core fuerte. 4 días/sem. Requiere barra.', 'Real strength for women: pull-ups, dips, strong core. 4 days/week. Requires pull bar.'),
-    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'muscle_gain', intensity: 'moderate', days_per_week: 4, equipment_required: ['pull_bar','bands'], contraindications: [] },
+    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'muscle_gain', intensity: 'moderate', days_per_week: 4, equipment_required: ['pull_bar','bands','parallel_bars'], contraindications: [] },
 ]
 
 /** Índice por slug, para cruzar una entrada con su fichero de contenido. */

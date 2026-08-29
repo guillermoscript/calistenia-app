@@ -3,7 +3,11 @@
     "name": "Principiante · Fundamentos",
     "description": "Tu primer programa de calistenia. 3 días/sem, técnica y hábito.",
     "difficulty": "beginner",
-    "duration_weeks": 8
+    "duration_weeks": 8,
+    "instructions": {
+      "es": "Progresión: cuando completes el número máximo de repeticiones indicado en TODAS las series de un ejercicio durante dos sesiones seguidas, súmale 1 repetición más en la siguiente sesión. Si ya estás en el tope del rango y te sigue resultando fácil, pasa a la variante más difícil del mismo movimiento (por ejemplo, de flexión sobre rodillas a flexión estándar, o de remo en sentadilla a remo a un brazo con toalla) en vez de acumular repeticiones sin límite — es la misma lógica de progresión que usa la Recommended Routine de r/bodyweightfitness. Descarga: cada 4-6 semanas dedica 5-7 días a moverte suave (caminar, estirar, jugar) sin entrenar fuerza, para que el cuerpo asimile el trabajo acumulado antes de subir de intensidad — la fase 2 de este programa ya llega con algo más de volumen y variantes algo más exigentes, así que respeta el descanso al terminarla. Para quién es: alguien que nunca ha entrenado calistenia o que vuelve después de mucho tiempo parado. No necesitas ningún material, solo constancia con las 3 sesiones semanales.",
+      "en": "Progression: once you complete the top rep count on EVERY set of an exercise for two sessions in a row, add 1 more rep the next session. Once you're at the top of the range and it still feels easy, move to the harder variant of the same movement (e.g. from knee push-up to standard push-up, or from squatting row to one-arm towel row) instead of stacking reps forever — the same logic the r/bodyweightfitness Recommended Routine uses. Deload: every 4-6 weeks take 5-7 days of easy movement (walking, stretching, play) with no strength training, so your body absorbs the accumulated work before the next intensity bump — phase 2 already brings a bit more volume and slightly harder variants, so respect the deload once you finish it. Who it's for: someone who has never trained calisthenics, or who is returning after a long break. No equipment needed — just showing up for the 3 weekly sessions."
+    }
   },
   "phases": [
     {
@@ -62,7 +66,7 @@
               "name": "Flexiones estándar",
               "exercise_id": "pushup_std",
               "muscles": "Pecho, tríceps, hombros",
-              "sets": 3,
+              "sets": 4,
               "reps": "5-8",
               "rest_seconds": 90,
               "priority": "primary",
@@ -71,18 +75,54 @@
             },
             {
               "sort_order": 5,
+              "name": "Flexiones anchas",
+              "exercise_id": "wide_pushup",
+              "muscles": "Pecho, hombros",
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Manos más abiertas que los hombros. Desde rodillas si te falta fuerza todavía."
+            },
+            {
+              "sort_order": 6,
+              "name": "Remo en sentadilla",
+              "exercise_id": "bodyweight_squatting_row",
+              "muscles": "Espalda alta, bíceps, hombros",
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sujétate al borde de una mesa firme o al marco de una puerta. Baja el cuerpo en sentadilla y tira juntando los omóplatos."
+            },
+            {
+              "sort_order": 7,
+              "name": "Apertura con toalla",
+              "exercise_id": "pull_apart",
+              "muscles": "Deltoides posterior, escápulas",
+              "sets": 3,
+              "reps": "15-20",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Codos casi rectos."
+            },
+            {
+              "sort_order": 8,
               "name": "Plancha frontal",
               "exercise_id": "plank",
               "muscles": "Core, abdominales, espalda baja",
               "sets": 3,
               "reps": "20-30s",
               "rest_seconds": 60,
-              "priority": "primary",
+              "priority": "secondary",
               "is_timer": false,
               "note": "Aprieta abdomen y glúteos. No dejes caer la cadera."
             },
             {
-              "sort_order": 6,
+              "sort_order": 9,
               "name": "Superman",
               "exercise_id": "superman",
               "muscles": "Espalda baja, glúteos, dorsales",
@@ -94,7 +134,7 @@
               "note": "Eleva brazos y piernas a la vez. Mantén 2 seg arriba, baja con control."
             },
             {
-              "sort_order": 7,
+              "sort_order": 10,
               "name": "Dead bug",
               "exercise_id": "dead_bug",
               "muscles": "Core profundo, estabilización",
@@ -106,19 +146,7 @@
               "note": "Espalda baja pegada al suelo TODO el tiempo. Movimiento lento y controlado."
             },
             {
-              "sort_order": 8,
-              "name": "Sentadilla con pausa",
-              "exercise_id": "squat_pause",
-              "muscles": "Cuádriceps, glúteos",
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Baja hasta donde puedas con buena forma. Pausa de 2 seg abajo."
-            },
-            {
-              "sort_order": 9,
+              "sort_order": 11,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pectorales, hombros",
@@ -131,7 +159,7 @@
               "note": "Brazo contra la pared, gira el torso suavemente. 15 seg por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 12,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -144,7 +172,7 @@
               "note": "Lleva la mano detrás de la cabeza, empuja el codo con la otra mano."
             },
             {
-              "sort_order": 11,
+              "sort_order": 13,
               "name": "Postura del niño",
               "exercise_id": "childs_pose",
               "muscles": "Espalda, hombros, relajación",
@@ -356,7 +384,7 @@
               "name": "Flexiones estándar",
               "exercise_id": "pushup_std",
               "muscles": "Pecho, tríceps, hombros",
-              "sets": 3,
+              "sets": 4,
               "reps": "5-8",
               "rest_seconds": 90,
               "priority": "primary",
@@ -365,18 +393,30 @@
             },
             {
               "sort_order": 5,
-              "name": "Sentadilla goblet",
-              "exercise_id": "goblet_squat",
+              "name": "Sentadilla sin peso",
+              "exercise_id": "bodyweight_squat",
               "muscles": "Cuádriceps, glúteos, core",
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Manos al pecho, baja profundo con la espalda recta. Sin peso extra."
+              "note": "Baja hasta que los muslos queden paralelos al suelo, espalda recta. Solo tu cuerpo, sin peso extra."
             },
             {
               "sort_order": 6,
+              "name": "Remo a un brazo con toalla",
+              "exercise_id": "one_arm_towel_row",
+              "muscles": "Espalda alta, bíceps, antebrazos",
+              "sets": 4,
+              "reps": "8-10 por brazo",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pisa un extremo de la toalla, sujeta el otro con una mano e inclínate hacia adelante. Tira hacia el pecho juntando el omóplato."
+            },
+            {
+              "sort_order": 7,
               "name": "Bird dog",
               "exercise_id": "bird_dog",
               "muscles": "Core, espalda baja, equilibrio",
@@ -388,7 +428,7 @@
               "note": "Extiende brazo y pierna opuestos. No gires la cadera."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Puente de glúteos",
               "exercise_id": "glute_bridge",
               "muscles": "Glúteos, isquiotibiales",
@@ -400,7 +440,7 @@
               "note": "Aprieta arriba, baja lento. No uses la espalda baja."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Hollow hold",
               "exercise_id": "hollow_hold",
               "muscles": "Core profundo, recto abdominal",
@@ -412,7 +452,7 @@
               "note": "Espalda baja pegada al suelo. Piernas más altas si es muy difícil."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "name": "Estiramiento flexor de cadera",
               "exercise_id": "hip_flexor_stretch",
               "muscles": "Flexores de cadera",
@@ -425,7 +465,7 @@
               "note": "Rodilla en el suelo, empuja la cadera hacia adelante. 15 seg por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales, costados",
@@ -438,7 +478,7 @@
               "note": "Brazo arriba, inclínate al lado contrario. Respira profundo."
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Relajación, sistema nervioso",
@@ -464,7 +504,7 @@
         {
           "day_id": "lun",
           "day_name": "Lunes",
-          "day_focus": "Empuje + core dinámico",
+          "day_focus": "Empuje + tracción + core dinámico",
           "workout_title": "Empuje y fuerza central",
           "exercises": [
             {
@@ -511,7 +551,7 @@
               "name": "Flexiones estándar",
               "exercise_id": "pushup_std",
               "muscles": "Pecho, tríceps, hombros",
-              "sets": 3,
+              "sets": 4,
               "reps": "8-12",
               "rest_seconds": 75,
               "priority": "primary",
@@ -523,15 +563,39 @@
               "name": "Flexiones anchas",
               "exercise_id": "wide_pushup",
               "muscles": "Pecho, hombros",
-              "sets": 3,
-              "reps": "6-10",
+              "sets": 4,
+              "reps": "8-10",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Manos más abiertas que los hombros. Más énfasis en pecho."
+              "note": "Manos más abiertas que los hombros. Más énfasis en pecho, más reps que fase 1."
             },
             {
               "sort_order": 6,
+              "name": "Remo en sentadilla",
+              "exercise_id": "bodyweight_squatting_row",
+              "muscles": "Espalda alta, bíceps, hombros",
+              "sets": 4,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sujétate al borde de una mesa firme o al marco de una puerta. Más reps y una serie más que fase 1."
+            },
+            {
+              "sort_order": 7,
+              "name": "Apertura con toalla",
+              "exercise_id": "pull_apart",
+              "muscles": "Deltoides posterior, escápulas",
+              "sets": 3,
+              "reps": "20",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Más reps que fase 1."
+            },
+            {
+              "sort_order": 8,
               "name": "Plancha con toque de hombro",
               "exercise_id": "plank_shoulder",
               "muscles": "Core, hombros, estabilización",
@@ -543,7 +607,7 @@
               "note": "No gires la cadera al tocar. Core apretado todo el tiempo."
             },
             {
-              "sort_order": 7,
+              "sort_order": 9,
               "name": "Escaladores",
               "exercise_id": "mountain_climbers",
               "muscles": "Core, cardio, hombros",
@@ -555,7 +619,7 @@
               "note": "Ritmo moderado y controlado. Lleva la rodilla al pecho."
             },
             {
-              "sort_order": 8,
+              "sort_order": 10,
               "name": "V-ups",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, core",
@@ -567,7 +631,7 @@
               "note": "Toca las puntas de los pies arriba. Baja con control, no te dejes caer."
             },
             {
-              "sort_order": 9,
+              "sort_order": 11,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pectorales, hombros",
@@ -580,7 +644,7 @@
               "note": "Brazo contra la pared, gira suave. 15 seg por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 12,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -593,7 +657,7 @@
               "note": "Mano detrás de la cabeza, empuja el codo suavemente."
             },
             {
-              "sort_order": 11,
+              "sort_order": 13,
               "name": "Postura del niño",
               "exercise_id": "childs_pose",
               "muscles": "Espalda, hombros, relajación",
@@ -655,15 +719,15 @@
             },
             {
               "sort_order": 4,
-              "name": "Sentadilla goblet",
-              "exercise_id": "goblet_squat",
+              "name": "Sentadilla sin peso",
+              "exercise_id": "bodyweight_squat",
               "muscles": "Cuádriceps, glúteos, core",
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Baja profundo, espalda recta. Más reps que fase 1."
+              "note": "Baja profundo, espalda recta, sin peso extra. Más reps que fase 1."
             },
             {
               "sort_order": 5,
@@ -805,12 +869,12 @@
               "name": "Flexiones pike",
               "exercise_id": "pike_pushup",
               "muscles": "Hombros, tríceps",
-              "sets": 3,
+              "sets": 4,
               "reps": "6-8",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Cadera arriba formando V invertida. Baja la cabeza hacia el suelo."
+              "note": "Cadera arriba formando V invertida. Baja la cabeza hacia el suelo. Una serie más que fase 1."
             },
             {
               "sort_order": 5,
@@ -826,6 +890,18 @@
             },
             {
               "sort_order": 6,
+              "name": "Remo a un brazo con toalla",
+              "exercise_id": "one_arm_towel_row",
+              "muscles": "Espalda alta, bíceps, antebrazos",
+              "sets": 5,
+              "reps": "10-12 por brazo",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pisa un extremo de la toalla, tira hacia el pecho. Más reps y una serie más que fase 1."
+            },
+            {
+              "sort_order": 7,
               "name": "Plancha lateral",
               "exercise_id": "side_plank",
               "muscles": "Oblicuos, core lateral",
@@ -837,7 +913,7 @@
               "note": "Cadera arriba, cuerpo recto. Respira, no aguantes el aire."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Superman",
               "exercise_id": "superman",
               "muscles": "Espalda baja, glúteos",
@@ -849,7 +925,7 @@
               "note": "Más reps que fase 1. Mantén 2 seg arriba."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Elevación de cadera acostado",
               "exercise_id": "hip_raise_lying",
               "muscles": "Core, glúteos, cadera",
@@ -861,7 +937,7 @@
               "note": "Eleva la cadera con control desde acostado boca arriba."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales, costados",
@@ -874,7 +950,7 @@
               "note": "Brazo arriba, inclínate al lado contrario."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento pike",
               "exercise_id": "pike_stretch",
               "muscles": "Isquiotibiales, espalda",
@@ -887,7 +963,7 @@
               "note": "Piernas estiradas, inclínate hacia los pies. Sin rebotar."
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
               "muscles": "Relajación, recuperación",

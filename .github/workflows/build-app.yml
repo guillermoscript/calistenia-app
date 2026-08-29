@@ -1,5 +1,12 @@
 name: Build & Deploy App
 
+# `programs/**` y `scripts/**` están en los `paths` de abajo porque ya pasó
+# antes (#437): un PR que solo toca un directorio ausente de estos filtros se
+# mezcla a main sin que ninguna máquina lo mire. `ci.yml` ya corre
+# `programs:seed:check` y el guardarraíl de contenido de programas
+# (`programs:content:check`), pero eso no sirve de nada si el propio `push`/
+# `pull_request` de este workflow nunca dispara sobre un cambio en
+# `programs/*.json` o en `scripts/check-program-content.mjs`.
 on:
   workflow_dispatch:
   push:
@@ -9,6 +16,8 @@ on:
       - 'packages/**'
       - 'pb_migrations/**'
       - 'pb_hooks/**'
+      - 'programs/**'
+      - 'scripts/**'
       - 'Dockerfile'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -21,6 +30,8 @@ on:
       - 'packages/**'
       - 'pb_migrations/**'
       - 'pb_hooks/**'
+      - 'programs/**'
+      - 'scripts/**'
       - 'Dockerfile'
       - 'package.json'
       - 'pnpm-lock.yaml'
