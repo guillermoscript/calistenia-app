@@ -36,6 +36,7 @@ import { registerMediaTools } from "./tools/media.js";
 import { registerCircuitTools } from "./tools/circuits.js";
 import { registerPantryTools } from "./tools/pantry.js";
 import { registerRecipeTools } from "./tools/recipes.js";
+import { registerSocialTools } from "./tools/social.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 import { PORT, HOST, PB_URL, SERVER_URL } from "./config.js";
@@ -126,6 +127,7 @@ registerMediaTools(server, PB_URL);
 registerCircuitTools(server, PB_URL);
 registerPantryTools(server, PB_URL);
 registerRecipeTools(server, PB_URL);
+registerSocialTools(server, PB_URL);
 
 // ── Resources (3) + Prompts (3) ───────────────────────────────────────────────
 registerResources(server, PB_URL);
