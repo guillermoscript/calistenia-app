@@ -104,10 +104,18 @@ export async function countChallengeParticipants(
 
 // ─── Batallas ───────────────────────────────────────────────────────────────
 
-/** Estados en los que una batalla sigue en juego. */
-const OPEN_BATTLE_STATUSES = ["draft", "lobby", "ready", "live"] as const;
-/** Estados en los que ya no hay nada que jugar. */
-const CLOSED_BATTLE_STATUSES = ["finished", "cancelled", "expired"] as const;
+/**
+ * Estados en los que una batalla sigue en juego, y en los que ya no.
+ *
+ * Escritos a mano y no montados con un `.map().join()` sobre un array: el
+ * guardarraíl `packages/core/lib/pb-filter-binding.test.ts` (#461) prohíbe
+ * cualquier `${}` dentro de un `filter:` y escanea también `mcp-server/`.
+ * Aquí lo interpolado sería una constante nuestra, no un valor de usuario,
+ * pero la regla no distingue —ni debe— y una excepción abriría el hueco. Es
+ * exactamente la forma que usa `packages/core/lib/battleApi.ts`.
+ */
+const OPEN_BATTLES_FILTER = "status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'";
+const CLOSED_BATTLES_FILTER = "status = 'finished' || status = 'cancelled' || status = 'expired'";
 
 /** Cuántas batallas abiertas se miran antes de rendirse. Igual que `battleApi`. */
 const ACTIVE_BATTLE_SCAN = 10;
@@ -125,7 +133,7 @@ export function listMyOpenBattles(pb: PB, limit = ACTIVE_BATTLE_SCAN): Promise<R
   return pb
     .collection("battles")
     .getList(1, limit, {
-      filter: OPEN_BATTLE_STATUSES.map((s) => `status = '${s}'`).join(" || "),
+      filter: OPEN_BATTLES_FILTER,
       sort: "-last_activity_at",
       // La back-relation trae el asiento del usuario: el estado de la batalla
       // por sí solo no dice si a ÉL le queda algo que hacer (sigue `live`
@@ -149,7 +157,7 @@ export function listMyBattleHistory(pb: PB, limit = 30): Promise<RecordModel[]> 
   return pb
     .collection("battles")
     .getList(1, limit, {
-      filter: CLOSED_BATTLE_STATUSES.map((s) => `status = '${s}'`).join(" || "),
+      filter: CLOSED_BATTLES_FILTER,
       sort: "-finished_at,-last_activity_at",
       requestKey: null,
     })
