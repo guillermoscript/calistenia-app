@@ -25,6 +25,7 @@ import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
 import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
 import { retryTransient } from '@calistenia/core/lib/pocketbase-errors'
+import { CARDIO_HISTORY_PAGE_SIZE } from '@calistenia/core/lib/cardio-history'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 import { haptics } from '@/lib/haptics'
@@ -68,7 +69,7 @@ interface CardioSessionContextValue {
   resume: () => void
   finish: (note?: string) => Promise<CardioSession | null>
   discard: () => void
-  getHistory: (limit?: number) => Promise<CardioSession[]>
+  getHistory: (limit?: number, page?: number, activity?: CardioActivityType) => Promise<CardioSession[]>
   deleteSession: (id: string) => Promise<void>
   updateSessionNote: (id: string, note: string) => Promise<void>
   unsavedCount: number
@@ -392,15 +393,25 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
   }, [userId, queryClient])
 
-  const getHistory = useCallback(async (limit = 20): Promise<CardioSession[]> => {
+  const getHistory = useCallback(async (
+    limit = CARDIO_HISTORY_PAGE_SIZE,
+    page = 1,
+    activity?: CardioActivityType,
+  ): Promise<CardioSession[]> => {
     if (!userId) return []
     // Sin try/catch: un fallo aqui NO es «no hay sesiones» — debe llegar al
     // caller, que distingue y reporta (#559). Antes cualquier abort/fallo
     // devolvia [] y se pintaba el estado vacio aunque hubiera datos.
     // Reintento ante 5xx/sin-respuesta: un solo 504 del gateway pintaba el
     // historial vacío (CALISTENIA-APP-S). Los 4xx no se reintentan.
-    const res = await retryTransient(() => pb.collection('cardio_sessions').getList(1, limit, {
-      filter: pb.filter('user = {:userId}', { userId }),
+    // El filtro por actividad va al servidor, no al array ya cargado: con la
+    // lista paginada, filtrar en cliente diría «no hay ciclismo» cuando lo que
+    // falta es pedir la siguiente página.
+    const filter = activity
+      ? pb.filter('user = {:userId} && activity_type = {:activity}', { userId, activity })
+      : pb.filter('user = {:userId}', { userId })
+    const res = await retryTransient(() => pb.collection('cardio_sessions').getList(page, limit, {
+      filter,
       sort: '-started_at',
       // Sin auto-cancelación: chocaba con el getFullList de stats y el getList
       // del widget sobre la misma colección (#559).
