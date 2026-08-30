@@ -164,7 +164,10 @@ export default function CardioHistory({ sessions, loading, onDelete, onStart, er
                   onPress={() => confirmDelete(s)}
                   accessibilityRole="button"
                   accessibilityLabel={t('cardio.deleteSession')}
-                  className="h-full shrink-0 justify-center border-l border-border px-3.5 py-3 active:bg-red-500/10"
+                  /* `self-stretch`, NO `h-full`: el padre tiene alto automático, así que
+                     un height:100% no tiene de qué calcular el porcentaje y Yoga acababa
+                     dando filas de millones de dp (historial en blanco). */
+                  className="shrink-0 self-stretch justify-center border-l border-border px-3.5 py-3 active:bg-red-500/10"
                 >
                   <Trash2 size={15} color="#f87171" />
                 </Pressable>
