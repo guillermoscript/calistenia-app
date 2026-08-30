@@ -343,18 +343,17 @@ export default function CardioScreen() {
 
             <RacePRsPanel userId={userId} />
 
-            {/* Historial */}
-            <View className="gap-3">
-              <Kicker>{t('cardio.history')}</Kicker>
-              <CardioHistory
-                sessions={history}
-                loading={historyLoading}
-                onDelete={handleDeleteSession}
-                onStart={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-                error={historyError}
-                onRetry={() => setHistoryRetry((c) => c + 1)}
-              />
-            </View>
+            {/* Historial — sólo las últimas; la lista completa, con filtros y
+                paginación, vive en /cardio/history. */}
+            <CardioHistory
+              sessions={history}
+              loading={historyLoading}
+              onDelete={handleDeleteSession}
+              onStart={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+              error={historyError}
+              onRetry={() => setHistoryRetry((c) => c + 1)}
+              onSeeAll={() => router.push('/cardio/history')}
+            />
 
             {/* Estadísticas */}
             {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
