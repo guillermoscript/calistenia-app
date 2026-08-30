@@ -11,6 +11,7 @@ const session = (id: string, over: Partial<CardioSession> = {}): CardioSession =
   avg_pace: 300,
   elevation_gain: 0,
   started_at: '2026-08-29T10:00:00.000Z',
+  finished_at: '2026-08-29T10:05:00.000Z',
   ...over,
 })
 
