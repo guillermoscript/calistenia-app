@@ -1,6 +1,146 @@
 {
-  "generated": "2026-08-26T19:24:56.306Z",
+  "generated": "2026-08-31T17:30:42.283Z",
   "versions": [
+    {
+      "version": "1.12.3",
+      "date": "2026-08-31",
+      "summary": {
+        "es": "Health Connect ahora solo lee sueño, peso y grasa corporal. Además: el historial de cardio vuelve a verse, los programas oficiales traen sus instrucciones y nutrición ya no pregunta dos veces.",
+        "en": "Health Connect now only reads sleep, weight and body fat. Also: cardio history shows again, official programs come with their instructions and nutrition no longer asks twice."
+      },
+      "highlights": [
+        {
+          "icon": "🔒",
+          "type": "fix",
+          "title": {
+            "es": "Menos datos de salud",
+            "en": "Leaner health access"
+          },
+          "body": {
+            "es": "La app deja de leer pasos y frecuencia cardíaca de Health Connect: solo pide sueño, peso y grasa corporal, todo de solo lectura. La FC de tus entrenos antiguos se conserva.",
+            "en": "The app no longer reads steps or heart rate from Health Connect: it only requests sleep, weight and body fat, all read-only. Heart-rate data from your past workouts is kept."
+          }
+        },
+        {
+          "icon": "🐛",
+          "type": "fix",
+          "title": {
+            "es": "Historial de cardio",
+            "en": "Cardio history"
+          },
+          "body": {
+            "es": "El historial salía en blanco y la lista ocupaba toda la pantalla de Cardio. Arreglado.",
+            "en": "History showed up blank and the list took over the whole Cardio screen. Fixed."
+          }
+        },
+        {
+          "icon": "📋",
+          "type": "fix",
+          "title": {
+            "es": "Programas con instrucciones",
+            "en": "Programs with instructions"
+          },
+          "body": {
+            "es": "Los 15 programas oficiales se revisaron a fondo: ejercicios, dosis e instrucciones que iban vacías ahora están completas.",
+            "en": "The 15 official programs got a deep review: exercises, dosing and previously empty instructions are now complete."
+          }
+        },
+        {
+          "icon": "🥗",
+          "type": "fix",
+          "title": {
+            "es": "Nutrición sin repetir preguntas",
+            "en": "Nutrition without repeat questions"
+          },
+          "body": {
+            "es": "Al configurar tus objetivos de nutrición, lo que ya contaste en el onboarding aparece pre-rellenado.",
+            "en": "When setting up your nutrition goals, what you already answered during onboarding comes pre-filled."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Retos, batallas y carreras para el servidor (#667) (#672)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "94cbc4a"
+            },
+            {
+              "description": "Cuánta gente sigue cada programa (#669) (#671)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "db3916e"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Tercer rechazo de Play — Health Connect a 3 permisos (fuera Steps y HeartRate) (#685)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "b916b7f"
+            },
+            {
+              "description": "El historial salía en blanco, y deja de ocupar toda la pantalla de Cardio (#684)",
+              "scope": "cardio",
+              "breaking": false,
+              "hash": "21b1eec"
+            },
+            {
+              "description": "Dejar de pedir en /nutrition lo que ya dio el onboarding (#676)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "51b9449"
+            },
+            {
+              "description": "Sembrar de verdad las instrucciones, que iban vacías (#677)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "49313de"
+            },
+            {
+              "description": "Auditar y corregir los 15 programas oficiales, con guardarraíl de contenido (#675)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "2fea435"
+            },
+            {
+              "description": "Los filtros de rango perdían el último día sobre columnas TEXT (#674)",
+              "scope": "data",
+              "breaking": false,
+              "hash": "124824d"
+            },
+            {
+              "description": "Los récords iban como texto a un campo numérico (#666) (#670)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "f22a05f"
+            },
+            {
+              "description": "El servidor servía la fase y la dosis equivocadas (#663) (#664)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "1f761c6"
+            },
+            {
+              "description": "La app se quedaba en el splash con una clave de AsyncStorage de +2 MB (#661) (#662)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "ab17f47"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.12.2",
       "date": "2026-08-27",
