@@ -36,7 +36,6 @@ export default function HealthScreen() {
   const s = h.summary
   const metrics: { label: string; value: string }[] = []
   if (s) {
-    if (s.steps) metrics.push({ label: 'Pasos', value: s.steps.toLocaleString() })
     const sleep = fmtSleep(s.sleep_minutes)
     if (sleep) metrics.push({ label: 'Sueño', value: sleep })
     if (s.weight_kg) metrics.push({ label: 'Peso', value: `${s.weight_kg} kg` })
@@ -61,8 +60,7 @@ export default function HealthScreen() {
             <Text className="font-bebas text-4xl text-foreground">Reloj y salud</Text>
           </View>
           <Text className="mt-1 font-sans text-sm text-muted-foreground">
-            Conecta tu reloj a través de Health Connect para traer sueño, frecuencia cardíaca de tus entrenos,
-            pasos y peso.
+            Conecta tu reloj a través de Health Connect para traer tu sueño, peso y grasa corporal.
           </Text>
         </View>
 
@@ -121,7 +119,7 @@ export default function HealthScreen() {
                   <Text className="font-sans-medium text-foreground">Qué leeremos</Text>
                 </View>
                 <Text className="font-sans text-sm text-muted-foreground">
-                  Sueño · Frecuencia cardíaca durante tus entrenos · Pasos · Peso y grasa corporal.
+                  Sueño · Peso y grasa corporal.
                   Solo lectura: la app nunca modifica tus datos del reloj.
                 </Text>
               </CardContent>
