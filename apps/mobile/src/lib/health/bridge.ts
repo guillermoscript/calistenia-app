@@ -29,8 +29,6 @@ import type { HealthHubStatus } from '@calistenia/core/types'
  * (política de acceso mínimo a datos de Health Connect de Google Play).
  *
  * Cada entrada tiene una función visible detrás:
- *   Steps        → pantalla "Reloj y salud"
- *   HeartRate    → FC media/máx de cada entreno (detalle de sesión)
  *   SleepSession → registro de sueño y calendario
  *   Weight       → seguimiento de peso
  *   BodyFat      → composición corporal (junto al peso)
@@ -38,12 +36,12 @@ import type { HealthHubStatus } from '@calistenia/core/types'
  * NO añadas un tipo aquí sin una función que lo muestre al usuario: aparece en
  * el diálogo de permisos y Google rechaza la release por acceso excesivo.
  * Historial de recortes: v1.11.1 quitó Distance/Exercise/TotalCalories/HRV/VO2;
- * v1.12.1 quitó RestingHeartRate y ActiveCaloriesBurned (segundo rechazo).
+ * v1.12.1 quitó RestingHeartRate y ActiveCaloriesBurned (segundo rechazo);
+ * v1.12.3 quitó Steps y HeartRate (tercer rechazo — Google no aceptó
+ * «mostrar el dato» como función esencial de una app de entreno).
  */
 const READ_RECORD_TYPES = [
-  'Steps',
   'SleepSession',
-  'HeartRate',
   'Weight',
   'BodyFat',
 ] as const
@@ -162,19 +160,10 @@ interface RawInstant { time: string; metadata?: RawMetadata }
 interface RawInterval { startTime: string; endTime: string; metadata?: RawMetadata }
 interface RawMass { inKilograms?: number }
 
-interface RawSteps extends RawInterval { count?: number }
 interface RawSleepStage { stage: number; startTime: string; endTime: string }
 interface RawSleepSession extends RawInterval { stages?: RawSleepStage[] }
-interface RawHeartRateSample { time: string; beatsPerMinute: number }
-interface RawHeartRate extends RawInterval { samples?: RawHeartRateSample[] }
 interface RawWeight extends RawInstant { weight?: RawMass }
 interface RawBodyFat extends RawInstant { percentage?: number }
-
-export interface StepsSample { startTime: string; endTime: string; count: number }
-export async function readSteps(range: TimeRange): Promise<StepsSample[]> {
-  const recs = await read<RawSteps>('Steps', range)
-  return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, count: r.count ?? 0 }))
-}
 
 export interface SleepSample { startTime: string; endTime: string; awakeMinutes: number; id?: string }
 export async function readSleep(range: TimeRange): Promise<SleepSample[]> {
@@ -186,14 +175,6 @@ export async function readSleep(range: TimeRange): Promise<SleepSample[]> {
       .reduce((sum: number, s) => sum + minutesBetween(s.startTime, s.endTime), 0)
     return { startTime: r.startTime, endTime: r.endTime, awakeMinutes, id: r.metadata?.id }
   })
-}
-
-export interface HrSample { time: string; bpm: number }
-export async function readHeartRate(range: TimeRange): Promise<HrSample[]> {
-  const recs = await read<RawHeartRate>('HeartRate', range)
-  return recs.flatMap((r) =>
-    (r.samples ?? []).map((s) => ({ time: s.time, bpm: s.beatsPerMinute })),
-  )
 }
 
 export interface WeightSample { time: string; kg: number; id?: string }

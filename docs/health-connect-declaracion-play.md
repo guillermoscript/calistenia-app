@@ -11,6 +11,17 @@ la publicación, y para la respuesta a los rechazos de la **v1.11.1 (vc35)**:
 
 **Versión que corrige los tres: 1.12.1 (versionCode 37).**
 
+> **TERCER rechazo (2026-08-31, contra vc38 = v1.12.2)**: «Excessive data
+> access» otra vez, ahora por `HeartRate` y `StepsCadence/Steps`. El revisor no
+> aceptó «mostrar el dato» (fila de pasos en «Reloj y salud», FC media/máx en el
+> detalle de sesión) como función esencial de una app de entreno de calistenia.
+> **Corrección: v1.12.3 (versionCode 39)** — se retiran `READ_STEPS` y
+> `READ_HEART_RATE`; quedan **3 permisos**: `READ_SLEEP`, `READ_WEIGHT`,
+> `READ_BODY_FAT`. Ojo: la app nunca pidió `StepsCadence` — que aparezca en el
+> rechazo refuerza que el revisor lee la **declaración de App content**, no el
+> manifiesto: al reenviar, vaciar en el paso 2 las justificaciones de Steps y
+> HeartRate (desplegar TODAS las secciones, ver 4b).
+
 ---
 
 ## 1. Qué cambió respecto a la versión rechazada (vc35)
@@ -34,10 +45,12 @@ Historial completo de recortes:
 |---|---|
 | 1.11.1 (vc35) | `READ_DISTANCE`, `READ_EXERCISE`, `READ_TOTAL_CALORIES_BURNED`, `READ_HEART_RATE_VARIABILITY`, `READ_VO2_MAX` |
 | 1.12.1 (vc37) | `READ_ACTIVE_CALORIES_BURNED`, `READ_RESTING_HEART_RATE` |
+| 1.12.3 (vc39) | `READ_STEPS`, `READ_HEART_RATE` (tercer rechazo: la fila de pasos y la FC por sesión no cuentan como función esencial) |
 
-Quedan **5 permisos, todos de solo lectura**: `READ_STEPS`, `READ_HEART_RATE`,
-`READ_SLEEP`, `READ_WEIGHT`, `READ_BODY_FAT`. La app nunca escribe en Health
-Connect. Las columnas viejas de `daily_health_cache` se conservan sin escribir.
+Quedan **3 permisos, todos de solo lectura**: `READ_SLEEP`, `READ_WEIGHT`,
+`READ_BODY_FAT`. La app nunca escribe en Health Connect. Las columnas viejas de
+`daily_health_cache` (y `hr_avg`/`hr_max` de las sesiones) se conservan sin
+escribir.
 
 ### Foreground service: `dataSync` → `health`
 
@@ -66,17 +79,9 @@ targetSdk, permisos FGS y que ningún `<service>` siga en `dataSync`.
 Texto para el formulario (App content → Health Connect): cada permiso con la
 función concreta y la pantalla donde el usuario ve el dato.
 
-### `READ_STEPS` — Pasos
-Se muestran como el total diario de pasos en la pantalla **«Reloj y salud»**.
-Permiten al usuario ver su actividad diaria fuera de los entrenamientos
-registrados en la app.
-
-### `READ_HEART_RATE` — Frecuencia cardíaca
-Las muestras de FC se cruzan con la ventana temporal de cada entrenamiento
-registrado en la app (fuerza, cardio y circuitos) para calcular y mostrar la
-**FC media y FC máxima de esa sesión** en la pantalla de detalle del
-entrenamiento. Es la función central de la integración con el reloj: sin este
-dato la app no puede mostrar la intensidad real del entrenamiento.
+> **v1.12.3**: `READ_STEPS` y `READ_HEART_RATE` eliminados (tercer rechazo).
+> En el paso 2 del formulario hay que **vaciar y guardar** sus justificaciones
+> si siguen apareciendo; solo quedan las tres de abajo.
 
 ### `READ_SLEEP` — Sueño
 Se importa a las **entradas de sueño de la app**, que aparecen en la pantalla
@@ -186,16 +191,14 @@ Health Connect y un reloj con datos reales.
    pantalla apagada; encender: la notificación muestra distancia y tiempo.
 6. **Terminar** → se ve el mapa con la ruta y el resumen.
 
-**Parte C — Health Connect:**
+**Parte C — Health Connect** *(re-grabar con vc39: el diálogo cambió)*:
 7. Perfil → **Reloj y salud** → «Conectar con Health Connect». El diálogo del
-   sistema lista **exactamente 5 tipos de datos**.
-8. Aceptar → «Sincronizar ahora» → aparecen las filas **Pasos, Sueño, Peso,
+   sistema lista **exactamente 3 tipos de datos**.
+8. Aceptar → «Sincronizar ahora» → aparecen las filas **Sueño, Peso,
    Grasa corporal**.
-9. **Historial** → abrir un entrenamiento hecho con el reloj puesto → mostrar
-   **FC MEDIA / FC MÁX**. *(justifica HEART_RATE)*
-10. **Calendario / seguimiento** → la entrada de sueño y la de peso importadas.
-    *(justifica SLEEP, WEIGHT, BODY_FAT)*
-11. Volver a «Reloj y salud» → «Gestionar permisos en Health Connect».
+9. **Calendario / seguimiento** → la entrada de sueño y la de peso importadas.
+   *(justifica SLEEP, WEIGHT, BODY_FAT)*
+10. Volver a «Reloj y salud» → «Gestionar permisos en Health Connect».
 
 ---
 
@@ -246,6 +249,27 @@ Health Connect y un reloj con datos reales.
 
 ## 6. Runbook de resubmisión
 
+### Runbook v1.12.3 / vc39 (tercer rechazo)
+
+1. Mergear el PR de `fix/play-rejection-3-hc-steps-hr`.
+2. En `main` actualizado: `pnpm release:mobile patch` (1.12.2 → 1.12.3,
+   vc38 → 39, changelog + tag) y `git push && git push origin mobile-v1.12.3`.
+   El `AndroidManifest.xml` y `build.gradle` locales de `android/` ya quedaron
+   en 3 permisos y vc39 (build:aab no ejecuta prebuild).
+3. `pnpm build:aab` → verifica vc39, **3 permisos de salud**, FGS
+   health|location, targetSdk 36.
+4. `pnpm play:publish` (internal) → `pnpm play:promote --track alpha|beta`.
+5. **App content → Health Connect, paso 2**: desplegar TODAS las secciones y
+   **vaciar y guardar** las justificaciones de Steps y HeartRate si aparecen
+   (y cualquier StepsCadence fantasma). Deben quedar exactamente 3.
+6. QA en dispositivo: reconectar HC → el diálogo lista **exactamente 3 tipos**;
+   el FGS `health` del entreno sigue arrancando (HIGH_SAMPLING_RATE_SENSORS
+   sigue declarado, no dependía de READ_HEART_RATE).
+7. `pnpm play:promote --track production --code 39` (lo lanza Guillermo con `!`)
+   → responder al rechazo con el texto de la sección 7 → Enviar a revisión.
+
+### Runbook del segundo rechazo (v1.12.1/vc37, ya ejecutado)
+
 1. **Mergear el PR** de esta rama (`fix/play-rejection-hc-fgs-sdk36`).
 2. En `main` actualizado:
    ```
@@ -293,6 +317,20 @@ Health Connect y un reloj con datos reales.
 ---
 
 ## 7. Respuesta al rechazo (texto para el formulario)
+
+Texto para el TERCER rechazo (v1.12.3 / vc39):
+
+> Hemos eliminado los permisos READ_HEART_RATE y READ_STEPS del manifiesto, del
+> diálogo de permisos y de la declaración de Health Connect, junto con las
+> funciones que los mostraban (frecuencia cardíaca por entrenamiento y total
+> diario de pasos). La app no solicita StepsCadence ni lo ha solicitado en
+> ninguna versión. La nueva versión (código 39) solicita únicamente 3 tipos de
+> datos, todos de solo lectura y cada uno con la pantalla concreta que lo
+> muestra: sueño (registro de sueño y calendario), peso y grasa corporal
+> (seguimiento de composición corporal). La declaración de App content está
+> actualizada para reflejar exactamente esos 3 tipos.
+
+Texto del segundo rechazo (v1.12.1 / vc37), ya enviado:
 
 > Hemos eliminado los permisos READ_ACTIVE_CALORIES_BURNED y
 > READ_RESTING_HEART_RATE del manifiesto y del diálogo de permisos.

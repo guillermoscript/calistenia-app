@@ -21,8 +21,6 @@ export type HealthSource = 'health_connect' | 'healthkit' | 'manual'
  * volver a declararlo en Play Console.
  */
 export type HealthDataType =
-  | 'steps'
-  | 'heart_rate'
   | 'sleep'
   | 'weight'
   | 'body_fat'
@@ -53,6 +51,7 @@ export interface DailyHealthSummary {
   id?: string
   /** YYYY-MM-DD local */
   date: string
+  /** Legado: READ_STEPS se retiró en v1.12.3 (tercer rechazo); solo días viejos. */
   steps?: number
   sleep_minutes?: number
   sleep_quality?: number
@@ -60,7 +59,11 @@ export interface DailyHealthSummary {
   body_fat_pct?: number
 }
 
-/** FC medida por el reloj, adjunta a una sesión (sessions/cardio/circuit). */
+/**
+ * FC medida por el reloj, adjunta a una sesión (sessions/cardio/circuit).
+ * Legado: READ_HEART_RATE se retiró en v1.12.3 (tercer rechazo de Play);
+ * hr_avg/hr_max ya no se escriben — se muestran si la sesión los tenía.
+ */
 export interface SessionHealthMetrics {
   hr_avg?: number
   hr_max?: number
