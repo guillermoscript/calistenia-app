@@ -16,7 +16,7 @@ import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from 
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
-import ExerciseThumbnail from '../components/ExerciseThumbnail'
+import ExerciseThumbnail, { NoDemoPlaceholder } from '../components/ExerciseThumbnail'
 import ProgramProgressBar from '../components/programs/ProgramProgressBar'
 import AutoProgressToggle from '../components/programs/AutoProgressToggle'
 import { shareProgram } from '../lib/share'
@@ -842,6 +842,9 @@ export default function ProgramDetailPage({
                                     alt={exercise.name}
                                     className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0"
                                     imgClassName="w-full h-full object-cover"
+                                    fallback={
+                                      <NoDemoPlaceholder className="w-14 h-14 rounded-lg overflow-hidden shrink-0" />
+                                    }
                                   />
 
                                   {/* Sets x Reps in accent */}

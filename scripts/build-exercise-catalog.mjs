@@ -26,6 +26,7 @@
 
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve, join } from 'path'
+import { buildMediaSlugIndex, discoverMediaFiles } from './lib/exercise-media.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
 // FROZEN pre-merge base (local + wger layer). OFFLINE merge reads this — never
@@ -1162,6 +1163,56 @@ const FAMILY_PATTERNS = [
   ['mountain_climber', /mountain climber|escalador/],
 ]
 
+// ── [#619] Media descubierta en disco ─────────────────────────────────────────
+/**
+ * Engancha al catálogo la media que exista en `seeds/exercises/media/<slug>/`.
+ *
+ * Antes de esto, registrar una imagen pedía dos pasos acoplados: soltar el
+ * fichero Y añadir a mano el bloque `media` al seed JSON. El segundo se olvidaba
+ * y el fallo era mudo —la imagen quedaba en disco sin que ninguna pantalla la
+ * pidiera—, que es por lo que tras meses de pipeline solo `strict-pull-up` tenía
+ * media. Ahora soltar el fichero basta: este paso lo encuentra y lo publica.
+ *
+ * Corre DESPUÉS de la fusión de seeds (necesita `seed_slug` ya estampado) y
+ * antes de reconstruir el catálogo. El bloque `media` escrito a mano sigue
+ * mandando: el disco solo rellena los huecos que el seed no fijó, para que
+ * nombres de fichero no canónicos que ya estén declarados no se pierdan.
+ */
+function attachDiskMedia(baseList) {
+  const { slugById, conflicts } = buildMediaSlugIndex(baseList)
+
+  let withMedia = 0
+  let filesAttached = 0
+
+  for (const ex of baseList) {
+    const slug = slugById.get(ex.id)
+    if (!slug) continue
+
+    const found = discoverMediaFiles(slug)
+    const roles = Object.keys(found)
+    if (roles.length === 0) continue
+
+    const media = { ...(ex.media || {}) }
+    let touched = false
+    for (const role of roles) {
+      if (media[role]) continue // el seed ya lo declaró: no se pisa
+      media[role] = `/exercise-media/${slug}/${found[role]}`
+      filesAttached++
+      touched = true
+    }
+    if (!touched) continue
+
+    ex.media = media
+    // `seed_slug` es también la provenance que lee el informe de cobertura, así
+    // que un ejercicio sin seed que reciba media por slug derivado necesita que
+    // quede escrita, o el siguiente build no sabría de dónde salió.
+    if (!ex.seed_slug) ex.seed_slug = slug
+    withMedia++
+  }
+
+  return { withMedia, filesAttached, conflicts }
+}
+
 /** Stamp `family` on entries whose name matches a variation family. */
 function stampFamilies(baseList) {
   let withFamily = 0
@@ -1356,6 +1407,17 @@ async function main() {
   console.log('\nStamping variation families...')
   const { withFamily } = stampFamilies(baseList)
   console.log(`  With family: ${withFamily}/${baseList.length}`)
+
+  // [#619] Media suelta en seeds/exercises/media/<slug>/ — sin editar JSON a mano
+  console.log('\nAttaching media found on disk...')
+  const { withMedia, filesAttached, conflicts } = attachDiskMedia(baseList)
+  console.log(`  Exercises with disk media: ${withMedia} (${filesAttached} files attached)`)
+  for (const c of conflicts) {
+    console.warn(
+      `  WARN: media slug "${c.slug}" ya es de "${c.kept}" — "${c.dropped}" se queda sin carpeta ` +
+      `(${c.kind}). Dale un seed_slug propio si necesita media.`
+    )
+  }
 
   // i18n leak check (last: seeds/exercisedb may have fixed entries above)
   console.log('\nChecking for English text in es descriptions...')

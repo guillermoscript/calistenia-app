@@ -2488,7 +2488,8 @@
   "motivation.quote19": "It's not about being the best. It's about being better than yesterday.",
   "motivation.author19": "Unknown",
 
-  "media.noMedia": "No media available",
+  "media.noMedia": "No demo yet",
+  "media.noDemoYet": "No demo yet",
   "media.searchYouTube": "Search on YouTube",
   "media.searchGoogle": "Search on Google",
   "media.copyToClipboard": "Copy to clipboard",

@@ -30,6 +30,8 @@
     "build:catalog": "node scripts/build-exercise-catalog.mjs",
     "build:id-map": "node scripts/build-id-map.mjs",
     "build:media": "node scripts/sync-exercise-media.mjs",
+    "exercises:media": "node scripts/build-exercise-catalog.mjs && node scripts/sync-exercise-media.mjs && node scripts/exercise-media-status.mjs",
+    "exercises:media:status": "node scripts/exercise-media-status.mjs",
     "programs:seed": "node scripts/generate-program-seed-migration.mjs",
     "programs:seed:check": "node scripts/generate-program-seed-migration.mjs --check",
     "programs:clean-test": "node scripts/clean-test-programs.mjs",
