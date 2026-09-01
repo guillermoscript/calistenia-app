@@ -179,6 +179,11 @@ initCore({
     },
   },
   reportError: (e) => {
+    // Sentry primero: captureException devuelve el event id y ese id viaja en
+    // el `page_error` de OpenPanel — es el puente entre una sesión del panel
+    // y el evento exacto en Sentry (antes cruzar era dispositivo + hora).
+    const sentryEventId = __DEV__ ? undefined : Sentry.captureException(e)
+    if (__DEV__) console.error('[core]', e)
     // Paridad con el `page_error` de web (#636 §5): hasta ahora el móvil solo
     // lo mandaba a Sentry, así que la tasa de errores por plataforma no se
     // podía comparar. Sentry sigue siendo el sitio para depurarlo; esto solo
@@ -188,10 +193,9 @@ initCore({
         surface: 'app', source: 'core_report',
         error_type: 'reported',
         message: e instanceof Error ? e.message : String(e),
+        ...(sentryEventId ? { sentry_event_id: sentryEventId } : {}),
       })
     } catch { /* informar de un error no puede provocar otro */ }
-    if (__DEV__) console.error('[core]', e)
-    else Sentry.captureException(e)
   },
   connectivity: { isOnline, onOnline, onChange: onConnectivityChange },
   lifecycle: { isForeground, onForeground, onBackground },
@@ -218,6 +222,10 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
     if (user?.id) {
       if (identifiedAs === user.id) return
       identifiedAs = user.id
+      // Mismo id (PB) en Sentry que el profileId de OpenPanel: permite cruzar
+      // un issue con la sesión/perfil del panel. Solo el id, sin email
+      // (sendDefaultPii sigue en false).
+      Sentry.setUser({ id: user.id })
       if (__DEV__) { console.log('[analytics] identify', user.id); return }
       op.identify({
         profileId: user.id,
@@ -227,6 +235,7 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
       })
     } else {
       identifiedAs = null
+      Sentry.setUser(null)
       // Invitado: soltar la cola para no perder los eventos de onboarding/login.
       if (!__DEV__) op.ready()
     }

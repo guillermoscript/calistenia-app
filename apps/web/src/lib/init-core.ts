@@ -56,8 +56,18 @@ initCore({
   analytics: {
     track: (name, properties) => op.track(name, properties),
     // El payload del facade es laxo; OpenPanel exige profileId — los callers de core siempre lo mandan.
-    identify: (payload) => op.identify(payload as Parameters<typeof op.identify>[0]),
-    clear: () => op.clear(),
+    identify: (payload) => {
+      op.identify(payload as Parameters<typeof op.identify>[0])
+      // Cruce OpenPanel↔Sentry: el mismo id de PocketBase en los dos lados.
+      // Sin esto Sentry solo tiene la IP y cruzar una sesión del panel con un
+      // issue era «mismo dispositivo + misma hora». Solo el id, nada de PII.
+      const profileId = (payload as { profileId?: string }).profileId
+      if (profileId) Sentry.setUser({ id: profileId })
+    },
+    clear: () => {
+      op.clear()
+      Sentry.setUser(null)
+    },
   },
   reportError: (e) => Sentry.captureException(e),
   lifecycle: {
