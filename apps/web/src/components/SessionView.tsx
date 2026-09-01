@@ -93,7 +93,10 @@ export default function SessionView({
   const { stepIdx, phase, setsCount, transitionType } = state
 
   const [showExit, setShowExit] = useState<boolean>(false)
-  const [prEvent, setPREvent] = useState<PREvent | null>(null)
+  // El nombre viaja junto al evento (como en el SessionView móvil): el PREvent
+  // solo trae el `exerciseId`, que en programas viejos es una clave de slot
+  // («lun_1_9») y no sirve para pintar.
+  const [prEvent, setPREvent] = useState<{ event: PREvent; exerciseName: string } | null>(null)
   const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
   // Espejo en ref de finalTimings para que el guard one-shot y el guardado de
   // la nota nunca lean un valor obsoleto (evita doble finalize / timings vacíos).
@@ -178,7 +181,7 @@ export default function SessionView({
   const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
     if (!currentStep) return
     const pr = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
-    if (pr) setPREvent(pr)
+    if (pr) setPREvent({ event: pr, exerciseName: currentStep.exercise.name })
 
     sounds.playSetComplete()
     sounds.vibrate([80])
@@ -312,7 +315,13 @@ export default function SessionView({
 
       {phase === 'rest' && (
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {prEvent && <PRCelebration prEvent={prEvent} onDismiss={() => setPREvent(null)} />}
+          {prEvent && (
+            <PRCelebration
+              prEvent={prEvent.event}
+              exerciseName={prEvent.exerciseName}
+              onDismiss={() => setPREvent(null)}
+            />
+          )}
           <ExerciseNavArrows
             hasPrev={hasPrevExercise}
             hasNext={hasNextExercise}

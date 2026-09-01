@@ -17,6 +17,8 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytic
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
 import i18n from 'i18next'
 import { localize, toTranslatable } from '../lib/i18n-db'
+import { resolveExerciseDisplayName } from '../lib/exercise-resolver'
+import { loadCatalogIndex } from '../lib/catalogIndex'
 import {
   diffCollection,
   executePlans,
@@ -1102,6 +1104,10 @@ export function useProgramEditor() {
       const exercisesRes = { items: exerciseItems }
       const dayConfigRes = { items: dayConfigItems }
 
+      // El resolutor de nombres es síncrono: sin el índice cargado dejaría
+      // pasar los slugs crudos («sphinx_pushup»). Si falla, se pinta tal cual.
+      await loadCatalogIndex().catch(() => null)
+
       const locale = i18n.language
       const loadedPhases: EditorPhase[] = phasesRes.items
         .sort((a, b) => a.sort_order - b.sort_order)
@@ -1172,7 +1178,10 @@ export function useProgramEditor() {
 
         days[key].exercises.push({
           exerciseId: r.exercise_id,
-          name: localize(r.exercise_name, locale),
+          // Cambia un slug de catálogo en `exercise_name` por el nombre
+          // localizado. Bonus: al guardar, el editor reescribe `exercise_name`
+          // con este valor, así que editar un programa viejo sana el dato.
+          name: resolveExerciseDisplayName(r.exercise_name, r.exercise_id, locale),
           sets: r.sets,
           reps: r.reps,
           rest: r.rest_seconds,
