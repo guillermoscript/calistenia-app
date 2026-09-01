@@ -14,6 +14,17 @@ Sentry.init({
   environment: __DEV__ ? 'development' : 'production',
   sendDefaultPii: false,
   tracesSampleRate: 0.2,
+  // Ruido conocido que no es accionable desde la app:
+  ignoreErrors: [
+    // Red del usuario, no bugs nuestros — fetch abortado al ir la app a
+    // background y DNS sin resolver por estar offline (CALISTENIA-APP-2/8).
+    'Fetch request has been canceled',
+    'Unable to resolve host',
+    // El install referrer de Play lo consulta una dependencia (atribución) y
+    // falla en dispositivos sin Play Store o con versiones viejas
+    // (CALISTENIA-APP-X/M/A/R). No hay nada que arreglar en nuestro código.
+    /install(ation)? referrer/i,
+  ],
 })
 
 export { Sentry }

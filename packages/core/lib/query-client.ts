@@ -110,17 +110,65 @@ export const PERSIST_KEY = 'calistenia_rq_cache'
 export const PERSIST_MAX_CHARS = 600_000
 
 /**
+ * Recorta un caché persistido que se pasa del tope quitando las queries MÁS
+ * GRANDES (por tamaño serializado) hasta que quepa. Devuelve el JSON recortado
+ * o `null` si no se puede recortar (no parsea, no tiene la forma esperada, o
+ * ni vaciando las queries cabe).
+ *
+ * Por qué recortar y no descartar: en producción hay usuarios cuyo caché
+ * supera el tope en CADA escritura (CALISTENIA-APP-10: 2,3M caracteres contra
+ * 600k). Con el descarte total esos usuarios no tenían NUNCA caché offline y
+ * además reportábamos el mismo error en bucle. Perder las 2-3 queries más
+ * gordas (que se refetchean al abrirlas) es mucho más barato que perderlo todo.
+ */
+export function trimPersistedCache(value: string): string | null {
+  let parsed: any
+  try {
+    parsed = JSON.parse(value)
+  } catch {
+    return null
+  }
+  const queries = parsed?.clientState?.queries
+  if (!Array.isArray(queries) || queries.length === 0) return null
+
+  // Tamaño serializado de cada query, ordenado de mayor a menor. El descarte
+  // es exacto: quitar una query resta su longitud + 1 coma del total.
+  const sized = queries
+    .map((query: unknown) => ({ query, len: JSON.stringify(query).length }))
+    .sort((a, b) => b.len - a.len)
+
+  let estimate = value.length
+  const dropped = new Set<unknown>()
+  for (const { query, len } of sized) {
+    if (estimate <= PERSIST_MAX_CHARS) break
+    estimate -= len + 1
+    dropped.add(query)
+  }
+
+  // Se conserva el orden original de las queries que sobreviven.
+  parsed.clientState.queries = queries.filter((q: unknown) => !dropped.has(q))
+  const out = JSON.stringify(parsed)
+  return out.length <= PERSIST_MAX_CHARS ? out : null
+}
+
+/**
  * Storage del persister con guard de tamaño. Exportado para poder testear el
- * descarte sin montar un persister entero. Si el caché serializado se pasa
- * del tope no se escribe y además se BORRA el anterior: dejar en disco una
- * versión vieja significaría rehidratar datos rancios indefinidamente, porque
- * ya nunca se sobrescribiría.
+ * recorte sin montar un persister entero. Si el caché serializado se pasa del
+ * tope se recorta (ver `trimPersistedCache`); si ni recortando cabe, no se
+ * escribe y además se BORRA el anterior: dejar en disco una versión vieja
+ * significaría rehidratar datos rancios indefinidamente, porque ya nunca se
+ * sobrescribiría.
  */
 export const cappedStorage = {
   getItem: (key: string) => storage.getItem(key),
   removeItem: (key: string) => storage.removeItem(key),
   setItem: (key: string, value: string) => {
     if (key === PERSIST_KEY && value.length > PERSIST_MAX_CHARS) {
+      const trimmed = trimPersistedCache(value)
+      if (trimmed !== null) {
+        storage.setItem(key, trimmed)
+        return
+      }
       storage.removeItem(key)
       try {
         getPlatform().reportError?.(

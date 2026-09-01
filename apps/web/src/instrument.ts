@@ -6,6 +6,11 @@ const isSpanish = detectedLang.startsWith("es");
 
 Sentry.init({
   dsn: "https://45325daff5446587024f972577dbbb70@o4507789962706944.ingest.us.sentry.io/4511134403723264",
+  // En dev no se envía nada (mismo criterio que mobile): las sesiones locales
+  // contra localhost:5173 estaban creando issues «development» en el proyecto
+  // (GYM-GUILLE-1F y compañía) que solo son ruido de QA. Para depurar Sentry
+  // en local: VITE_SENTRY_DEV=1.
+  enabled: import.meta.env.PROD || import.meta.env.VITE_SENTRY_DEV === "1",
   environment: import.meta.env.MODE,
   // Única por deploy (ver __SENTRY_RELEASE__ en vite.config.js). NO uses
   // __APP_VERSION__ aquí: es el semver de package.json y no cambia entre
