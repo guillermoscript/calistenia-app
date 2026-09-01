@@ -3,7 +3,7 @@ import "./lib/init-core";           // Platform adapter de @calistenia/core — 
 
 import React, { type ErrorInfo } from 'react'
 import ReactDOM from 'react-dom/client'
-import { reactErrorHandler } from "@sentry/react"
+import { reactErrorHandler, lastEventId } from "@sentry/react"
 import { BrowserRouter } from 'react-router-dom'
 import { I18nextProvider } from 'react-i18next'
 import { registerSW } from 'virtual:pwa-register'
@@ -71,11 +71,14 @@ if ('serviceWorker' in navigator) {
 const trackAndHandleError = (type: string) => {
   const sentryHandler = reactErrorHandler()
   return (error: unknown, errorInfo: ErrorInfo) => {
+    // Sentry primero: así `lastEventId()` ya apunta a ESTE error y el
+    // `page_error` de OpenPanel lleva el puente al evento exacto de Sentry.
+    sentryHandler(error, errorInfo)
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.pageError, {
       surface: 'app', source: 'react_root', error_type: type,
       message: error instanceof Error ? error.message : String(error),
+      sentry_event_id: lastEventId(),
     })
-    sentryHandler(error, errorInfo)
   }
 }
 
