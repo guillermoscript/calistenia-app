@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import PRShareCard from './PRShareCard'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
+import { resolveExerciseDisplayName } from '@calistenia/core/lib/exercise-resolver'
 import { useSessionIdentity } from '../hooks/useSessionIdentity'
 
 const PR_KEY_NAMES: Record<string, string> = {
@@ -15,11 +16,13 @@ const PR_KEY_NAMES: Record<string, string> = {
 
 interface PRCelebrationProps {
   prEvent: PREvent
+  /** Nombre ya resuelto del ejercicio (lo conoce quien registró la serie). */
+  exerciseName?: string
   onDismiss: () => void
 }
 
-export default function PRCelebration({ prEvent, onDismiss }: PRCelebrationProps) {
-  const { t } = useTranslation()
+export default function PRCelebration({ prEvent, exerciseName: exerciseNameProp, onDismiss }: PRCelebrationProps) {
+  const { t, i18n } = useTranslation()
   // La identidad se lee aquí en lugar de bajarla como props desde la página:
   // el AuthProvider ya está montado por encima (#475).
   const { userName, avatarUrl, referralCode } = useSessionIdentity()
@@ -31,7 +34,12 @@ export default function PRCelebration({ prEvent, onDismiss }: PRCelebrationProps
     return () => clearTimeout(timer)
   }, [onDismiss])
 
-  const exerciseName = PR_KEY_NAMES[prEvent.prKey] || prEvent.exerciseId
+  // Último peldaño: el catálogo, que traduce un id canónico; una clave de slot
+  // («lun_1_9») no resuelve y sale tal cual, pero ese caso ya lo cubre la prop.
+  const exerciseName =
+    exerciseNameProp ||
+    PR_KEY_NAMES[prEvent.prKey] ||
+    resolveExerciseDisplayName(undefined, prEvent.exerciseId, i18n.language)
 
   const handleShareClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()

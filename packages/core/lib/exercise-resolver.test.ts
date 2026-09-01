@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildExerciseResolver } from './exercise-resolver'
+import { buildExerciseResolver, resolveExerciseNameField, resolveExerciseDisplayName } from './exercise-resolver'
 import { buildCatalogIndex, type RawCatalog } from './catalogIndex'
 import { muscleTokensToGroups } from './muscles'
 import type { Workout } from '../types'
@@ -111,5 +111,35 @@ describe('muscleTokensToGroups', () => {
     expect(muscleTokensToGroups('')).toEqual([])
     expect(muscleTokensToGroups(null)).toEqual([])
     expect(muscleTokensToGroups('todo el cuerpo')).toEqual([])
+  })
+})
+
+describe('resolveExerciseNameField / resolveExerciseDisplayName', () => {
+  it('un slug de catálogo en el nombre se cambia por el name {es,en} del catálogo', () => {
+    expect(resolveExerciseNameField('flexiones-clasicas', 'lun_1_9', index)).toEqual({ es: 'Flexiones', en: 'Push-ups' })
+    expect(resolveExerciseNameField('pushups', 'lun_1_9', index)).toEqual({ es: 'Flexiones', en: 'Push-ups' })
+  })
+
+  it('con el nombre irresoluble, resuelve por el exercise_id', () => {
+    expect(resolveExerciseNameField('sphinx_pushup', 'pushups', index)).toEqual({ es: 'Flexiones', en: 'Push-ups' })
+  })
+
+  it('un nombre humano pasa intacto, aunque el id sea de catálogo', () => {
+    expect(resolveExerciseNameField('Flexiones arqueras', 'pushups', index)).toBe('Flexiones arqueras')
+    expect(resolveExerciseNameField({ es: 'Mi ejercicio' }, 'pushups', index)).toEqual({ es: 'Mi ejercicio' })
+  })
+
+  it('clave de máquina que no resuelve a nada se queda como estaba', () => {
+    expect(resolveExerciseNameField('cosa_desconocida', 'lun_1_9', index)).toBe('cosa_desconocida')
+  })
+
+  it('sin índice no se afirma nada', () => {
+    expect(resolveExerciseNameField('flexiones-clasicas', 'lun_1_9', null)).toBe('flexiones-clasicas')
+  })
+
+  it('display: localiza y cae al exerciseId antes que a vacío', () => {
+    expect(resolveExerciseDisplayName('flexiones-clasicas', 'lun_1_9', 'en', index)).toBe('Push-ups')
+    expect(resolveExerciseDisplayName('', 'lun_1_9', 'es', index)).toBe('lun_1_9')
+    expect(resolveExerciseDisplayName('', 'plank', 'es', index)).toBe('Plancha')
   })
 })

@@ -23,6 +23,8 @@ import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import { resolveExerciseDisplayName } from '@calistenia/core/lib/exercise-resolver'
+import { loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import { ProgramRemixCredit, ProgramFollowers } from '../components/programs/ProgramRemixCredit'
@@ -220,6 +222,10 @@ export default function ProgramDetailPage({
       const { phases: phaseItems, exercises: exerciseItems, dayConfigs: dayConfigItems } =
         await fetchProgramDetailRows(programId)
 
+      // El resolutor de nombres es síncrono: sin el índice cargado dejaría
+      // pasar los slugs crudos («sphinx_pushup»). Si falla, se pinta tal cual.
+      await loadCatalogIndex().catch(() => null)
+
       const builtPhases: ProgramPhase[] = phaseItems.map(p => ({
         id: p.phase_number,
         name: localize(p.name, locale),
@@ -274,7 +280,9 @@ export default function ProgramDetailPage({
         }
         workoutMap[key].exercises.push({
           id: r.exercise_id,
-          name: localize(r.exercise_name, locale),
+          // Cambia un slug de catálogo en `exercise_name` por el nombre
+          // localizado; el `id` sigue crudo (clave del historial de series).
+          name: resolveExerciseDisplayName(r.exercise_name, r.exercise_id, locale),
           sets: r.sets,
           reps: r.reps,
           rest: r.rest_seconds,

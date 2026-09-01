@@ -31,6 +31,8 @@ import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType, CircuitDefinition, CircuitExercise } from '../types'
 import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
+import { resolveExerciseDisplayName, resolveExerciseNameField } from '../lib/exercise-resolver'
+import { loadCatalogIndex } from '../lib/catalogIndex'
 import { authorDisplayName } from '../lib/author-name'
 import { applyOverrides } from '../lib/programOverrides'
 import { useProgramOverrides } from './useAutoProgression'
@@ -66,7 +68,9 @@ export function toCircuitExercises(exerciseRecords: RecordModel[]): CircuitExerc
   return exerciseRecords.map(r => {
     const exercise: CircuitExercise = {
       exerciseId: r.exercise_id,
-      name: r.exercise_name,
+      // Sigue siendo el campo `{es,en}` (no se localiza aquí), pero pasado por
+      // el resolutor: un slug de catálogo en `exercise_name` se pintaría crudo.
+      name: resolveExerciseNameField(r.exercise_name, r.exercise_id),
     }
     if (r.reps) exercise.reps = r.reps
     // Un ejercicio por tiempo guarda su duración en `timer_seconds`; en modo
@@ -204,7 +208,10 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
     }
     map[key].exercises.push({
       id:           r.exercise_id,
-      name:         localize(r.exercise_name, locale),
+      // Un `exercise_name` que es un slug del catálogo (o va vacío) se cambia
+      // por el nombre localizado del catálogo; el `id` se queda crudo a
+      // propósito: es la clave del historial de series y PRs.
+      name:         resolveExerciseDisplayName(r.exercise_name, r.exercise_id, locale),
       sets:         r.sets,
       reps:         r.reps,
       rest:         r.rest_seconds,
@@ -429,6 +436,11 @@ export interface ProgramDetail {
  * `lib/programDetailQuery.ts` y la comparten las dos.
  */
 export async function fetchProgramDetail(programId: string): Promise<ProgramDetail> {
+  // Deja el índice del catálogo listo ANTES de construir los mapas: los
+  // resolutores de nombre (`resolveExerciseDisplayName`) son síncronos y sin
+  // índice dejan pasar los slugs crudos. Si la carga falla, se construye igual
+  // con los nombres tal cual vienen.
+  await loadCatalogIndex().catch(() => null)
   const rows = await fetchProgramDetailRows(programId)
   // RecordModel solo tiene índice genérico; day_id/phase_number existen en estas colecciones.
   const { exercises, dayConfigs, remapped } = normalizeProgramDayIds(
