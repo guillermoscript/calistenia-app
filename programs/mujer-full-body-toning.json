@@ -306,7 +306,7 @@
               "sort_order": 7,
               "exercise_id": "crunch",
               "name": {
-                "es": "Crunch",
+                "es": "Crunch Abdominal",
                 "en": "Crunch"
               },
               "sets": 3,
@@ -442,7 +442,7 @@
               "sort_order": 5,
               "exercise_id": "pike_pushup",
               "name": {
-                "es": "Pike Push-up",
+                "es": "Flexiones Pike",
                 "en": "Pike Push-up"
               },
               "sets": 3,
@@ -546,7 +546,7 @@
               "sort_order": 1,
               "exercise_id": "jumping_jacks",
               "name": {
-                "es": "Jumping Jacks",
+                "es": "Saltos de Tijera",
                 "en": "Jumping Jacks"
               },
               "sets": 1,
@@ -1002,7 +1002,7 @@
               "sort_order": 7,
               "exercise_id": "crunch",
               "name": {
-                "es": "Crunch",
+                "es": "Crunch Abdominal",
                 "en": "Crunch"
               },
               "sets": 3,
@@ -1138,7 +1138,7 @@
               "sort_order": 5,
               "exercise_id": "pike_pushup",
               "name": {
-                "es": "Pike Push-up",
+                "es": "Flexiones Pike",
                 "en": "Pike Push-up"
               },
               "sets": 3,
@@ -1242,7 +1242,7 @@
               "sort_order": 1,
               "exercise_id": "jumping_jacks",
               "name": {
-                "es": "Jumping Jacks",
+                "es": "Saltos de Tijera",
                 "en": "Jumping Jacks"
               },
               "sets": 1,
@@ -1698,7 +1698,7 @@
               "sort_order": 7,
               "exercise_id": "crunch",
               "name": {
-                "es": "Crunch",
+                "es": "Crunch Abdominal",
                 "en": "Crunch"
               },
               "sets": 3,
@@ -1938,7 +1938,7 @@
               "sort_order": 1,
               "exercise_id": "jumping_jacks",
               "name": {
-                "es": "Jumping Jacks",
+                "es": "Saltos de Tijera",
                 "en": "Jumping Jacks"
               },
               "sets": 1,
