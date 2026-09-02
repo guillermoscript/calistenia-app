@@ -32,6 +32,7 @@ import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId
 import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
 import { resolveExerciseDisplayName, resolveExerciseNameField } from '../lib/exercise-resolver'
+import { inferTimerFromReps } from '../lib/exercise-timer-inference'
 import { loadCatalogIndex } from '../lib/catalogIndex'
 import { authorDisplayName } from '../lib/author-name'
 import { applyOverrides } from '../lib/programOverrides'
@@ -75,7 +76,15 @@ export function toCircuitExercises(exerciseRecords: RecordModel[]): CircuitExerc
     if (r.reps) exercise.reps = r.reps
     // Un ejercicio por tiempo guarda su duración en `timer_seconds`; en modo
     // `timed` es exactamente el trabajo de esa estación.
+    //
+    // Una fila mal sembrada (#690) llega con `is_timer: false` y la duración
+    // metida en el texto de `reps` («45s»); sin deducirla, esa estación se
+    // queda sin trabajo que cronometrar aunque el propio texto cante los
+    // segundos. Sólo se toca la duración: `exerciseId`, `name` y `reps` siguen
+    // saliendo tal cual.
+    const inferred = r.is_timer ? null : inferTimerFromReps(r.reps)
     if (r.is_timer && r.timer_seconds) exercise.workSecondsOverride = r.timer_seconds
+    else if (inferred) exercise.workSecondsOverride = r.timer_seconds || inferred.timerSeconds
     return exercise
   })
 }
@@ -193,7 +202,13 @@ export function buildCircuitDayConfigs(
   return configs
 }
 
-function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
+/**
+ * Filas de `program_exercises` → `WorkoutsMap`, la forma que consume la sesión.
+ *
+ * Exportada sólo para poder testearla sin montar el hook, igual que
+ * `toCircuitExercises` y `buildCircuitDayConfigs`.
+ */
+export function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
   const locale = i18n.language
   const map: WorkoutsMap = {}
   exerciseRecords.forEach(r => {
@@ -206,6 +221,12 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
         exercises: [],
       }
     }
+    // #690: hay filas en producción con `is_timer: false` y `timer_seconds: 0`
+    // cuyo `reps` es una duración pura («30-45 seg»). Sin esto la pantalla de
+    // ejercicio pinta ese texto y NINGÚN cronómetro, porque sólo lo enseña
+    // cuando `isTimer` es cierto. Sólo se corrigen esos dos campos: `id`,
+    // `name` y `reps` se quedan como están (el `id` es la clave del historial).
+    const inferred = r.is_timer ? null : inferTimerFromReps(r.reps)
     map[key].exercises.push({
       id:           r.exercise_id,
       // Un `exercise_name` que es un slug del catálogo (o va vacío) se cambia
@@ -219,8 +240,8 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       note:         localize(r.note, locale),
       youtube:      r.youtube,
       priority:     r.priority,
-      isTimer:      r.is_timer,
-      timerSeconds: r.timer_seconds,
+      isTimer:      r.is_timer || !!inferred,
+      timerSeconds: inferred ? (r.timer_seconds || inferred.timerSeconds) : r.timer_seconds,
       // `demoImages`/`demoVideo` son los NOMBRES DE FICHERO de PocketBase, no URLs.
       // Se exponen crudos a propósito: son la entrada que espera `getExerciseMedia()`
       // (y así los consume también el `ExerciseScreen` móvil). Resolverlos aquí
