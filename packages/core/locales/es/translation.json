@@ -3003,6 +3003,7 @@
   "pr.celebration": "Nuevo PR!",
   "pr.share": "Compartir PR",
   "pr.reps": "{{count}} reps",
+  "pr.seconds": "{{count}} s",
 
   "streak.milestone.title": "Racha de {{days}} días!",
   "streak.milestone.subtitle7": "Una semana sin parar!",

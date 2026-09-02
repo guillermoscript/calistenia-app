@@ -112,7 +112,7 @@ export default function OneRepMaxCalculator({ exerciseLogs, exerciseNames, bodyw
               {autoEstimates.map(e => (
                 <div key={e.exerciseId} className="flex items-center justify-between">
                   <div>
-                    <div className="text-[13px] font-medium capitalize">{exerciseNames?.[e.exerciseId] ?? e.exerciseId.replace(/_/g, ' ')}</div>
+                    <div className="text-[13px] font-medium">{exerciseNames?.[e.exerciseId] ?? e.exerciseId.replace(/_/g, ' ')}</div>
                     <div className="text-[10px] text-muted-foreground font-mono">
                       {e.weight}kg × {e.reps} reps ({t('progress.oneRepMax.bwPlusWeight')})
                     </div>

@@ -18,10 +18,12 @@ interface PRCelebrationProps {
   prEvent: PREvent
   /** Nombre ya resuelto del ejercicio (lo conoce quien registró la serie). */
   exerciseName?: string
+  /** Ejercicio por tiempo: `newValue` son SEGUNDOS, no repeticiones (#690). */
+  isTimer?: boolean
   onDismiss: () => void
 }
 
-export default function PRCelebration({ prEvent, exerciseName: exerciseNameProp, onDismiss }: PRCelebrationProps) {
+export default function PRCelebration({ prEvent, exerciseName: exerciseNameProp, isTimer, onDismiss }: PRCelebrationProps) {
   const { t, i18n } = useTranslation()
   // La identidad se lee aquí en lugar de bajarla como props desde la página:
   // el AuthProvider ya está montado por encima (#475).
@@ -90,7 +92,9 @@ export default function PRCelebration({ prEvent, exerciseName: exerciseNameProp,
               <span className="ml-1 text-muted-foreground/70">
                 {prEvent.kind === 'weight'
                   ? `kg × ${prEvent.reps ?? 1}`
-                  : t('pr.reps', { count: prEvent.newValue })}
+                  : isTimer
+                    ? t('pr.seconds', { count: prEvent.newValue })
+                    : t('pr.reps', { count: prEvent.newValue })}
               </span>
             </div>
           </div>

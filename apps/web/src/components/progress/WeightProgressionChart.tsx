@@ -58,7 +58,7 @@ export default function WeightProgressionChart({ exerciseLogs, exerciseNames }: 
                 size="sm"
                 onClick={() => setSelectedExercise(id)}
                 className={cn(
-                  'h-7 px-3 text-[10px] tracking-wide capitalize',
+                  'h-7 px-3 text-[10px] tracking-wide',
                   (active === id) && 'border-amber-400/50 text-amber-400 bg-amber-400/10'
                 )}
               >
