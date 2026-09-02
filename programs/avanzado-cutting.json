@@ -50,7 +50,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -123,7 +123,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros, pecho",
               "sets": 3,
@@ -431,7 +431,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Jump squat",
+              "name": "Sentadilla con Salto",
               "exercise_id": "jump_squat",
               "muscles": "Cuádriceps, glúteos, potencia",
               "sets": 4,
@@ -566,7 +566,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Jumping jacks",
+              "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
               "muscles": "Cuerpo completo, cardio",
               "sets": 1,
@@ -615,7 +615,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Deltoides, tríceps, trapecio",
               "sets": 3,
@@ -627,7 +627,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Towel pull-up",
+              "name": "Dominadas con Toalla",
               "exercise_id": "towel_pullup",
               "muscles": "Dorsales, agarre, antebrazos",
               "sets": 3,
@@ -802,7 +802,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Windshield wipers",
+              "name": "Limpiaparabrisas",
               "exercise_id": "windshield_wipers",
               "muscles": "Oblicuos, core rotacional",
               "sets": 3,
@@ -839,7 +839,7 @@
             },
             {
               "sort_order": 11,
-              "name": "Pike stretch",
+              "name": "Estiramiento en Pike",
               "exercise_id": "pike_stretch",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,
@@ -908,7 +908,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -970,7 +970,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Deltoides, tríceps, trapecio",
               "sets": 4,
@@ -982,7 +982,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros, pecho",
               "sets": 2,
@@ -1154,7 +1154,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Towel pull-up",
+              "name": "Dominadas con Toalla",
               "exercise_id": "towel_pullup",
               "muscles": "Dorsales, agarre, antebrazos",
               "sets": 3,
@@ -1302,7 +1302,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Jump squat",
+              "name": "Sentadilla con Salto",
               "exercise_id": "jump_squat",
               "muscles": "Cuádriceps, glúteos, potencia",
               "sets": 4,
@@ -1424,7 +1424,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Jumping jacks",
+              "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
               "muscles": "Cuerpo completo, cardio",
               "sets": 1,
@@ -1673,7 +1673,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Hanging leg raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Recto abdominal, hip flexors",
               "sets": 3,
@@ -1685,7 +1685,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Ab wheel rollout",
+              "name": "Rueda Abdominal (Rollout)",
               "exercise_id": "ab_wheel_rollout",
               "muscles": "Core, dorsales, hombros",
               "sets": 3,
@@ -1710,7 +1710,7 @@
             },
             {
               "sort_order": 11,
-              "name": "Pike stretch",
+              "name": "Estiramiento en Pike",
               "exercise_id": "pike_stretch",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,
@@ -1766,7 +1766,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -1841,7 +1841,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Deltoides, tríceps, trapecio",
               "sets": 3,
@@ -1865,7 +1865,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros, pecho",
               "sets": 3,
@@ -2025,7 +2025,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Towel pull-up",
+              "name": "Dominadas con Toalla",
               "exercise_id": "towel_pullup",
               "muscles": "Dorsales, agarre, antebrazos",
               "sets": 3,
@@ -2136,7 +2136,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Jumping jacks",
+              "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
               "muscles": "Cuerpo completo",
               "sets": 1,
@@ -2185,7 +2185,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Jump squat",
+              "name": "Sentadilla con Salto",
               "exercise_id": "jump_squat",
               "muscles": "Cuádriceps, glúteos, potencia",
               "sets": 3,
@@ -2544,7 +2544,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Windshield wipers",
+              "name": "Limpiaparabrisas",
               "exercise_id": "windshield_wipers",
               "muscles": "Oblicuos, core rotacional",
               "sets": 3,
@@ -2556,7 +2556,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging leg raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Recto abdominal, hip flexors",
               "sets": 3,
@@ -2581,7 +2581,7 @@
             },
             {
               "sort_order": 11,
-              "name": "Pike stretch",
+              "name": "Estiramiento en Pike",
               "exercise_id": "pike_stretch",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,

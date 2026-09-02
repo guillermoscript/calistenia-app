@@ -370,7 +370,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -538,7 +538,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -623,7 +623,7 @@
             },
             {
               "sort_order": 10,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, core",
               "sets": 3,
@@ -857,7 +857,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Jumping jacks",
+              "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
               "muscles": "Full body, activación cardiovascular",
               "sets": 1,

@@ -532,7 +532,7 @@
             },
             {
               "sort_order": 8,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, flexores de cadera",
               "sets": 3,
@@ -1064,7 +1064,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Glute bridge march",
+              "name": "Puente de Glúteo con Marcha",
               "exercise_id": "glute_bridge_march",
               "muscles": "Glúteos, core, estabilidad pélvica",
               "sets": 3,
@@ -1599,7 +1599,7 @@
             },
             {
               "sort_order": 6,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, flexores de cadera",
               "sets": 3,

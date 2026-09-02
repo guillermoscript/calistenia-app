@@ -99,7 +99,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros, pecho",
               "sets": 3,
@@ -210,7 +210,7 @@
             },
             {
               "sort_order": 5,
-              "name": "Archer Pull-up",
+              "name": "Dominadas Arquero",
               "exercise_id": "archer_pull_up",
               "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 5,
@@ -483,7 +483,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Isquiotibiales, core, hombros",
               "sets": 1,
@@ -556,7 +556,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging Leg Raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Recto abdominal, flexores de cadera",
               "sets": 4,
@@ -981,7 +981,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "exercise_id": "tiger_bend_pushup",
               "muscles": "Tríceps, hombros",
               "sets": 3,
@@ -1092,7 +1092,7 @@
             },
             {
               "sort_order": 5,
-              "name": "Archer Pull-up",
+              "name": "Dominadas Arquero",
               "exercise_id": "archer_pull_up",
               "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 5,
@@ -1354,7 +1354,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Isquiotibiales, core",
               "sets": 1,
@@ -1427,7 +1427,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging Leg Raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Recto abdominal, flexores de cadera",
               "sets": 5,
@@ -2214,7 +2214,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Isquiotibiales, core",
               "sets": 1,
@@ -2263,7 +2263,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Jump squat",
+              "name": "Sentadilla con Salto",
               "exercise_id": "jump_squat",
               "muscles": "Cuádriceps, glúteos, potencia",
               "sets": 3,
@@ -2287,7 +2287,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging Leg Raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Recto abdominal, flexores de cadera",
               "sets": 6,

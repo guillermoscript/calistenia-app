@@ -24,7 +24,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -75,7 +75,7 @@
             },
             {
               "sort_order": 5,
-              "name": "Pike Push-up",
+              "name": "Flexiones Pike",
               "muscles": "hombro anterior, tríceps",
               "sets": 4,
               "reps": "8-12",
@@ -87,7 +87,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Diamond Push-up",
+              "name": "Flexiones Diamante",
               "muscles": "tríceps, pectoral interno",
               "sets": 3,
               "reps": "10-15",
@@ -99,7 +99,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Wide Push-up",
+              "name": "Flexiones Agarre Ancho",
               "muscles": "pectoral, hombro anterior",
               "sets": 3,
               "reps": "10-15",
@@ -111,7 +111,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Decline Push-up",
+              "name": "Flexiones Declinadas",
               "muscles": "pectoral superior, hombro anterior",
               "sets": 3,
               "reps": "10-12",
@@ -171,7 +171,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -197,7 +197,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Cat-Cow",
+              "name": "Gato-Vaca",
               "muscles": "columna, core",
               "sets": 1,
               "reps": "",
@@ -234,7 +234,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Australian Pull-up",
+              "name": "Remo Australiano",
               "muscles": "romboides, dorsal, bíceps",
               "sets": 3,
               "reps": "10-15",
@@ -270,7 +270,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging Knee Raise",
+              "name": "Elevación de Rodillas Colgado",
               "muscles": "abdomen inferior",
               "sets": 3,
               "reps": "12-15",
@@ -343,7 +343,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Leg Swings",
+              "name": "Balanceos de Pierna",
               "muscles": "cadera, isquios",
               "sets": 1,
               "reps": "",
@@ -393,7 +393,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Reverse Lunge",
+              "name": "Zancada Inversa",
               "muscles": "cuádriceps, glúteos",
               "sets": 3,
               "reps": "10-12 c/lado",
@@ -405,7 +405,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Glute Bridge Unilateral",
+              "name": "Puente de Glúteo Unilateral",
               "muscles": "glúteos, isquiotibiales",
               "sets": 3,
               "reps": "10-12 c/lado",
@@ -417,7 +417,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Calf Raises",
+              "name": "Elevaciones de Gemelos",
               "muscles": "gemelos",
               "sets": 3,
               "reps": "15-20",
@@ -442,7 +442,7 @@
             },
             {
               "sort_order": 10,
-              "name": "Plank",
+              "name": "Plancha",
               "muscles": "core",
               "sets": 3,
               "reps": "30-45 seg",
@@ -456,7 +456,7 @@
             {
               "sort_order": 11,
               "exercise_id": "jump_squat",
-              "name": "Jump Squat",
+              "name": "Sentadilla con Salto",
               "muscles": "Cuádriceps, glúteos, potencia",
               "sets": 3,
               "reps": "12",
@@ -516,7 +516,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Wrist Mobility Routine",
+              "name": "Rutina de Movilidad de Muñecas",
               "muscles": "muñecas",
               "sets": 1,
               "reps": "",
@@ -567,7 +567,7 @@
             },
             {
               "sort_order": 5,
-              "name": "Pike Push-up",
+              "name": "Flexiones Pike",
               "muscles": "hombro anterior, tríceps",
               "sets": 4,
               "reps": "8-12",
@@ -591,7 +591,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Decline Push-up",
+              "name": "Flexiones Declinadas",
               "muscles": "pectoral superior",
               "sets": 3,
               "reps": "10-12",
@@ -603,7 +603,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Diamond Push-up",
+              "name": "Flexiones Diamante",
               "muscles": "tríceps, pectoral interno",
               "sets": 3,
               "reps": "8-12",
@@ -615,7 +615,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Side Plank",
+              "name": "Plancha Lateral",
               "muscles": "oblicuos, core",
               "sets": 3,
               "reps": "20-30 seg c/lado",
@@ -676,7 +676,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Cat-Cow",
+              "name": "Gato-Vaca",
               "muscles": "columna",
               "sets": 1,
               "reps": "",
@@ -689,7 +689,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -715,7 +715,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Wide Grip Pull-up",
+              "name": "Dominadas Agarre Ancho",
               "muscles": "dorsal ancho, redondo mayor",
               "sets": 4,
               "reps": "6-10",
@@ -763,7 +763,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Hanging Leg Raise",
+              "name": "Elevación de Piernas Colgado",
               "muscles": "abdomen, flexor de cadera",
               "sets": 3,
               "reps": "8-12",
@@ -843,7 +843,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -869,7 +869,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "muscles": "cadena posterior, hombros",
               "sets": 1,
               "reps": "",
@@ -918,7 +918,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Diamond Push-up",
+              "name": "Flexiones Diamante",
               "muscles": "tríceps, pectoral interno",
               "sets": 3,
               "reps": "10-15",
@@ -930,7 +930,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Decline Push-up",
+              "name": "Flexiones Declinadas",
               "muscles": "pectoral superior",
               "sets": 3,
               "reps": "10-12",
@@ -942,7 +942,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Sphinx Push-up",
+              "name": "Flexiones Esfinge",
               "muscles": "tríceps",
               "sets": 3,
               "reps": "10-12",
@@ -1015,7 +1015,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Cat-Cow",
+              "name": "Gato-Vaca",
               "muscles": "columna",
               "sets": 1,
               "reps": "",
@@ -1054,7 +1054,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Close Grip Pull-up",
+              "name": "Dominadas Agarre Cerrado",
               "muscles": "dorsal, bíceps",
               "sets": 4,
               "reps": "8-10",
@@ -1114,7 +1114,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging Leg Raise",
+              "name": "Elevación de Piernas Colgado",
               "muscles": "abdomen",
               "sets": 3,
               "reps": "8-12",
@@ -1187,7 +1187,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Leg Swings",
+              "name": "Balanceos de Pierna",
               "muscles": "cadera, isquios",
               "sets": 1,
               "reps": "",
@@ -1213,7 +1213,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Bulgarian Split Squat",
+              "name": "Sentadilla Búlgara",
               "muscles": "cuádriceps, glúteos",
               "sets": 4,
               "reps": "8-10 c/lado",
@@ -1261,7 +1261,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Calf Raise Unilateral",
+              "name": "Elevación de Gemelo Unilateral",
               "muscles": "gemelos",
               "sets": 3,
               "reps": "12-15 c/lado",
@@ -1273,7 +1273,7 @@
             },
             {
               "sort_order": 9,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "muscles": "abdomen",
               "sets": 3,
               "reps": "12-15",
@@ -1345,7 +1345,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Wrist Mobility Routine",
+              "name": "Rutina de Movilidad de Muñecas",
               "muscles": "muñecas",
               "sets": 1,
               "reps": "",
@@ -1420,7 +1420,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Wide Push-up",
+              "name": "Flexiones Agarre Ancho",
               "muscles": "pectoral",
               "sets": 3,
               "reps": "12-15",
@@ -1493,7 +1493,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -1506,7 +1506,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Cat-Cow",
+              "name": "Gato-Vaca",
               "muscles": "columna",
               "sets": 1,
               "reps": "",
@@ -1532,7 +1532,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Wide Grip Pull-up",
+              "name": "Dominadas Agarre Ancho",
               "muscles": "dorsal ancho",
               "sets": 4,
               "reps": "6-10",
@@ -1556,7 +1556,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Australian Pull-up",
+              "name": "Remo Australiano",
               "muscles": "romboides, bíceps",
               "sets": 3,
               "reps": "12-15",
@@ -1593,7 +1593,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Ab Wheel Rollout",
+              "name": "Rueda Abdominal (Rollout)",
               "muscles": "abdomen, core",
               "sets": 3,
               "reps": "8-12",
@@ -1661,7 +1661,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -1687,7 +1687,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "muscles": "cadena posterior, hombros",
               "sets": 1,
               "reps": "",
@@ -1700,7 +1700,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Archer Push-up",
+              "name": "Flexiones Arquero",
               "muscles": "pectoral, tríceps",
               "sets": 4,
               "reps": "5-8 c/lado",
@@ -1736,7 +1736,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Diamond Push-up",
+              "name": "Flexiones Diamante",
               "muscles": "tríceps, pectoral interno",
               "sets": 3,
               "reps": "12-15",
@@ -1748,7 +1748,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Decline Push-up",
+              "name": "Flexiones Declinadas",
               "muscles": "pectoral superior",
               "sets": 3,
               "reps": "12-15",
@@ -1760,7 +1760,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Sphinx Push-up",
+              "name": "Flexiones Esfinge",
               "muscles": "tríceps",
               "sets": 3,
               "reps": "10-15",
@@ -1833,7 +1833,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Cat-Cow",
+              "name": "Gato-Vaca",
               "muscles": "columna",
               "sets": 1,
               "reps": "",
@@ -1872,7 +1872,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Archer Pull-up",
+              "name": "Dominadas Arquero",
               "muscles": "Dorsal, bíceps, core",
               "sets": 4,
               "reps": "5-8",
@@ -1884,7 +1884,7 @@
             },
             {
               "sort_order": 5,
-              "name": "Close Grip Pull-up",
+              "name": "Dominadas Agarre Cerrado",
               "muscles": "bíceps, dorsal",
               "sets": 4,
               "reps": "8-10",
@@ -1932,7 +1932,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging Leg Raise",
+              "name": "Elevación de Piernas Colgado",
               "muscles": "abdomen",
               "sets": 3,
               "reps": "10-15",
@@ -2005,7 +2005,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Leg Swings",
+              "name": "Balanceos de Pierna",
               "muscles": "cadera, isquios",
               "sets": 1,
               "reps": "",
@@ -2031,7 +2031,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Bulgarian Split Squat",
+              "name": "Sentadilla Búlgara",
               "muscles": "cuádriceps, glúteos",
               "sets": 4,
               "reps": "8-12 c/lado",
@@ -2067,7 +2067,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Reverse Lunge",
+              "name": "Zancada Inversa",
               "muscles": "cuádriceps, glúteos",
               "sets": 3,
               "reps": "10-12 c/lado",
@@ -2079,7 +2079,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Glute Bridge Unilateral",
+              "name": "Puente de Glúteo Unilateral",
               "muscles": "glúteos",
               "sets": 3,
               "reps": "12-15 c/lado",
@@ -2091,7 +2091,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Calf Raise Unilateral",
+              "name": "Elevación de Gemelo Unilateral",
               "muscles": "gemelos",
               "sets": 3,
               "reps": "15-20 c/lado",
@@ -2103,7 +2103,7 @@
             },
             {
               "sort_order": 10,
-              "name": "Ab Wheel Rollout",
+              "name": "Rueda Abdominal (Rollout)",
               "muscles": "abdomen, core",
               "sets": 3,
               "reps": "10-12",
@@ -2163,7 +2163,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Wrist Mobility Routine",
+              "name": "Rutina de Movilidad de Muñecas",
               "muscles": "muñecas",
               "sets": 1,
               "reps": "",
@@ -2202,7 +2202,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Archer Push-up",
+              "name": "Flexiones Arquero",
               "muscles": "pectoral, tríceps",
               "sets": 4,
               "reps": "5-8 c/lado",
@@ -2239,7 +2239,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Decline Push-up",
+              "name": "Flexiones Declinadas",
               "muscles": "pectoral superior",
               "sets": 4,
               "reps": "12-15",
@@ -2251,7 +2251,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Diamond Push-up",
+              "name": "Flexiones Diamante",
               "muscles": "tríceps",
               "sets": 4,
               "reps": "12-15",
@@ -2263,7 +2263,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Side Plank",
+              "name": "Plancha Lateral",
               "muscles": "oblicuos, core",
               "sets": 3,
               "reps": "30-40 seg c/lado",
@@ -2324,7 +2324,7 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Arm Circles",
+              "name": "Círculos de Brazos",
               "muscles": "hombros",
               "sets": 1,
               "reps": "",
@@ -2337,7 +2337,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Cat-Cow",
+              "name": "Gato-Vaca",
               "muscles": "columna",
               "sets": 1,
               "reps": "",
@@ -2363,7 +2363,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Archer Pull-up",
+              "name": "Dominadas Arquero",
               "muscles": "Dorsal, bíceps, core",
               "sets": 4,
               "reps": "5-8",
@@ -2387,7 +2387,7 @@
             },
             {
               "sort_order": 6,
-              "name": "Australian Pull-up",
+              "name": "Remo Australiano",
               "muscles": "romboides, bíceps",
               "sets": 3,
               "reps": "12-15",

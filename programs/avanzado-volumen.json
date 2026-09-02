@@ -120,7 +120,7 @@
             {
               "sort_order": 8,
               "exercise_id": "tiger_bend_pushup",
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "muscles": "Tríceps, deltoides, pecho",
               "sets": 3,
               "reps": "6-8",
@@ -206,7 +206,7 @@
             {
               "sort_order": 3,
               "exercise_id": "cat_cow",
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "muscles": "Columna torácica, core",
               "sets": 1,
               "reps": "",
@@ -219,7 +219,7 @@
             {
               "sort_order": 4,
               "exercise_id": "archer_pull_up",
-              "name": "Archer Pull-up",
+              "name": "Dominadas Arquero",
               "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 4,
               "reps": "6-8",
@@ -353,7 +353,7 @@
             {
               "sort_order": 3,
               "exercise_id": "inchworm",
-              "name": "Inchworm",
+              "name": "Oruga",
               "muscles": "Isquiotibiales, core, hombros",
               "sets": 1,
               "reps": "",
@@ -537,7 +537,7 @@
             {
               "sort_order": 4,
               "exercise_id": "pike_hspu",
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "muscles": "Deltoides anterior y medio, tríceps, trapecio",
               "sets": 5,
               "reps": "6-8",
@@ -574,7 +574,7 @@
             {
               "sort_order": 7,
               "exercise_id": "sphinx_pushup",
-              "name": "Sphinx push-up",
+              "name": "Flexiones Esfinge",
               "muscles": "Tríceps, deltoides anterior",
               "sets": 3,
               "reps": "8-10",
@@ -660,7 +660,7 @@
             {
               "sort_order": 2,
               "exercise_id": "cat_cow",
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "muscles": "Columna, movilidad torácica",
               "sets": 1,
               "reps": "",
@@ -930,7 +930,7 @@
             {
               "sort_order": 11,
               "exercise_id": "windshield_wipers",
-              "name": "Windshield wipers",
+              "name": "Limpiaparabrisas",
               "muscles": "Oblicuos, recto abdominal, core rotacional",
               "sets": 3,
               "reps": "6-8 c/lado",
@@ -1049,7 +1049,7 @@
             {
               "sort_order": 5,
               "exercise_id": "one_arm_prog",
-              "name": "One-arm push-up progresión",
+              "name": "Progresión de Flexión a Un Brazo",
               "muscles": "Pecho unilateral, tríceps, core anti-rotación",
               "sets": 4,
               "reps": "4-5 c/lado",
@@ -1073,7 +1073,7 @@
             {
               "sort_order": 7,
               "exercise_id": "tiger_bend_pushup",
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "muscles": "Tríceps, deltoides, pecho",
               "sets": 3,
               "reps": "6-8",
@@ -1184,7 +1184,7 @@
             {
               "sort_order": 4,
               "exercise_id": "archer_pull_up",
-              "name": "Archer Pull-up",
+              "name": "Dominadas Arquero",
               "muscles": "Dorsales, bíceps, core (unilateral)",
               "sets": 5,
               "reps": "5-6",
@@ -1319,7 +1319,7 @@
             {
               "sort_order": 3,
               "exercise_id": "inchworm",
-              "name": "Inchworm",
+              "name": "Oruga",
               "muscles": "Isquiotibiales, core, hombros",
               "sets": 1,
               "reps": "",
@@ -1404,7 +1404,7 @@
             {
               "sort_order": 10,
               "exercise_id": "v_ups",
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "muscles": "Recto abdominal, flexores de cadera",
               "sets": 3,
               "reps": "12-15",
@@ -1553,7 +1553,7 @@
             {
               "sort_order": 8,
               "exercise_id": "sphinx_pushup",
-              "name": "Sphinx push-up",
+              "name": "Flexiones Esfinge",
               "muscles": "Tríceps, deltoides",
               "sets": 4,
               "reps": "8-10",
@@ -1626,7 +1626,7 @@
             {
               "sort_order": 2,
               "exercise_id": "cat_cow",
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "muscles": "Columna, movilidad",
               "sets": 1,
               "reps": "",
@@ -1652,7 +1652,7 @@
             {
               "sort_order": 4,
               "exercise_id": "one_arm_pullup_prog",
-              "name": "One-arm pull-up progresión",
+              "name": "Progresión de Dominada a Un Brazo",
               "muscles": "Dorsales, bíceps, braquial, core",
               "sets": 5,
               "reps": "3-4 c/lado",
@@ -1873,7 +1873,7 @@
             {
               "sort_order": 9,
               "exercise_id": "windshield_wipers",
-              "name": "Windshield wipers",
+              "name": "Limpiaparabrisas",
               "muscles": "Oblicuos, core rotacional",
               "sets": 3,
               "reps": "6-8 c/lado",
@@ -2006,7 +2006,7 @@
             {
               "sort_order": 4,
               "exercise_id": "one_arm_prog",
-              "name": "One-arm push-up progresión",
+              "name": "Progresión de Flexión a Un Brazo",
               "muscles": "Pecho unilateral, tríceps, core anti-rotación",
               "sets": 5,
               "reps": "3-5 c/lado",
@@ -2042,7 +2042,7 @@
             {
               "sort_order": 7,
               "exercise_id": "tiger_bend_pushup",
-              "name": "Tiger bend push-up",
+              "name": "Flexiones Tiger Bend",
               "muscles": "Tríceps, deltoides, pecho",
               "sets": 5,
               "reps": "8-10",
@@ -2128,7 +2128,7 @@
             {
               "sort_order": 3,
               "exercise_id": "cat_cow",
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "muscles": "Columna, movilidad",
               "sets": 1,
               "reps": "",
@@ -2166,7 +2166,7 @@
             {
               "sort_order": 6,
               "exercise_id": "one_arm_pullup_prog",
-              "name": "One-arm pull-up progresión",
+              "name": "Progresión de Dominada a Un Brazo",
               "muscles": "Dorsales, bíceps, braquial, core",
               "sets": 5,
               "reps": "2-3 c/lado",
@@ -2276,7 +2276,7 @@
             {
               "sort_order": 3,
               "exercise_id": "inchworm",
-              "name": "Inchworm",
+              "name": "Oruga",
               "muscles": "Isquiotibiales, core",
               "sets": 1,
               "reps": "",
@@ -2361,7 +2361,7 @@
             {
               "sort_order": 10,
               "exercise_id": "ab_wheel_rollout",
-              "name": "Ab wheel rollout",
+              "name": "Rueda Abdominal (Rollout)",
               "muscles": "Core completo, dorsales, hombros",
               "sets": 3,
               "reps": "8-10",
@@ -2486,7 +2486,7 @@
             {
               "sort_order": 6,
               "exercise_id": "one_arm_actual",
-              "name": "One-arm push-up",
+              "name": "Flexión a Un Brazo",
               "muscles": "Pecho unilateral, tríceps, core anti-rotación",
               "sets": 5,
               "reps": "3-5 c/lado",
@@ -2583,7 +2583,7 @@
             {
               "sort_order": 2,
               "exercise_id": "cat_cow",
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "muscles": "Columna, movilidad",
               "sets": 1,
               "reps": "",
@@ -2634,7 +2634,7 @@
             {
               "sort_order": 6,
               "exercise_id": "one_arm_pullup_prog",
-              "name": "One-arm pull-up progresión",
+              "name": "Progresión de Dominada a Un Brazo",
               "muscles": "Dorsales, bíceps, braquial, core",
               "sets": 5,
               "reps": "2-3 c/lado",
@@ -2817,7 +2817,7 @@
             {
               "sort_order": 9,
               "exercise_id": "windshield_wipers",
-              "name": "Windshield wipers",
+              "name": "Limpiaparabrisas",
               "muscles": "Oblicuos, core rotacional",
               "sets": 3,
               "reps": "8-10 c/lado",
