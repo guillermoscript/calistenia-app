@@ -1580,7 +1580,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Front Lever Tucked",
+              "name": {
+                "es": "Front Lever Agrupado",
+                "en": "Front Lever Tucked"
+              },
               "muscles": "dorsal, core, hombros",
               "sets": 3,
               "reps": "10-15 seg",
@@ -2399,7 +2402,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Front Lever Tucked",
+              "name": {
+                "es": "Front Lever Agrupado",
+                "en": "Front Lever Tucked"
+              },
               "muscles": "dorsal, core",
               "sets": 3,
               "reps": "15-20 seg",
