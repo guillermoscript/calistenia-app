@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
-import { registerRoute } from 'workbox-routing'
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
+import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
@@ -9,6 +9,48 @@ declare let self: ServiceWorkerGlobalScope
 // Precache all assets injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
+
+// ── Navegaciones de la SPA (#690) ────────────────────────────────────────────
+//
+// Sin esto solo `/` se servía del precache (workbox lo resuelve a `index.html`
+// por `directoryIndex`) y CUALQUIER otra ruta —`/session`, `/nutrition`,
+// `/profile`— se iba a la red. Es decir: quien abría la PWA instalada veía el
+// index VIEJO y quien entraba por un enlace profundo veía el NUEVO, con lo que
+// el mismo usuario mezclaba dos bundles según por dónde entrase.
+//
+// Ahora todas las navegaciones salen del mismo `index.html` precacheado: la app
+// es coherentemente vieja hasta que el worker nuevo releva, y coherentemente
+// nueva después. Quien decide cuándo ocurre ese relevo es `main.tsx`.
+//
+// Va DESPUÉS de `precacheAndRoute` a propósito (workbox resuelve en orden de
+// registro): las URLs que sí están precacheadas —`/privacy.html`,
+// `/delete-account.html`, `/oauth-bridge.html`— las sigue atendiendo el
+// precache con su contenido real, no con el shell.
+const NAVIGATION_DENYLIST = [
+  // PocketBase: API y panel de admin.
+  /^\/api\//,
+  /^\/_\//,
+  // Servidor de IA (chat MCP).
+  /^\/mcp(\/|$)/,
+  // Blog pre-renderizado. `scripts/prerender-blog.mjs` corre DESPUÉS de
+  // `vite build`, así que su HTML no entra en el manifiesto del precache:
+  // servir el shell aquí se cargaría el prerender.
+  /^\/blog(\/|$)/,
+  // Generados por ese mismo script, y por tanto tampoco precacheados.
+  /^\/sitemap\.xml$/,
+  /^\/robots\.txt$/,
+  // Assets con hash del build.
+  /^\/assets\//,
+  // Cualquier cosa con extensión (iconos, media de ejercicios, las páginas
+  // sueltas de `public/`): nunca es una ruta de la SPA.
+  /\/[^/?]+\.[^/?]+$/,
+]
+
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL('index.html'), {
+    denylist: NAVIGATION_DENYLIST,
+  })
+)
 
 // Google Fonts — CacheFirst, 1 year
 registerRoute(
@@ -34,12 +76,29 @@ registerRoute(
 // (packages/core/lib/app-config.ts), así que NetworkOnly no lo deja sin datos.
 registerRoute(/\/api\/app-config/i, new NetworkOnly())
 
-// API calls — NetworkFirst, 5s timeout, 1 day cache
+// Realtime de PocketBase (#690) — igual que app-config, NUNCA pasa por caché, y
+// por el mismo motivo va ANTES de la regla genérica de /api/.
+//
+// `/api/realtime` es un GET a un `text/event-stream` que NO termina nunca: es la
+// suscripción viva. La regla genérica lo trataba como una respuesta normal, así
+// que lo hacía competir contra su propio `networkTimeoutSeconds: 5` —a los 5 s
+// una suscripción recién abierta ya cuenta como «red lenta»— e intentaba meter
+// un flujo infinito en `cache.put`. Un stream que no acaba no se puede cachear.
+registerRoute(/\/api\/realtime/i, new NetworkOnly())
+
+// API calls — NetworkFirst, 5s timeout.
+//
+// 5 min de caché, no 24 h (#690): quien manda offline es React Query con su
+// caché persistida (`gcTime` de 24 h, packages/core/lib/query-client.ts), y
+// ESTA caché queda por debajo de aquella. Con un día de vida servía respuestas
+// rancias por detrás de React Query, y fue una de las vías por las que prod
+// seguía pintando como viejas filas que ya se habían reparado. 5 min cubren su
+// verdadero trabajo —un bache de red— sin sobrevivir a un arreglo de datos.
 registerRoute(
   /\/api\/.*/i,
   new NetworkFirst({
     cacheName: 'api-cache',
-    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 86400 })],
+    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 300 })],
     networkTimeoutSeconds: 5,
   })
 )
