@@ -39,8 +39,10 @@ import { STRENGTH_ACTIVE_KEY as STORAGE_KEY } from '../../lib/storage-keys'
 import {
   scheduleActiveSessionPush, flushActiveSessionPush, pushActiveSessionNow,
   fetchRemoteActiveSession, clearRemoteActiveSession,
+  type RemoteActiveSession,
 } from '../../lib/activeSessionSync'
 import { storage, lifecycle } from '../../platform'
+import { normalizeRestoredWorkout } from './normalizeRestoredWorkout'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -192,7 +194,8 @@ interface RestoredStrengthSession {
   expired: PersistedStrengthSession | null
 }
 
-function loadFromStorage(): RestoredStrengthSession {
+/** Exportada sólo para testear la restauración sin montar el hook (#690). */
+export function loadFromStorage(): RestoredStrengthSession {
   const nothing: RestoredStrengthSession = { session: null, expired: null }
   try {
     const raw = storage.getItem(STORAGE_KEY)
@@ -208,7 +211,12 @@ function loadFromStorage(): RestoredStrengthSession {
       storage.removeItem(STORAGE_KEY)
       return { session: null, expired: data }
     }
-    return { session: data, expired: null }
+    // El entreno persistido es un SNAPSHOT: nadie vuelve a consultar el
+    // programa mientras dura la sesión, así que una sesión empezada antes del
+    // despliegue arrastraría los nombres crudos («arm_circles») y la falta de
+    // cronómetro que arregló el #690 hasta terminarla o caducar. Se repasa aquí,
+    // al restaurar; `id` se queda intacto (es la clave de series y PRs).
+    return { session: { ...data, workout: normalizeRestoredWorkout(data.workout) }, expired: null }
   } catch {
     storage.removeItem(STORAGE_KEY)
     return nothing
@@ -217,6 +225,24 @@ function loadFromStorage(): RestoredStrengthSession {
 
 function clearStorage() {
   try { storage.removeItem(STORAGE_KEY) } catch {}
+}
+
+/**
+ * La sesión que viene del server, repasada antes de adoptarla (#690).
+ *
+ * `active_sessions` guarda el MISMO snapshot congelado que el storage local —se
+ * sube tal cual—, así que una sesión empezada antes del despliegue arrastra por
+ * ahí los nombres crudos y la falta de cronómetro. Sin este repaso, reanudar en
+ * el otro dispositivo reintroduciría lo que acabamos de curar al restaurar.
+ *
+ * Devuelve el MISMO objeto si no hubo nada que corregir. Exportada sólo para
+ * poder testear la adopción sin montar el hook.
+ */
+export function normalizeRemoteSession(
+  remote: RemoteActiveSession<Workout, SessionProgress>,
+): RemoteActiveSession<Workout, SessionProgress> {
+  const workout = normalizeRestoredWorkout(remote.workout)
+  return workout === remote.workout ? remote : { ...remote, workout }
 }
 
 // ── Hook ────────────────────────────────────────────────────────────────────
@@ -469,6 +495,10 @@ export function useActiveSessionState({
         if (remote.workoutKey !== workoutKeyRef.current) return
         if (remote.savedAt <= savedAtRef.current) return
       }
+      // Repasado igual que al restaurar del storage: la copia del server es el
+      // mismo snapshot congelado y arrastra los mismos nombres crudos y la
+      // misma falta de cronómetro (#690).
+      const adopted = normalizeRemoteSession(remote)
       workoutKeyRef.current = remote.workoutKey
       startedAtRef.current = remote.startedAt
       savedAtRef.current = remote.savedAt
@@ -476,14 +506,14 @@ export function useActiveSessionState({
       // Adoptar es empezar a llevar OTRA sesión: el pestillo del desenlace de
       // la anterior no puede seguir armado o esta se quedaría sin evento final.
       outcomeRef.current = null
-      setWorkout(remote.workout)
+      setWorkout(adopted.workout)
       setSource(remote.source)
       setProgressState(remote.progress)
       setSectionStartTime(remote.sectionStartTime)
       setIsActive(true)
       setResumeEpoch(n => n + 1)
       saveToStorage({
-        workout: remote.workout, workoutKey: remote.workoutKey, source: remote.source,
+        workout: adopted.workout, workoutKey: remote.workoutKey, source: remote.source,
         progress: remote.progress, startedAt: remote.startedAt,
         sectionStartTime: remote.sectionStartTime, savedAt: remote.savedAt,
       })

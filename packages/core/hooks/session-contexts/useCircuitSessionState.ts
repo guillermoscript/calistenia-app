@@ -26,6 +26,7 @@ import {
   migrateLegacyCircuitQueue,
 } from '../../lib/circuitSessionQueue'
 import { getPlatform, storage, lifecycle } from '../../platform'
+import { normalizeRestoredCircuit } from './normalizeRestoredWorkout'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -122,7 +123,12 @@ function loadFromStorage(): PersistedCircuitSession | null {
       storage.removeItem(STORAGE_KEY)
       return null
     }
-    return data
+    // El circuito persistido es un SNAPSHOT: nadie vuelve a consultar el
+    // programa mientras dura la sesión, así que uno empezado antes del
+    // despliegue arrastraría los nombres crudos («arm_circles») y las
+    // estaciones sin trabajo que cronometrar que arregló el #690. Se repasa al
+    // restaurar; `exerciseId` no se toca.
+    return { ...data, circuit: normalizeRestoredCircuit(data.circuit) }
   } catch {
     storage.removeItem(STORAGE_KEY)
     return null
