@@ -1211,7 +1211,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Skater Jumps",
+              "name": {
+                "es": "Saltos de Patinador",
+                "en": "Skater Jumps"
+              },
               "muscles": "Glúteo medio, equilibrio, cardio",
               "sets": 4,
               "reps": "10 por lado",
@@ -2064,7 +2067,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Skater Jumps",
+              "name": {
+                "es": "Saltos de Patinador",
+                "en": "Skater Jumps"
+              },
               "muscles": "Glúteo medio, cardio",
               "sets": 4,
               "reps": "12 por lado",
