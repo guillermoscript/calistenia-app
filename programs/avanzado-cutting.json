@@ -745,7 +745,8 @@
               "reps": "30-45s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Pecho a la pared. Aprieta glúteos, empuja el suelo. Busca 45s sólidos."
             },
             {
@@ -757,7 +758,8 @@
               "reps": "15-20s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Protrae escápulas, inclina hombros frente a las manos. Cuerpo recto."
             },
             {
@@ -769,7 +771,8 @@
               "reps": "15-20s",
               "rest_seconds": 40,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "En paralelas o suelo. Piernas rectas, empuja el suelo fuerte."
             },
             {
@@ -781,7 +784,8 @@
               "reps": "12-15s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 15,
               "note": "Rodillas al pecho, cuerpo horizontal. Aprieta dorsales."
             },
             {
@@ -1612,7 +1616,8 @@
               "reps": "20-30s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Progresión de pared a libre. Kick-up controlado, busca equilibrio con los dedos."
             },
             {
@@ -1624,7 +1629,8 @@
               "reps": "20-25s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 25,
               "note": "Más tiempo que Fase 1. Hombros más adelante de las manos."
             },
             {
@@ -1636,7 +1642,8 @@
               "reps": "10-12s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 12,
               "note": "Progresión de tuck a single leg. Una pierna extendida, otra al pecho."
             },
             {
@@ -1648,7 +1655,8 @@
               "reps": "10-15s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 15,
               "note": "Desde skin the cat, extiende a horizontal. Posición tuck o piernas rectas."
             },
             {
@@ -2479,7 +2487,8 @@
               "reps": "30-45s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Objetivo: 45s sin pared. Controla con dedos y palma."
             },
             {
@@ -2491,7 +2500,8 @@
               "reps": "25-30s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Máximo tiempo del programa. Hombros bien adelante. Protrae fuerte."
             },
             {
@@ -2503,7 +2513,8 @@
               "reps": "12-15s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 15,
               "note": "Más tiempo que Fase 2. Busca extender ambas piernas."
             },
             {
@@ -2515,7 +2526,8 @@
               "reps": "15-20s",
               "rest_seconds": 45,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Piernas rectas si es posible. Aprieta glúteos, hombros deprimidos."
             },
             {

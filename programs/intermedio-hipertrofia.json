@@ -435,7 +435,8 @@
               "reps": "20-30 seg",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Lumbar pegada al suelo, apretar abdomen",
               "exercise_id": "hollow_hold"
             },
@@ -447,7 +448,8 @@
               "reps": "30-45 seg",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Activar glúteos y abdomen, no hundir cadera",
               "exercise_id": "plank"
             },
@@ -619,7 +621,8 @@
               "reps": "20-30 seg c/lado",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Cadera alta, apretar oblicuo",
               "exercise_id": "side_plank"
             },
@@ -957,7 +960,8 @@
               "reps": "15-20 seg",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Empujar fuerte contra paralelas",
               "exercise_id": "lsit_prog"
             },
@@ -1434,7 +1438,8 @@
               "reps": "20-30 seg",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Empujar fuerte contra el suelo, activar core",
               "exercise_id": "handstand_wall"
             },
@@ -1581,7 +1586,8 @@
               "reps": "10-15 seg",
               "rest_seconds": 75,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 15,
               "note": "Mantener posición, activar dorsales y core",
               "exercise_id": "front_lever_tuck"
             },
@@ -1772,7 +1778,8 @@
               "reps": "20-30 seg",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Mantener posición, empujar fuerte",
               "exercise_id": "lsit_30s"
             },
@@ -2213,7 +2220,8 @@
               "reps": "30-45 seg",
               "rest_seconds": 75,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Empujar fuerte, activar core, buscar despegar pies",
               "exercise_id": "handstand_wall"
             },
@@ -2261,7 +2269,8 @@
               "reps": "30-40 seg c/lado",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 40,
               "note": "Cadera alta, elevar pierna arriba para más dificultad",
               "exercise_id": "side_plank"
             },
@@ -2396,7 +2405,8 @@
               "reps": "15-20 seg",
               "rest_seconds": 75,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Extender piernas si es posible, activar dorsal",
               "exercise_id": "front_lever_tuck"
             },

@@ -594,7 +594,8 @@
               "reps": "15-20s",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "En paralelas, mantener piernas elevadas",
               "exercise_id": "lsit_prog"
             },
@@ -753,7 +754,8 @@
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Finisher cardio, máxima velocidad",
               "exercise_id": "high_knees"
             },
@@ -896,7 +898,8 @@
               "reps": "45s",
               "rest_seconds": 30,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Apretar glúteos y abdomen",
               "exercise_id": "plank"
             },
@@ -1409,7 +1412,8 @@
               "reps": "20-30s",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Panza a la pared, apretar core",
               "exercise_id": "handstand_wall"
             },
@@ -1592,7 +1596,8 @@
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Finisher final, dar todo",
               "exercise_id": "high_knees"
             },
@@ -2113,7 +2118,8 @@
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Finisher cardio final",
               "exercise_id": "high_knees"
             },
@@ -2260,7 +2266,8 @@
               "reps": "30-40s",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 40,
               "note": "Más tiempo que fase 2, panza a pared",
               "exercise_id": "handstand_wall"
             },
@@ -2272,7 +2279,8 @@
               "reps": "20-30s",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Progresión: mantener más tiempo",
               "exercise_id": "lsit_prog"
             },
@@ -2284,7 +2292,8 @@
               "reps": "15-20s",
               "rest_seconds": 45,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Habilidad + core, mantener posición",
               "exercise_id": "crow_pose"
             },
@@ -2455,7 +2464,8 @@
               "reps": "30s",
               "rest_seconds": 30,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Espalda baja pegada al suelo",
               "exercise_id": "hollow_hold"
             },
@@ -2467,7 +2477,8 @@
               "reps": "45s",
               "rest_seconds": 30,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Finisher final del programa. Darlo TODO",
               "exercise_id": "high_knees"
             },
