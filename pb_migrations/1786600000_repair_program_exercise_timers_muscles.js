@@ -12,7 +12,7 @@
  *     `reps` («30-45 seg») pero con `is_timer:false` y `timer_seconds:0`. La
  *     pantalla de sesión solo pinta la cuenta atrás cuando `is_timer` es true,
  *     así que el usuario leía «30-45 seg» y no tenía ningún temporizador que
- *     arrancar: la plancha se hacía a ojo. 68 filas en producción, repartidas
+ *     arrancar: la plancha se hacía a ojo. 60 filas en producción (medido el 2026-09-02; otras 8 con «6x10s hold» o notas de tempo se dejan a propósito), repartidas
  *     por 11 de los 15 programas oficiales (y sus copias de usuario).
  *
  * (b) MÚSCULOS. Otras filas llevan tokens de máquina en `muscles` («core,
