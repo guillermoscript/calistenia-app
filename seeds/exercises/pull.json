@@ -11,7 +11,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Dead Hang", "en": "Dead Hang" },
+          "name": { "es": "Suspensión en Barra", "en": "Dead Hang" },
           "slug": "dead-hang",
           "description": {
             "es": "Agarre pasivo colgado de la barra con brazos completamente extendidos. Trabaja fuerza de agarre y descompresión espinal.",
@@ -138,7 +138,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Neutral Grip Pull-up", "en": "Neutral Grip Pull-up" },
+          "name": { "es": "Dominadas Agarre Neutro", "en": "Neutral Grip Pull-up" },
           "slug": "neutral-grip-pull-up",
           "description": {
             "es": "Dominada con palmas enfrentadas en agarre neutro. Mas amigable con los hombros y enfatiza el braquial.",
@@ -198,7 +198,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Ring Pull-up", "en": "Ring Pull-up" },
+          "name": { "es": "Dominadas en Anillas", "en": "Ring Pull-up" },
           "slug": "ring-pull-up",
           "description": {
             "es": "Dominada en anillas que permite rotacion libre de las munyecas. Requiere mayor estabilizacion que en barra fija.",
@@ -318,7 +318,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Archer Pull-up", "en": "Archer Pull-up" },
+          "name": { "es": "Dominadas Arquero", "en": "Archer Pull-up" },
           "slug": "archer-pull-up",
           "description": {
             "es": "Dominada donde un brazo tira mientras el otro se extiende lateralmente. Carga la mayor parte del peso en un lado.",
@@ -358,7 +358,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "One-Arm Pull-up", "en": "One-Arm Pull-up" },
+          "name": { "es": "Dominada a Un Brazo (pronación)", "en": "One-Arm Pull-up" },
           "slug": "one-arm-pull-up",
           "description": {
             "es": "Dominada completa con un solo brazo. Uno de los movimientos de tiron mas avanzados en calistenia.",
@@ -498,7 +498,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Ring Row", "en": "Ring Row" },
+          "name": { "es": "Remo en Anillas", "en": "Ring Row" },
           "slug": "ring-row",
           "description": {
             "es": "Remo horizontal en anillas con el cuerpo inclinado. Ajusta la dificultad cambiando el angulo del cuerpo.",

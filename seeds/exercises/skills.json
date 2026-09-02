@@ -18,7 +18,7 @@
       "exercises": [
         {
           "name": {
-            "es": "Wall Plank (pecho a pared)",
+            "es": "Plancha en Pared (pecho a la pared)",
             "en": "Wall Plank (chest to wall)"
           },
           "slug": "wall-plank-chest-to-wall",
@@ -1085,7 +1085,7 @@
         },
         {
           "name": {
-            "es": "Side Crow",
+            "es": "Cuervo Lateral",
             "en": "Side Crow"
           },
           "slug": "side-crow",
@@ -1337,7 +1337,7 @@
         },
         {
           "name": {
-            "es": "Ring Turned Out Support",
+            "es": "Sostén en Anillas con Agarre Rotado (RTO)",
             "en": "Ring Turned Out Support"
           },
           "slug": "ring-turned-out-support",

@@ -256,7 +256,7 @@
         },
         {
           "name": {
-            "es": "Crab Walk",
+            "es": "Marcha del Cangrejo",
             "en": "Crab Walk"
           },
           "slug": "crab-walk",
@@ -308,7 +308,7 @@
         },
         {
           "name": {
-            "es": "Shuttle Run",
+            "es": "Carrera de Ida y Vuelta",
             "en": "Shuttle Run"
           },
           "slug": "shuttle-run",

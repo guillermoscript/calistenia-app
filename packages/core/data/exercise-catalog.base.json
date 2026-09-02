@@ -12,7 +12,7 @@
         {
           "id": "ab_wheel_rollout",
           "name": {
-            "es": "Ab Wheel Rollout",
+            "es": "Rueda Abdominal (Rollout)",
             "en": "Ab Wheel Rollout"
           },
           "muscles": {
@@ -41,7 +41,7 @@
         {
           "id": "incline_plank_with_alternate_floor_touch",
           "name": {
-            "es": "Ball crunches",
+            "es": "Crunch en Fitball",
             "en": "Ball crunches"
           },
           "muscles": {
@@ -74,7 +74,7 @@
         {
           "id": "biceps_curl_cable",
           "name": {
-            "es": "Biceps Curl With Cable",
+            "es": "Curl de Bíceps en Polea",
             "en": "Biceps Curl With Cable"
           },
           "muscles": {
@@ -114,7 +114,7 @@
         {
           "id": "leg_curls_laying",
           "name": {
-            "es": "Chin-ups",
+            "es": "Dominadas Supinas",
             "en": "Chin-ups"
           },
           "muscles": {
@@ -216,7 +216,7 @@
         {
           "id": "hanging_knee_raise",
           "name": {
-            "es": "Hanging Knee Raise",
+            "es": "Elevación de Rodillas Colgado",
             "en": "Hanging Knee Raise"
           },
           "muscles": {
@@ -245,7 +245,7 @@
         {
           "id": "hanging_leg_raise",
           "name": {
-            "es": "Hanging Leg Raise",
+            "es": "Elevación de Piernas Colgado",
             "en": "Hanging Leg Raise"
           },
           "muscles": {
@@ -332,7 +332,7 @@
         {
           "id": "mountain_climbers",
           "name": {
-            "es": "Mountain Climbers",
+            "es": "Escaladores",
             "en": "Mountain Climbers"
           },
           "muscles": {
@@ -361,7 +361,7 @@
         {
           "id": "plank",
           "name": {
-            "es": "Plank",
+            "es": "Plancha",
             "en": "Plank"
           },
           "muscles": {
@@ -420,7 +420,7 @@
         {
           "id": "side_plank",
           "name": {
-            "es": "Side Plank",
+            "es": "Plancha Lateral",
             "en": "Side Plank"
           },
           "muscles": {
@@ -450,7 +450,7 @@
         {
           "id": "v_ups",
           "name": {
-            "es": "V-ups",
+            "es": "Abdominales en V",
             "en": "V-ups"
           },
           "muscles": {
@@ -479,7 +479,7 @@
         {
           "id": "windshield_wipers",
           "name": {
-            "es": "Windshield Wipers",
+            "es": "Limpiaparabrisas",
             "en": "Windshield Wipers"
           },
           "muscles": {
@@ -513,7 +513,7 @@
         {
           "id": "bear_crawl",
           "name": {
-            "es": "Bear Crawl",
+            "es": "Marcha del Oso",
             "en": "Bear Crawl"
           },
           "muscles": {
@@ -542,7 +542,7 @@
         {
           "id": "butterfly_reverse",
           "name": {
-            "es": "Braced Squat",
+            "es": "Sentadilla con Soporte",
             "en": "Braced Squat"
           },
           "muscles": {
@@ -606,7 +606,7 @@
         {
           "id": "lateral_raises",
           "name": {
-            "es": "Calf Raises on Hackenschmitt Machine",
+            "es": "Elevación de Gemelos en Máquina Hackenschmidt",
             "en": "Calf Raises on Hackenschmitt Machine"
           },
           "muscles": {
@@ -641,7 +641,7 @@
         {
           "id": "reverse_bar_curl",
           "name": {
-            "es": "Dumbbells on Scott Machine",
+            "es": "Curl con Mancuernas en Banco Scott",
             "en": "Dumbbells on Scott Machine"
           },
           "muscles": {
@@ -674,7 +674,7 @@
         {
           "id": "rear_delt_raises",
           "name": {
-            "es": "Fly With Cable",
+            "es": "Aperturas en Polea",
             "en": "Fly With Cable"
           },
           "muscles": {
@@ -710,7 +710,7 @@
         {
           "id": "high_knees",
           "name": {
-            "es": "High Knees",
+            "es": "Rodillas Altas",
             "en": "High Knees"
           },
           "muscles": {
@@ -739,7 +739,7 @@
         {
           "id": "axe_hold",
           "name": {
-            "es": "High Pull",
+            "es": "Tirón Alto",
             "en": "High Pull"
           },
           "muscles": {
@@ -774,7 +774,7 @@
         {
           "id": "jumping_jacks",
           "name": {
-            "es": "Jumping Jacks",
+            "es": "Saltos de Tijera",
             "en": "Jumping Jacks"
           },
           "muscles": {
@@ -803,7 +803,7 @@
         {
           "id": "hip_raise_lying",
           "name": {
-            "es": "Leg Raise",
+            "es": "Elevación de Piernas",
             "en": "Leg Raise"
           },
           "muscles": {
@@ -873,7 +873,7 @@
         {
           "id": "front_plate_raise",
           "name": {
-            "es": "Plate twist",
+            "es": "Giro con Disco",
             "en": "Plate twist"
           },
           "muscles": {
@@ -945,7 +945,7 @@
         {
           "id": "shoulder_shrug",
           "name": {
-            "es": "Tricep Pushdown on Cable",
+            "es": "Extensión de Tríceps en Polea",
             "en": "Tricep Pushdown on Cable"
           },
           "muscles": {
@@ -1043,7 +1043,7 @@
         {
           "id": "bulgarian",
           "name": {
-            "es": "Bulgarian Split Squat",
+            "es": "Sentadilla Búlgara",
             "en": "Bulgarian Split Squat"
           },
           "muscles": {
@@ -1072,7 +1072,7 @@
         {
           "id": "calf_uni",
           "name": {
-            "es": "Calf Raise Unilateral",
+            "es": "Elevación de Gemelo Unilateral",
             "en": "Unilateral Calf Raise"
           },
           "muscles": {
@@ -1101,7 +1101,7 @@
         {
           "id": "calf_raise",
           "name": {
-            "es": "Calf Raises",
+            "es": "Elevaciones de Gemelos",
             "en": "Calf Raises"
           },
           "muscles": {
@@ -1159,7 +1159,7 @@
         {
           "id": "jump_squat",
           "name": {
-            "es": "Jump Squat",
+            "es": "Sentadilla con Salto",
             "en": "Jump Squat"
           },
           "muscles": {
@@ -1362,7 +1362,7 @@
         {
           "id": "reverse_lunge",
           "name": {
-            "es": "Reverse Lunge",
+            "es": "Zancada Inversa",
             "en": "Reverse Lunge"
           },
           "muscles": {
@@ -1478,7 +1478,7 @@
         {
           "id": "single_rdl",
           "name": {
-            "es": "Single Leg RDL",
+            "es": "Peso Muerto Rumano a Una Pierna",
             "en": "Single Leg RDL"
           },
           "muscles": {
@@ -1594,7 +1594,7 @@
         {
           "id": "wger_1529",
           "name": {
-            "es": "Toes to bar",
+            "es": "Punteras a la Barra",
             "en": "Toes to bar"
           },
           "muscles": {
@@ -1629,7 +1629,7 @@
         {
           "id": "tuck_jumps",
           "name": {
-            "es": "Tuck Jumps",
+            "es": "Saltos Agrupados",
             "en": "Tuck Jumps"
           },
           "muscles": {
@@ -1750,7 +1750,7 @@
         {
           "id": "glute_activation_peak",
           "name": {
-            "es": "Glute Activation Peak",
+            "es": "Activación Máxima de Glúteo",
             "en": "Glute Activation Peak"
           },
           "muscles": {
@@ -1779,7 +1779,7 @@
         {
           "id": "glute_bridge",
           "name": {
-            "es": "Glute Bridge",
+            "es": "Puente de Glúteo",
             "en": "Glute Bridge"
           },
           "muscles": {
@@ -1808,7 +1808,7 @@
         {
           "id": "glute_bridge_pause",
           "name": {
-            "es": "Glute Bridge con Pausa (3s)",
+            "es": "Puente de Glúteo con Pausa (3s)",
             "en": "Glute Bridge with Pause (3s)"
           },
           "muscles": {
@@ -1837,7 +1837,7 @@
         {
           "id": "glute_bridge_march",
           "name": {
-            "es": "Glute Bridge March",
+            "es": "Puente de Glúteo con Marcha",
             "en": "Glute Bridge March"
           },
           "muscles": {
@@ -1866,7 +1866,7 @@
         {
           "id": "glute_bridge_uni",
           "name": {
-            "es": "Glute Bridge Unilateral",
+            "es": "Puente de Glúteo Unilateral",
             "en": "Unilateral Glute Bridge"
           },
           "muscles": {
@@ -1959,7 +1959,7 @@
         {
           "id": "ankle_mobility",
           "name": {
-            "es": "Ankle Mobility Drill",
+            "es": "Movilidad de Tobillo",
             "en": "Ankle Mobility Drill"
           },
           "muscles": {
@@ -1988,7 +1988,7 @@
         {
           "id": "arm_circles",
           "name": {
-            "es": "Arm Circles",
+            "es": "Círculos de Brazos",
             "en": "Arm Circles"
           },
           "muscles": {
@@ -2017,7 +2017,7 @@
         {
           "id": "right_levator_scapulae_stretch",
           "name": {
-            "es": "Cat Plank",
+            "es": "Plancha del Gato",
             "en": "Cat Plank"
           },
           "muscles": {
@@ -2052,7 +2052,7 @@
         {
           "id": "cat_cow",
           "name": {
-            "es": "Cat-Cow",
+            "es": "Gato-Vaca",
             "en": "Cat-Cow"
           },
           "muscles": {
@@ -2111,7 +2111,7 @@
         {
           "id": "cossack_squat",
           "name": {
-            "es": "Cossack Squat",
+            "es": "Sentadilla Cosaca",
             "en": "Cossack Squat"
           },
           "muscles": {
@@ -2140,7 +2140,7 @@
         {
           "id": "hip_flexor_deep",
           "name": {
-            "es": "Hip Flexor 90/90",
+            "es": "Flexores de Cadera 90/90",
             "en": "Hip Flexor 90/90"
           },
           "muscles": {
@@ -2170,7 +2170,7 @@
         {
           "id": "hip_flexor",
           "name": {
-            "es": "Hip Flexor Stretch (Psoas)",
+            "es": "Estiramiento de Flexores de Cadera (Psoas)",
             "en": "Hip Flexor Stretch (Psoas)"
           },
           "muscles": {
@@ -2200,7 +2200,7 @@
         {
           "id": "deep_hip_mobility",
           "name": {
-            "es": "Hip Mobility Full Routine",
+            "es": "Rutina Completa de Movilidad de Cadera",
             "en": "Hip Mobility Full Routine"
           },
           "muscles": {
@@ -2229,7 +2229,7 @@
         {
           "id": "inchworm",
           "name": {
-            "es": "Inchworm",
+            "es": "Oruga",
             "en": "Inchworm"
           },
           "muscles": {
@@ -2316,7 +2316,7 @@
         {
           "id": "leg_swings",
           "name": {
-            "es": "Leg Swings",
+            "es": "Balanceos de Pierna",
             "en": "Leg Swings"
           },
           "muscles": {
@@ -2345,7 +2345,7 @@
         {
           "id": "pancake_stretch",
           "name": {
-            "es": "Pancake Stretch",
+            "es": "Estiramiento Pancake",
             "en": "Pancake Stretch"
           },
           "muscles": {
@@ -2375,7 +2375,7 @@
         {
           "id": "pigeon",
           "name": {
-            "es": "Pigeon Pose",
+            "es": "Postura de la Paloma",
             "en": "Pigeon Pose"
           },
           "muscles": {
@@ -2405,7 +2405,7 @@
         {
           "id": "right_neck_stretch",
           "name": {
-            "es": "Pigeon Stretch",
+            "es": "Estiramiento de la Paloma",
             "en": "Pigeon Stretch"
           },
           "muscles": {
@@ -2442,7 +2442,7 @@
         {
           "id": "pike_stretch",
           "name": {
-            "es": "Pike Stretch",
+            "es": "Estiramiento en Pike",
             "en": "Pike Stretch"
           },
           "muscles": {
@@ -2472,7 +2472,7 @@
         {
           "id": "forward_fold",
           "name": {
-            "es": "Seated Forward Fold",
+            "es": "Estiramiento Sentado hacia Delante",
             "en": "Seated Forward Fold"
           },
           "muscles": {
@@ -2502,7 +2502,7 @@
         {
           "id": "shoulder_dislocates",
           "name": {
-            "es": "Shoulder Dislocates",
+            "es": "Dislocaciones de Hombro",
             "en": "Shoulder Dislocates"
           },
           "muscles": {
@@ -2591,7 +2591,7 @@
         {
           "id": "thoracic_mobility",
           "name": {
-            "es": "Thoracic Mobility Full",
+            "es": "Movilidad Torácica Completa",
             "en": "Thoracic Mobility Full"
           },
           "muscles": {
@@ -2620,7 +2620,7 @@
         {
           "id": "thoracic_rotation_side",
           "name": {
-            "es": "Thoracic Rotation (Side-Lying)",
+            "es": "Rotación Torácica (Tumbado de Lado)",
             "en": "Thoracic Rotation (Side-Lying)"
           },
           "muscles": {
@@ -2649,7 +2649,7 @@
         {
           "id": "worlds_stretch",
           "name": {
-            "es": "World's Greatest Stretch",
+            "es": "El Mejor Estiramiento del Mundo (dinámico)",
             "en": "World's Greatest Stretch"
           },
           "muscles": {
@@ -2678,7 +2678,7 @@
         {
           "id": "wrist_mobility",
           "name": {
-            "es": "Wrist Mobility Routine",
+            "es": "Rutina de Movilidad de Muñecas",
             "en": "Wrist Mobility Routine"
           },
           "muscles": {
@@ -2984,7 +2984,7 @@
         {
           "id": "australian_pullup",
           "name": {
-            "es": "Australian Pull-up",
+            "es": "Remo Australiano",
             "en": "Australian Pull-up"
           },
           "muscles": {
@@ -3042,7 +3042,7 @@
         {
           "id": "close_grip_pullup",
           "name": {
-            "es": "Close Grip Pull-up",
+            "es": "Dominadas Agarre Cerrado",
             "en": "Close Grip Pull-up"
           },
           "muscles": {
@@ -3071,7 +3071,7 @@
         {
           "id": "commando_pullup",
           "name": {
-            "es": "Commando Pull-up",
+            "es": "Dominadas Comando",
             "en": "Commando Pull-up"
           },
           "muscles": {
@@ -3224,7 +3224,7 @@
         {
           "id": "t_bar_row",
           "name": {
-            "es": "Inverted Rows",
+            "es": "Remo Invertido en Barra",
             "en": "Inverted Rows"
           },
           "muscles": {
@@ -3290,7 +3290,7 @@
         {
           "id": "facepull",
           "name": {
-            "es": "Long-Pulley (low Row)",
+            "es": "Remo Bajo en Polea",
             "en": "Long-Pulley (low Row)"
           },
           "muscles": {
@@ -3328,7 +3328,7 @@
         {
           "id": "chin_up",
           "name": {
-            "es": "One Arm Triceps Extensions on Cable",
+            "es": "Extensiones de Tríceps a Un Brazo en Polea",
             "en": "One Arm Triceps Extensions on Cable"
           },
           "muscles": {
@@ -3363,7 +3363,7 @@
         {
           "id": "leg_raises_pull_up_bar",
           "name": {
-            "es": "One armed push-ups",
+            "es": "Flexiones a Un Solo Brazo",
             "en": "One armed push-ups"
           },
           "muscles": {
@@ -3398,7 +3398,7 @@
         {
           "id": "one_arm_pullup_prog",
           "name": {
-            "es": "One-Arm Pull-up Progresión",
+            "es": "Progresión de Dominada a Un Brazo",
             "en": "One-Arm Pull-up Progression"
           },
           "muscles": {
@@ -3516,7 +3516,7 @@
         {
           "id": "renegade_row",
           "name": {
-            "es": "Renegade Row",
+            "es": "Remo Renegado",
             "en": "Renegade Row"
           },
           "muscles": {
@@ -3574,7 +3574,7 @@
         {
           "id": "pull_apart",
           "name": {
-            "es": "Towel Pull Apart",
+            "es": "Aperturas con Toalla",
             "en": "Towel Pull Apart"
           },
           "muscles": {
@@ -3603,7 +3603,7 @@
         {
           "id": "towel_pullup",
           "name": {
-            "es": "Towel Pull-up",
+            "es": "Dominadas con Toalla",
             "en": "Towel Pull-up"
           },
           "muscles": {
@@ -3633,7 +3633,7 @@
         {
           "id": "typewriter_pullup",
           "name": {
-            "es": "Typewriter Pull-up",
+            "es": "Dominadas Typewriter",
             "en": "Typewriter Pull-up"
           },
           "muscles": {
@@ -3662,7 +3662,7 @@
         {
           "id": "wide_pullup",
           "name": {
-            "es": "Wide Grip Pull-up",
+            "es": "Dominadas Agarre Ancho",
             "en": "Wide Grip Pull-up"
           },
           "muscles": {
@@ -3696,7 +3696,7 @@
         {
           "id": "archer2",
           "name": {
-            "es": "Archer Push-up",
+            "es": "Flexiones Arquero",
             "en": "Archer Push-up"
           },
           "muscles": {
@@ -3754,7 +3754,7 @@
         {
           "id": "clapping_pushup",
           "name": {
-            "es": "Clapping Push-up",
+            "es": "Flexiones con Aplauso",
             "en": "Clapping Push-up"
           },
           "muscles": {
@@ -3783,7 +3783,7 @@
         {
           "id": "decline_pushup",
           "name": {
-            "es": "Decline Push-up",
+            "es": "Flexiones Declinadas",
             "en": "Decline Push-up"
           },
           "muscles": {
@@ -3812,7 +3812,7 @@
         {
           "id": "diamond_pushup",
           "name": {
-            "es": "Diamond Push-up",
+            "es": "Flexiones Diamante",
             "en": "Diamond Push-up"
           },
           "muscles": {
@@ -3899,7 +3899,7 @@
         {
           "id": "hindu_pushup",
           "name": {
-            "es": "Hindu Push-up",
+            "es": "Flexiones Hindú",
             "en": "Hindu Push-up"
           },
           "muscles": {
@@ -3928,7 +3928,7 @@
         {
           "id": "one_arm_actual",
           "name": {
-            "es": "One-Arm Push-up",
+            "es": "Flexión a Un Brazo",
             "en": "One-Arm Push-up"
           },
           "muscles": {
@@ -3957,7 +3957,7 @@
         {
           "id": "one_arm_prog",
           "name": {
-            "es": "One-Arm Push-up Progresión",
+            "es": "Progresión de Flexión a Un Brazo",
             "en": "One-Arm Push-up Progression"
           },
           "muscles": {
@@ -3986,7 +3986,7 @@
         {
           "id": "pike_hspu",
           "name": {
-            "es": "Pike HSPU",
+            "es": "Flexión Vertical en Pike (HSPU)",
             "en": "Pike HSPU"
           },
           "muscles": {
@@ -4015,7 +4015,7 @@
         {
           "id": "pike_pushup",
           "name": {
-            "es": "Pike Push-up",
+            "es": "Flexiones Pike",
             "en": "Pike Push-up"
           },
           "muscles": {
@@ -4102,7 +4102,7 @@
         {
           "id": "ring_dip_prog",
           "name": {
-            "es": "Ring Dips (o Dips con peso)",
+            "es": "Fondos en Anillas (o Fondos con Lastre)",
             "en": "Ring Dips (or Weighted Dips)"
           },
           "muscles": {
@@ -4131,7 +4131,7 @@
         {
           "id": "sphinx_pushup",
           "name": {
-            "es": "Sphinx Push-up",
+            "es": "Flexiones Esfinge",
             "en": "Sphinx Push-up"
           },
           "muscles": {
@@ -4160,7 +4160,7 @@
         {
           "id": "tiger_bend_pushup",
           "name": {
-            "es": "Tiger Bend Push-up",
+            "es": "Flexiones Tiger Bend",
             "en": "Tiger Bend Push-up"
           },
           "muscles": {
@@ -4189,7 +4189,7 @@
         {
           "id": "wide_pushup",
           "name": {
-            "es": "Wide Push-up",
+            "es": "Flexiones Agarre Ancho",
             "en": "Wide Push-up"
           },
           "muscles": {
@@ -4253,7 +4253,7 @@
         {
           "id": "crow_pose",
           "name": {
-            "es": "Crow Pose / Frog Stand",
+            "es": "Postura del Cuervo / Frog Stand",
             "en": "Crow Pose / Frog Stand"
           },
           "muscles": {
@@ -4816,7 +4816,7 @@
         {
           "id": "ring_support",
           "name": {
-            "es": "Ring Support Hold",
+            "es": "Sostén en Anillas",
             "en": "Ring Support Hold"
           },
           "muscles": {

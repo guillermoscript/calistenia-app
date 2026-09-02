@@ -36,7 +36,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Incline Push-up", "en": "Incline Push-up" },
+          "name": { "es": "Flexiones Inclinadas", "en": "Incline Push-up" },
           "slug": "incline-push-up",
           "description": {
             "es": "Flexión con las manos elevadas sobre un banco o superficie. Reduce la carga respecto a la flexión estándar manteniendo el rango completo.",
@@ -150,7 +150,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Staggered Push-up", "en": "Staggered Push-up" },
+          "name": { "es": "Flexión Escalonada", "en": "Staggered Push-up" },
           "slug": "staggered-push-up",
           "description": {
             "es": "Flexión con una mano adelantada y otra retrasada. Introduce carga asimétrica que prepara para variantes unilaterales.",
@@ -188,7 +188,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Spiderman Push-up", "en": "Spiderman Push-up" },
+          "name": { "es": "Flexión Spiderman", "en": "Spiderman Push-up" },
           "slug": "spiderman-push-up",
           "description": {
             "es": "Flexión llevando la rodilla al codo en cada repetición. Añade trabajo de oblicuos y flexores de cadera al empuje estándar.",
@@ -359,7 +359,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Maltese Push-up", "en": "Maltese Push-up" },
+          "name": { "es": "Flexión Maltese", "en": "Maltese Push-up" },
           "slug": "maltese-push-up",
           "description": {
             "es": "Flexión con los brazos abiertos lateralmente y girados hacia fuera, similar a la posición de cruz maltesa en anillas. Enorme demanda sobre hombros y bíceps.",
@@ -378,7 +378,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "90° Push-up", "en": "90° Push-up" },
+          "name": { "es": "Flexión a 90°", "en": "90° Push-up" },
           "slug": "90-degree-push-up",
           "description": {
             "es": "Flexión que transiciona a una V invertida con el cuerpo a 90 grados. Combina empuje horizontal y vertical con alta demanda de hombros y core.",
@@ -505,7 +505,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Deficit HSPU", "en": "Deficit HSPU" },
+          "name": { "es": "HSPU en Déficit", "en": "Deficit HSPU" },
           "slug": "deficit-hspu",
           "description": {
             "es": "Handstand push-up contra la pared con las manos sobre paralelas o bloques. Aumenta el rango de movimiento más allá de la cabeza.",
@@ -613,7 +613,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Korean Dips", "en": "Korean Dips" },
+          "name": { "es": "Fondos Coreanos", "en": "Korean Dips" },
           "slug": "korean-dips",
           "description": {
             "es": "Fondos con las manos agarrando la barra detrás del cuerpo. Exige mayor movilidad de hombros y activa los deltoides de forma única.",
@@ -651,7 +651,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Ring Dips", "en": "Ring Dips" },
+          "name": { "es": "Fondos en Anillas", "en": "Ring Dips" },
           "slug": "ring-dips",
           "description": {
             "es": "Fondos en anillas, que se mueven libremente. La inestabilidad activa los estabilizadores del hombro y pecho de forma intensa.",
@@ -689,7 +689,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Impossible Dips", "en": "Impossible Dips" },
+          "name": { "es": "Fondos Imposibles", "en": "Impossible Dips" },
           "slug": "impossible-dips",
           "description": {
             "es": "Fondos en barra recta donde el cuerpo pasa de debajo a encima de la barra. Movimiento avanzado que combina fondo con muscle-up invertido.",
