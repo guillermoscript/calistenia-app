@@ -204,7 +204,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -512,7 +512,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "exercise_id": "cat_cow",
               "muscles": "Columna, movilidad espinal",
               "sets": 1,
@@ -589,7 +589,7 @@
             },
             {
               "sort_order": 8,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Core, flexores de cadera",
               "sets": 3,
@@ -833,7 +833,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -859,7 +859,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Hombros, tríceps, trapecio",
               "sets": 4,
@@ -920,7 +920,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging leg raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Core inferior, flexores de cadera",
               "sets": 3,
@@ -1153,7 +1153,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "exercise_id": "cat_cow",
               "muscles": "Columna, movilidad espinal",
               "sets": 1,
@@ -1231,7 +1231,7 @@
             },
             {
               "sort_order": 8,
-              "name": "Ab wheel rollout",
+              "name": "Rueda Abdominal (Rollout)",
               "exercise_id": "ab_wheel_rollout",
               "muscles": "Core, abdominales, hombros",
               "sets": 3,
@@ -1255,7 +1255,7 @@
             },
             {
               "sort_order": 10,
-              "name": "Glute bridge march",
+              "name": "Puente de Glúteo con Marcha",
               "exercise_id": "glute_bridge_march",
               "muscles": "Glúteos, cadena posterior, estabilidad",
               "sets": 3,
@@ -1486,7 +1486,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -1512,7 +1512,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Hombros, tríceps, trapecio",
               "sets": 4,
@@ -1734,7 +1734,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Hanging leg raise",
+              "name": "Elevación de Piernas Colgado",
               "exercise_id": "hanging_leg_raise",
               "muscles": "Core inferior, flexores de cadera",
               "sets": 3,
@@ -1807,7 +1807,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "exercise_id": "cat_cow",
               "muscles": "Columna, movilidad espinal",
               "sets": 1,
@@ -1896,7 +1896,7 @@
             },
             {
               "sort_order": 9,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Core, flexores de cadera",
               "sets": 3,
@@ -2127,7 +2127,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -2153,7 +2153,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Pike HSPU",
+              "name": "Flexión Vertical en Pike (HSPU)",
               "exercise_id": "pike_hspu",
               "muscles": "Hombros, tríceps, trapecio",
               "sets": 4,
@@ -2448,7 +2448,7 @@
             },
             {
               "sort_order": 2,
-              "name": "Cat-cow",
+              "name": "Gato-Vaca",
               "exercise_id": "cat_cow",
               "muscles": "Columna, movilidad espinal",
               "sets": 1,
@@ -2538,7 +2538,7 @@
             },
             {
               "sort_order": 9,
-              "name": "Ab wheel rollout",
+              "name": "Rueda Abdominal (Rollout)",
               "exercise_id": "ab_wheel_rollout",
               "muscles": "Core, abdominales, hombros",
               "sets": 3,

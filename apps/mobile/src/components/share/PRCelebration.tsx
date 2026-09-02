@@ -21,6 +21,8 @@ import type { PREvent } from '@calistenia/core/hooks/useProgress'
 export interface PRCelebrationProps {
   prEvent: PREvent
   exerciseName: string
+  /** Ejercicio por tiempo: `newValue` son SEGUNDOS, no repeticiones (#690). */
+  isTimer?: boolean
   userName: string
   avatarUrl?: string | null
   referralCode?: string | null
@@ -31,6 +33,7 @@ export interface PRCelebrationProps {
 export default function PRCelebration({
   prEvent,
   exerciseName,
+  isTimer,
   userName,
   avatarUrl,
   referralCode,
@@ -117,7 +120,7 @@ export default function PRCelebration({
               <Text className="font-mono-semibold text-xs text-lime-400">
                 {prEvent.kind === 'weight'
                   ? `${prEvent.newValue} kg × ${prEvent.reps ?? 1}`
-                  : `${prEvent.newValue} reps`}
+                  : `${prEvent.newValue} ${isTimer ? 's' : 'reps'}`}
               </Text>
             </View>
           </View>

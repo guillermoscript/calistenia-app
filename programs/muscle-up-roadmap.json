@@ -243,7 +243,8 @@
               "reps": "15-20s",
               "rest_seconds": 90,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "En paralelas o suelo. Piernas dobladas si es necesario. Trabaja la compresión de core."
             },
             {
@@ -255,7 +256,8 @@
               "reps": "10-15s",
               "rest_seconds": 90,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 15,
               "note": "Rodillas al pecho, cuerpo paralelo al suelo. Mantén la retracción escapular."
             },
             {
@@ -267,7 +269,8 @@
               "reps": "20-30s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Espalda baja pegada al suelo. Brazos y piernas extendidos. Posición clave del muscle up."
             },
             {
@@ -486,7 +489,8 @@
               "reps": "15-20s",
               "rest_seconds": 90,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Busca extender las piernas más cada semana. Fuerza de brazos rectos."
             },
             {
@@ -498,7 +502,8 @@
               "reps": "10-15s",
               "rest_seconds": 120,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 15,
               "note": "Aprieta los abdominales. Mantén la línea recta desde hombros a rodillas."
             },
             {
@@ -527,7 +532,7 @@
             },
             {
               "sort_order": 8,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, flexores de cadera",
               "sets": 3,
@@ -797,7 +802,8 @@
               "reps": "30-40s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 40,
               "note": "Posición tight. Practica el swing del kipping mentalmente mientras mantienes."
             },
             {
@@ -1015,7 +1021,8 @@
               "reps": "20-30s",
               "rest_seconds": 90,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Piernas rectas o casi rectas. Progresa hacia 30s completos. Depresión escapular activa."
             },
             {
@@ -1027,7 +1034,8 @@
               "reps": "12-18s",
               "rest_seconds": 120,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 18,
               "note": "Extiende ligeramente las rodillas si ya dominas el tuck. Progresión avanzada."
             },
             {
@@ -1056,7 +1064,7 @@
             },
             {
               "sort_order": 7,
-              "name": "Glute bridge march",
+              "name": "Puente de Glúteo con Marcha",
               "exercise_id": "glute_bridge_march",
               "muscles": "Glúteos, core, estabilidad pélvica",
               "sets": 3,
@@ -1075,7 +1083,8 @@
               "reps": "40-50s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 50,
               "note": "Aprieta todo. Protracción escapular. Línea recta de cabeza a talones."
             },
             {
@@ -1351,7 +1360,8 @@
               "reps": "30-40s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 40,
               "note": "Core firme. Esta posición es la que necesitas dominar en la barra."
             },
             {
@@ -1558,7 +1568,8 @@
               "reps": "25-30s",
               "rest_seconds": 90,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Piernas rectas. Deberías alcanzar 30s consistentes. Depresión escapular completa."
             },
             {
@@ -1570,7 +1581,8 @@
               "reps": "15-20s",
               "rest_seconds": 120,
               "priority": "primary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Abre las rodillas para avanzar. Cuerpo paralelo al suelo."
             },
             {
@@ -1587,7 +1599,7 @@
             },
             {
               "sort_order": 6,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, flexores de cadera",
               "sets": 3,

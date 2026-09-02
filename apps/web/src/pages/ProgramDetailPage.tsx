@@ -24,7 +24,9 @@ import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icon
 import { useTranslation } from 'react-i18next'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { resolveExerciseDisplayName } from '@calistenia/core/lib/exercise-resolver'
-import { loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
+import { loadCatalogIndex, getCatalogIndexSync } from '@calistenia/core/lib/catalogIndex'
+import { resolveExerciseId } from '@calistenia/core/lib/resolveExerciseId'
+import { inferTimerFromReps } from '@calistenia/core/lib/exercise-timer-inference'
 import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import { ProgramRemixCredit, ProgramFollowers } from '../components/programs/ProgramRemixCredit'
@@ -66,6 +68,23 @@ interface ProgramExercise {
   demoImages?: string[]
   demoVideo?: string
   pbRecordId?: string
+}
+
+/**
+ * Id con el que `/exercises/:id` sabe abrir la ficha, o `null` si no hay ninguno.
+ *
+ * `program_exercises.exercise_id` es o un id del catálogo o una CLAVE DE SLOT
+ * del programa («lun_1_9»), que sólo significa algo dentro de ese programa. La
+ * ficha de ejercicio busca por id exacto en el catálogo, así que enlazar una
+ * clave de slot llevaba a un «ejercicio no encontrado» (#690). Se enlaza el id
+ * ya resuelto —un seed slug («flexiones-clasicas») tampoco abre la ficha tal
+ * cual— y sólo cuando de verdad existe en el catálogo.
+ */
+function catalogLinkId(exerciseId: string): string | null {
+  const index = getCatalogIndexSync()
+  if (!index || !exerciseId) return null
+  const resolved = resolveExerciseId(exerciseId, index)
+  return index.ids.has(resolved) ? resolved : null
 }
 
 const PRIORITY_LABEL_KEY: Record<string, string> = {
@@ -267,6 +286,11 @@ export default function ProgramDetailPage({
 
       exerciseItems.forEach((r: RecordModel) => {
         const key = `p${r.phase_number}_${r.day_id}`
+        // #690: filas sembradas con `is_timer: false` y la duración metida en
+        // el texto de `reps` («30-45 seg»). Aquí sólo cambia el «Timer: Ns» de
+        // la ficha, pero se deduce igual que en la sesión para que las dos
+        // pantallas cuenten lo mismo del mismo ejercicio.
+        const inferredTimer = r.is_timer ? null : inferTimerFromReps(r.reps)
         if (!workoutMap[key]) {
           workoutMap[key] = {
             phase: r.phase_number,
@@ -290,8 +314,8 @@ export default function ProgramDetailPage({
           note: localize(r.note, locale),
           youtube: r.youtube,
           priority: r.priority,
-          isTimer: r.is_timer,
-          timerSeconds: r.timer_seconds,
+          isTimer: r.is_timer || !!inferredTimer,
+          timerSeconds: inferredTimer ? (r.timer_seconds || inferredTimer.timerSeconds) : r.timer_seconds,
           // Nombres de fichero crudos de PB, no URLs: se pintan vía `ExerciseThumbnail`
           // / `MediaViewer`, que resuelven por `getExerciseMedia()` (#608).
           demoImages: r.demo_images || [],
@@ -854,13 +878,22 @@ export default function ProgramDetailPage({
                                   {/* Exercise info */}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-0.5">
-                                      <Link
-                                        to={`/exercises/${exercise.id}`}
-                                        className="text-[13px] font-semibold text-foreground truncate hover:text-lime transition-colors"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        {exercise.name}
-                                      </Link>
+                                      {(() => {
+                                        const linkId = catalogLinkId(exercise.id)
+                                        return linkId ? (
+                                          <Link
+                                            to={`/exercises/${linkId}`}
+                                            className="text-[13px] font-semibold text-foreground truncate hover:text-lime transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {exercise.name}
+                                          </Link>
+                                        ) : (
+                                          <span className="text-[13px] font-semibold text-foreground truncate">
+                                            {exercise.name}
+                                          </span>
+                                        )
+                                      })()}
                                       {isAdminOrEditor && exercise.pbRecordId && (
                                         <a
                                           href={pbExerciseEditUrl(exercise.pbRecordId)}

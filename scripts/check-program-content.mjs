@@ -22,6 +22,11 @@ import { resolve, dirname, basename, join } from 'path'
 import { fileURLToPath } from 'url'
 import { CATALOG_BY_SLUG } from './lib/program-catalog.mjs'
 import { PRIORITY_ALIASES } from './lib/program-exercise-fields.mjs'
+import {
+  inferTimerFromReps,
+  needsMuscleRepair,
+  unknownMuscleTokens,
+} from './repair-program-timers-muscles.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -226,6 +231,31 @@ export function checkProgram(slug, doc) {
         if (!name.trim()) err(`${where}: sin nombre`)
         else if (SLUG_LIKE.test(name.trim())) {
           err(`${where}: el nombre "${name}" es un slug, no un nombre — se enseña tal cual al usuario`)
+        }
+
+        // 3b — Una duración en `reps` sin temporizador encendido (#690).
+        //
+        // La sesión solo pinta la cuenta atrás cuando `is_timer` es true. Con
+        // `is_timer:false` el usuario lee «30-45 seg» y no tiene nada que
+        // arrancar: la plancha se hace a ojo. Solo dispara con duraciones
+        // PURAS; «6x10s hold» o «10 (3s arriba)» son repeticiones con tempo y
+        // pasan intactas.
+        const inferred = inferTimerFromReps(ex.reps)
+        if (inferred !== null && !ex.is_timer) {
+          err(`${where}: reps "${ex.reps}" es una duración pero is_timer es false — la sesión no pinta el temporizador`)
+        } else if (ex.is_timer && !Number(ex.timer_seconds)) {
+          err(`${where}: is_timer sin timer_seconds — la cuenta atrás arranca en 0`)
+        }
+
+        // 3c — Tokens de máquina en `muscles` (#690). La ficha del ejercicio
+        //      los enseña tal cual: «core, anterior_core, shoulders».
+        const muscles = textOf(ex.muscles)
+        if (needsMuscleRepair(muscles)) {
+          const unknown = unknownMuscleTokens(muscles)
+          err(
+            `${where}: muscles "${muscles}" lleva tokens de máquina — se enseña tal cual al usuario` +
+            (unknown.length ? ` (fuera del diccionario: ${unknown.join(', ')})` : ''),
+          )
         }
 
         // 4 — Prioridad dentro del vocabulario que la app sabe pintar.

@@ -3003,6 +3003,7 @@
   "pr.celebration": "New PR!",
   "pr.share": "Share PR",
   "pr.reps": "{{count}} reps",
+  "pr.seconds": "{{count}} s",
 
   "streak.milestone.title": "{{days}}-day streak!",
   "streak.milestone.subtitle7": "One week without stopping!",

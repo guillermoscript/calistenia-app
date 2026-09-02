@@ -8,6 +8,8 @@ import { cn } from '../lib/utils'
 import { relativeDate } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { useTrainingStats } from '@calistenia/core/hooks/useTrainingStats'
+import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
+import { buildExerciseResolver } from '@calistenia/core/lib/exercise-resolver'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import type { ExerciseLog } from '@calistenia/core/types'
@@ -31,11 +33,17 @@ import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
-function ChartsExerciseList({ exerciseLogs, t }: { exerciseLogs: Record<string, ExerciseLog[]>; t: (key: string) => string }) {
+function ChartsExerciseList({ exerciseLogs, exerciseNames, t }: { exerciseLogs: Record<string, ExerciseLog[]>; exerciseNames: Record<string, string>; t: (key: string) => string }) {
   const [search, setSearch] = useState('')
   const entries = Object.entries(exerciseLogs)
+  // Se busca sobre el nombre pintado Y sobre la clave: quien ya se sabe el id
+  // crudo de un ejercicio sigue encontrándolo.
   const filtered = search
-    ? entries.filter(([exId]) => exId.replace(/_/g, ' ').toLowerCase().includes(search.toLowerCase()))
+    ? entries.filter(([exId]) => {
+        const q = search.toLowerCase()
+        return exId.replace(/_/g, ' ').toLowerCase().includes(q)
+          || (exerciseNames[exId] ?? '').toLowerCase().includes(q)
+      })
     : entries
   const showSearch = entries.length > 6
 
@@ -56,7 +64,7 @@ function ChartsExerciseList({ exerciseLogs, t }: { exerciseLogs: Record<string, 
         {filtered.map(([exId, logs]) => (
           <ExerciseChart
             key={exId}
-            exerciseName={exId}
+            exerciseName={exerciseNames[exId] ?? exId}
             logs={logs}
             showSessionType
           />
@@ -81,7 +89,7 @@ interface SessionLog {
 }
 
 export default function ProgressPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { progress, settings, activeProgram, programProgress } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
   const { userId } = useAuthState()
@@ -136,6 +144,24 @@ export default function ProgressPage() {
     })
     return logs
   }, [progress])
+
+  // Los gráficos etiquetaban cada serie con la CLAVE cruda del ProgressMap, así
+  // que un ejercicio registrado como `arm_circles` salía «arm circles» y uno de
+  // programa como «lun_1_9» (#690). El mismo resolutor que ya nombra las
+  // estadísticas: catálogo primero y, si no, el ejercicio del programa activo
+  // en ese `workoutKey`. Lo que no resuelve se queda con su clave, como antes.
+  const { index: catalogIndex } = useCatalogIndex()
+  const resolveExercise = useMemo(
+    () => buildExerciseResolver({ index: catalogIndex, getWorkout, locale: i18n.language }),
+    [catalogIndex, getWorkout, i18n.language],
+  )
+  const exerciseNames = useMemo<Record<string, string>>(() => {
+    const names: Record<string, string> = {}
+    for (const [exId, logs] of Object.entries(exerciseLogs)) {
+      names[exId] = resolveExercise(exId, logs[0]?.workoutKey ?? '').name
+    }
+    return names
+  }, [exerciseLogs, resolveExercise])
 
   // #636 §4: la pantalla de progreso no emitía nada, así que no se sabía si
   // alguien vuelve a mirar lo que ha hecho — que es la señal de retención más
@@ -295,17 +321,17 @@ export default function ProgressPage() {
                 </div>
 
                 {/* Weight Progression (lastre) */}
-                <WeightProgressionChart exerciseLogs={exerciseLogs} />
+                <WeightProgressionChart exerciseLogs={exerciseLogs} exerciseNames={exerciseNames} />
 
                 {/* 1RM Calculator */}
-                <OneRepMaxCalculator exerciseLogs={exerciseLogs} bodyweightKg={
+                <OneRepMaxCalculator exerciseLogs={exerciseLogs} exerciseNames={exerciseNames} bodyweightKg={
                   weights.length > 0
                     ? [...weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight_kg
                     : undefined
                 } />
 
                 {/* Exercise Charts with filter */}
-                <ChartsExerciseList exerciseLogs={exerciseLogs} t={t} />
+                <ChartsExerciseList exerciseLogs={exerciseLogs} exerciseNames={exerciseNames} t={t} />
               </>
             )}
           </TabsContent>

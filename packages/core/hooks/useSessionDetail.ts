@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { ProgressMap, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 import type { TranslatableField } from '../lib/i18n-db'
+import { resolveExerciseNameField } from '../lib/exercise-resolver'
 
 export interface SessionSet {
   setNumber: number
@@ -127,7 +128,12 @@ export function buildSessionDetail(
 
       return {
         exerciseId,
-        name: catalog?.name || exerciseId,
+        // El catálogo de una sesión AJENA se arma con el `exercise_name` crudo
+        // de `program_exercises`, que a veces es un slug del catálogo
+        // («sphinx_pushup»): sin el resolutor la tabla pintaba esa clave
+        // mientras el dueño veía el nombre bueno (#690). Un nombre escrito por
+        // una persona pasa intacto, y el `exerciseId` no se toca nunca.
+        name: resolveExerciseNameField(catalog?.name, exerciseId) || exerciseId,
         muscles: catalog?.muscles || '',
         sets,
         bestSet,

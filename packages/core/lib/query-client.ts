@@ -87,7 +87,11 @@ export function setupOnlineManager(): void {
  */
 // v3: la v1.12.1 (vc37) persistió settings.startDate = «Invalid Date» (dayjs
 // roto en Hermes); rehidratarlo tumbaba la Home. Se desecha esa caché.
-export const PERSIST_BUSTER = 'v3-dayjs-660'
+// v4: las migraciones de datos de #689/#690 cambiaron `exercise_name` e
+// `is_timer` de filas que se cachean bajo las MISMAS query keys, así que sin
+// tirar el caché los clientes seguían enseñando `arm_circles` y ningún
+// cronómetro durante horas después del deploy.
+export const PERSIST_BUSTER = 'v4-program-repair-690'
 
 /** Clave única donde el persister serializa TODA la caché de queries. */
 export const PERSIST_KEY = 'calistenia_rq_cache'

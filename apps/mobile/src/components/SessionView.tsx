@@ -108,7 +108,7 @@ export default function SessionView({
 
   const { stepIdx, phase, setsCount, transitionType } = state
 
-  const [prCelebration, setPrCelebration] = useState<{ event: PREvent; exerciseName: string } | null>(null)
+  const [prCelebration, setPrCelebration] = useState<{ event: PREvent; exerciseName: string; isTimer: boolean } | null>(null)
   const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
   // Ref mirror para que el guard one-shot y handleNoteSaved nunca lean estado obsoleto.
   const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
@@ -242,7 +242,7 @@ export default function SessionView({
     if (!currentStep) return
     const prEvent = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
     if (prEvent) {
-      setPrCelebration({ event: prEvent, exerciseName: currentStep.exercise.name })
+      setPrCelebration({ event: prEvent, exerciseName: currentStep.exercise.name, isTimer: !!currentStep.exercise.isTimer })
     }
     // Mismas propiedades que en web a propósito (#636 §3): el embudo tiene que
     // poder segmentarse por plataforma, y para eso las dos tienen que mandar lo
@@ -449,6 +449,7 @@ export default function SessionView({
         <PRCelebration
           prEvent={prCelebration.event}
           exerciseName={prCelebration.exerciseName}
+          isTimer={prCelebration.isTimer}
           userName={(sessionUser?.display_name as string) || (sessionUser?.name as string) || 'Atleta'}
           avatarUrl={sessionUser ? getUserAvatarUrl(sessionUser, '200x200') : null}
           referralCode={(sessionUser?.referral_code as string) || null}

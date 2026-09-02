@@ -96,7 +96,7 @@ export default function SessionView({
   // El nombre viaja junto al evento (como en el SessionView móvil): el PREvent
   // solo trae el `exerciseId`, que en programas viejos es una clave de slot
   // («lun_1_9») y no sirve para pintar.
-  const [prEvent, setPREvent] = useState<{ event: PREvent; exerciseName: string } | null>(null)
+  const [prEvent, setPREvent] = useState<{ event: PREvent; exerciseName: string; isTimer: boolean } | null>(null)
   const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
   // Espejo en ref de finalTimings para que el guard one-shot y el guardado de
   // la nota nunca lean un valor obsoleto (evita doble finalize / timings vacíos).
@@ -181,7 +181,7 @@ export default function SessionView({
   const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
     if (!currentStep) return
     const pr = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
-    if (pr) setPREvent({ event: pr, exerciseName: currentStep.exercise.name })
+    if (pr) setPREvent({ event: pr, exerciseName: currentStep.exercise.name, isTimer: !!currentStep.exercise.isTimer })
 
     sounds.playSetComplete()
     sounds.vibrate([80])
@@ -319,6 +319,7 @@ export default function SessionView({
             <PRCelebration
               prEvent={prEvent.event}
               exerciseName={prEvent.exerciseName}
+              isTimer={prEvent.isTimer}
               onDismiss={() => setPREvent(null)}
             />
           )}

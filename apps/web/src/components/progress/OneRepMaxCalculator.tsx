@@ -28,10 +28,16 @@ const PERCENTAGES = [100, 95, 90, 85, 80, 75, 70, 65, 60]
 
 interface OneRepMaxCalculatorProps {
   exerciseLogs: Record<string, ExerciseLog[]>
+  /**
+   * Nombre a pintar por clave del ProgressMap (#690). Sin él la estimación
+   * salía rotulada con la clave cruda («arm circles», «lun 1 9»); lo que no
+   * esté en el mapa sigue cayendo a eso.
+   */
+  exerciseNames?: Record<string, string>
   bodyweightKg?: number
 }
 
-export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }: OneRepMaxCalculatorProps) {
+export default function OneRepMaxCalculator({ exerciseLogs, exerciseNames, bodyweightKg = 70 }: OneRepMaxCalculatorProps) {
   const { t } = useTranslation()
   const [manualWeight, setManualWeight] = useState('')
   const [manualReps, setManualReps] = useState('')
@@ -106,7 +112,7 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
               {autoEstimates.map(e => (
                 <div key={e.exerciseId} className="flex items-center justify-between">
                   <div>
-                    <div className="text-[13px] font-medium capitalize">{e.exerciseId.replace(/_/g, ' ')}</div>
+                    <div className="text-[13px] font-medium">{exerciseNames?.[e.exerciseId] ?? e.exerciseId.replace(/_/g, ' ')}</div>
                     <div className="text-[10px] text-muted-foreground font-mono">
                       {e.weight}kg × {e.reps} reps ({t('progress.oneRepMax.bwPlusWeight')})
                     </div>

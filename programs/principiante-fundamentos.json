@@ -118,7 +118,8 @@
               "reps": "20-30s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Aprieta abdomen y glúteos. No dejes caer la cadera."
             },
             {
@@ -289,7 +290,8 @@
               "reps": "20-30s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Espalda pegada a la pared, muslos paralelos al suelo. Respira."
             },
             {
@@ -368,7 +370,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -448,7 +450,8 @@
               "reps": "15-20s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 20,
               "note": "Espalda baja pegada al suelo. Piernas más altas si es muy difícil."
             },
             {
@@ -535,7 +538,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Inchworm",
+              "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
               "sets": 1,
@@ -620,7 +623,7 @@
             },
             {
               "sort_order": 10,
-              "name": "V-ups",
+              "name": "Abdominales en V",
               "exercise_id": "v_ups",
               "muscles": "Abdominales, core",
               "sets": 3,
@@ -774,7 +777,8 @@
               "reps": "30-45s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 45,
               "note": "Más tiempo que fase 1. Respira, no aguantes la respiración."
             },
             {
@@ -853,7 +857,7 @@
             },
             {
               "sort_order": 3,
-              "name": "Jumping jacks",
+              "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
               "muscles": "Full body, activación cardiovascular",
               "sets": 1,
@@ -909,7 +913,8 @@
               "reps": "20-30s por lado",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
+              "is_timer": true,
+              "timer_seconds": 30,
               "note": "Cadera arriba, cuerpo recto. Respira, no aguantes el aire."
             },
             {

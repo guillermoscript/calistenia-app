@@ -570,7 +570,7 @@
               "sort_order": 7,
               "exercise_id": "mountain_climbers",
               "name": {
-                "es": "Mountain Climbers",
+                "es": "Escaladores",
                 "en": "Mountain Climbers"
               },
               "sets": 2,
@@ -666,7 +666,7 @@
               "sort_order": 4,
               "exercise_id": "commando_pullup",
               "name": {
-                "es": "Commando Pull-up",
+                "es": "Dominadas Comando",
                 "en": "Commando Pull-up"
               },
               "sets": 3,
@@ -1018,7 +1018,7 @@
               "sort_order": 9,
               "exercise_id": "windshield_wipers",
               "name": {
-                "es": "Windshield Wipers",
+                "es": "Limpiaparabrisas",
                 "en": "Windshield Wipers"
               },
               "sets": 2,
@@ -1058,7 +1058,7 @@
               "sort_order": 1,
               "exercise_id": "jumping_jacks",
               "name": {
-                "es": "Jumping Jacks",
+                "es": "Saltos de Tijera",
                 "en": "Jumping Jacks"
               },
               "sets": 2,
@@ -1074,7 +1074,7 @@
               "sort_order": 2,
               "exercise_id": "inchworm",
               "name": {
-                "es": "Inchworm",
+                "es": "Oruga",
                 "en": "Inchworm"
               },
               "sets": 2,
@@ -1250,7 +1250,7 @@
               "sort_order": 4,
               "exercise_id": "close_grip_pullup",
               "name": {
-                "es": "Close Grip Pull-up",
+                "es": "Dominadas Agarre Cerrado",
                 "en": "Close-Grip Pull-up"
               },
               "sets": 3,
@@ -1266,7 +1266,7 @@
               "sort_order": 5,
               "exercise_id": "typewriter_pullup",
               "name": {
-                "es": "Typewriter Pull-up",
+                "es": "Dominadas Typewriter",
                 "en": "Typewriter Pull-up"
               },
               "sets": 3,
@@ -1298,7 +1298,7 @@
               "sort_order": 7,
               "exercise_id": "renegade_row",
               "name": {
-                "es": "Renegade Row",
+                "es": "Remo Renegado",
                 "en": "Renegade Row"
               },
               "sets": 2,
@@ -1386,7 +1386,7 @@
               "sort_order": 4,
               "exercise_id": "pike_hspu",
               "name": {
-                "es": "Pike HSPU",
+                "es": "Flexión Vertical en Pike (HSPU)",
                 "en": "Pike HSPU"
               },
               "sets": 4,
@@ -1642,7 +1642,7 @@
               "sort_order": 2,
               "exercise_id": "inchworm",
               "name": {
-                "es": "Inchworm",
+                "es": "Oruga",
                 "en": "Inchworm"
               },
               "sets": 2,
@@ -1722,7 +1722,7 @@
               "sort_order": 7,
               "exercise_id": "v_ups",
               "name": {
-                "es": "V-ups",
+                "es": "Abdominales en V",
                 "en": "V-ups"
               },
               "sets": 2,
