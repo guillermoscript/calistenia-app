@@ -20,7 +20,7 @@ import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { isForeground, onForeground, onBackground } from './lifecycle'
 import { registerPushTokenAsync } from './push-registration'
-import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, setActiveAnalyticsProfileId, shouldSendAnalytics, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // El catálogo de ejercicios va en el bundle de RN de todas formas, así que se
 // indexa aquí, en el arranque (#486). Las APIs síncronas de core que dependen de
@@ -141,6 +141,10 @@ const op = new OpenPanel({
   // los primeros screen_view del arranque llevan profileId en vez de salir
   // anónimos. Ver identifyFromAuthStore() más abajo.
   waitForProfile: true,
+  // #696: la cuenta demo del revisor de Play no cuenta. El SDK evalúa el filtro
+  // antes de encolar y otra vez al vaciar la cola (ya con profileId), así que
+  // ni los screen_view del arranque ni el identify llegan al panel.
+  filter: shouldSendAnalytics,
 })
 
 /**
@@ -226,6 +230,9 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
       // un issue con la sesión/perfil del panel. Solo el id, sin email
       // (sendDefaultPii sigue en false).
       Sentry.setUser({ id: user.id })
+      // Aquí se llama al SDK directamente (no al facade de core), así que el
+      // respaldo del filtro #696 hay que fijarlo a mano.
+      setActiveAnalyticsProfileId(user.id)
       if (__DEV__) { console.log('[analytics] identify', user.id); return }
       op.identify({
         profileId: user.id,
@@ -236,6 +243,7 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
     } else {
       identifiedAs = null
       Sentry.setUser(null)
+      setActiveAnalyticsProfileId(null)
       // Invitado: soltar la cola para no perder los eventos de onboarding/login.
       if (!__DEV__) op.ready()
     }

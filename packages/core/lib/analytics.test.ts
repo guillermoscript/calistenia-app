@@ -13,9 +13,13 @@ vi.mock('../platform', () => ({
 }))
 
 import {
+  ANALYTICS_EXCLUDED_PROFILE_IDS,
   CANONICAL_ANALYTICS_EVENTS,
   emitOnce,
   normalizeCanonicalAnalyticsProperties,
+  op,
+  setActiveAnalyticsProfileId,
+  shouldSendAnalytics,
 } from './analytics'
 
 describe('canonical analytics contract', () => {
@@ -149,5 +153,32 @@ describe('emitOnce', () => {
     emitOnce('k3', emit)
     expect(emit).toHaveBeenCalledTimes(1)
     spy.mockRestore()
+  })
+})
+
+describe('shouldSendAnalytics (#696, filtro del SDK para la cuenta demo)', () => {
+  const demo = [...ANALYTICS_EXCLUDED_PROFILE_IDS][0]
+
+  beforeEach(() => { setActiveAnalyticsProfileId(null) })
+
+  it('descarta cualquier payload cuyo profileId sea una cuenta excluida', () => {
+    expect(shouldSendAnalytics({ type: 'track', payload: { profileId: demo } })).toBe(false)
+    expect(shouldSendAnalytics({ type: 'identify', payload: { profileId: demo } })).toBe(false)
+  })
+
+  it('deja pasar a cualquier otro usuario y a los anónimos', () => {
+    expect(shouldSendAnalytics({ type: 'track', payload: { profileId: 'otro_usuario' } })).toBe(true)
+    expect(shouldSendAnalytics({ type: 'track', payload: {} })).toBe(true)
+    expect(shouldSendAnalytics(undefined)).toBe(true)
+  })
+
+  it('usa el último identify como respaldo para payloads sin profileId (replay)', () => {
+    op.identify({ profileId: demo, firstName: 'Demo Play' })
+    expect(shouldSendAnalytics({ type: 'replay', payload: {} })).toBe(false)
+    // Un payload con profileId propio de otro usuario sigue pasando.
+    expect(shouldSendAnalytics({ type: 'track', payload: { profileId: 'otro_usuario' } })).toBe(true)
+
+    op.clear()
+    expect(shouldSendAnalytics({ type: 'replay', payload: {} })).toBe(true)
   })
 })
