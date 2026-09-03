@@ -106,14 +106,29 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
 
   // ── Paso 6: Personalizing (fase loading dura 2.4s) → preview → finish ────
   await expect(page.getByText(/PERSONALIZANDO|PERSONALIZING/i)).toBeVisible({ timeout: 8000 })
-  const finishBtn = page.getByRole('button', { name: /EMPEZAR A ENTRENAR|START TRAINING/i })
-  await expect(finishBtn).toBeVisible({ timeout: 10000 })
+  // Desde #694 el CTA primario arranca el primer entreno; ir al inicio es el
+  // enlace secundario. Este test cubre el camino al dashboard; el del primer
+  // entreno está en el test de abajo.
+  const firstWorkoutBtn = page.getByRole('button', { name: /EMPEZAR MI PRIMER ENTRENO|START MY FIRST WORKOUT/i })
+  await expect(firstWorkoutBtn).toBeVisible({ timeout: 10000 })
   // El preview del plan ya muestra el programa elegido
   await expect(page.getByText(/Balance Total/i).first()).toBeVisible({ timeout: 5000 })
-  await finishBtn.click()
+  await page.getByRole('button', { name: /Ahora no, ir al inicio|Not now, go to home/i }).click()
 
-  // ── Aterrizaje en el dashboard con el programa ACTIVO (no fallback) ──────
+  // ── Aterrizaje en la app con el programa ACTIVO (no fallback) ────────────
   await expect(page.locator('header nav')).toBeVisible({ timeout: 15000 })
+  // El enlace cae en /workout, donde conviven dos tours (página + detalle)
+  // cuyos popovers se tapan entre sí y el helper no puede cerrarlos. Los
+  // tours van por usuario (`calistenia_tour_<page>_<uid>`), así que se marcan
+  // hechos ya con el uid conocido y el resto se comprueba desde el dashboard.
+  const { userId: tourUid } = await readAuth(page)
+  await page.evaluate((uid) => {
+    for (const p of ['dashboard', 'workout', 'workout-detail', 'programs']) {
+      localStorage.setItem(`calistenia_tour_${p}_${uid}`, 'true')
+    }
+  }, tourUid)
+  await page.goto('/')
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await dismissOverlays(page)
   await expect(
     page.locator('#tour-weekly-plan').getByText(/Balance Total/i),
@@ -149,4 +164,51 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   await selectDay(page)
   // "Push – Pecho y tríceps" es del seed; el fallback usa "Empuje + Core Lumbar"
   await expect(page.getByText(/Pecho y tríceps/i).first()).toBeVisible({ timeout: 8000 })
+})
+
+/**
+ * Día 0 (#694): el CTA primario del último paso arranca directamente una
+ * sesión corta (4 ejercicios, 8 series) en /session, sin pasar por el home ni
+ * por el prompt de calentamiento. Se recorre el wizard saltando lo opcional.
+ */
+test('el último paso del onboarding arranca el primer entreno en /session', async ({ page }) => {
+  test.setTimeout(120_000)
+
+  await signup(page)
+
+  await page.getByRole('button', { name: /^EMPEZAR$|^START$/i }).click()
+  // Basics y goals son opcionales: «Omitir por ahora».
+  await page.getByRole('button', { name: /Omitir por ahora|Skip for now/i }).click()
+  await page.getByRole('button', { name: /Omitir por ahora|Skip for now/i }).click()
+  await page.getByRole('button', { name: /No tengo condiciones ni lesiones|No conditions or injuries/i }).click()
+  // Training: principiante viene marcado por defecto.
+  await page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i }).click()
+
+  await expect(page.getByText(/ELIGE TU PROGRAMA|CHOOSE YOUR PROGRAM/i)).toBeVisible({ timeout: 8000 })
+  await page.getByText(/Balance Total/i).first().click()
+  const continueBtn = page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i })
+  await expect(continueBtn).toBeEnabled({ timeout: 10000 })
+  await continueBtn.click()
+
+  const firstWorkoutBtn = page.getByRole('button', { name: /EMPEZAR MI PRIMER ENTRENO|START MY FIRST WORKOUT/i })
+  await expect(firstWorkoutBtn).toBeVisible({ timeout: 10000 })
+  await firstWorkoutBtn.click()
+
+  // Aterriza en la sesión activa: primer ejercicio del nivel principiante y
+  // contador de series del entreno corto.
+  await expect(page).toHaveURL(/\/session$/, { timeout: 15000 })
+  await expect(page.getByText(/1\/8 series/i).first()).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: /serie completada|set completed/i }).first()).toBeVisible({ timeout: 5000 })
+
+  // El onboarding queda marcado y la intención pendiente se consumió.
+  const state = await page.evaluate(() => {
+    const parsed = JSON.parse(localStorage.getItem('pocketbase_auth') || '{}')
+    const uid = parsed?.record?.id || parsed?.model?.id || ''
+    return {
+      onboardingDone: localStorage.getItem(`calistenia_onboarding_done_${uid}`),
+      pending: localStorage.getItem('calistenia_first_workout_pending'),
+    }
+  })
+  expect(state.onboardingDone).toBe('true')
+  expect(state.pending).toBeNull()
 })

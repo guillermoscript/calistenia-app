@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, startTransition, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
@@ -561,7 +561,11 @@ function AuthenticatedApp({
         onCreateProgram={() => { markOnboardingDone(user.id); setOnboardingDone(true); navigate('/programs/new') }}
         onComplete={() => { setOnboardingDone(true); navigate('/workout') }}
         onFirstMeasurement={() => { setOnboardingDone(true); navigate('/progress?tab=cuerpo') }}
-        onStartFirstWorkout={() => { setOnboardingDone(true); navigate('/session') }}
+        // En una sola transición: si el estado y la navegación fueran
+        // actualizaciones separadas, el árbol autenticado se pintaría primero
+        // con la ruta actual (tras el alta, `/auth`), y el comodín de <Routes>
+        // haría `replace('/')` cancelando el `/session` pendiente (#694).
+        onStartFirstWorkout={() => startTransition(() => { setOnboardingDone(true); navigate('/session') })}
       />
     )
   }
