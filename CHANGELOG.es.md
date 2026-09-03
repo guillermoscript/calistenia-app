@@ -9,6 +9,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.13.0] - 2026-09-03
+
+_El onboarding termina con tu primer entreno corto y un recordatorio a tu hora. Además: las notificaciones de seguidores, reacciones y comentarios vuelven a llegar, y los programas se ven en español y con sus cronómetros._
+
+### Añadido
+
+- **Tu primer entreno, nada más entrar** — Al terminar el onboarding arrancas una sesión corta de 4 ejercicios en vez de caer en la pantalla de inicio. Al completarla, la app te pregunta si quieres recibir notificaciones.
+- **Recordatorio desde el primer día** — Eliges tus días y tu hora durante el onboarding y la app te avisa a esa hora. Si pasas 24 o 72 horas sin entrenar, recibes un aviso; al tocarlo se abre el entreno de hoy.
+
+### Corregido
+
+- **Las notificaciones vuelven a llegar** — Los avisos de nuevos seguidores, reacciones, comentarios, logros y racha no llegaban al móvil. Arreglado en el servidor.
+- **Programas en español y con cronómetros** — Algunos ejercicios salían en inglés o con guiones bajos, los ejercicios por tiempo no mostraban su cronómetro y al copiar un programa el nombre quedaba roto. Todo corregido.
+
 ## [1.12.3] - 2026-08-31
 
 _Health Connect ahora solo lee sueño, peso y grasa corporal. Además: el historial de cardio vuelve a verse, los programas oficiales traen sus instrucciones y nutrición ya no pregunta dos veces._
@@ -390,7 +404,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...HEAD
+[1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
 [1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3
 [1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2
 [1.12.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...mobile-v1.12.1

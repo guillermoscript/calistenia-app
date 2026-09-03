@@ -1,6 +1,128 @@
 {
-  "generated": "2026-08-31T17:30:42.283Z",
+  "generated": "2026-09-03T19:55:55.414Z",
   "versions": [
+    {
+      "version": "1.13.0",
+      "date": "2026-09-03",
+      "summary": {
+        "es": "El onboarding termina con tu primer entreno corto y un recordatorio a tu hora. Además: las notificaciones de seguidores, reacciones y comentarios vuelven a llegar, y los programas se ven en español y con sus cronómetros.",
+        "en": "Onboarding now ends with a short first workout and a reminder at your time. Also: follow, reaction and comment notifications arrive again, and programs show in Spanish with their timers."
+      },
+      "highlights": [
+        {
+          "icon": "🚀",
+          "type": "feat",
+          "title": {
+            "es": "Tu primer entreno, nada más entrar",
+            "en": "Your first workout, right after sign-up"
+          },
+          "body": {
+            "es": "Al terminar el onboarding arrancas una sesión corta de 4 ejercicios en vez de caer en la pantalla de inicio. Al completarla, la app te pregunta si quieres recibir notificaciones.",
+            "en": "When onboarding ends you start a short 4-exercise session instead of landing on the home screen. Once you finish it, the app asks whether you want notifications."
+          }
+        },
+        {
+          "icon": "⏰",
+          "type": "feat",
+          "title": {
+            "es": "Recordatorio desde el primer día",
+            "en": "A reminder from day one"
+          },
+          "body": {
+            "es": "Eliges tus días y tu hora durante el onboarding y la app te avisa a esa hora. Si pasas 24 o 72 horas sin entrenar, recibes un aviso; al tocarlo se abre el entreno de hoy.",
+            "en": "Pick your days and time during onboarding and the app reminds you then. Go 24 or 72 hours without training and you get a nudge; tapping it opens today’s workout."
+          }
+        },
+        {
+          "icon": "🔔",
+          "type": "fix",
+          "title": {
+            "es": "Las notificaciones vuelven a llegar",
+            "en": "Notifications arrive again"
+          },
+          "body": {
+            "es": "Los avisos de nuevos seguidores, reacciones, comentarios, logros y racha no llegaban al móvil. Arreglado en el servidor.",
+            "en": "Alerts for new followers, reactions, comments, achievements and streaks were not reaching the phone. Fixed on the server."
+          }
+        },
+        {
+          "icon": "📋",
+          "type": "fix",
+          "title": {
+            "es": "Programas en español y con cronómetros",
+            "en": "Programs in Spanish, with timers"
+          },
+          "body": {
+            "es": "Algunos ejercicios salían en inglés o con guiones bajos, los ejercicios por tiempo no mostraban su cronómetro y al copiar un programa el nombre quedaba roto. Todo corregido.",
+            "en": "Some exercises showed in English or with underscores, timed exercises had no timer and copying a program broke its name. All fixed."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Activación de día 0 — primer entreno corto y permiso push al acabarlo (#694) (#699)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "bf586d2"
+            },
+            {
+              "description": "Recordatorio en el onboarding, push de inactividad 24/72 h y deep link (#698)",
+              "scope": "notificaciones",
+              "breaking": false,
+              "hash": "9595a23"
+            },
+            {
+              "description": "Cruce OpenPanel↔Sentry — mismo user id en ambos y sentry_event_id en page_error (#688)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "1d5d12f"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Nombres ingleses restantes en los programas y copias «[object Object] (copia)» (#693)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "ff35736"
+            },
+            {
+              "description": "Cronómetros, muscles y nombres en español en los programas, y cliente web sin caché vieja (#691)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "4cfad36"
+            },
+            {
+              "description": "Reparar exercise_name con slug del catálogo en program_exercises (#689)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "875f84d"
+            },
+            {
+              "description": "Nombres de ejercicio en snake_case en sesión y programas (#687)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "df0bead"
+            },
+            {
+              "description": "Triaje Sentry — recortar el caché persistido en vez de descartarlo, y callar ruido (#686)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "0e7a7fd"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.12.3",
       "date": "2026-08-31",
