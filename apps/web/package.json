@@ -62,7 +62,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.34.0",
     "media-chrome": "^4.19.2",
-    "motion": "^12.43.0",
+    "motion": "^13.1.1",
     "nanoid": "^6.0.1",
     "pocketbase": "^0.27.3",
     "react": "^19.2.8",
