@@ -271,6 +271,19 @@ process.on('exit', restore)
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => process.exit(1))
 
 const env = { ...process.env, JAVA_HOME: JBR, ...PROD_ENV }
+// Sin ANDROID_HOME gradle muere en 3 s con «SDK location not found» (android/
+// está gitignorado, así que tampoco hay local.properties). El SDK de Android
+// Studio vive siempre en ~/Library/Android/sdk en macOS.
+if (!env.ANDROID_HOME && !env.ANDROID_SDK_ROOT) {
+  const sdk = resolve(homedir(), 'Library/Android/sdk')
+  if (existsSync(sdk)) {
+    env.ANDROID_HOME = sdk
+    ok(`ANDROID_HOME no estaba en el shell; usando ${sdk}`)
+  } else {
+    console.error(`ANDROID_HOME no está definido y no existe ${sdk}. Instala el SDK de Android o exporta ANDROID_HOME.`)
+    process.exit(1)
+  }
+}
 if (existsSync(SENTRY_ENV)) {
   const token = readFileSync(SENTRY_ENV, 'utf-8').match(/^SENTRY_AUTH_TOKEN=(.+)$/m)?.[1]?.trim()
   if (token) {

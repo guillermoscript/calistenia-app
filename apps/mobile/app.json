@@ -255,7 +255,8 @@
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "./plugins/with-upload-signing.js"
     ],
     "extra": {
       "eas": {
