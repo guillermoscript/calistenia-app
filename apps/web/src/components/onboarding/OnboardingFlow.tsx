@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { AuthUser } from '@calistenia/core/types'
 import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
@@ -21,6 +21,11 @@ import type { ProgramMeta } from '@calistenia/core/types'
 import { requestNotificationPermission, subscribeToPush, getNotificationSupport } from '../../lib/push-subscription'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
+import {
+  DISCOVERY_SOURCE_NOT_ANSWERED,
+  trackDiscoverySourceAnswered,
+  type DiscoverySourceId,
+} from '@calistenia/core/lib/discovery-source'
 import { StepBasics, type BasicsValues } from './StepBasics'
 import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth, type HealthValues } from './StepHealth'
@@ -86,6 +91,10 @@ export default function OnboardingFlow({
   const [selecting, setSelecting] = useState(false)
   const [reminderPreset, setReminderPreset] = useState<TrainingTimePresetId>(DEFAULT_TRAINING_TIME_PRESET)
   const [savingReminder, setSavingReminder] = useState(false)
+  // «¿Cómo conociste la app?» (#586). Se emite UNA vez, al salir de la
+  // bienvenida; volver atrás y salir de nuevo no lo repite.
+  const [discoverySource, setDiscoverySource] = useState<DiscoverySourceId | null>(null)
+  const discoveryTracked = useRef(false)
   // Escrituras del onboarding a PocketBase, compartidas con móvil (#472).
   // Si un guardado falla devuelven false y NO se avanza de paso (#222).
   const {
@@ -150,6 +159,13 @@ export default function OnboardingFlow({
     setSaveError(false)
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
+  }
+
+  const leaveWelcome = () => {
+    if (discoverySource && !discoveryTracked.current) {
+      discoveryTracked.current = true
+      trackDiscoverySourceAnswered(discoverySource, 'onboarding_web')
+    }
   }
 
   const handleSelectProgram = async (programId: string) => {
@@ -242,6 +258,7 @@ export default function OnboardingFlow({
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
       has_reminder: hasWorkoutReminder,
+      discovery_source: discoverySource ?? DISCOVERY_SOURCE_NOT_ANSWERED,
     })
     if (destination === 'measurements' && onFirstMeasurement) {
       onFirstMeasurement()
@@ -294,8 +311,10 @@ export default function OnboardingFlow({
           <StepWelcome
             firstName={firstName}
             needsProfile={needsProfile}
-            onStart={() => goToStep(needsProfile ? profileStep : programStep)}
-            onSkipAll={handleFinish}
+            discoverySource={discoverySource}
+            onDiscoverySourceChange={setDiscoverySource}
+            onStart={() => { leaveWelcome(); goToStep(needsProfile ? profileStep : programStep) }}
+            onSkipAll={() => { leaveWelcome(); handleFinish() }}
           />
         )}
 

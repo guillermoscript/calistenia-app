@@ -2,15 +2,21 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
+import { DISCOVERY_SOURCES, type DiscoverySourceId } from '@calistenia/core/lib/discovery-source'
 
 interface Props {
   firstName: string
   needsProfile: boolean
+  /** «¿Cómo conociste la app?» (#586): null = sin contestar. */
+  discoverySource: DiscoverySourceId | null
+  onDiscoverySourceChange: (source: DiscoverySourceId | null) => void
   onStart: () => void
   onSkipAll: () => void
 }
 
-export function StepWelcome({ firstName, needsProfile, onStart, onSkipAll }: Props) {
+export function StepWelcome({
+  firstName, needsProfile, discoverySource, onDiscoverySourceChange, onStart, onSkipAll,
+}: Props) {
   const { t } = useTranslation()
 
   return (
@@ -51,6 +57,38 @@ export function StepWelcome({ firstName, needsProfile, onStart, onSkipAll }: Pro
           </div>
         </CardContent>
       </Card>
+
+      {/* Una sola pregunta, opcional, antes del CTA: aquí todavía la contesta
+          casi todo el mundo; al final del onboarding llega menos de la mitad. */}
+      <div className="mb-6 text-left">
+        <div className="flex items-baseline justify-between mb-2">
+          <span className="text-sm font-medium">{t('onboarding.discoveryTitle')}</span>
+          <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            {t('onboarding.discoveryOptional')}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('onboarding.discoveryTitle')}>
+          {DISCOVERY_SOURCES.map((option) => {
+            const active = discoverySource === option.id
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onDiscoverySourceChange(active ? null : option.id)}
+                aria-pressed={active}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                  active
+                    ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/10 text-foreground'
+                    : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                )}
+              >
+                {t(option.labelKey)}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <Button
         variant="limeSolid"

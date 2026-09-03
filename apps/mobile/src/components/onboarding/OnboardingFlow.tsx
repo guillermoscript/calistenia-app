@@ -8,7 +8,7 @@
  * Recovery: if user already has an active program and onboarding is not done,
  * markOnboardingDone immediately and go to tabs.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
@@ -30,6 +30,11 @@ import {
   type TrainingTimePresetId,
 } from '@calistenia/core/lib/onboarding-reminder'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
+import {
+  DISCOVERY_SOURCE_NOT_ANSWERED,
+  trackDiscoverySourceAnswered,
+  type DiscoverySourceId,
+} from '@calistenia/core/lib/discovery-source'
 
 import { Sentry } from '@/lib/instrument'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -117,6 +122,10 @@ export function OnboardingFlow() {
   const [reminderPreset, setReminderPreset] = useState<TrainingTimePresetId>(DEFAULT_TRAINING_TIME_PRESET)
   const [savingReminder, setSavingReminder] = useState(false)
   const [reminderPermissionDenied, setReminderPermissionDenied] = useState(false)
+  // «¿Cómo conociste la app?» (#586). Se emite UNA vez, al salir de la
+  // bienvenida; volver atrás y salir de nuevo no lo repite.
+  const [discoverySource, setDiscoverySource] = useState<DiscoverySourceId | null>(null)
+  const discoveryTracked = useRef(false)
 
   // Step index layout (frozen via needsProfile)
   const profileStep = needsProfile ? 1 : -1
@@ -168,6 +177,13 @@ export function OnboardingFlow() {
     setSaveError(false)
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
+  }
+
+  const leaveWelcome = () => {
+    if (discoverySource && !discoveryTracked.current) {
+      discoveryTracked.current = true
+      trackDiscoverySourceAnswered(discoverySource, 'onboarding_mobile')
+    }
   }
 
   const handleSelectProgram = async (programId: string) => {
@@ -261,6 +277,7 @@ export function OnboardingFlow() {
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
       has_reminder: reminders.some((r) => r.reminderType === 'workout' && r.enabled),
+      discovery_source: discoverySource ?? DISCOVERY_SOURCE_NOT_ANSWERED,
     })
     if (destination === 'first_workout') {
       // startFirstWorkout navega por su cuenta a /session — no hace falta
@@ -342,8 +359,10 @@ export function OnboardingFlow() {
             <StepWelcome
               firstName={firstName}
               needsProfile={needsProfile}
-              onStart={() => goToStep(needsProfile ? profileStep : programStep)}
-              onSkipAll={handleFinish}
+              discoverySource={discoverySource}
+              onDiscoverySourceChange={setDiscoverySource}
+              onStart={() => { leaveWelcome(); goToStep(needsProfile ? profileStep : programStep) }}
+              onSkipAll={() => { leaveWelcome(); handleFinish() }}
             />
           ) : null}
 
