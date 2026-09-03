@@ -20,6 +20,10 @@ interface PushPayload {
   title: string;
   body: string;
   url?: string;
+  /** Campaña del push (p. ej. "workout_reminder", "inactivity_24h") — viaja en
+   * el `data` de cada canal para que el cliente pueda registrar de qué push
+   * viene un `notification_clicked`. */
+  campaign?: string;
 }
 
 export async function sendPushToUser(
@@ -94,7 +98,7 @@ export async function sendPushToUser(
         channelId: "push-notifications",
         // `source: 'push'` lets the mobile foreground handler distinguish remote
         // push (show banner) from the in-session rest timer (stay silent).
-        data: { url: payload.url, source: "push" },
+        data: { url: payload.url, source: "push", campaign: payload.campaign ?? "" },
       }));
 
     if (messages.length > 0) {

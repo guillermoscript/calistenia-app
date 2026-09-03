@@ -5,12 +5,13 @@ import { dismissOverlays, suppressOverlays, selectDay, TEST_PASS, TEST_NAME } fr
  * Golden path: onboarding completo + activación de programa real.
  *
  * A diferencia de smoke.spec.js (que salta el wizard con "Ya conozco la app"),
- * este spec recorre los 7 pasos (welcome → basics → goals → health → training
- * → program → personalizing), selecciona el programa sembrado
+ * este spec recorre los 8 pasos (welcome → basics → goals → health → training
+ * → program → reminder → personalizing), selecciona el programa sembrado
  * "Intermedio – Balance Total" y verifica que:
  *   1. user_programs tiene el enrollment is_current=true en PB
- *   2. el dashboard muestra el programa activo (no el fallback)
- *   3. /workout muestra los días del programa real ("Push – Pecho y tríceps",
+ *   2. workout_reminders tiene el recordatorio por defecto del paso nuevo (#695)
+ *   3. el dashboard muestra el programa activo (no el fallback)
+ *   4. /workout muestra los días del programa real ("Push – Pecho y tríceps",
  *      que no existe en packages/core/data/workouts)
  *
  * Requiere el catálogo sembrado (scripts/seed-program.mjs), igual que el
@@ -50,7 +51,7 @@ async function readAuth(page) {
   })
 }
 
-test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async ({ page, request }) => {
+test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async ({ page, request }) => {
   test.setTimeout(150_000)
 
   await signup(page)
@@ -104,7 +105,17 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   await expect(continueBtn).toBeEnabled({ timeout: 10000 }) // deshabilitado hasta que el write termina
   await continueBtn.click()
 
-  // ── Paso 6: Personalizing (fase loading dura 2.4s) → preview → finish ────
+  // ── Paso 6: Recordatorio por defecto (#695) ──────────────────────────────
+  // El prompt nativo de permiso bloquearía el test: se simula «denegado», que
+  // es justo la rama «no insistir» — el recordatorio se guarda igual y se avanza.
+  await expect(page.getByText(/A QUÉ HORA SUELES ENTRENAR|WHEN DO YOU USUALLY TRAIN/i)).toBeVisible({ timeout: 8000 })
+  await page.evaluate(() => {
+    if ('Notification' in window) Notification.requestPermission = () => Promise.resolve('denied')
+  })
+  await page.getByRole('button', { name: /^(Noche|Evening)\b/i }).click()
+  await page.getByRole('button', { name: /ACTIVAR RECORDATORIO|TURN ON REMINDER/i }).click()
+
+  // ── Paso 7: Personalizing (fase loading dura 2.4s) → preview → finish ────
   await expect(page.getByText(/PERSONALIZANDO|PERSONALIZING/i)).toBeVisible({ timeout: 8000 })
   // Desde #694 el CTA primario arranca el primer entreno; ir al inicio es el
   // enlace secundario. Este test cubre el camino al dashboard; el del primer
@@ -157,6 +168,18 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   expect(body.totalItems, 'no hay enrollment activo en user_programs').toBe(1)
   expect(JSON.stringify(body.items[0].expand?.program?.name || '')).toContain('Balance Total')
 
+  // ── Ground truth: el paso de recordatorio escribió workout_reminders (#695) ─
+  // Sin días marcados en el paso de entrenamiento cae a lunes-viernes.
+  const remRes = await request.get(`${PB_URL}/api/collections/workout_reminders/records`, {
+    headers: { Authorization: token },
+    params: { perPage: 5, filter: `user='${userId}'` },
+  })
+  expect(remRes.ok(), 'no se pudo leer workout_reminders de PB').toBeTruthy()
+  const remBody = await remRes.json()
+  expect(remBody.totalItems, 'no hay recordatorio de entreno por defecto').toBe(1)
+  expect(remBody.items[0]).toMatchObject({ hour: 20, minute: 30, enabled: true, reminder_type: 'workout' })
+  expect(remBody.items[0].days_of_week).toEqual([1, 2, 3, 4, 5])
+
   // ── /workout renderiza los días del programa real, no el fallback ────────
   await page.goto('/workout')
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
@@ -189,6 +212,12 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   const continueBtn = page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i })
   await expect(continueBtn).toBeEnabled({ timeout: 10000 })
   await continueBtn.click()
+
+  // Paso de recordatorio (#695): se salta con «Ahora no» para dejar el permiso
+  // de notificaciones sin decidir, que es lo que hace que la celebración del
+  // primer entreno ofrezca el push (#694).
+  await expect(page.getByText(/A QUÉ HORA SUELES ENTRENAR|WHEN DO YOU USUALLY TRAIN/i)).toBeVisible({ timeout: 8000 })
+  await page.getByRole('button', { name: /^(Ahora no|Not now)$/i }).click()
 
   const firstWorkoutBtn = page.getByRole('button', { name: /EMPEZAR MI PRIMER ENTRENO|START MY FIRST WORKOUT/i })
   await expect(firstWorkoutBtn).toBeVisible({ timeout: 10000 })

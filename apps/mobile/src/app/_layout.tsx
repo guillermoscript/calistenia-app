@@ -165,6 +165,9 @@ function RootLayout() {
         source,
         url: response.notification.request.content.data?.url as string | undefined,
         title: response.notification.request.content.title ?? undefined,
+        // Qué campaña de push disparó el tap (recordatorio, inactividad 24h/72h…),
+        // el dato que faltaba para saber CUÁL push trae de vuelta al usuario (#695).
+        campaign: response.notification.request.content.data?.campaign as string | undefined,
       })
     }
 

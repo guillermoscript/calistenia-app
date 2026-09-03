@@ -82,6 +82,12 @@ function getNotificationMessage(
       // El nombre puede venir vacío (programa sin `name`): el copy se sostiene
       // igual, así que no hay fallback que inventar aquí.
       return t('notif.programDeleted', { name: l(n.data?.programName) })
+    // Push de inactividad (#695): autonotificación (actor = el propio usuario),
+    // así que el copy no lleva nombre.
+    case 'inactivity_24h':
+      return t('notif.inactivity24h')
+    case 'inactivity_72h':
+      return t('notif.inactivity72h')
     default:
       return t('notif.default', { name: n.actorName })
   }
@@ -122,6 +128,10 @@ function getNotificationRoute(n: AppNotification): string {
       // navega a él: el registro ya no existe y `/programs/:id` daría un 404.
       // El catálogo es la acción útil que le queda al usuario: buscarse otro.
       return '/programs'
+    case 'inactivity_24h':
+    case 'inactivity_72h':
+      // La acción útil es entrenar: la página del entreno de hoy (#695).
+      return '/workout'
     default:
       return '/'
   }

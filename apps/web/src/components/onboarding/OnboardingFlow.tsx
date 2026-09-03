@@ -4,12 +4,21 @@ import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
 import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { getOrLoadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { estimateFirstWorkoutMinutes, markFirstWorkoutPending, normalizeFirstWorkoutLevel } from '@calistenia/core/lib/first-workout'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
+import {
+  DEFAULT_TRAINING_TIME_PRESET,
+  findTrainingTimePreset,
+  formatReminderTime,
+  reminderDaysFromTraining,
+  type TrainingTimePresetId,
+} from '@calistenia/core/lib/onboarding-reminder'
 import type { ProgramMeta } from '@calistenia/core/types'
+import { requestNotificationPermission, subscribeToPush, getNotificationSupport } from '../../lib/push-subscription'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
@@ -17,6 +26,7 @@ import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth, type HealthValues } from './StepHealth'
 import { StepTraining, type TrainingValues } from './StepTraining'
 import { StepProgram } from './StepProgram'
+import { StepReminder } from './StepReminder'
 import { StepPersonalizing } from './StepPersonalizing'
 
 interface OnboardingFlowProps {
@@ -74,6 +84,8 @@ export default function OnboardingFlow({
   const [training, setTraining] = useState<TrainingValues>(EMPTY_TRAINING)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
+  const [reminderPreset, setReminderPreset] = useState<TrainingTimePresetId>(DEFAULT_TRAINING_TIME_PRESET)
+  const [savingReminder, setSavingReminder] = useState(false)
   // Escrituras del onboarding a PocketBase, compartidas con móvil (#472).
   // Si un guardado falla devuelven false y NO se avanza de paso (#222).
   const {
@@ -88,17 +100,22 @@ export default function OnboardingFlow({
   // Salud guardada (user_health): fallback para el matching de programas cuando
   // el flujo no pasó por el paso de salud (needsProfile=false).
   const { health: savedHealth } = useUserHealth(userId ?? null)
+  // #695: si ya existe un recordatorio de entrenamiento activo (p.ej. lo creó
+  // en un onboarding anterior interrumpido) no lo volvemos a pedir.
+  const { reminders: workoutReminders, saveReminder } = useWorkoutReminders(userId ?? null)
+  const hasWorkoutReminder = workoutReminders.some(r => r.reminderType === 'workout' && r.enabled)
 
   // Step index layout (frozen via needsProfile):
   //   0=welcome, 1=basics, 2=goals, 3=health, 4=training (only if needsProfile),
-  //   then program, then personalizing
+  //   then program, then reminder, then personalizing
   const profileStep = needsProfile ? 1 : -1
   const goalsStep = needsProfile ? 2 : -1
   const healthStep = needsProfile ? 3 : -1
   const trainingStep = needsProfile ? 4 : -1
   const programStep = needsProfile ? 5 : 1
-  const personalizingStep = needsProfile ? 6 : 2
-  const totalSteps = needsProfile ? 7 : 3
+  const reminderStep = needsProfile ? 6 : 2
+  const personalizingStep = needsProfile ? 7 : 3
+  const totalSteps = needsProfile ? 8 : 4
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
@@ -107,6 +124,7 @@ export default function OnboardingFlow({
     if (s === healthStep) return 'health'
     if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
+    if (s === reminderStep) return 'reminder'
     if (s === personalizingStep) return 'personalizing'
     return `step_${s}`
   }
@@ -170,6 +188,45 @@ export default function OnboardingFlow({
     if (await saveTraining(training)) goToStep(programStep)
   }
 
+  // #695: guarda el recordatorio por defecto («¿a qué hora sueles entrenar?»)
+  // con la entrega ya delegada al dispatcher del servidor. Pedir permiso de
+  // notificaciones puede acabar denegado — igual guardamos el recordatorio: el
+  // issue pide no insistir, no bloquear el guardado.
+  const handleSaveReminder = async () => {
+    setSavingReminder(true)
+    setSaveError(false)
+    try {
+      const support = getNotificationSupport()
+      let permission: 'granted' | 'denied' | 'unsupported' = 'unsupported'
+      if (support.notifications) {
+        const granted = await requestNotificationPermission()
+        permission = granted ? 'granted' : 'denied'
+        if (granted && userId) subscribeToPush(userId).catch(() => {})
+      }
+
+      const chosenPreset = findTrainingTimePreset(reminderPreset)
+      const days = reminderDaysFromTraining(training.training_days)
+      await saveReminder(chosenPreset.hour, chosenPreset.minute, days, 'workout')
+
+      op.track('onboarding_reminder_set', {
+        preset: chosenPreset.id,
+        time: formatReminderTime(chosenPreset.hour, chosenPreset.minute),
+        days_count: days.length,
+        permission,
+      })
+      goToStep(personalizingStep)
+    } catch {
+      setSaveError(true)
+    } finally {
+      setSavingReminder(false)
+    }
+  }
+
+  const handleSkipReminder = () => {
+    op.track('onboarding_reminder_skipped', { preset: reminderPreset })
+    goToStep(personalizingStep)
+  }
+
   const handleFinish = (destination: 'home' | 'measurements' | 'first_workout' = 'home') => {
     if (userId) markOnboardingDone(userId)
     op.track('onboarding_completed', {
@@ -184,6 +241,7 @@ export default function OnboardingFlow({
       injuries_count: health.injuries.length,
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
+      has_reminder: hasWorkoutReminder,
     })
     if (destination === 'measurements' && onFirstMeasurement) {
       onFirstMeasurement()
@@ -309,7 +367,18 @@ export default function OnboardingFlow({
               onCreateProgram()
             }}
             onBack={() => goToStep(needsProfile ? trainingStep : 0)}
-            onContinue={() => goToStep(personalizingStep)}
+            onContinue={() => goToStep(hasWorkoutReminder ? personalizingStep : reminderStep)}
+          />
+        )}
+
+        {step === reminderStep && (
+          <StepReminder
+            preset={reminderPreset}
+            onChange={setReminderPreset}
+            saving={savingReminder}
+            onBack={() => goToStep(programStep)}
+            onContinue={handleSaveReminder}
+            onSkip={handleSkipReminder}
           />
         )}
 
