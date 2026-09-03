@@ -182,6 +182,11 @@ export const CANONICAL_ANALYTICS_EVENTS = {
    * cae la gente.
    */
   onboardingStarted: 'onboarding_started',
+  /**
+   * Respuesta a «¿cómo conociste la app?» en la bienvenida del onboarding
+   * (#586). Lleva `discovery_source` con un id estable, nunca texto libre.
+   */
+  discoverySourceAnswered: 'discovery_source_answered',
 } as const
 
 export type CanonicalAnalyticsEvent = typeof CANONICAL_ANALYTICS_EVENTS[keyof typeof CANONICAL_ANALYTICS_EVENTS]

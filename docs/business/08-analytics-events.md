@@ -1,9 +1,24 @@
 # Analytics & Growth Events
 
-Version: **5**
+Version: **6**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
 
+> **Version 6 (2026-09-03, PR #586) — where users come from, in their own
+> words.** Additive; no saved report changes.
+>
+> - **`discovery_source_answered`.** The onboarding welcome screen asks one
+>   optional question, "How did you find the app?", as a row of chips. The
+>   answer travels as a stable id (`app_store`, `search`, `ai_chat`, `social`,
+>   `friend`, `github`, `other`) — never free text. Referrer and Play install
+>   referrer already say *which site* sent someone; they cannot tell a ChatGPT
+>   recommendation from a friend's. Fires once per flow, when the user leaves
+>   the welcome step, so changing one's mind before continuing does not count
+>   twice.
+> - **`onboarding_completed` gains `discovery_source`.** Same ids, plus
+>   `not_answered`, so completion (and everything downstream keyed on the
+>   profile) can be broken down by acquisition channel without a join.
+>
 > **Version 5 (2026-08-25, issue #636) — the training funnel gets its middle,
 > web and mobile stop measuring different things, and six silent surfaces start
 > reporting.** This version **breaks one saved report on purpose**; everything
@@ -192,6 +207,7 @@ GPS coordinates, or unnecessary personal data.
 | `signup_started` | A registration attempt begins | `surface=auth`, `source`, `method` | Web + mobile core | One per attempt |
 | `signup_failed` | A registration attempt fails | `surface=auth`, `source`, `method`, `status` | Web + mobile core | Same message rule as `login_failed` |
 | `onboarding_started` | The onboarding flow mounts | `surface=onboarding`, `source`, `total_steps`, `needs_profile` | Web + mobile | Once per flow. `onboarding_step_viewed` only fires when *advancing*, so step 0 was never reported and `onboarding_completed` had no denominator |
+| `discovery_source_answered` | The user leaves the onboarding welcome step having picked "how did you find the app?" | `surface=onboarding`, `source`, `discovery_source` | Web + mobile | Once per flow, only if a chip was picked. `discovery_source` is one of `app_store`, `search`, `ai_chat`, `social`, `friend`, `github`, `other`; `onboarding_completed` carries the same value (or `not_answered`) |
 
 The training-funnel events (`session_started`, `workout_completed`,
 `session_exited`, `workout_abandoned`, `workout_day_viewed`, `set_logged`,
