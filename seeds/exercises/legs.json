@@ -791,7 +791,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Skater Jumps", "en": "Skater Jumps" },
+          "name": { "es": "Salto de Patinador", "en": "Skater Jumps" },
           "slug": "skater-jumps",
           "description": {
             "es": "Saltos laterales de pierna a pierna imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
@@ -810,7 +810,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Box Jump", "en": "Box Jump" },
+          "name": { "es": "Salto al Cajón", "en": "Box Jump" },
           "slug": "box-jump",
           "description": {
             "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
@@ -886,7 +886,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Single Leg Box Jump", "en": "Single Leg Box Jump" },
+          "name": { "es": "Salto al Cajón a Una Pierna", "en": "Single Leg Box Jump" },
           "slug": "single-leg-box-jump",
           "description": {
             "es": "Salto al cajón impulsándote con una sola pierna. El ejercicio pliométrico unilateral más avanzado.",

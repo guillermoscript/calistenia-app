@@ -1,5 +1,5 @@
 {
-  "_comment": "Curated map: ExerciseDB id -> existing catalog id. Used by build-exercise-catalog.mjs to ENRICH existing entries instead of creating near-duplicate new ones. Exact normalized-name matches are computed automatically at build time; this file only covers base movements whose names differ between the two catalogs (e.g. ExerciseDB 'push-up' = our 'pushup_std') plus one explicit disambiguation ('muscle up' normalizes to both muscle_up and the legacy jogging entry).",
+  "_comment": "Curated map: ExerciseDB id -> existing catalog id. Used by build-exercise-catalog.mjs to ENRICH existing entries instead of creating near-duplicate new ones. Exact normalized-name matches are computed automatically at build time; this file only covers base movements whose names differ between the two catalogs (e.g. ExerciseDB 'push-up' = our 'pushup_std'). Note (#692): a mislabeled 'jogging' wger entry that duplicated 'muscle up' was removed from the catalog base.",
   "matches": {
     "0662": "pushup_std",
     "0652": "pullup_strict",

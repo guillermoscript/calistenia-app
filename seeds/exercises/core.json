@@ -501,7 +501,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Sit-up", "en": "Sit-up" },
+          "name": { "es": "Abdominales Sit-up", "en": "Sit-up" },
           "slug": "sit-up",
           "description": {
             "es": "Desde tumbado, sube el torso completo hasta sentarte. Mayor rango que el crunch, involucrando también los flexores de cadera.",
