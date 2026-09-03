@@ -21,6 +21,21 @@
  * explícitamente false. `push_enabled` es el master de push. Ver prefAllows().
  */
 
+// Aviso de arranque: sin INTERNAL_API_KEY el AI API rechaza el push con 401 y
+// sin AI_API_URL se intenta contra localhost:3001 (nunca alcanzable en prod).
+// Ambos fallan EN SILENCIO dentro de sendPush/sendPushBatch (try/catch), así
+// que este aviso al cargar el módulo es la única pista en los logs de PB.
+try {
+  if (!$os.getenv("INTERNAL_API_KEY")) {
+    console.error("[notif] INTERNAL_API_KEY vacía: los push del servidor devolverán 401")
+  }
+  if (!$os.getenv("AI_API_URL")) {
+    console.error("[notif] AI_API_URL vacía: se usará http://localhost:3001")
+  }
+} catch (e) {
+  // nunca romper la carga del módulo por este aviso
+}
+
 /**
  * Nombre PÚBLICO de un usuario: el que puede acabar en la pantalla de otro.
  *
@@ -122,6 +137,12 @@ function categoryForType(type) {
     // con categoría vacía. Va escrito como `case` y no cayéndose por el `default`
     // para que la decisión sea explícita y salga al grepear el tipo.
     case "program_deleted": return ""
+    // inactivity_24h / inactivity_72h (#695): mismo caso que program_deleted —
+    // transaccional, no contenido social de otro usuario. Es el único push que
+    // puede sacar a alguien de "se registró y nunca entrenó"; silenciarlo con
+    // una categoría social apagable anularía la feature.
+    case "inactivity_24h":
+    case "inactivity_72h": return ""
     default: return ""
   }
 }
@@ -209,15 +230,18 @@ function sendPush(userId, title, body, url, type, actorId) {
     if (internalKey) {
       headers["X-Internal-Key"] = internalKey
     }
-    $http.send({
+    var res = $http.send({
       url: apiUrl + "/api/send-push",
       method: "POST",
       headers: headers,
       body: JSON.stringify({ user_id: userId, title: title, body: body, url: url }),
       timeout: 10,
     })
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      console.error("[notif] push HTTP " + res.statusCode + " (" + apiUrl + "): " + String(res.raw || "").slice(0, 200))
+    }
   } catch (e) {
-    console.log("[notif] push error:", e)
+    console.error("[notif] push error:", e)
   }
 }
 
@@ -263,15 +287,18 @@ function sendPushBatch(userIds, title, body, url, type, actorId) {
     if (internalKey) {
       headers["X-Internal-Key"] = internalKey
     }
-    $http.send({
+    var res = $http.send({
       url: apiUrl + "/api/send-push",
       method: "POST",
       headers: headers,
       body: JSON.stringify({ user_ids: recipients, title: title, body: body, url: url }),
       timeout: 10,
     })
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      console.error("[notif] push batch HTTP " + res.statusCode + " (" + apiUrl + "): " + String(res.raw || "").slice(0, 200))
+    }
   } catch (e) {
-    console.log("[notif] push batch error:", e)
+    console.error("[notif] push batch error:", e)
   }
 }
 

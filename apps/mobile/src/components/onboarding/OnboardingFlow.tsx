@@ -16,15 +16,26 @@ import Animated, { FadeInRight } from 'react-native-reanimated'
 
 import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import {
+  DEFAULT_TRAINING_TIME_PRESET,
+  findTrainingTimePreset,
+  formatReminderTime,
+  reminderDaysFromTraining,
+  type TrainingTimePresetId,
+} from '@calistenia/core/lib/onboarding-reminder'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
 
 import { Sentry } from '@/lib/instrument'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { haptics } from '@/lib/haptics'
+import { ensureReminderPermission, getReminderPermission } from '@/lib/reminder-scheduler'
+import { registerPushTokenAsync } from '@/lib/push-registration'
 
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
@@ -33,6 +44,7 @@ import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth } from './StepHealth'
 import { StepTraining } from './StepTraining'
 import { StepProgram } from './StepProgram'
+import { StepReminder } from './StepReminder'
 import { StepPersonalizing } from './StepPersonalizing'
 import type { HealthValues } from '@calistenia/core/types/onboarding'
 import type { TrainingValues } from '@calistenia/core/types/onboarding'
@@ -96,6 +108,12 @@ export function OnboardingFlow() {
   // Salud guardada (user_health): fallback para el matching de programas cuando
   // el flujo no pasó por el paso de salud (needsProfile=false).
   const { health: savedHealth } = useUserHealth(userId ?? null)
+  // Recordatorio de entreno por defecto (#695): comparte hook con la pantalla
+  // de Ajustes > Recordatorios.
+  const { reminders, saveReminder } = useWorkoutReminders(userId ?? null)
+  const [reminderPreset, setReminderPreset] = useState<TrainingTimePresetId>(DEFAULT_TRAINING_TIME_PRESET)
+  const [savingReminder, setSavingReminder] = useState(false)
+  const [reminderPermissionDenied, setReminderPermissionDenied] = useState(false)
 
   // Step index layout (frozen via needsProfile)
   const profileStep = needsProfile ? 1 : -1
@@ -103,8 +121,9 @@ export function OnboardingFlow() {
   const healthStep = needsProfile ? 3 : -1
   const trainingStep = needsProfile ? 4 : -1
   const programStep = needsProfile ? 5 : 1
-  const personalizingStep = needsProfile ? 6 : 2
-  const totalSteps = needsProfile ? 7 : 3
+  const reminderStep = needsProfile ? 6 : 2
+  const personalizingStep = needsProfile ? 7 : 3
+  const totalSteps = needsProfile ? 8 : 4
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
@@ -113,9 +132,22 @@ export function OnboardingFlow() {
     if (s === healthStep) return 'health'
     if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
+    if (s === reminderStep) return 'reminder'
     if (s === personalizingStep) return 'personalizing'
     return `step_${s}`
   }
+
+  // Al llegar al paso del recordatorio, si ya hay permiso denegado a nivel OS
+  // (p. ej. lo rechazó antes en Ajustes), avisamos de una vez en vez de que
+  // lo descubra al tocar «Activar recordatorio».
+  useEffect(() => {
+    if (step !== reminderStep) return
+    let cancelled = false
+    getReminderPermission().then((status) => {
+      if (!cancelled) setReminderPermissionDenied(status === 'denied')
+    })
+    return () => { cancelled = true }
+  }, [step, reminderStep])
 
   // `onboarding_step_viewed` solo se emite al AVANZAR, así que el primer paso
   // no lo emitía nadie y no se sabía cuánta gente llega a ver el onboarding
@@ -171,6 +203,44 @@ export function OnboardingFlow() {
     if (await saveTraining(training)) goToStep(programStep)
   }
 
+  // El recordatorio queda guardado SIEMPRE (offline-first, `saveReminder`
+  // escribe a local antes de intentar PB y nunca lanza), permiso concedido o
+  // no: negarlo solo cambia si sonará, no si el recordatorio existe (#695).
+  const handleSaveReminder = async () => {
+    setSavingReminder(true)
+    setSaveError(false)
+    try {
+      const presetMeta = findTrainingTimePreset(reminderPreset)
+      const granted = await ensureReminderPermission()
+      setReminderPermissionDenied(!granted)
+      if (granted && userId) {
+        registerPushTokenAsync(pb, userId).catch((e) => {
+          Sentry.captureException(e, { tags: { feature: 'onboarding_reminder', op: 'register_push_token' } })
+        })
+      }
+      const days = reminderDaysFromTraining(training.training_days)
+      await saveReminder(presetMeta.hour, presetMeta.minute, days, 'workout')
+      op.track('onboarding_reminder_set', {
+        preset: reminderPreset,
+        time: formatReminderTime(presetMeta.hour, presetMeta.minute),
+        days_count: days.length,
+        permission: granted ? 'granted' : 'denied',
+      })
+      goToStep(personalizingStep)
+    } catch (e) {
+      Sentry.captureException(e, { tags: { flow: 'onboarding_save', step: 'reminder' } })
+      setSaveError(true)
+      haptics.error()
+    } finally {
+      setSavingReminder(false)
+    }
+  }
+
+  const handleSkipReminder = () => {
+    op.track('onboarding_reminder_skipped', { preset: reminderPreset })
+    goToStep(personalizingStep)
+  }
+
   const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
     if (userId) {
       markOnboardingDone(userId)
@@ -186,6 +256,7 @@ export function OnboardingFlow() {
       injuries_count: health.injuries.length,
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
+      has_reminder: reminders.some((r) => r.reminderType === 'workout' && r.enabled),
     })
     router.replace('/(tabs)')
     // Deep-link a la primera medición corporal (#227): la pantalla stacked se
@@ -327,7 +398,26 @@ export function OnboardingFlow() {
                 router.replace('/program-editor')
               }}
               onBack={() => goToStep(needsProfile ? trainingStep : 0)}
-              onContinue={() => goToStep(personalizingStep)}
+              onContinue={() => {
+                // Si ya tiene un recordatorio de entreno activo (perfil existente,
+                // o volvió atrás tras guardarlo), el paso no aporta nada: saltarlo.
+                const hasWorkoutReminder = reminders.some(
+                  (r) => r.reminderType === 'workout' && r.enabled,
+                )
+                goToStep(hasWorkoutReminder ? personalizingStep : reminderStep)
+              }}
+            />
+          ) : null}
+
+          {step === reminderStep ? (
+            <StepReminder
+              preset={reminderPreset}
+              onChange={setReminderPreset}
+              onBack={() => goToStep(programStep)}
+              onContinue={handleSaveReminder}
+              onSkip={handleSkipReminder}
+              saving={savingReminder}
+              permissionDenied={reminderPermissionDenied}
             />
           ) : null}
 

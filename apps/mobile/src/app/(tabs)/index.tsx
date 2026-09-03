@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useCountUp } from '@/lib/use-count-up'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Play, Check, Moon, MapPin, Users, Bell, Trophy, Flag, Timer } from 'lucide-react-native'
 
@@ -192,6 +192,36 @@ export default function TodayScreen() {
     }
     router.push('/session')
   }
+
+  // Deep-link `autostart=1` (#695): tocar el push de recordatorio/inactividad
+  // (`/workout` → `resolveNotifUrl`) arranca el entreno de hoy sin que el
+  // usuario tenga que buscar el botón. Misma prioridad que el Pressable del
+  // hero: fuerza > cardio > circuito. `autostartFiredFor` evita relanzar en
+  // cada render mientras `programsReady` sigue resolviendo (el efecto vuelve
+  // a correr con cada cambio de esas deps hasta que puede decidir).
+  const { autostart } = useLocalSearchParams<{ autostart?: string }>()
+  const autostartFiredFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (autostart !== '1') {
+      // El param se limpia tras disparar; al desaparecer se rearma el guard
+      // para que un segundo push más tarde (misma vida de la app) sí arranque.
+      autostartFiredFor.current = null
+      return
+    }
+    if (!programsReady) return
+    if (autostartFiredFor.current === autostart) return
+    autostartFiredFor.current = autostart
+    if (canTrainToday && !doneToday) {
+      handleStart()
+    } else if (isCardioDay) {
+      handleStartCardio()
+    } else if (canStartCircuit && !doneToday) {
+      handleStartCircuit()
+    }
+    // Sin esto, volver a esta pestaña (o refrescar la vista) relanzaría el
+    // entreno cada vez: el query param sigue vivo hasta que se limpia aquí.
+    router.setParams({ autostart: undefined })
+  }, [autostart, programsReady, canTrainToday, doneToday, isCardioDay, canStartCircuit]) // eslint-disable-line react-hooks/exhaustive-deps -- handlers recreados cada render, no deps útiles
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>

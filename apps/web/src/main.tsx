@@ -118,7 +118,7 @@ if ('serviceWorker' in navigator) {
     if (event.data?.type === 'NOTIFICATION_CLICKED') {
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.notificationClicked, {
         surface: 'notification', source: 'service_worker',
-        url: event.data.url, title: event.data.title,
+        url: event.data.url, title: event.data.title, campaign: event.data.campaign,
       })
     }
   })

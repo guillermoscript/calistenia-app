@@ -114,7 +114,7 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    data: { url: data.url || '/nutrition' },
+    data: { url: data.url || '/nutrition', campaign: data.campaign },
     vibrate: [200, 100, 200],
     requireInteraction: true,
   }
@@ -143,7 +143,12 @@ self.addEventListener('notificationclick', (event) => {
       // If there's already an open tab, focus it and notify for analytics
       for (const client of windowClients) {
         if ('focus' in client) {
-          client.postMessage({ type: 'NOTIFICATION_CLICKED', url: targetUrl, title: notifTitle })
+          client.postMessage({
+            type: 'NOTIFICATION_CLICKED',
+            url: targetUrl,
+            title: notifTitle,
+            campaign: event.notification.data?.campaign,
+          })
           return (client as WindowClient).navigate(targetUrl).then(c => c?.focus())
         }
       }

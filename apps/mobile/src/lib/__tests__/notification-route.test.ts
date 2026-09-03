@@ -40,6 +40,28 @@ describe('challenge notification deep links', () => {
   })
 })
 
+describe('workout reminder / inactivity push deep link (#695)', () => {
+  // El servidor manda `url: '/workout'` para los recordatorios y los pushes
+  // de inactividad, pero esa ruta no existe en nativo — antes caía al
+  // `default` y aterrizaba en /notifications en vez de arrancar el entreno.
+  it('lands a workout reminder push on home with autostart', () => {
+    expect(resolveNotifUrl('/workout')).toBe('/(tabs)?autostart=1')
+  })
+
+  it('ignores any query string on the workout url — autostart always wins', () => {
+    expect(resolveNotifUrl('/workout?x=1')).toBe('/(tabs)?autostart=1')
+  })
+
+  // Dos mapeos existentes, sin regresión tras el cambio de arriba.
+  it('still lands a referral push on /referrals', () => {
+    expect(resolveNotifUrl('/referrals')).toBe('/referrals')
+  })
+
+  it('still keeps a challenge detail url intact', () => {
+    expect(resolveNotifUrl('/challenges/challenge-123')).toBe('/challenges/challenge-123')
+  })
+})
+
 describe('program deleted notification (#633)', () => {
   // `referenceId` guarda el id del programa borrado como rastro, pero navegar
   // ahí daría un 404: el registro ya no existe. El catálogo es la acción útil

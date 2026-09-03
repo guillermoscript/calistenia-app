@@ -146,11 +146,14 @@ describe("contentFor", () => {
     const c = contentFor({ kind: "meal", mealType: "desayuno" });
     expect(c.title).toContain("desayuno");
     expect(c.url).toBe("/nutrition");
+    expect(c.campaign).toBe("meal_reminder");
   });
 
   it("distingue pausa activa de entrenamiento", () => {
     expect(contentFor({ kind: "pause" }).title).toBe("Pausa activa");
+    expect(contentFor({ kind: "pause" }).campaign).toBe("pause_reminder");
     expect(contentFor({ kind: "workout" }).title).toContain("entrenar");
+    expect(contentFor({ kind: "workout" }).campaign).toBe("workout_reminder");
   });
 });
 

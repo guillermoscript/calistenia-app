@@ -103,6 +103,12 @@ function getNotificationMessage(
     // aquí `l`. Puede venir vacío (programa sin `name`) y el copy se sostiene.
     case 'program_deleted':
       return t('notif.programDeleted', { name: l(n.data?.programName) })
+    // Push de inactividad (#695): autonotificación (actor = el propio usuario),
+    // así que el copy no lleva nombre.
+    case 'inactivity_24h':
+      return t('notif.inactivity24h')
+    case 'inactivity_72h':
+      return t('notif.inactivity72h')
     default:
       return `${name} te envió una notificación`
   }
