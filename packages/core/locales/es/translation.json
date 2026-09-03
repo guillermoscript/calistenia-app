@@ -4900,5 +4900,18 @@
   "progression.accepted": "Aplicado",
   "progression.failed": "No se pudo guardar",
   "progression.optInLabel": "Progresión automática",
-  "progression.optInHint": "Sugiere subir repeticiones o cambiar de variante cuando cumples el objetivo dos sesiones seguidas."
+  "progression.optInHint": "Sugiere subir repeticiones o cambiar de variante cuando cumples el objetivo dos sesiones seguidas.",
+  "onboarding.firstWorkoutCta": "EMPEZAR MI PRIMER ENTRENO · {{minutes}} MIN",
+  "onboarding.firstWorkoutHint": "4 ejercicios sin material. Lo cierras hoy mismo.",
+  "onboarding.goHomeInstead": "Ahora no, ir al inicio",
+  "firstWorkout.title": "Tu primer entreno",
+  "firstWorkout.cardKicker": "Empieza por aquí",
+  "firstWorkout.cardDesc": "{{minutes}} min · 4 ejercicios · sin material",
+  "firstWorkout.cardCta": "Empezar",
+  "pushPrompt.title": "¿Te avisamos del próximo?",
+  "pushPrompt.desc": "Un recordatorio para que la racha no se quede en uno.",
+  "pushPrompt.accept": "Activar avisos",
+  "pushPrompt.decline": "Ahora no",
+  "pushPrompt.granted": "Avisos activados",
+  "pushPrompt.denied": "Puedes activarlos en Ajustes cuando quieras."
 }

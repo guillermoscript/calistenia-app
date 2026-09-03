@@ -561,6 +561,7 @@ function AuthenticatedApp({
         onCreateProgram={() => { markOnboardingDone(user.id); setOnboardingDone(true); navigate('/programs/new') }}
         onComplete={() => { setOnboardingDone(true); navigate('/workout') }}
         onFirstMeasurement={() => { setOnboardingDone(true); navigate('/progress?tab=cuerpo') }}
+        onStartFirstWorkout={() => { setOnboardingDone(true); navigate('/session') }}
       />
     )
   }

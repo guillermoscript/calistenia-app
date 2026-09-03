@@ -4900,5 +4900,18 @@
   "progression.accepted": "Applied",
   "progression.failed": "Could not save",
   "progression.optInLabel": "Auto progression",
-  "progression.optInHint": "Suggests more reps or a harder variant once you hit the target two sessions in a row."
+  "progression.optInHint": "Suggests more reps or a harder variant once you hit the target two sessions in a row.",
+  "onboarding.firstWorkoutCta": "START MY FIRST WORKOUT · {{minutes}} MIN",
+  "onboarding.firstWorkoutHint": "4 bodyweight exercises. Done today.",
+  "onboarding.goHomeInstead": "Not now, go to home",
+  "firstWorkout.title": "Your first workout",
+  "firstWorkout.cardKicker": "Start here",
+  "firstWorkout.cardDesc": "{{minutes}} min · 4 exercises · no equipment",
+  "firstWorkout.cardCta": "Start",
+  "pushPrompt.title": "Want a nudge for the next one?",
+  "pushPrompt.desc": "One reminder so the streak doesn’t stop at one.",
+  "pushPrompt.accept": "Turn on alerts",
+  "pushPrompt.decline": "Not now",
+  "pushPrompt.granted": "Alerts on",
+  "pushPrompt.denied": "You can turn them on in Settings any time."
 }

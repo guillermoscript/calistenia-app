@@ -6,6 +6,8 @@ import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
+import { getOrLoadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
+import { estimateFirstWorkoutMinutes, markFirstWorkoutPending, normalizeFirstWorkoutLevel } from '@calistenia/core/lib/first-workout'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import type { ProgramMeta } from '@calistenia/core/types'
 import { OnboardingProgress } from './OnboardingProgress'
@@ -28,6 +30,8 @@ interface OnboardingFlowProps {
   onComplete: () => void
   /** Cierra el onboarding navegando a la primera medición corporal (#227). */
   onFirstMeasurement?: () => void
+  /** Cierra el onboarding directo al primer entreno del día 0 (#694). */
+  onStartFirstWorkout?: () => void
 }
 
 const EMPTY_BASICS: BasicsValues = {
@@ -56,6 +60,7 @@ export default function OnboardingFlow({
   onCreateProgram,
   onComplete,
   onFirstMeasurement,
+  onStartFirstWorkout,
 }: OnboardingFlowProps) {
   // Detect if profile data is missing (e.g. Google OAuth signup or skipped step).
   // Freeze at mount: otherwise saving the profile mid-flow re-numbers the steps
@@ -117,6 +122,12 @@ export default function OnboardingFlow({
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vez por onboarding
 
+  // Precalienta el índice del catálogo (web lo carga perezoso, #486): así ya
+  // está listo cuando `handleFinish('first_workout')` construya la sesión.
+  useEffect(() => {
+    getOrLoadCatalogIndex()
+  }, [])
+
   const goToStep = (s: number) => {
     setSaveError(false)
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
@@ -159,10 +170,11 @@ export default function OnboardingFlow({
     if (await saveTraining(training)) goToStep(programStep)
   }
 
-  const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
+  const handleFinish = (destination: 'home' | 'measurements' | 'first_workout' = 'home') => {
     if (userId) markOnboardingDone(userId)
     op.track('onboarding_completed', {
       first_measurement_cta: destination === 'measurements',
+      destination,
       level: training.level || 'unknown',
       primary_goal: goals.primary_goal || 'unknown',
       has_program: !!selectedProgramId,
@@ -173,8 +185,14 @@ export default function OnboardingFlow({
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
     })
-    if (destination === 'measurements' && onFirstMeasurement) onFirstMeasurement()
-    else onComplete()
+    if (destination === 'measurements' && onFirstMeasurement) {
+      onFirstMeasurement()
+    } else if (destination === 'first_workout' && onStartFirstWorkout) {
+      if (userId) markFirstWorkoutPending(userId, training.level || user?.level, 'onboarding')
+      onStartFirstWorkout()
+    } else {
+      onComplete()
+    }
   }
 
   const { t, i18n } = useTranslation()
@@ -303,6 +321,8 @@ export default function OnboardingFlow({
             program={programs.find(p => p.id === selectedProgramId) ?? null}
             onFinish={() => handleFinish()}
             onFirstMeasurement={onFirstMeasurement ? () => handleFinish('measurements') : undefined}
+            onStartFirstWorkout={onStartFirstWorkout ? () => handleFinish('first_workout') : undefined}
+            firstWorkoutMinutes={estimateFirstWorkoutMinutes(normalizeFirstWorkoutLevel(training.level || user?.level))}
           />
         )}
       </div>

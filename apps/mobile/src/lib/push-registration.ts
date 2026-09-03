@@ -15,6 +15,7 @@ import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import type PocketBase from 'pocketbase'
+import type { PushPermissionState } from '@calistenia/core/lib/push-prompt'
 
 // Canal Android para notificaciones remotas (push).
 // Usamos un id separado de 'reminders' y 'rest-timer' para que el usuario
@@ -27,13 +28,20 @@ const PUSH_CHANNEL_ID = 'push-notifications'
  *
  * @param pb      Instancia singleton de PocketBase (ya inicializada).
  * @param userId  ID del usuario autenticado.
+ * @param opts.requestPermission  Si es `false`, no dispara el diálogo del SO
+ *   cuando el permiso aún no está concedido (`undetermined`): se limita a
+ *   registrar el token si ya había permiso, y si no lo hay, no hace nada.
+ *   Por defecto `true` (comportamiento histórico). Ver `#694`: el arranque ya
+ *   no pide el permiso — el diálogo vive en la celebración post-entreno.
  *
  * @returns El token registrado, o null si no se pudo obtener/guardar.
  */
 export async function registerPushTokenAsync(
   pb: PocketBase,
   userId: string,
+  opts: { requestPermission?: boolean } = {},
 ): Promise<string | null> {
+  const { requestPermission = true } = opts
   try {
     // ── 1. Guard: solo dispositivos físicos soportan push remoto ─────────────
     if (!Device.isDevice) {
@@ -53,6 +61,10 @@ export async function registerPushTokenAsync(
     // ── 3. Permisos ───────────────────────────────────────────────────────────
     const { granted: alreadyGranted } = await Notifications.getPermissionsAsync()
     if (!alreadyGranted) {
+      if (!requestPermission) {
+        console.log('[push] Permiso aún no decidido y requestPermission=false; omitiendo registro (#694).')
+        return null
+      }
       const { granted } = await Notifications.requestPermissionsAsync()
       if (!granted) {
         console.log('[push] Permiso de notificaciones denegado; omitiendo registro.')
@@ -132,5 +144,22 @@ export async function registerPushTokenAsync(
     // Nunca bloquear el init de la app por un fallo de push registration.
     console.warn('[push] Error en registerPushTokenAsync:', err)
     return null
+  }
+}
+
+/**
+ * Estado del permiso de notificaciones en el vocabulario común de
+ * `@calistenia/core/lib/push-prompt` (#694). No dispara el diálogo del SO:
+ * solo lee el estado actual con `getPermissionsAsync()`.
+ */
+export async function getPushPermissionState(): Promise<PushPermissionState> {
+  try {
+    if (!Device.isDevice) return 'unsupported'
+    const { status, granted, canAskAgain } = await Notifications.getPermissionsAsync()
+    if (granted) return 'granted'
+    if (status === 'undetermined' || (!granted && canAskAgain)) return 'undetermined'
+    return 'denied'
+  } catch {
+    return 'unsupported'
   }
 }

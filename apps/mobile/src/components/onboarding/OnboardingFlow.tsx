@@ -19,12 +19,14 @@ import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
+import { estimateFirstWorkoutMinutes, normalizeFirstWorkoutLevel } from '@calistenia/core/lib/first-workout'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
 
 import { Sentry } from '@/lib/instrument'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { haptics } from '@/lib/haptics'
+import { useStartFirstWorkout } from '@/lib/start-first-workout'
 
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
@@ -58,6 +60,7 @@ export function OnboardingFlow() {
 
   const { programs, activeProgram } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
+  const startFirstWorkout = useStartFirstWorkout()
 
   const [step, setStep] = useState(0)
 
@@ -171,11 +174,12 @@ export function OnboardingFlow() {
     if (await saveTraining(training)) goToStep(programStep)
   }
 
-  const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
+  const handleFinish = (destination: 'home' | 'measurements' | 'first_workout' = 'home') => {
     if (userId) {
       markOnboardingDone(userId)
     }
     op.track('onboarding_completed', {
+      destination,
       first_measurement_cta: destination === 'measurements',
       level: training.level || 'unknown',
       primary_goal: goals.primary_goal || 'unknown',
@@ -187,6 +191,12 @@ export function OnboardingFlow() {
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
     })
+    if (destination === 'first_workout') {
+      // startFirstWorkout navega por su cuenta a /session — no hace falta
+      // (ni conviene) también reemplazar por /(tabs) aquí (#694).
+      startFirstWorkout(training.level || (user as Record<string, unknown>)?.level as string | undefined, 'onboarding')
+      return
+    }
     router.replace('/(tabs)')
     // Deep-link a la primera medición corporal (#227): la pantalla stacked se
     // apila sobre las tabs para que "atrás" caiga en la app normal.
@@ -339,6 +349,10 @@ export function OnboardingFlow() {
               program={programs.find((p) => p.id === selectedProgramId) ?? null}
               onFinish={() => handleFinish()}
               onFirstMeasurement={() => handleFinish('measurements')}
+              onStartFirstWorkout={() => handleFinish('first_workout')}
+              firstWorkoutMinutes={estimateFirstWorkoutMinutes(
+                normalizeFirstWorkoutLevel(training.level || (user as Record<string, unknown>)?.level as string | undefined),
+              )}
             />
           ) : null}
         </Animated.View>

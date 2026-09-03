@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { buildFirstWorkout, firstWorkoutKey, takeFirstWorkoutPending, trackFirstWorkoutStarted } from '@calistenia/core/lib/first-workout'
+import { loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
+import { useSessionIdentity } from '../hooks/useSessionIdentity'
 import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {
   const { isActive, workout, workoutKey, source, startSession, endSession, getWarmupCooldownData, resumeEpoch } = useActiveSession()
-  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
+  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
+  const { userId } = useSessionIdentity()
+  const { i18n } = useTranslation()
   // Repetir reinicia la misma rutina: hay que remontar SessionView para que
   // vuelva al primer paso, igual que hace `resumeEpoch` al adoptar una sesión.
   const [repeatEpoch, setRepeatEpoch] = useState(0)
@@ -17,13 +23,31 @@ export default function ActiveSessionPage() {
   // guarda respondería con un `replace('/')` que se come el destino.
   const leavingTo = useRef(false)
 
+  // El primer entreno del día 0 (#694): el onboarding deja la intención en
+  // storage (no puede llamar a `startSession`, ver `first-workout.ts`) y esta
+  // página la consume UNA vez al montar. Mientras se arranca, la guarda de
+  // abajo no debe redirigir a '/'.
+  const startingFirstWorkout = useRef(false)
+
   // Redirect to dashboard if no active session
   useEffect(() => {
-    if (leavingTo.current) return
-    if (!isActive || !workout) {
-      navigate('/', { replace: true })
+    if (leavingTo.current || startingFirstWorkout.current) return
+    if (isActive && workout) return
+
+    const pending = takeFirstWorkoutPending(userId)
+    if (pending) {
+      startingFirstWorkout.current = true
+      loadCatalogIndex().catch(() => null).then(() => {
+        const w = buildFirstWorkout(pending.level, i18n.language)
+        const key = firstWorkoutKey()
+        startSession(w, key, 'free')
+        trackFirstWorkoutStarted({ source: pending.source, level: pending.level, workoutKey: key })
+      })
+      return
     }
-  }, [isActive, workout, navigate])
+
+    navigate('/', { replace: true })
+  }, [isActive, workout, navigate, userId, i18n.language, startSession])
 
   const handleGoToDashboard = useCallback(() => {
     endSession()
@@ -76,6 +100,7 @@ export default function ActiveSessionPage() {
       onNavigateAway={handleNavigateAway}
       onExitSession={handleExitSession}
       getExerciseLogs={getExerciseLogs}
+      totalSessions={getTotalSessions()}
     />
   )
 }
