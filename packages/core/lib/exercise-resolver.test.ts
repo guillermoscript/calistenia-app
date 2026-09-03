@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildExerciseResolver, resolveExerciseNameField, resolveExerciseDisplayName } from './exercise-resolver'
+import { buildExerciseResolver, groupLogsByResolvedExercise, resolveExerciseNameField, resolveExerciseDisplayName } from './exercise-resolver'
 import { buildCatalogIndex, type RawCatalog } from './catalogIndex'
 import { muscleTokensToGroups } from './muscles'
-import type { Workout } from '../types'
+import type { ProgressMap, Workout } from '../types'
 
 const RAW: RawCatalog = {
   categories: {
@@ -141,5 +141,37 @@ describe('resolveExerciseNameField / resolveExerciseDisplayName', () => {
     expect(resolveExerciseDisplayName('flexiones-clasicas', 'lun_1_9', 'en', index)).toBe('Push-ups')
     expect(resolveExerciseDisplayName('', 'lun_1_9', 'es', index)).toBe('lun_1_9')
     expect(resolveExerciseDisplayName('', 'plank', 'es', index)).toBe('Plancha')
+  })
+})
+
+describe('groupLogsByResolvedExercise (#692)', () => {
+  const resolve = buildExerciseResolver({ index, getWorkout, locale: 'es' })
+  const log = (exerciseId: string, workoutKey: string, date: string) => ({ exerciseId, workoutKey, date, sets: [{ reps: 10 }] })
+  const progress = {
+    'done_2026-01-03_p1_lun': { note: '' },
+    'lun_1_1_2026-01-03': log('lun_1_1', 'p1_lun', '2026-01-03'),
+    'pushups_2026-01-01': log('pushups', 'free_1', '2026-01-01'),
+    'flexiones-clasicas_2026-01-02': log('flexiones-clasicas', 'free_2', '2026-01-02'),
+    'lun_1_3_2026-01-03': log('lun_1_3', 'p1_lun', '2026-01-03'),
+    'zzz_2026-01-04': log('zzz', 'free_3', '2026-01-04'),
+  } as unknown as ProgressMap
+
+  it('fusiona la clave de slot, el seed_slug y el id de catálogo bajo la misma identidad', () => {
+    const { logs, names } = groupLogsByResolvedExercise(progress, resolve)
+    expect(Object.keys(logs).sort()).toEqual(['cosa inventada', 'pushups', 'zzz'])
+    expect(logs.pushups.map(l => l.exerciseId)).toEqual(['pushups', 'flexiones-clasicas', 'lun_1_1'])
+    expect(names.pushups).toBe('Flexiones')
+  })
+
+  it('lo que no resuelve conserva su clave cruda y su nombre', () => {
+    const { logs, names } = groupLogsByResolvedExercise(progress, resolve)
+    expect(logs.zzz).toHaveLength(1)
+    expect(names.zzz).toBe('zzz')
+    expect(names['cosa inventada']).toBe('Cosa inventada')
+  })
+
+  it('ignora las claves done_ y las entradas sin series', () => {
+    const { logs } = groupLogsByResolvedExercise({ 'done_x': { note: '' }, weird: { exerciseId: 'pushups' } } as unknown as ProgressMap, resolve)
+    expect(logs).toEqual({})
   })
 })

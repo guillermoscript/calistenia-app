@@ -1,13 +1,13 @@
 {
   "generated_at": "2026-03-27T00:28:21.066Z",
-  "total_count": 171,
+  "total_count": 169,
   "local_count": 127,
-  "wger_count": 44,
+  "wger_count": 42,
   "with_images": 8,
   "with_video_links": 171,
   "categories": {
     "core": {
-      "count": 16,
+      "count": 15,
       "exercises": [
         {
           "id": "ab_wheel_rollout",
@@ -177,41 +177,6 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Dragon%20Flag%20exercise%20tutorial",
           "youtube_query": "dragon flag tutorial bruce lee",
           "images": []
-        },
-        {
-          "id": "medicine_ball_booklet_crunch",
-          "name": {
-            "es": "Dynamic Planche",
-            "en": "Dynamic Planche"
-          },
-          "muscles": {
-            "es": "Core, Cuadriceps",
-            "en": "Core, Cuadriceps"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": {
-            "es": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs",
-            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs"
-          },
-          "description": {
-            "es": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles.",
-            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "core",
-          "difficulty": "beginner",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1286,
-          "youtube_search": "https://www.youtube.com/results?search_query=Medicine%20ball%20booklet%20crunch%20exercise%20tutorial",
-          "youtube_query": "Medicine ball booklet crunch exercise tutorial",
-          "images": [],
-          "videos": []
         },
         {
           "id": "hanging_knee_raise",
@@ -508,7 +473,7 @@
       ]
     },
     "full": {
-      "count": 14,
+      "count": 13,
       "exercises": [
         {
           "id": "bear_crawl",
@@ -832,41 +797,6 @@
           "wger_id": 376,
           "youtube_search": "https://www.youtube.com/results?search_query=Hip%20Raise%2C%20Lying%20exercise%20tutorial",
           "youtube_query": "Hip Raise, Lying exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
-          "id": "jogging",
-          "name": {
-            "es": "Muscle up",
-            "en": "Muscle up"
-          },
-          "muscles": {
-            "es": "Biceps",
-            "en": "Biceps"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": {
-            "es": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the",
-            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the"
-          },
-          "description": {
-            "es": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion.",
-            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "full",
-          "difficulty": "intermediate",
-          "equipment": [
-            "barra_dominadas"
-          ],
-          "source": "wger",
-          "wger_id": 423,
-          "youtube_search": "https://www.youtube.com/results?search_query=Jogging%20exercise%20tutorial",
-          "youtube_query": "Jogging exercise tutorial",
           "images": [],
           "videos": []
         },
@@ -1507,7 +1437,7 @@
         {
           "id": "skaters",
           "name": {
-            "es": "Skater Jumps",
+            "es": "Patinadores",
             "en": "Skater Jumps"
           },
           "muscles": {
@@ -4992,7 +4922,7 @@
         {
           "id": "wall_sit",
           "name": {
-            "es": "Wall Sit",
+            "es": "Sentadilla en la Pared",
             "en": "Wall Sit"
           },
           "muscles": {

@@ -9,7 +9,7 @@ import { relativeDate } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { useTrainingStats } from '@calistenia/core/hooks/useTrainingStats'
 import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
-import { buildExerciseResolver } from '@calistenia/core/lib/exercise-resolver'
+import { buildExerciseResolver, groupLogsByResolvedExercise } from '@calistenia/core/lib/exercise-resolver'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import type { ExerciseLog } from '@calistenia/core/types'
@@ -133,35 +133,24 @@ export default function ProgressPage() {
       .sort((a, b) => b.date.localeCompare(a.date))
   }, [progress, t])
 
-  const exerciseLogs = useMemo<Record<string, ExerciseLog[]>>(() => {
-    const logs: Record<string, ExerciseLog[]> = {}
-    Object.values(progress).forEach(val => {
-      const v = val as ExerciseLog
-      if (v.exerciseId && v.sets) {
-        if (!logs[v.exerciseId]) logs[v.exerciseId] = []
-        logs[v.exerciseId].push(v)
-      }
-    })
-    return logs
-  }, [progress])
-
   // Los gráficos etiquetaban cada serie con la CLAVE cruda del ProgressMap, así
   // que un ejercicio registrado como `arm_circles` salía «arm circles» y uno de
   // programa como «lun_1_9» (#690). El mismo resolutor que ya nombra las
   // estadísticas: catálogo primero y, si no, el ejercicio del programa activo
   // en ese `workoutKey`. Lo que no resuelve se queda con su clave, como antes.
+  //
+  // Y se AGRUPA por esa misma identidad (#692): la plancha de un programa viejo
+  // vive en el historial como `mie_1_10` y la de una sesión libre como `plank`;
+  // agrupar por la clave cruda pintaba dos «Plancha» en las gráficas y el 1RM.
   const { index: catalogIndex } = useCatalogIndex()
   const resolveExercise = useMemo(
     () => buildExerciseResolver({ index: catalogIndex, getWorkout, locale: i18n.language }),
     [catalogIndex, getWorkout, i18n.language],
   )
-  const exerciseNames = useMemo<Record<string, string>>(() => {
-    const names: Record<string, string> = {}
-    for (const [exId, logs] of Object.entries(exerciseLogs)) {
-      names[exId] = resolveExercise(exId, logs[0]?.workoutKey ?? '').name
-    }
-    return names
-  }, [exerciseLogs, resolveExercise])
+  const { logs: exerciseLogs, names: exerciseNames } = useMemo(
+    () => groupLogsByResolvedExercise(progress, resolveExercise),
+    [progress, resolveExercise],
+  )
 
   // #636 §4: la pantalla de progreso no emitía nada, así que no se sabía si
   // alguien vuelve a mirar lo que ha hecho — que es la señal de retención más

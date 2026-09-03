@@ -463,6 +463,10 @@ async function fetchWgerExercises() {
       category, difficulty, equipment,
       source: 'wger',
       wger_id: ex.wger_id,
+      // Pre-enrichment search-suggestion name (see #692): the wger translation
+      // fetched into `nameField` above can be wrong/mismatched, so the blacklist
+      // filter needs this original name too, not just the enriched one.
+      source_name: ex.name,
       youtube_search: youtubeUrl(ex.name),
       youtube_query: `${ex.name} exercise tutorial`,
       images,
@@ -542,8 +546,13 @@ async function buildBaseListFromWger() {
 
   for (const [id, ex] of catalog) {
     if (ex.source !== 'wger') continue
+    // Test both the enriched name AND the original pre-enrichment search-suggestion
+    // name (#692: a wger entry's enriched name can drift from what got it flagged,
+    // e.g. search suggestion "Jogging" enriching into "Muscle up").
     const nl = str(ex.name, 'en').toLowerCase() || str(ex.name).toLowerCase()
-    if (BLACKLIST_NAMES.some(b => nl.includes(b))) { catalog.delete(id); continue }
+    const sourceNl = (ex.source_name || '').toLowerCase()
+    if (BLACKLIST_NAMES.some(b => nl.includes(b) || sourceNl.includes(b))) { catalog.delete(id); continue }
+    delete ex.source_name
   }
 
   return Array.from(catalog.values())

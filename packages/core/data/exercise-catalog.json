@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-09-02T02:36:45.435Z",
-  "total_count": 1578,
+  "generated_at": "2026-09-03T20:47:22.289Z",
+  "total_count": 1576,
   "local_count": 148,
-  "wger_count": 22,
+  "wger_count": 20,
   "exercisedb_count": 1271,
-  "with_muscle_groups": 1554,
-  "with_family": 1076,
+  "with_muscle_groups": 1552,
+  "with_family": 1075,
   "with_images": 8,
   "with_curated_video": 2,
-  "with_youtube_query": 1578,
+  "with_youtube_query": 1576,
   "with_sequence": 1,
   "with_muscle_map": 1,
   "categories": {
     "core": {
-      "count": 195,
+      "count": 194,
       "exercises": [
         {
           "id": "standing_ab_wheel_rollout",
@@ -1931,6 +1931,45 @@
           "family": "crunch"
         },
         {
+          "id": "sit_up",
+          "name": {
+            "es": "Abdominales Sit-up",
+            "en": "Sit-up"
+          },
+          "muscles": {
+            "es": "Recto abdominal, flexores de cadera",
+            "en": "Rectus abdominis, hip flexors"
+          },
+          "sets": 3,
+          "reps": "10-15",
+          "rest": 60,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Desde tumbado, sube el torso completo hasta sentarte. Mayor rango que el crunch, involucrando también los flexores de cadera.",
+            "en": "From lying down, raise your full torso to a seated position. Greater range than a crunch, also engaging hip flexors."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "core",
+          "difficulty": "beginner",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=Sit-up%20exercise%20tutorial",
+          "youtube_query": "Sit-up exercise tutorial",
+          "images": [],
+          "seed_slug": "sit-up",
+          "muscle_groups": [
+            "core",
+            "cadera"
+          ],
+          "family": "sit_up"
+        },
+        {
           "id": "sit_up_v_2",
           "name": {
             "es": "Abdominales v. 2",
@@ -3117,46 +3156,6 @@
             "espalda",
             "core"
           ]
-        },
-        {
-          "id": "medicine_ball_booklet_crunch",
-          "name": {
-            "es": "Dynamic Planche",
-            "en": "Dynamic Planche"
-          },
-          "muscles": {
-            "es": "Core, Cuadriceps",
-            "en": "Core, Cuadriceps"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": {
-            "es": "Comienza en posición de plancha, con las manos directamente bajo los hombros y los pies separados al ancho de las caderas. Activa el core para mantener el cuerpo en línea recta de la cabeza a los pies. Desde esta posición, flexiona ligeramente las rodillas y salta con ambos pies hacia dentro, acercá",
-            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs"
-          },
-          "description": {
-            "es": "Comienza en posición de plancha, con las manos directamente bajo los hombros y los pies separados al ancho de las caderas. Activa el core para mantener el cuerpo en línea recta de la cabeza a los pies. Desde esta posición, flexiona ligeramente las rodillas y salta con ambos pies hacia dentro, acercándolos lo más posible al core. En cuanto los pies toquen el suelo, impúlsate con fuerza para saltar de nuevo y volver a la posición inicial de plancha. Continúa repitiendo este movimiento de salto, manteniendo el control y la estabilidad del core durante todo el ejercicio. Mantén una respiración constante mientras saltas, respirando profundamente y de forma controlada. Mantén la mirada fija en el suelo para conservar la alineación correcta de la columna. Repite los saltos durante el tiempo deseado o el número de repeticiones recomendado en tu programa. Para terminar, suelta la posición de plancha y estira si es necesario para relajar los músculos.",
-            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "core",
-          "difficulty": "beginner",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1286,
-          "youtube_search": "https://www.youtube.com/results?search_query=Medicine%20ball%20booklet%20crunch%20exercise%20tutorial",
-          "youtube_query": "Medicine ball booklet crunch exercise tutorial",
-          "images": [],
-          "videos": [],
-          "muscle_groups": [
-            "core",
-            "cuadriceps"
-          ],
-          "family": "planche"
         },
         {
           "id": "hip_raise_bent_knee",
@@ -8222,45 +8221,6 @@
           ]
         },
         {
-          "id": "sit_up",
-          "name": {
-            "es": "Sit-up",
-            "en": "Sit-up"
-          },
-          "muscles": {
-            "es": "Recto abdominal, flexores de cadera",
-            "en": "Rectus abdominis, hip flexors"
-          },
-          "sets": 3,
-          "reps": "10-15",
-          "rest": 60,
-          "note": {
-            "es": "",
-            "en": ""
-          },
-          "description": {
-            "es": "Desde tumbado, sube el torso completo hasta sentarte. Mayor rango que el crunch, involucrando también los flexores de cadera.",
-            "en": "From lying down, raise your full torso to a seated position. Greater range than a crunch, also engaging hip flexors."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "core",
-          "difficulty": "beginner",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "seed",
-          "youtube_search": "https://www.youtube.com/results?search_query=Sit-up%20exercise%20tutorial",
-          "youtube_query": "Sit-up exercise tutorial",
-          "images": [],
-          "seed_slug": "sit-up",
-          "muscle_groups": [
-            "core",
-            "cadera"
-          ],
-          "family": "sit_up"
-        },
-        {
           "id": "wind_sprints",
           "name": {
             "es": "Sprints cortos",
@@ -8659,7 +8619,7 @@
       ]
     },
     "full": {
-      "count": 46,
+      "count": 45,
       "exercises": [
         {
           "id": "rear_delt_raises",
@@ -9905,45 +9865,6 @@
             "cardio"
           ],
           "family": "mountain_climber"
-        },
-        {
-          "id": "jogging",
-          "name": {
-            "es": "Muscle up",
-            "en": "Muscle up"
-          },
-          "muscles": {
-            "es": "Biceps",
-            "en": "Biceps"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": {
-            "es": "El cuerpo se eleva de forma explosiva con los brazos en una dominada radial, con mayor velocidad que una dominada normal. Cuando la barra se acerca a la parte alta del pecho, se flexionan rápidamente las muñecas para llevar los antebrazos por encima de la barra. El cuerpo se inclina hacia delante y ",
-            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the"
-          },
-          "description": {
-            "es": "El cuerpo se eleva de forma explosiva con los brazos en una dominada radial, con mayor velocidad que una dominada normal. Cuando la barra se acerca a la parte alta del pecho, se flexionan rápidamente las muñecas para llevar los antebrazos por encima de la barra. El cuerpo se inclina hacia delante y los codos se extienden activando los tríceps. La repetición se considera completa cuando la barra queda a la altura de la cintura y los brazos totalmente estirados.\nPara bajar, se flexionan los codos y se desciende el cuerpo, pudiendo repetir el ejercicio.\nAl ser un ejercicio relativamente avanzado, el muscle-up suele aprenderse primero con un kip de asistencia: las piernas se balancean (kip) hacia arriba y aportan impulso para ayudar en la fuerza ascendente explosiva necesaria para subir por encima de la barra. Los atletas más avanzados pueden realizar la variante estricta, ejecutada lentamente y sin kip. Esta variante parte de una suspensión completamente quieta y usa contracción muscular isométrica para ascender por encima de la barra de forma lenta y controlada.",
-            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "full",
-          "difficulty": "intermediate",
-          "equipment": [
-            "barra_dominadas"
-          ],
-          "source": "wger",
-          "wger_id": 423,
-          "youtube_search": "https://www.youtube.com/results?search_query=Jogging%20exercise%20tutorial",
-          "youtube_query": "Jogging exercise tutorial",
-          "images": [],
-          "videos": [],
-          "muscle_groups": [
-            "biceps"
-          ],
-          "family": "muscle_up"
         },
         {
           "id": "back_and_forth_step",
@@ -11368,42 +11289,6 @@
             "isquios"
           ],
           "family": "glute_bridge"
-        },
-        {
-          "id": "box_jump_2",
-          "name": {
-            "es": "Box Jump",
-            "en": "Box Jump"
-          },
-          "muscles": {
-            "es": "Explosividad total",
-            "en": "Total explosiveness"
-          },
-          "sets": 3,
-          "reps": "5-8",
-          "rest": 120,
-          "note": {
-            "es": "",
-            "en": ""
-          },
-          "description": {
-            "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
-            "en": "Explosive jump from the floor onto a box. Develops lower-body power and coordination."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "intermediate",
-          "equipment": [
-            "escalon"
-          ],
-          "source": "seed",
-          "youtube_search": "https://www.youtube.com/results?search_query=Box%20Jump%20exercise%20tutorial",
-          "youtube_query": "Box Jump exercise tutorial",
-          "images": [],
-          "seed_slug": "box-jump",
-          "variant_of": "box_jump",
-          "muscle_groups": []
         },
         {
           "id": "box_jump",
@@ -16209,6 +16094,44 @@
           ]
         },
         {
+          "id": "skaters",
+          "name": {
+            "es": "Patinadores",
+            "en": "Skater Jumps"
+          },
+          "muscles": {
+            "es": "Glúteo medio, equilibrio, cardio",
+            "en": "Glute medius, balance, cardio"
+          },
+          "sets": 3,
+          "reps": "12/lado",
+          "rest": 45,
+          "note": {
+            "es": "Salta lateralmente de un pie al otro. Aterrizaje suave.",
+            "en": "Jump laterally from one foot to the other. Soft landing."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "beginner",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "local",
+          "youtube_search": "https://www.youtube.com/results?search_query=Skater%20Jumps%20exercise%20tutorial",
+          "youtube_query": "skater jumps exercise tutorial",
+          "images": [],
+          "description": {
+            "es": "Saltos laterales de una pierna a otra imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
+            "en": "Lateral single-leg jumps mimicking a skating motion. Works glute medius, balance, and cardio."
+          },
+          "seed_slug": "skater-jumps-cardio",
+          "muscle_groups": [
+            "gluteos",
+            "cardio"
+          ]
+        },
+        {
           "id": "dumbbell_single_leg_deadlift_with_stepbox_support",
           "name": {
             "es": "Peso muerto a una pierna con apoyo en step y mancuerna",
@@ -18657,6 +18580,77 @@
           ]
         },
         {
+          "id": "box_jump_2",
+          "name": {
+            "es": "Salto al Cajón",
+            "en": "Box Jump"
+          },
+          "muscles": {
+            "es": "Explosividad total",
+            "en": "Total explosiveness"
+          },
+          "sets": 3,
+          "reps": "5-8",
+          "rest": 120,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
+            "en": "Explosive jump from the floor onto a box. Develops lower-body power and coordination."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "intermediate",
+          "equipment": [
+            "escalon"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=Box%20Jump%20exercise%20tutorial",
+          "youtube_query": "Box Jump exercise tutorial",
+          "images": [],
+          "seed_slug": "box-jump",
+          "variant_of": "box_jump",
+          "muscle_groups": []
+        },
+        {
+          "id": "single_leg_box_jump",
+          "name": {
+            "es": "Salto al Cajón a Una Pierna",
+            "en": "Single Leg Box Jump"
+          },
+          "muscles": {
+            "es": "Explosividad unilateral",
+            "en": "Unilateral explosiveness"
+          },
+          "sets": 3,
+          "reps": "5-8",
+          "rest": 120,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Salto al cajón impulsándote con una sola pierna. El ejercicio pliométrico unilateral más avanzado.",
+            "en": "Box jump driving off a single leg. The most advanced unilateral plyometric exercise."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "advanced",
+          "equipment": [
+            "escalon"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=Single%20Leg%20Box%20Jump%20exercise%20tutorial",
+          "youtube_query": "Single Leg Box Jump exercise tutorial",
+          "images": [],
+          "seed_slug": "single-leg-box-jump",
+          "muscle_groups": []
+        },
+        {
           "id": "box_jump_down_with_one_leg_stabilization",
           "name": {
             "es": "Salto de caída del cajón con estabilización a una pierna",
@@ -18702,6 +18696,44 @@
             "cuadriceps",
             "isquios",
             "pantorrillas"
+          ]
+        },
+        {
+          "id": "skater_jumps",
+          "name": {
+            "es": "Salto de Patinador",
+            "en": "Skater Jumps"
+          },
+          "muscles": {
+            "es": "Glúteo medio, equilibrio, cardio",
+            "en": "Glute medius, balance, cardio"
+          },
+          "sets": 3,
+          "reps": "5-8",
+          "rest": 120,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Saltos laterales de pierna a pierna imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
+            "en": "Lateral jumps from leg to leg mimicking a skater's motion. Works glute medius, balance, and cardio."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "beginner",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=Skater%20Jumps%20exercise%20tutorial",
+          "youtube_query": "Skater Jumps exercise tutorial",
+          "images": [],
+          "seed_slug": "skater-jumps",
+          "muscle_groups": [
+            "gluteos",
+            "cardio"
           ]
         },
         {
@@ -22569,117 +22601,6 @@
             "cuadriceps"
           ],
           "family": "squat"
-        },
-        {
-          "id": "single_leg_box_jump",
-          "name": {
-            "es": "Single Leg Box Jump",
-            "en": "Single Leg Box Jump"
-          },
-          "muscles": {
-            "es": "Explosividad unilateral",
-            "en": "Unilateral explosiveness"
-          },
-          "sets": 3,
-          "reps": "5-8",
-          "rest": 120,
-          "note": {
-            "es": "",
-            "en": ""
-          },
-          "description": {
-            "es": "Salto al cajón impulsándote con una sola pierna. El ejercicio pliométrico unilateral más avanzado.",
-            "en": "Box jump driving off a single leg. The most advanced unilateral plyometric exercise."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "advanced",
-          "equipment": [
-            "escalon"
-          ],
-          "source": "seed",
-          "youtube_search": "https://www.youtube.com/results?search_query=Single%20Leg%20Box%20Jump%20exercise%20tutorial",
-          "youtube_query": "Single Leg Box Jump exercise tutorial",
-          "images": [],
-          "seed_slug": "single-leg-box-jump",
-          "muscle_groups": []
-        },
-        {
-          "id": "skaters",
-          "name": {
-            "es": "Skater Jumps",
-            "en": "Skater Jumps"
-          },
-          "muscles": {
-            "es": "Glúteo medio, equilibrio, cardio",
-            "en": "Glute medius, balance, cardio"
-          },
-          "sets": 3,
-          "reps": "12/lado",
-          "rest": 45,
-          "note": {
-            "es": "Salta lateralmente de un pie al otro. Aterrizaje suave.",
-            "en": "Jump laterally from one foot to the other. Soft landing."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "beginner",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "local",
-          "youtube_search": "https://www.youtube.com/results?search_query=Skater%20Jumps%20exercise%20tutorial",
-          "youtube_query": "skater jumps exercise tutorial",
-          "images": [],
-          "description": {
-            "es": "Saltos laterales de una pierna a otra imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
-            "en": "Lateral single-leg jumps mimicking a skating motion. Works glute medius, balance, and cardio."
-          },
-          "seed_slug": "skater-jumps-cardio",
-          "muscle_groups": [
-            "gluteos",
-            "cardio"
-          ]
-        },
-        {
-          "id": "skater_jumps",
-          "name": {
-            "es": "Skater Jumps",
-            "en": "Skater Jumps"
-          },
-          "muscles": {
-            "es": "Glúteo medio, equilibrio, cardio",
-            "en": "Glute medius, balance, cardio"
-          },
-          "sets": 3,
-          "reps": "5-8",
-          "rest": 120,
-          "note": {
-            "es": "",
-            "en": ""
-          },
-          "description": {
-            "es": "Saltos laterales de pierna a pierna imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
-            "en": "Lateral jumps from leg to leg mimicking a skater's motion. Works glute medius, balance, and cardio."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "beginner",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "seed",
-          "youtube_search": "https://www.youtube.com/results?search_query=Skater%20Jumps%20exercise%20tutorial",
-          "youtube_query": "Skater Jumps exercise tutorial",
-          "images": [],
-          "seed_slug": "skater-jumps",
-          "muscle_groups": [
-            "gluteos",
-            "cardio"
-          ]
         },
         {
           "id": "squat_pause",
@@ -70889,6 +70810,46 @@
           "family": "planche"
         },
         {
+          "id": "wall_sit",
+          "name": {
+            "es": "Sentadilla en la Pared",
+            "en": "Wall Sit"
+          },
+          "muscles": {
+            "es": "Cuádriceps, core",
+            "en": "Quads, core"
+          },
+          "sets": 3,
+          "reps": "45s",
+          "rest": 60,
+          "note": {
+            "es": "Espalda plana contra la pared, 90° rodillas.",
+            "en": "Flat back against the wall, 90° knees."
+          },
+          "priority": "med",
+          "isTimer": true,
+          "timerSeconds": 45,
+          "category": "skill",
+          "difficulty": "beginner",
+          "equipment": [
+            "pared"
+          ],
+          "source": "local",
+          "youtube_search": "https://www.youtube.com/results?search_query=Wall%20Sit%20exercise%20tutorial",
+          "youtube_query": "wall sit exercise tutorial",
+          "images": [],
+          "description": {
+            "es": "Sentadilla isométrica con la espalda apoyada en la pared y rodillas a 90 grados. Construye resistencia en cuádriceps y estabilidad de rodilla.",
+            "en": "Isometric squat with back against the wall and knees at 90 degrees. Builds quad endurance and knee stability."
+          },
+          "seed_slug": "wall-sit",
+          "muscle_groups": [
+            "core",
+            "cuadriceps"
+          ],
+          "family": "squat"
+        },
+        {
           "id": "skill_complex",
           "name": {
             "es": "Skill Complex (elige 3 skills)",
@@ -71275,45 +71236,6 @@
           "muscle_groups": [
             "core",
             "cadera"
-          ]
-        },
-        {
-          "id": "wall_sit",
-          "name": {
-            "es": "Wall Sit",
-            "en": "Wall Sit"
-          },
-          "muscles": {
-            "es": "Cuádriceps, core",
-            "en": "Quads, core"
-          },
-          "sets": 3,
-          "reps": "45s",
-          "rest": 60,
-          "note": {
-            "es": "Espalda plana contra la pared, 90° rodillas.",
-            "en": "Flat back against the wall, 90° knees."
-          },
-          "priority": "med",
-          "isTimer": true,
-          "timerSeconds": 45,
-          "category": "skill",
-          "difficulty": "beginner",
-          "equipment": [
-            "pared"
-          ],
-          "source": "local",
-          "youtube_search": "https://www.youtube.com/results?search_query=Wall%20Sit%20exercise%20tutorial",
-          "youtube_query": "wall sit exercise tutorial",
-          "images": [],
-          "description": {
-            "es": "Sentadilla isométrica con la espalda apoyada en la pared y rodillas a 90 grados. Construye resistencia en cuádriceps y estabilidad de rodilla.",
-            "en": "Isometric squat with back against the wall and knees at 90 degrees. Builds quad endurance and knee stability."
-          },
-          "seed_slug": "wall-sit",
-          "muscle_groups": [
-            "core",
-            "cuadriceps"
           ]
         }
       ]
