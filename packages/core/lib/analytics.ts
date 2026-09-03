@@ -236,10 +236,55 @@ export function normalizeCanonicalAnalyticsProperties(
   ].filter(([, value]) => value !== undefined && value !== null))
 }
 
+/**
+ * Cuentas cuyos eventos NO deben llegar a OpenPanel (#696). Hoy solo la cuenta
+ * «Demo Play» que usa el revisor de Google Play (y algún usuario real que copia
+ * las credenciales de la ficha). Se compara por id de PocketBase, que es el
+ * `profileId` de OpenPanel tanto en web como en móvil. No es un secreto: el id
+ * ya viaja en cada evento.
+ */
+export const ANALYTICS_EXCLUDED_PROFILE_IDS: ReadonlySet<string> = new Set(['7imoyrw39rritud'])
+
+/**
+ * Último `profileId` identificado en esta ejecución. El filtro del SDK lo usa
+ * como respaldo para los payloads que no llevan `profileId` propio (replay,
+ * `assign_group`), que de otro modo pasarían aunque la cuenta esté excluida.
+ */
+let activeAnalyticsProfileId: string | null = null
+
+export function setActiveAnalyticsProfileId(profileId: string | number | null | undefined): void {
+  activeAnalyticsProfileId = profileId == null ? null : String(profileId)
+}
+
+export function isAnalyticsExcludedProfile(profileId: unknown): boolean {
+  return typeof profileId === 'string' && ANALYTICS_EXCLUDED_PROFILE_IDS.has(profileId)
+}
+
+/**
+ * Para la opción `filter` del SDK de OpenPanel (web y RN). El SDK la evalúa en
+ * `send()`, ANTES de encolar, para todos los tipos de payload: track (incluye
+ * `screen_view`), identify, replay… Devolver `false` descarta el evento sin
+ * red ni cola. Se vuelve a evaluar al hacer flush de la cola, ya con el
+ * `profileId` resuelto, así que los eventos encolados antes del identify de la
+ * cuenta demo también caen.
+ *
+ * El tipo es estructural a propósito: core no depende de `@openpanel/sdk`.
+ */
+export function shouldSendAnalytics(payload: { type?: string; payload?: unknown } | null | undefined): boolean {
+  const own = (payload?.payload as { profileId?: string | number } | undefined)?.profileId
+  return !isAnalyticsExcludedProfile(own == null ? activeAnalyticsProfileId : String(own))
+}
+
 export const op: CoreAnalytics = {
   track: (name, properties) => getPlatform().analytics.track(name, properties),
-  identify: (payload) => getPlatform().analytics.identify(payload),
-  clear: () => getPlatform().analytics.clear(),
+  identify: (payload) => {
+    setActiveAnalyticsProfileId(payload.profileId)
+    return getPlatform().analytics.identify(payload)
+  },
+  clear: () => {
+    setActiveAnalyticsProfileId(null)
+    return getPlatform().analytics.clear()
+  },
 }
 
 export function trackCanonicalEvent(

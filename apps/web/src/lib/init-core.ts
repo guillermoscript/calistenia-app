@@ -7,6 +7,7 @@
 import * as Sentry from '@sentry/react'
 import { OpenPanel } from '@openpanel/web'
 import { initCore } from '@calistenia/core/platform'
+import { shouldSendAnalytics } from '@calistenia/core/lib/analytics'
 
 // Session replay (rrweb) solo en builds de producción y navegadores reales:
 // el e2e de CI corre contra el bundle de prod con `vite preview`, y no queremos
@@ -20,6 +21,10 @@ const op = new OpenPanel({
   trackScreenViews: true,
   trackOutgoingLinks: true,
   trackAttributes: true,
+  // #696: la cuenta demo del revisor de Play no cuenta. El filtro corre antes
+  // de encolar cualquier payload (track, screen_view automático, identify,
+  // replay), así que no hace falta gatear cada llamada.
+  filter: shouldSendAnalytics,
   sessionReplay: {
     enabled: replayEnabled,
     // maskAllText y maskAllInputs quedan en su default (true): la app maneja datos
