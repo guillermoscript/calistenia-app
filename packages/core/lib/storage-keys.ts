@@ -56,6 +56,10 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   'calistenia_exercise_favorites',
   // useHealthSync — last successful health-hub (Health Connect/HealthKit) sync, per data type
   'calistenia_health_last_sync',
+  // first-workout — intención de arrancar el primer entreno al salir del
+  // onboarding (#694). Un solo uso y ligada al usuario: no debe arrancar una
+  // sesión a quien entre después con otra cuenta.
+  'calistenia_first_workout_pending',
   // battleInviteHandoff — token de invitación pendiente. Es una credencial de un solo
   // uso para una plaza: no puede sobrevivir a un cambio de cuenta.
   'calistenia_battle_invite_token',

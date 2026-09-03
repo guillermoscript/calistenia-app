@@ -47,6 +47,8 @@ interface SessionViewProps {
   onNavigateAway: (path: string) => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
+  /** Sesiones totales del usuario, para decidir si ofrecer el aviso de push (#694). */
+  totalSessions: number
 }
 
 export default function SessionView({
@@ -59,6 +61,7 @@ export default function SessionView({
   onNavigateAway,
   onExitSession,
   getExerciseLogs,
+  totalSessions,
 }: SessionViewProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -367,6 +370,7 @@ export default function SessionView({
           durationMin={durationMin}
           exercises={workout.exercises}
           timings={finalTimings ?? []}
+          totalSessions={totalSessions}
           onDone={onGoToDashboard}
           onRepeat={onRepeat}
           onNavigateAway={onNavigateAway}

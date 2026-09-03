@@ -28,9 +28,22 @@ interface Props {
   onFinish: () => void
   /** Cierra el onboarding y lleva a registrar la primera medición corporal (#227). */
   onFirstMeasurement?: () => void
+  /** Cierra el onboarding y arranca el primer entreno en vez de ir al home (#694). */
+  onStartFirstWorkout?: () => void
+  /** Minutos estimados del primer entreno, para el CTA. */
+  firstWorkoutMinutes?: number
 }
 
-export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish, onFirstMeasurement }: Props) {
+export function StepPersonalizing({
+  currentWeightKg,
+  goalWeightKg,
+  pace,
+  program,
+  onFinish,
+  onFirstMeasurement,
+  onStartFirstWorkout,
+  firstWorkoutMinutes,
+}: Props) {
   const { t, i18n } = useTranslation()
   const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
   const [msgIndex, setMsgIndex] = useState(0)
@@ -209,13 +222,29 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
         </View>
 
         <Button
-          onPress={onFinish}
+          onPress={onStartFirstWorkout ?? onFinish}
           className="w-full h-12 bg-lime active:bg-lime/90"
         >
           <Text className="font-bebas text-xl tracking-wide text-lime-foreground">
-            {t('onboarding.startTraining')}
+            {onStartFirstWorkout
+              ? t('onboarding.firstWorkoutCta', { minutes: firstWorkoutMinutes })
+              : t('onboarding.startTraining')}
           </Text>
         </Button>
+
+        {onStartFirstWorkout && (
+          <Text className="mt-2 text-center text-xs text-muted-foreground">
+            {t('onboarding.firstWorkoutHint')}
+          </Text>
+        )}
+
+        {onStartFirstWorkout && (
+          <Pressable onPress={onFinish} hitSlop={8} className="mt-3 items-center py-1">
+            <Text className="font-mono text-[11px] tracking-wide text-muted-foreground underline">
+              {t('onboarding.goHomeInstead')}
+            </Text>
+          </Pressable>
+        )}
 
         {onFirstMeasurement && (
           <Pressable onPress={onFirstMeasurement} hitSlop={8} className="mt-3 items-center py-1">

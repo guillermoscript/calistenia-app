@@ -10,6 +10,12 @@
  * El wrapper (export default) decide si renderiza y el componente interno es
  * quien monta los hooks de datos extra — así los usuarios que ya descartaron
  * la card no pagan las queries de nutrición/cardio/fotos/follows.
+ *
+ * #694: quien todavía no ha entrenado ni una vez (`totalSessions === 0`) ve en
+ * su lugar `FirstWorkoutCard` — una fila con el CTA directo al primer
+ * entreno, sin montar las queries de nutrición/cardio/fotos/follows que el
+ * checklist completo necesita. El checklist de 6 ítems vuelve a partir de la
+ * primera sesión.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { View, Pressable } from 'react-native'
@@ -51,6 +57,7 @@ import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import FirstWorkoutCard from './FirstWorkoutCard'
 
 const ITEM_META: Record<ChecklistItemId, { icon: LucideIcon; route: Href }> = {
   program: { icon: ClipboardList, route: '/programs' },
@@ -84,12 +91,16 @@ interface GettingStartedCardProps {
 }
 
 function GettingStartedCard(props: GettingStartedCardProps) {
-  const { userId } = props
+  const { userId, totalSessions, programsReady } = props
   // Bump para re-leer los flags de storage tras «Ocultar» (desmonta el inner).
   const [, setDismissedTick] = useState(0)
   const onDismiss = useCallback(() => setDismissedTick(t => t + 1), [])
 
   if (!userId || isChecklistDismissed(userId)) return null
+
+  // #694: nunca ha entrenado → CTA directo al primer entreno, sin montar las
+  // queries extra del checklist completo (nutrición/cardio/fotos/follows).
+  if (programsReady && totalSessions === 0) return <FirstWorkoutCard />
 
   return <GettingStartedInner {...props} userId={userId} onDismiss={onDismiss} />
 }
