@@ -28,6 +28,7 @@ import {
   NUTRITION_TOTALS_FIELDS,
 } from "../api/repos/index.js";
 import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
+import { loadUserExerciseResolver } from "../api/exercise-identity-server.js";
 import { resolveProgramExercises, toProgramOverrides } from "../api/program-overrides-server.js";
 
 export function registerSmartTools(server: AppServer, pbUrl: string) {
@@ -407,9 +408,12 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const sessionsRequired = progression.sessions_at_target as number;
         const nextExerciseId = progression.next_exercise_id as string | null;
 
-        // Get recent sets for this exercise (last 90 days)
+        // Get recent sets for this exercise (last 90 days), under every id
+        // that is the same exercise: retired aliases and the active program's
+        // slot keys count towards the progression too (#702).
         const ninetyDaysAgo = daysAgo(90, tz);
-        const sets = await listExerciseSets(pb, userId, exercise_id, { from: ninetyDaysAgo, fields: SET_FIELDS });
+        const resolver = await loadUserExerciseResolver(pb, userId);
+        const sets = await listExerciseSets(pb, userId, resolver.aliasesOf(exercise_id).ids, { from: ninetyDaysAgo, fields: SET_FIELDS });
 
         if (sets.length === 0) {
           return {

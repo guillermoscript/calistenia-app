@@ -50,23 +50,46 @@ export function listSets<T extends RecordModel = RecordModel>(pb: PB, userId: st
   });
 }
 
-/** Sets of ONE exercise since `from`, oldest first (exercise history / progression). */
+/**
+ * Sets of ONE exercise since `from`, oldest first (exercise history / progression).
+ *
+ * `exerciseId` may be a list: every raw `exercise_id` that resolves to the same
+ * identity (#702 — the canonical id, its retired aliases, the active program's
+ * slot keys). One `OR` filter, one request; an empty list reads nothing.
+ */
 export function listExerciseSets<T extends RecordModel = RecordModel>(
   pb: PB,
   userId: string,
-  exerciseId: string,
+  exerciseId: string | string[],
   q: PeriodQuery,
 ): Promise<T[]> {
+  const ids = Array.isArray(exerciseId) ? exerciseId : [exerciseId];
+  if (ids.length === 0) return Promise.resolve([] as T[]);
+  const { expr, params } = exerciseIdFilter(ids);
   return pb.collection("sets_log").getFullList<T>({
-    filter: pb.filter("user = {:userId} && exercise_id = {:exerciseId} && logged_at >= {:from}", {
+    filter: pb.filter(`user = {:userId} && ${expr} && logged_at >= {:from}`, {
       userId,
-      exerciseId,
+      ...params,
       from: q.from,
     }),
     sort: q.sort ?? "logged_at",
     fields: q.fields ?? `${SET_FIELDS},note`,
     requestKey: null,
   });
+}
+
+/**
+ * `exercise_id` bound to one or many ids, for `pb.filter`. Params are
+ * numbered (`ex0`, `ex1`, …) so callers can merge them into their own map.
+ */
+export function exerciseIdFilter(ids: string[]): { expr: string; params: Record<string, string> } {
+  const params: Record<string, string> = {};
+  const parts = ids.map((id, i) => {
+    params[`ex${i}`] = id;
+    return `exercise_id = {:ex${i}}`;
+  });
+  const expr = parts.length === 1 ? parts[0] : `(${parts.join(" || ")})`;
+  return { expr, params };
 }
 
 /** Meals logged in the period. Full records unless `fields` is given. */
