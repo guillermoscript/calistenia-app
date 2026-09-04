@@ -9,7 +9,9 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import { buildCatalogIndex } from "@calistenia/core/lib/catalogIndex";
 import type { PB, RecordModel } from "./repos/pb.js";
+import { buildServerExerciseResolver } from "./exercise-identity-server.js";
 import { resolvePersonalRecords, topRepRecords } from "./prs-server.js";
 
 const rec = (row: Record<string, unknown>): RecordModel =>
@@ -26,6 +28,13 @@ function stubPb(sets: Record<string, unknown>[]): PB {
 /** Fila de `settings` con los cinco espejos a cero. */
 const SETTINGS = rec({ id: "s1", user: "u1", phase: 3, weekly_goal: 5 });
 
+/**
+ * Resolutor ciego: sin catálogo ni programa, cada id es su propia identidad.
+ * Es lo que aísla los tests del criterio de récord de los de fusión (abajo), y
+ * evita que dependan de lo que haya hoy en `data/exercise-catalog.json`.
+ */
+const RAW = { resolver: buildServerExerciseResolver({ index: null, programExercises: [] }) };
+
 describe("resolvePersonalRecords", () => {
   it("saca el récord de un ejercicio que NO tiene campo legacy", async () => {
     // `muscle_up` no casa con ninguno de los 5 PR_PATTERNS, así que antes de
@@ -37,6 +46,7 @@ describe("resolvePersonalRecords", () => {
       ]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(prs.reps.muscle_up).toBe(5);
@@ -51,6 +61,7 @@ describe("resolvePersonalRecords", () => {
       ]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(prs.reps.pullup).toBe(12);
@@ -61,6 +72,7 @@ describe("resolvePersonalRecords", () => {
       stubPb([{ exercise_id: "dip", reps: "8-12" }]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(prs.reps.dip).toBe(12);
@@ -71,6 +83,7 @@ describe("resolvePersonalRecords", () => {
       stubPb([{ exercise_id: "burpee", reps: "max" }]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(prs.reps.burpee).toBeUndefined();
@@ -84,6 +97,7 @@ describe("resolvePersonalRecords", () => {
       stubPb([{ exercise_id: "plank", reps: "45" }]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(prs.reps.plank).toBe(45);
@@ -99,6 +113,7 @@ describe("resolvePersonalRecords", () => {
       ]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(prs.weight.weighted_pullup).toMatchObject({ weight: 60, reps: 8, e1rm: 76 });
@@ -109,6 +124,7 @@ describe("resolvePersonalRecords", () => {
       stubPb([{ exercise_id: "pullup", reps: "20" }]),
       "u1",
       rec({ ...SETTINGS, pr_pullups: 15 }),
+      RAW,
     );
 
     expect(prs.legacy.pullups).toBe(20);
@@ -121,6 +137,7 @@ describe("resolvePersonalRecords", () => {
       stubPb([{ exercise_id: "pullup", reps: "10" }]),
       "u1",
       rec({ ...SETTINGS, pr_pullups: 15 }),
+      RAW,
     );
 
     expect(prs.legacy.pullups).toBe(15);
@@ -153,11 +170,76 @@ describe("topRepRecords", () => {
       ]),
       "u1",
       SETTINGS,
+      RAW,
     );
 
     expect(topRepRecords(prs, 2)).toEqual([
-      { exercise_id: "b", best: 30 },
-      { exercise_id: "c", best: 12 },
+      { exercise_id: "b", name: "b", best: 30, unit: "reps" },
+      { exercise_id: "c", name: "c", best: 12, unit: "reps" },
     ]);
+  });
+});
+
+describe("fusión por identidad resuelta (#702)", () => {
+  const INDEX = buildCatalogIndex({
+    categories: {
+      push: {
+        exercises: [
+          { id: "pushup_std", name: { es: "Flexiones", en: "Push-up" } },
+          { id: "plank", name: { es: "Plancha", en: "Plank" }, isTimer: true },
+        ],
+      },
+    },
+  });
+  const PROGRAM = [rec({ phase_number: 1, day_id: "mie", exercise_id: "mie_1_10", exercise_name: { es: "Plancha" }, is_timer: true })];
+  const MERGING = { resolver: buildServerExerciseResolver({ index: INDEX, programExercises: PROGRAM }) };
+
+  it("el id retirado y su heredero son UN récord, con el mejor de los dos", async () => {
+    const prs = await resolvePersonalRecords(
+      stubPb([
+        { exercise_id: "pushup", workout_key: "p1_lun", reps: "20" },
+        { exercise_id: "pushup_std", workout_key: "p1_lun", reps: "25" },
+        { exercise_id: "pushup", workout_key: "p1_lun", reps: "28" },
+      ]),
+      "u1",
+      SETTINGS,
+      MERGING,
+    );
+
+    expect(prs.reps).toEqual({ pushup_std: 28 });
+    expect(prs.exercises.pushup_std).toMatchObject({ name: "Flexiones", exercise_ids: ["pushup", "pushup_std"], is_timer: false });
+    expect(prs.tracked_exercises).toBe(1);
+    // El espejo legacy sale del id RESUELTO, que sigue casando con `pushup`.
+    expect(prs.legacy.pushups).toBe(28);
+  });
+
+  it("la clave de slot del programa activo suma con el id de catálogo", async () => {
+    const prs = await resolvePersonalRecords(
+      stubPb([
+        { exercise_id: "mie_1_10", workout_key: "p1_mie", reps: "45" },
+        { exercise_id: "plank", workout_key: "free_1", reps: "40" },
+      ]),
+      "u1",
+      SETTINGS,
+      MERGING,
+    );
+
+    expect(prs.reps).toEqual({ plank: 45 });
+    expect(prs.exercises.plank).toMatchObject({ exercise_ids: ["mie_1_10", "plank"], is_timer: true });
+    expect(topRepRecords(prs)).toEqual([
+      { exercise_id: "plank", name: "Plancha", best: 45, unit: "s", merged_from: ["mie_1_10", "plank"] },
+    ]);
+  });
+
+  it("lo que el resolutor no conoce se queda aparte, con su id crudo", async () => {
+    const prs = await resolvePersonalRecords(
+      stubPb([{ exercise_id: "mystery_move", workout_key: "free_1", reps: "9" }]),
+      "u1",
+      SETTINGS,
+      MERGING,
+    );
+
+    expect(prs.reps).toEqual({ mystery_move: 9 });
+    expect(prs.exercises.mystery_move.resolved).toBe(false);
   });
 });

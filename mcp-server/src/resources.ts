@@ -3,6 +3,7 @@ import { getAuthManager } from "./mcpuse/auth-bridge.js";
 import { today, startOfWeek } from "./utils.js";
 import { resolveActiveProgramProgress } from "./api/program-progress-server.js";
 import { resolvePersonalRecords } from "./api/prs-server.js";
+import { loadUserExerciseResolver } from "./api/exercise-identity-server.js";
 
 export function registerResources(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -38,7 +39,11 @@ export function registerResources(server: AppServer, pbUrl: string) {
       // Los récords de TODOS los ejercicios, recalculados desde `sets_log`
       // (#666). Los cinco `pr_*` de la fila son espejos heredados y solo
       // cubren lo que `legacyPrKey` sabe traducir.
-      const prs = settings ? await resolvePersonalRecords(pb, auth.getUserId(), settings) : null;
+      // El resolutor de identidades (#702) necesita el programa activo, que ya
+      // está leído arriba: se le pasa para no repetir la consulta.
+      const current = currentProgram ? { userProgram: userPrograms[0], program: userPrograms[0].expand!.program } : null;
+      const resolver = settings ? await loadUserExerciseResolver(pb, auth.getUserId(), { current }) : null;
+      const prs = settings && resolver ? await resolvePersonalRecords(pb, auth.getUserId(), settings, { resolver }) : null;
 
       const profile = {
         user_id: auth.getUserId(),
@@ -57,10 +62,12 @@ export function registerResources(server: AppServer, pbUrl: string) {
                 pistol: prs?.legacy.pistol_squat || null,
                 handstand: prs?.legacy.handstand || null,
               },
-              // `exercise_id` → mejor marca, de todo lo registrado. En un
-              // ejercicio de temporizador el número son SEGUNDOS.
+              // Clave de identidad → mejor marca, de todo lo registrado y
+              // fusionando los ids que son el mismo ejercicio (#702);
+              // `exercises` dice qué nombre e ids hay detrás de cada clave. En
+              // un ejercicio de temporizador el número son SEGUNDOS.
               all_records: prs
-                ? { tracked_exercises: prs.tracked_exercises, reps: prs.reps, weight: prs.weight }
+                ? { tracked_exercises: prs.tracked_exercises, reps: prs.reps, weight: prs.weight, exercises: prs.exercises }
                 : null,
             }
           : null,

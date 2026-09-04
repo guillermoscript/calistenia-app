@@ -12,6 +12,8 @@ const setSchema = z.object({
 export const exerciseHistoryPropsSchema = z.object({
   exercise_id: z.string(),
   exercise_name: z.string().optional(),
+  /** Every raw `exercise_id` merged into this history (#702); absent when nothing merged. */
+  exercise_ids: z.array(z.string()).optional(),
   days: z.number(),
   total_sets: z.number(),
   sessions: z.array(

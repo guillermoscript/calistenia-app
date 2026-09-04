@@ -66,6 +66,8 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             tracked_exercises: prs.tracked_exercises,
             reps: prs.reps,
             weight: prs.weight,
+            // Clave → nombre e ids crudos fusionados (#702).
+            exercises: prs.exercises,
           },
         };
 
@@ -88,10 +90,13 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             ...(prs.tracked_exercises > 0
               ? [
                   `\n## All-Time Records (${prs.tracked_exercises} exercises)`,
-                  `_Best set per exercise, from the full \`sets_log\` history. Timer exercises are in seconds._`,
-                  ...topRepRecords(prs).map(({ exercise_id, best }) => {
+                  `_Best set per exercise, from the full \`sets_log\` history, merged across every id of the same exercise. Timer exercises are in seconds._`,
+                  ...topRepRecords(prs).map(({ exercise_id, name, best, unit, merged_from }) => {
                     const w = prs.weight[exercise_id];
-                    return `- \`${exercise_id}\`: **${best}**${w ? ` \u00b7 ${w.weight}kg \u00d7 ${w.reps} (e1RM ${w.e1rm}kg)` : ""}`;
+                    const label = name !== exercise_id ? `${name} (\`${exercise_id}\`)` : `\`${exercise_id}\``;
+                    return `- ${label}: **${best}${unit === "s" ? " s" : ""}**`
+                      + (w ? ` \u00b7 ${w.weight}kg \u00d7 ${w.reps} (e1RM ${w.e1rm}kg)` : "")
+                      + (merged_from ? ` _(merged: ${merged_from.join(", ")})_` : "");
                   }),
                   ...(prs.tracked_exercises > 10
                     ? [`_\u2026 and ${prs.tracked_exercises - 10} more \u2014 read them all from \`all_records.reps\` in JSON format._`]
