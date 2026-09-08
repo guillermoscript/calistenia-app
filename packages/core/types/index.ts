@@ -318,6 +318,10 @@ export interface ProgramMeta {
   created_by_name?: string
   is_official?: boolean
   is_featured?: boolean
+  /** Variante «Mujer ·» de su celda nivel × objetivo (#717): «PARA TI» la prefiere si `sex === 'female'`. */
+  for_women?: boolean
+  /** Desempate explícito del catálogo curado (#717); 0 o ausente = sin orden. */
+  sort_order?: number
   /** Vacío en filas creadas por clientes anteriores a #603: se trata como `private`. */
   visibility?: ProgramVisibility
   difficulty?: ProgramDifficulty
