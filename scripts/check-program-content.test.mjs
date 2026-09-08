@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
-import { checkProgram } from './check-program-content.mjs'
+import { checkProgram, digestProgram, STRICT_RULES } from './check-program-content.mjs'
 import {
   PURE_DURATION_RE,
   MUSCLE_TOKENS,
@@ -35,7 +35,7 @@ function exercise(overrides = {}) {
   return {
     sort_order: 1,
     name: 'Ejercicio de prueba',
-    exercise_id: '90_degree_push_up',
+    exercise_id: 'pushup_std',
     muscles: '',
     sets: 10,
     reps: '10',
@@ -65,7 +65,7 @@ function baseProgram() {
             day_id: 'lun',
             day_name: 'Lunes',
             exercises: [
-              exercise({ sort_order: 1, name: '90° Push-up', exercise_id: '90_degree_push_up' }), // push
+              exercise({ sort_order: 1, name: 'Push-up Estándar', exercise_id: 'pushup_std' }), // push
               exercise({ sort_order: 2, name: 'Arquero de pie', exercise_id: 'standing_archer' }), // pull
               exercise({ sort_order: 3, name: 'Abdominal con patada de piernas', exercise_id: 'kick_out_sit' }), // legs
             ],
@@ -106,7 +106,7 @@ describe('checkProgram — patrón de movimiento a 0 series', () => {
     const doc = baseProgram()
     // Quita el ejercicio de push; deja solo pull y legs.
     doc.phases[0].days[0].exercises = doc.phases[0].days[0].exercises.filter(
-      ex => ex.exercise_id !== '90_degree_push_up',
+      ex => ex.exercise_id !== 'pushup_std',
     )
     const { errors } = checkProgram(SLUG, doc)
     expect(errors.some(e => e.includes('0 series de push'))).toBe(true)
@@ -369,5 +369,309 @@ describe('el diccionario de músculos cubre el censo de producción', () => {
 
   it('todo token inequívocamente inglés tiene traducción', () => {
     expect([...ENGLISH_ONLY_TOKENS].filter(t => !MUSCLE_TOKENS[t])).toEqual([])
+  })
+})
+
+// ── Lógica de entrenamiento (#715) ───────────────────────────────────────────
+//
+// `checkProgram(slug, doc)` no lee el nivel, el `goal_type` ni las
+// contraindicaciones del propio `doc`: todo eso sale de `SKELETONS` a través
+// del `slug` que se le pasa (ver `CATALOG_BY_SLUG.get(slug)` en el fichero
+// bajo prueba). Por eso muchos fixtures de aquí abajo reutilizan
+// `baseProgram()` tal cual y solo cambian el slug con el que se llama a
+// `checkProgram` — es la forma más corta de "un programa beginner" pasar a
+// ser "un programa fat_loss" sin tocar el contenido.
+//
+// Los que sí necesitan más de una fase o más de un día (regresión por
+// familia, días pesados seguidos, frecuencia por patrón, cardio real) se
+// construyen con los helpers `day()`/`phase()`/`logicProgram()` de aquí
+// abajo en vez de con `baseProgram()`.
+
+/** Un día mínimo con los ejercicios dados. */
+function day(day_id, exercises, overrides = {}) {
+  return { day_id, day_name: day_id, exercises, ...overrides }
+}
+
+/** Una fase mínima con los días dados. */
+function phase(phase_number, days, overrides = {}) {
+  return { phase_number, name: `Fase ${phase_number}`, weeks: '1-4', days, ...overrides }
+}
+
+/** Un documento mínimo con las fases dadas; instructions sin ninguna promesa. */
+function logicProgram(phases, programOverrides = {}) {
+  return {
+    program: {
+      name: 'Programa de prueba',
+      description: 'Programa de prueba',
+      difficulty: 'beginner',
+      duration_weeks: 8,
+      instructions: {
+        es: 'Sube el peso cuando completes todas las series.',
+        en: 'Add weight once you complete every set.',
+      },
+      ...programOverrides,
+    },
+    phases,
+  }
+}
+
+/** Solo los findings de UNA regla, para aislar el aserto de lo demás que el fixture dispare de rebote. */
+function findingsFor(result, rule) {
+  return result.findings.filter(f => f.rule === rule)
+}
+
+/**
+ * Fase con dos días de push+pull+legs "pesados" (10 series cada patrón, por
+ * encima de `HEAVY_DAY_SETS`); `secondDayId` decide si son consecutivos en
+ * el calendario (p. ej. 'mar' lo es respecto a 'lun'; 'mie' no lo es).
+ */
+function heavyDoc(secondDayId) {
+  const heavyDay = id => day(id, [
+    exercise({ sort_order: 1, name: 'Push-up Estándar', exercise_id: 'pushup_std', priority: 'primary', sets: 10 }),
+    exercise({ sort_order: 2, name: 'Arquero de pie', exercise_id: 'standing_archer', priority: 'primary', sets: 10 }),
+    exercise({ sort_order: 3, name: 'Abdominal con patada de piernas', exercise_id: 'kick_out_sit', priority: 'primary', sets: 10 }),
+  ])
+  return logicProgram([phase(1, [heavyDay('lun'), heavyDay(secondDayId)])])
+}
+
+describe('checkProgram — tope de dificultad por nivel del programa (L1, #715)', () => {
+  it('un ejercicio advanced en un programa beginner es un aviso', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Remo a un brazo con toalla', exercise_id: 'one_arm_towel_row', priority: 'accessory' }),
+    )
+    const result = checkProgram(SLUG, doc) // principiante-fundamentos: beginner
+    expect(findingsFor(result, 'level_cap').some(f => f.message.includes('es advanced en un programa beginner'))).toBe(true)
+  })
+
+  it('un ejercicio advanced en la fase 1 de un programa intermediate también es un aviso', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Remo a un brazo con toalla', exercise_id: 'one_arm_towel_row', priority: 'accessory' }),
+    )
+    const result = checkProgram('intermedio-hipertrofia', doc) // intermediate
+    expect(findingsFor(result, 'level_cap').some(f => f.message.includes('es advanced en la fase 1 de un programa intermediate'))).toBe(true)
+  })
+
+  it('sin ejercicios advanced no dispara la regla', () => {
+    // Ojo al elegir ids para fixtures: `90_degree_push_up` es 'advanced' en el
+    // catálogo real aunque el nombre no lo deje intuir. `baseProgram()` usa
+    // `pushup_std` (beginner) por eso.
+    const result = checkProgram(SLUG, baseProgram())
+    expect(findingsFor(result, 'level_cap')).toEqual([])
+  })
+})
+
+describe('checkProgram — no-regresión por familia entre fases (L2, #715)', () => {
+  it('bajar de tuck planche (advanced) en la fase 1 a planche lean (intermediate) en la fase 2 es un aviso', () => {
+    const doc = logicProgram([
+      phase(1, [day('lun', [exercise({ sort_order: 1, name: 'Tuck Planche', exercise_id: 'planche_tuck', priority: 'primary', sets: 5, reps: '8' })])]),
+      phase(2, [day('lun', [exercise({ sort_order: 1, name: 'Planche Lean', exercise_id: 'planche_lean', priority: 'primary', sets: 5, reps: '8' })])]),
+    ])
+    const result = checkProgram('planche-roadmap', doc)
+    const hits = findingsFor(result, 'family_regression')
+    expect(hits.some(f => f.message.includes('familia planche: la fase 1 llega a') && f.message.includes('baja a'))).toBe(true)
+  })
+
+  it('subir de planche lean a tuck planche entre fases no es una regresión', () => {
+    const doc = logicProgram([
+      phase(1, [day('lun', [exercise({ sort_order: 1, name: 'Planche Lean', exercise_id: 'planche_lean', priority: 'primary', sets: 5, reps: '8' })])]),
+      phase(2, [day('lun', [exercise({ sort_order: 1, name: 'Tuck Planche', exercise_id: 'planche_tuck', priority: 'primary', sets: 5, reps: '8' })])]),
+    ])
+    const result = checkProgram('planche-roadmap', doc)
+    expect(findingsFor(result, 'family_regression')).toEqual([])
+  })
+})
+
+describe('checkProgram — contraindicaciones derivadas del contenido (L3, #715)', () => {
+  it('un ejercicio de impacto sin "knee" declarado en SKELETONS es un aviso', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Sentadilla con Salto', exercise_id: 'jump_squat', priority: 'accessory' }),
+    )
+    const result = checkProgram('planche-roadmap', doc) // contraindications: wrist, shoulder, elbow — sin knee
+    expect(findingsFor(result, 'contraindications').some(f => f.message.includes('no declara knee'))).toBe(true)
+  })
+
+  it('chinup no dispara la contraindicación de muñeca aunque su `family` de catálogo esté mal etiquetada', () => {
+    // El catálogo trae a `chinup` con `family: 'handstand'` (lo arregla #714).
+    // La regla solo confía en `family` para categoría `skill`; `chinup` es
+    // `pull`, así que el disparador de apoyo invertido/planche tampoco lo
+    // alcanza por id (su regex no casa con "chinup").
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Chin-up (agarre supino)', exercise_id: 'chinup', priority: 'accessory' }),
+    )
+    const result = checkProgram('principiante-ganar-musculo', doc) // contraindications: shoulder, elbow, knee — sin wrist
+    expect(findingsFor(result, 'contraindications')).toEqual([])
+  })
+})
+
+describe('checkProgram — descarga prometida sin codificar (L4, #716 / #715)', () => {
+  it('instructions promete una descarga y ninguna fase la codifica', () => {
+    const doc = baseProgram()
+    doc.program.instructions.es = 'Sube el peso cada semana. Incluye una semana de descarga al final del bloque.'
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'deload_promise').some(f => f.message.includes('promete una descarga y ninguna fase la codifica'))).toBe(true)
+  })
+
+  it('con `day_type: "deload"` en un día, la promesa queda codificada y no dispara', () => {
+    const doc = baseProgram()
+    doc.program.instructions.es = 'Sube el peso cada semana. Incluye una semana de descarga al final del bloque.'
+    doc.phases[0].days[0].day_type = 'deload'
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'deload_promise')).toEqual([])
+  })
+})
+
+describe('checkProgram — fat_loss: cardio real por fase (L5, #718 / #715)', () => {
+  it('sin bloques de cardio cronometrado en un fat_loss es un aviso', () => {
+    const result = checkProgram('principiante-quema-grasa', baseProgram())
+    expect(findingsFor(result, 'fat_loss_cardio').some(f => f.message.includes('bloque(s) de cardio cronometrado'))).toBe(true)
+  })
+
+  it('dos días `day_type: "circuit"` en la fase cubren el mínimo exigido', () => {
+    const circuitDay = id => day(id, [
+      exercise({ sort_order: 1, exercise_id: 'pushup_std', priority: 'primary', sets: 10 }),
+      exercise({ sort_order: 2, exercise_id: 'standing_archer', priority: 'primary', sets: 10 }),
+      exercise({ sort_order: 3, exercise_id: 'kick_out_sit', priority: 'primary', sets: 10 }),
+    ], { day_type: 'circuit' })
+    const doc = logicProgram([phase(1, [circuitDay('lun'), circuitDay('jue')])])
+    const result = checkProgram('principiante-quema-grasa', doc)
+    expect(findingsFor(result, 'fat_loss_cardio')).toEqual([])
+  })
+})
+
+describe('checkProgram — fat_loss: párrafo de nutrición (L5, #718 / #715)', () => {
+  it('instructions sin "déficit"/"deficit" en un fat_loss es un aviso', () => {
+    const result = checkProgram('principiante-quema-grasa', baseProgram())
+    expect(findingsFor(result, 'fat_loss_nutrition').some(f => f.message.includes('sin el párrafo de nutrición'))).toBe(true)
+  })
+
+  it('"déficit" en es y "deficit" en en cumplen el marcador', () => {
+    const doc = baseProgram()
+    doc.program.instructions = {
+      es: 'Mantén un déficit calórico moderado y sube el peso cuando puedas.',
+      en: 'Keep a moderate caloric deficit and add weight when you can.',
+    }
+    const result = checkProgram('principiante-quema-grasa', doc)
+    expect(findingsFor(result, 'fat_loss_nutrition')).toEqual([])
+  })
+})
+
+describe('checkProgram — patrón pesado en dos días de calendario seguidos (L6, #715)', () => {
+  it('más de 8 series de empuje en lunes y martes (seguidos) es un aviso', () => {
+    const result = checkProgram('principiante-fundamentos', heavyDoc('mar'))
+    expect(findingsFor(result, 'heavy_consecutive_days').some(f => f.message.includes('series de empuje en dos días seguidos'))).toBe(true)
+  })
+
+  it('lunes y miércoles no son días seguidos: no dispara', () => {
+    const result = checkProgram('principiante-fundamentos', heavyDoc('mie'))
+    expect(findingsFor(result, 'heavy_consecutive_days')).toEqual([])
+  })
+})
+
+describe('checkProgram — frecuencia por patrón en muscle_gain (L7, #715)', () => {
+  it('un patrón presente en un solo día de la fase es un aviso', () => {
+    const result = checkProgram('principiante-ganar-musculo', baseProgram())
+    expect(findingsFor(result, 'pattern_frequency').some(f => f.message.includes('solo 1 día/semana en un muscle_gain'))).toBe(true)
+  })
+
+  it('el mismo patrón en dos días de la fase cubre el mínimo', () => {
+    const fullDay = id => day(id, [
+      exercise({ sort_order: 1, exercise_id: 'pushup_std', priority: 'primary', sets: 10 }),
+      exercise({ sort_order: 2, exercise_id: 'standing_archer', priority: 'primary', sets: 10 }),
+      exercise({ sort_order: 3, exercise_id: 'kick_out_sit', priority: 'primary', sets: 10 }),
+    ])
+    const doc = logicProgram([phase(1, [fullDay('lun'), fullDay('jue')])])
+    const result = checkProgram('principiante-ganar-musculo', doc)
+    expect(findingsFor(result, 'pattern_frequency')).toEqual([])
+  })
+})
+
+describe('checkProgram — ejercicio prometido en el texto (L8, #715)', () => {
+  it('el texto promete un dead hang y ningún ejercicio del contenido lo es', () => {
+    const doc = baseProgram()
+    doc.program.instructions.es = 'Incluye un dead hang al final de cada sesión.'
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'promised_exercise').some(f => f.message.includes('promete dead hang'))).toBe(true)
+  })
+
+  it('con un ejercicio de id "dead_hang" en el contenido, la promesa queda cumplida', () => {
+    const doc = baseProgram()
+    doc.program.instructions.es = 'Incluye un dead hang al final de cada sesión.'
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Suspensión en Barra', exercise_id: 'dead_hang', priority: 'accessory' }),
+    )
+    const result = checkProgram('principiante-ganar-musculo', doc) // declara pull_bar
+    expect(findingsFor(result, 'promised_exercise')).toEqual([])
+  })
+})
+
+describe('checkProgram — --strict promueve solo las reglas de STRICT_RULES', () => {
+  it('level_cap es aviso por defecto y error con --strict', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Remo a un brazo con toalla', exercise_id: 'one_arm_towel_row', priority: 'accessory' }),
+    )
+    const loose = checkProgram(SLUG, doc)
+    expect(loose.warnings.some(w => w.includes('es advanced en un programa beginner'))).toBe(true)
+    expect(loose.errors.some(e => e.includes('es advanced en un programa beginner'))).toBe(false)
+
+    const strict = checkProgram(SLUG, doc, { strict: true })
+    expect(strict.errors.some(e => e.includes('es advanced en un programa beginner'))).toBe(true)
+    expect(strict.warnings.some(w => w.includes('es advanced en un programa beginner'))).toBe(false)
+  })
+
+  it('heavy_consecutive_days no está en STRICT_RULES y se queda en aviso incluso con --strict', () => {
+    expect(STRICT_RULES.has('heavy_consecutive_days')).toBe(false)
+    const strict = checkProgram('principiante-fundamentos', heavyDoc('mar'), { strict: true })
+    expect(strict.warnings.some(w => w.includes('series de empuje en dos días seguidos'))).toBe(true)
+    expect(strict.errors.some(e => e.includes('series de empuje en dos días seguidos'))).toBe(false)
+  })
+})
+
+describe('checkProgram — findings', () => {
+  it('cada finding trae una regla no vacía y "findings" mide lo mismo que errors + warnings', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.push(
+      exercise({ sort_order: 4, name: 'Sentadilla con Salto', exercise_id: 'jump_squat', priority: 'accessory' }),
+    )
+    // planche-roadmap + --strict: contraindications (error) + equipment no usado (aviso) —
+    // mezcla deliberada de error y aviso para que la suma no case por casualidad.
+    const { errors, warnings, findings } = checkProgram('planche-roadmap', doc, { strict: true })
+    expect(errors.length).toBeGreaterThan(0)
+    expect(warnings.length).toBeGreaterThan(0)
+    expect(findings.length).toBe(errors.length + warnings.length)
+    expect(findings.every(f => typeof f.rule === 'string' && f.rule.length > 0)).toBe(true)
+  })
+})
+
+describe('checkProgram — baseProgram() en modo --strict', () => {
+  // Sus instructions no prometen descarga ni ningún ejercicio de la lista de
+  // #715, su slug (principiante-fundamentos) es `maintain` y ninguno de sus
+  // ejercicios es advanced: el fixture base tiene que seguir limpio también
+  // cuando las reglas de lógica son errores.
+  it('no reporta errores', () => {
+    const { errors } = checkProgram(SLUG, baseProgram(), { strict: true })
+    expect(errors).toEqual([])
+  })
+})
+
+describe('digestProgram', () => {
+  it('un timer con reps de rango muestra el rango y el timer entre paréntesis', () => {
+    const doc = baseProgram()
+    Object.assign(doc.phases[0].days[0].exercises[0], { reps: '20-30 s', is_timer: true, timer_seconds: 30 })
+    const out = digestProgram(SLUG, doc)
+    expect(out).toContain('20-30 s')
+    expect(out).toContain('(timer 30 s)')
+  })
+
+  it('un timer sin reps cae a los segundos a secas, sin el sufijo "(timer ...)"', () => {
+    const doc = baseProgram()
+    Object.assign(doc.phases[0].days[0].exercises[0], { reps: '', is_timer: true, timer_seconds: 30 })
+    const out = digestProgram(SLUG, doc)
+    expect(out).toContain('30 s')
+    expect(out).not.toContain('(timer')
   })
 })

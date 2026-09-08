@@ -11,10 +11,28 @@
  * ante un ERROR y solo informa ante un AVISO; los avisos son decisiones de
  * programación defendibles que conviene mirar, no cosas rotas.
  *
+ * La auditoría de ENTRENAMIENTO del 2026-09-08 (#711) añadió las reglas de
+ * LÓGICA: nivel del ejercicio frente al del programa, regresión por familia
+ * entre fases, contraindicaciones derivadas del contenido, descarga prometida
+ * y no codificada, cardio y nutrición en `fat_loss`, días pesados seguidos,
+ * frecuencia por patrón y ejercicios prometidos en el texto (#715). Nacen como
+ * AVISO para no bloquear las quince issues de contenido que corren en
+ * paralelo; con `--strict` las cinco primeras pasan a ERROR. Cuando #719-#733
+ * estén mergeadas, `--strict` es el modo de CI (PR de cierre de #711).
+ *
+ * Descarga (#716): se reconoce `deload_last_week: true` en la fase (opción A)
+ * o `day_type: 'deload'` en un día (opción B). Una issue de contenido que
+ * prometa descarga en `instructions` debe codificarla así o quitar la promesa.
+ *
+ * Cada hallazgo lleva un `rule` estable (ver `STRICT_RULES` y los ids de cada
+ * llamada) para que `--json` se pueda filtrar por programa y regla.
+ *
  * Uso:
  *   node scripts/check-program-content.mjs            # todos
  *   node scripts/check-program-content.mjs mujer-*    # por slug
  *   node scripts/check-program-content.mjs --json     # salida para máquinas
+ *   node scripts/check-program-content.mjs --strict   # reglas de lógica como ERROR
+ *   node scripts/check-program-content.mjs --digest   # el programa día a día
  */
 
 import { readFileSync, readdirSync } from 'fs'
@@ -135,6 +153,94 @@ const SLUG_LIKE = /^[a-z0-9]+(_[a-z0-9]+)+$/
 
 const WORK = new Set(['primary', 'secondary', 'accessory', 'high', 'med', 'low'])
 
+// ── Lógica de entrenamiento (#715) ───────────────────────────────────────────
+
+/**
+ * Reglas que `--strict` convierte en ERROR. Las demás reglas nuevas
+ * (`heavy_consecutive_days`, `pattern_frequency`, `promised_exercise`) son
+ * decisiones de programación discutibles y se quedan en AVISO siempre.
+ */
+export const STRICT_RULES = new Set([
+  'level_cap',
+  'family_regression',
+  'contraindications',
+  'deload_promise',
+  'fat_loss_cardio',
+  'fat_loss_nutrition',
+])
+
+/** Escalones de `difficulty` del catálogo, en orden. Solo hay tres. */
+const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 }
+
+/**
+ * Contraindicaciones que el contenido obliga a declarar en `SKELETONS`
+ * (vocabulario de `program-catalog.mjs`). Cada disparador casa contra la
+ * `family` del catálogo O contra el id del ejercicio; con que un ejercicio de
+ * TRABAJO dispare, el programa tiene que declarar todas las del grupo.
+ *
+ * - Colgado máximo / excéntrico de tracción: codo y hombro.
+ * - Apoyo invertido de manos y planche: muñeca y hombro.
+ * - Impacto (saltos, pliometría, nordic): rodilla. El tobillo de burpees y
+ *   patinadores queda como decisión del programa, no se exige.
+ *
+ * La `family` solo cuenta en entradas de categoría `skill`: el catálogo tiene
+ * a `chinup` en `family: handstand` (lo arregla #714) y sin ese cerrojo una
+ * dominada supina exigiría declarar muñeca.
+ */
+const CONTRAINDICATION_TRIGGERS = [
+  { label: 'colgado máximo o excéntrico de tracción', families: ['muscle_up', 'front_lever', 'back_lever'], ids: /muscleup|muscle_up|front_lever|back_lever|_neg\b|negative|dead_hang/, requires: ['elbow', 'shoulder'] },
+  { label: 'apoyo invertido o planche', families: ['handstand', 'planche'], ids: /handstand|hspu|planche|crow|elbow_lever/, requires: ['wrist', 'shoulder'] },
+  { label: 'impacto, pliometría o nordic', families: [], ids: /jump|plyo|burpee|skater|nordic|hop\b/, requires: ['knee'] },
+]
+
+/** `instructions` promete una descarga. */
+const DELOAD_RE = /descarga|deload/i
+
+/** Marcador del párrafo de nutrición que #718 fija para los `fat_loss`. */
+const NUTRITION_MARKER = { es: /d[ée]ficit/i, en: /deficit/i }
+
+/**
+ * Qué cuenta como bloque de cardio en un `fat_loss` (#718): un ejercicio de
+ * trabajo cronometrado, de categoría `full` o con id de cardio, que dure en
+ * total ≥ `minBlockSeconds`; o un día `day_type: 'circuit'`. Un `fat_loss`
+ * necesita `blocksPerWeek` por fase (cada fase es una semana tipo).
+ */
+const CARDIO = { blocksPerWeek: 2, minBlockSeconds: 300 }
+const CARDIO_IDS = /burpee|jump|jack|climber|skater|high_knee|bear_crawl|rope|jog|run|sprint|cardio|hiit/
+
+/** Series a partir de las cuales un día es «pesado» en un patrón. */
+const HEAVY_DAY_SETS = 8
+
+/** Tirón vertical: lo que cuelga de la barra. Los remos no cuentan. */
+const VERTICAL_PULL = { families: new Set(['pull_up', 'muscle_up', 'front_lever']), ids: /pull_?up|chin_?up|chinup|muscleup|front_lever/ }
+
+/** Días mínimos por patrón principal en un `muscle_gain`. */
+const MIN_PATTERN_DAYS = 2
+
+const WEEKDAY_INDEX = {
+  lun: 0, mar: 1, mie: 2, jue: 3, vie: 4, sab: 5, dom: 6,
+  mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6,
+}
+
+/**
+ * Promesas del texto que el contenido tiene que cumplir. Acotada a propósito:
+ * casar los 1.576 nombres del catálogo contra el texto libre daría más ruido
+ * que señal. `text` casa contra `instructions`, `day_focus` y `workout_title`;
+ * `ids` contra los ids del contenido (cualquier prioridad). `cardio` usa la
+ * definición de bloque de arriba.
+ */
+const PROMISES = [
+  { label: 'dead hang / colgado', text: /dead\s*hang|colgad[oa]s?\b|colgarte/i, ids: /hang/ },
+  { label: 'false grip / agarre falso', text: /false\s*grip|agarre\s+falso/i, ids: /false_grip/ },
+  { label: 'muscle-up', text: /muscle[\s-]?ups?/i, ids: /muscleup|muscle_up/ },
+  { label: 'pino / handstand', text: /\bpino\b|handstand/i, ids: /handstand|hspu/ },
+  { label: 'pistol', text: /pistol/i, ids: /pistol/ },
+  { label: 'nordic', text: /nordic|n[óo]rdic[oa]/i, ids: /nordic/ },
+  { label: 'dominada / pull-up', text: /dominadas?|pull[\s-]?ups?/i, ids: /pull_?up|chin_?up|chinup/ },
+  { label: 'fondos / dips', text: /\bfondos?\b|\bdips?\b/i, ids: /dip/ },
+  { label: 'cardio', text: /\bcardio\b/i, cardio: true },
+]
+
 // ── Utilidades ───────────────────────────────────────────────────────────────
 
 const textOf = v => (v && typeof v === 'object' ? v.es ?? v.en ?? '' : v ?? '')
@@ -150,25 +256,35 @@ function patternOf(entry) {
 
 // ── Comprobación de un programa ──────────────────────────────────────────────
 
-export function checkProgram(slug, doc) {
+export function checkProgram(slug, doc, { strict = false } = {}) {
   const errors = []
   const warnings = []
-  const err = m => errors.push(m)
-  const warn = m => warnings.push(m)
+  const findings = []
+  const push = (level, rule, message) => {
+    findings.push({ rule, level, message })
+    ;(level === 'error' ? errors : warnings).push(message)
+  }
+  const err = (m, rule = 'legacy') => push('error', rule, m)
+  const warn = (m, rule = 'legacy') => push('warning', rule, m)
+  /**
+   * Regla de lógica (#715): AVISO por defecto; ERROR con `--strict` si está en
+   * `STRICT_RULES`. Las demás son aviso siempre.
+   */
+  const logic = (rule, m) => push(strict && STRICT_RULES.has(rule) ? 'error' : 'warning', rule, m)
 
   const meta = CATALOG_BY_SLUG.get(slug)
-  if (!meta) err(`no tiene entrada en SKELETONS de program-catalog.mjs`)
+  if (!meta) err(`no tiene entrada en SKELETONS de program-catalog.mjs`, 'catalog_entry')
 
   const program = doc.program ?? {}
-  if (!program.duration_weeks) err(`program.duration_weeks ausente`)
+  if (!program.duration_weeks) err(`program.duration_weeks ausente`, 'duration')
 
   // #618: el bloque «cómo seguir este programa». Vacío en los 15 originales, que
   // es como el usuario acababa repitiendo la misma dosis cuatro semanas seguidas.
   const instr = program.instructions
   if (!instr || !textOf(instr).trim()) {
-    err(`program.instructions vacío — el usuario no recibe ninguna regla de progresión`)
+    err(`program.instructions vacío — el usuario no recibe ninguna regla de progresión`, 'instructions')
   } else if (typeof instr === 'object' && (!instr.es?.trim() || !instr.en?.trim())) {
-    err(`program.instructions debe traer 'es' y 'en'`)
+    err(`program.instructions debe traer 'es' y 'en'`, 'instructions')
   }
 
   const usedEquipment = new Set()
@@ -176,14 +292,29 @@ export function checkProgram(slug, doc) {
   const idsByPhase = new Map()
   let totalExercises = 0
 
+  // Lo que las reglas de lógica (#715) necesitan ver después del bucle.
+  const phaseLogic = [] // { pn, days: [{ label, weekday, push, vpull, patterns }], famMax, cardioBlocks, deload }
+  const allIds = new Set() // ids resueltos de cualquier prioridad (promesas)
+  const triggered = new Map() // etiqueta del disparador → primer sitio donde salta
+  const promisedText = [textOf(program.instructions), typeof program.instructions === 'object' ? program.instructions?.en ?? '' : '']
+  let anyDeloadEncoded = false
+
   for (const phase of doc.phases ?? []) {
     const pn = phase.phase_number
     const perPattern = new Map()
     const ids = new Set()
+    const lp = { pn, days: [], famMax: new Map(), cardioBlocks: 0, deload: !!phase.deload_last_week }
+    if (lp.deload) anyDeloadEncoded = true
 
     for (const day of phase.days ?? []) {
       // El id del ejercicio anterior EN ORDEN, para la comprobación 2b.
       let previousId = null
+      const dayType = String(day.day_type ?? '').toLowerCase()
+      if (dayType === 'deload') { lp.deload = true; anyDeloadEncoded = true }
+      if (dayType === 'circuit') lp.cardioBlocks++
+      const ld = { label: `fase ${pn} · ${day.day_id}`, weekday: WEEKDAY_INDEX[String(day.day_id ?? '').toLowerCase()], push: 0, vpull: 0, patterns: new Set() }
+      lp.days.push(ld)
+      promisedText.push(textOf(day.day_focus), textOf(day.workout_title))
 
       for (const ex of [...(day.exercises ?? [])].sort(
         (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
@@ -194,18 +325,18 @@ export function checkProgram(slug, doc) {
         // 1 — Esquema único. `catalog_id` y el campo ausente eran los otros dos
         //     dialectos que convivían en `programs/`.
         if (!ex.exercise_id) {
-          err(`${where}: sin 'exercise_id' (${'catalog_id' in ex ? "usa 'catalog_id', renómbralo" : 'campo ausente'})`)
+          err(`${where}: sin 'exercise_id' (${'catalog_id' in ex ? "usa 'catalog_id', renómbralo" : 'campo ausente'})`, 'exercise_id')
           continue
         }
 
         // 2 — El id tiene que existir de verdad en el catálogo.
         const resolved = resolveId(ex.exercise_id)
         if (!resolved) {
-          err(`${where}: exercise_id "${ex.exercise_id}" no resuelve contra el catálogo`)
+          err(`${where}: exercise_id "${ex.exercise_id}" no resuelve contra el catálogo`, 'exercise_id')
           continue
         }
         if (resolved !== ex.exercise_id) {
-          warn(`${where}: "${ex.exercise_id}" resuelve a "${resolved}" — escribe el id canónico`)
+          warn(`${where}: "${ex.exercise_id}" resuelve a "${resolved}" — escribe el id canónico`, 'exercise_id')
         }
 
         // 2b — Nunca el mismo ejercicio dos veces SEGUIDAS en un día.
@@ -222,15 +353,15 @@ export function checkProgram(slug, doc) {
         // muñeca en el calentamiento y otra vez en la vuelta a la calma es
         // legítimo y no toca ninguna frontera.
         if (resolved === previousId) {
-          err(`${where}: "${resolved}" repetido justo después de sí mismo — fusiona el bloque de navegación de la sesión`)
+          err(`${where}: "${resolved}" repetido justo después de sí mismo — fusiona el bloque de navegación de la sesión`, 'duplicate_adjacent')
         }
         previousId = resolved
 
         // 3 — El nombre es lo que se pinta en pantalla.
         const name = textOf(ex.name)
-        if (!name.trim()) err(`${where}: sin nombre`)
+        if (!name.trim()) err(`${where}: sin nombre`, 'exercise_name')
         else if (SLUG_LIKE.test(name.trim())) {
-          err(`${where}: el nombre "${name}" es un slug, no un nombre — se enseña tal cual al usuario`)
+          err(`${where}: el nombre "${name}" es un slug, no un nombre — se enseña tal cual al usuario`, 'exercise_name')
         }
 
         // 3b — Una duración en `reps` sin temporizador encendido (#690).
@@ -242,9 +373,9 @@ export function checkProgram(slug, doc) {
         // pasan intactas.
         const inferred = inferTimerFromReps(ex.reps)
         if (inferred !== null && !ex.is_timer) {
-          err(`${where}: reps "${ex.reps}" es una duración pero is_timer es false — la sesión no pinta el temporizador`)
+          err(`${where}: reps "${ex.reps}" es una duración pero is_timer es false — la sesión no pinta el temporizador`, 'timer')
         } else if (ex.is_timer && !Number(ex.timer_seconds)) {
-          err(`${where}: is_timer sin timer_seconds — la cuenta atrás arranca en 0`)
+          err(`${where}: is_timer sin timer_seconds — la cuenta atrás arranca en 0`, 'timer')
         }
 
         // 3c — Tokens de máquina en `muscles` (#690). La ficha del ejercicio
@@ -255,34 +386,68 @@ export function checkProgram(slug, doc) {
           err(
             `${where}: muscles "${muscles}" lleva tokens de máquina — se enseña tal cual al usuario` +
             (unknown.length ? ` (fuera del diccionario: ${unknown.join(', ')})` : ''),
+            'muscles',
           )
         }
 
         // 4 — Prioridad dentro del vocabulario que la app sabe pintar.
         if (ex.priority && !(String(ex.priority).toLowerCase() in PRIORITY_ALIASES)) {
-          err(`${where}: priority "${ex.priority}" fuera del enum`)
+          err(`${where}: priority "${ex.priority}" fuera del enum`, 'priority')
         }
 
         const entry = byId.get(resolved)
         for (const eq of entry?.equipment ?? []) {
           if (GYM_ONLY.has(eq)) {
-            err(`${where}: "${resolved}" necesita ${eq} — material de gimnasio en un programa de calistenia`)
+            err(`${where}: "${resolved}" necesita ${eq} — material de gimnasio en un programa de calistenia`, 'gym_equipment')
           } else if (!HOUSEHOLD.has(eq)) {
             usedEquipment.add(eq)
           }
         }
 
+        allIds.add(resolved)
+
         // 5 — Volumen: solo cuenta el trabajo efectivo.
         if (WORK.has(String(ex.priority ?? '').toLowerCase())) {
           const p = patternOf(entry)
-          perPattern.set(p, (perPattern.get(p) ?? 0) + (Number(ex.sets) || 0))
+          const sets = Number(ex.sets) || 0
+          perPattern.set(p, (perPattern.get(p) ?? 0) + sets)
           // Se indexa por FAMILIA, no por id: ver la comprobación 8.
           ids.add(entry?.family || resolved)
+
+          // ── Recogida para las reglas de lógica (#715) ──
+          const rank = LEVEL_RANK[entry?.difficulty]
+          const level = meta?.difficulty ?? program.difficulty
+          const programRank = LEVEL_RANK[level]
+          // L1 — Dificultad máxima por nivel.
+          if (rank === 2 && programRank === 0) {
+            logic('level_cap', `${where}: "${resolved}" es advanced en un programa beginner`)
+          } else if (rank === 2 && programRank === 1 && pn === 1) {
+            logic('level_cap', `${where}: "${resolved}" es advanced en la fase 1 de un programa intermediate — el día 1 debe poder hacerlo el usuario declarado`)
+          }
+          if (entry?.family && rank !== undefined) {
+            const prev = lp.famMax.get(entry.family)
+            if (!prev || rank > prev.rank) lp.famMax.set(entry.family, { rank, id: resolved })
+          }
+          for (const t of CONTRAINDICATION_TRIGGERS) {
+            const byFamily = entry?.category === 'skill' && t.families.includes(entry.family)
+            if (!triggered.has(t.label) && (byFamily || t.ids.test(resolved))) {
+              triggered.set(t.label, { where, id: resolved, requires: t.requires })
+            }
+          }
+          if (p === 'push') ld.push += sets
+          if (VERTICAL_PULL.families.has(entry?.family) || VERTICAL_PULL.ids.test(resolved)) ld.vpull += sets
+          ld.patterns.add(p)
+          const timed = ex.is_timer && Number(ex.timer_seconds) > 0
+          if (timed && (entry?.category === 'full' || CARDIO_IDS.test(resolved))) {
+            const total = Math.max(1, sets) * Number(ex.timer_seconds)
+            if (total >= CARDIO.minBlockSeconds) lp.cardioBlocks++
+          }
         }
       }
     }
     setsByPattern.set(pn, perPattern)
     idsByPhase.set(pn, ids)
+    phaseLogic.push(lp)
   }
 
   // 6 — Material declarado ⊇ material usado.
@@ -292,13 +457,13 @@ export function checkProgram(slug, doc) {
       .map(eq => EQUIPMENT_MAP[eq])
       .filter(eq => eq && !declared.has(eq))
     if (missing.length) {
-      err(`material sin declarar en program-catalog.mjs: ${[...new Set(missing)].join(', ')}`)
+      err(`material sin declarar en program-catalog.mjs: ${[...new Set(missing)].join(', ')}`, 'equipment')
     }
     const unused = [...declared].filter(
       d => ![...usedEquipment].some(eq => EQUIPMENT_MAP[eq] === d),
     )
     if (unused.length) {
-      warn(`declara material que no usa: ${unused.join(', ')} — excluye gente del matching a cambio de nada`)
+      warn(`declara material que no usa: ${unused.join(', ')} — excluye gente del matching a cambio de nada`, 'equipment')
     }
   }
 
@@ -312,25 +477,25 @@ export function checkProgram(slug, doc) {
       // antagonista del patrón que machaca sin una sola serie.
       if (n === 0) {
         if (isSkillTrack && pattern === 'legs') continue
-        if (isSkillTrack) warn(`fase ${pn}: 0 series de ${pattern} — el antagonista necesita algo aunque sea un bloque de especialización`)
-        else err(`fase ${pn}: 0 series de ${pattern} en un programa generalista`)
+        if (isSkillTrack) warn(`fase ${pn}: 0 series de ${pattern} — el antagonista necesita algo aunque sea un bloque de especialización`, 'volume')
+        else err(`fase ${pn}: 0 series de ${pattern} en un programa generalista`, 'volume')
       } else if (n < SETS.floor) {
-        err(`fase ${pn}: ${n} series de ${pattern} — por debajo del mínimo con el que un grupo crece (${SETS.floor})`)
+        err(`fase ${pn}: ${n} series de ${pattern} — por debajo del mínimo con el que un grupo crece (${SETS.floor})`, 'volume')
       } else if (n < SETS.min && !isSkillTrack) {
-        warn(`fase ${pn}: ${n} series de ${pattern} — por debajo del rango útil (${SETS.min}-${SETS.max})`)
+        warn(`fase ${pn}: ${n} series de ${pattern} — por debajo del rango útil (${SETS.min}-${SETS.max})`, 'volume')
       } else if (n > SETS.hardMax) {
-        err(`fase ${pn}: ${n} series de ${pattern} — muy por encima de lo recuperable`)
+        err(`fase ${pn}: ${n} series de ${pattern} — muy por encima de lo recuperable`, 'volume')
       } else if (n > SETS.max) {
-        warn(`fase ${pn}: ${n} series de ${pattern} — por encima del rango con evidencia (${SETS.max})`)
+        warn(`fase ${pn}: ${n} series de ${pattern} — por encima del rango con evidencia (${SETS.max})`, 'volume')
       }
     }
 
     for (const pattern of SOFT_PATTERNS) {
       const n = perPattern.get(pattern) ?? 0
       if (n > 0 && n < SETS.min && !isSkillTrack) {
-        warn(`fase ${pn}: ${n} series de ${pattern} — por debajo del rango útil (${SETS.min}-${SETS.max})`)
+        warn(`fase ${pn}: ${n} series de ${pattern} — por debajo del rango útil (${SETS.min}-${SETS.max})`, 'volume')
       } else if (n > SETS.hardMax) {
-        err(`fase ${pn}: ${n} series de ${pattern} — muy por encima de lo recuperable`)
+        err(`fase ${pn}: ${n} series de ${pattern} — muy por encima de lo recuperable`, 'volume')
       }
     }
 
@@ -339,10 +504,10 @@ export function checkProgram(slug, doc) {
     if (push && pull) {
       const ratio = push / pull
       if (!isSkillTrack && (ratio > 1.5 || ratio < 0.6)) {
-        warn(`fase ${pn}: empuje:tirón ${ratio.toFixed(2)} — fuera de 0,60-1,50`)
+        warn(`fase ${pn}: empuje:tirón ${ratio.toFixed(2)} — fuera de 0,60-1,50`, 'push_pull_ratio')
       }
     }
-    if (total > 140) warn(`fase ${pn}: ${total} series semanales en total — revisa que sea recuperable`)
+    if (total > 140) warn(`fase ${pn}: ${total} series semanales en total — revisa que sea recuperable`, 'total_volume')
   }
 
   // 8 — Continuidad: sin movimientos que duren, no hay nada que sobrecargar.
@@ -364,9 +529,9 @@ export function checkProgram(slug, doc) {
     const shared = [...first].filter(id => last.has(id)).length
     const pct = union.size ? Math.round((100 * shared) / union.size) : 0
     if (pct < 20) {
-      err(`solo ${pct}% de continuidad entre la primera fase y la última — no hay familia de movimiento que dure lo bastante para progresar en ella`)
+      err(`solo ${pct}% de continuidad entre la primera fase y la última — no hay familia de movimiento que dure lo bastante para progresar en ella`, 'continuity')
     } else if (pct < 30) {
-      warn(`${pct}% de continuidad entre la primera fase y la última — poca base para sobrecarga progresiva`)
+      warn(`${pct}% de continuidad entre la primera fase y la última — poca base para sobrecarga progresiva`, 'continuity')
     }
   }
 
@@ -376,18 +541,136 @@ export function checkProgram(slug, doc) {
     const a = sum(phases[0])
     const b = sum(phases[phases.length - 1])
     if (a && b / a > 1.4) {
-      warn(`el volumen sube ${Math.round((100 * (b - a)) / a)}% de la primera fase a la última sin descarga`)
+      warn(`el volumen sube ${Math.round((100 * (b - a)) / a)}% de la primera fase a la última sin descarga`, 'volume_escalation')
     }
   }
 
-  return { slug, errors, warnings, totalExercises }
+  // ── Reglas de lógica de entrenamiento (#715) ─────────────────────────────
+  // L1 (level_cap) se emite dentro del bucle, ejercicio a ejercicio.
+
+  // L2 — No-regresión por familia entre fases consecutivas. Con tres escalones
+  //      de `difficulty` solo se ve el salto grande (tuck → lean, full →
+  //      single), que es justo el que la auditoría encontró.
+  phaseLogic.sort((a, b) => a.pn - b.pn)
+  for (let i = 1; i < phaseLogic.length; i++) {
+    const prev = phaseLogic[i - 1]
+    const cur = phaseLogic[i]
+    for (const [family, before] of prev.famMax) {
+      const after = cur.famMax.get(family)
+      if (after && after.rank < before.rank) {
+        logic('family_regression', `familia ${family}: la fase ${prev.pn} llega a "${before.id}" (${entry(before.id).difficulty}) y la fase ${cur.pn} baja a "${after.id}" (${entry(after.id).difficulty})`)
+      }
+    }
+  }
+
+  // L3 — Contraindicaciones derivadas del contenido.
+  if (meta) {
+    const declared = new Set(meta.contraindications ?? [])
+    for (const [label, hit] of triggered) {
+      const missing = hit.requires.filter(c => !declared.has(c))
+      if (missing.length) {
+        logic('contraindications', `${hit.where}: "${hit.id}" es ${label} y SKELETONS no declara ${missing.join(' ni ')} en contraindications`)
+      }
+    }
+  }
+
+  // L4 — Promesa de descarga sin codificar (#716).
+  if (instr && DELOAD_RE.test(textOf(instr)) && !anyDeloadEncoded) {
+    logic('deload_promise', `instructions promete una descarga y ninguna fase la codifica (deload_last_week en la fase o day_type "deload") — codifícala o quita la promesa`)
+  }
+
+  // L5 — fat_loss: cardio real y párrafo de nutrición (#718).
+  if (meta?.goal_type === 'fat_loss') {
+    for (const lp of phaseLogic) {
+      if (lp.cardioBlocks < CARDIO.blocksPerWeek) {
+        logic('fat_loss_cardio', `fase ${lp.pn}: ${lp.cardioBlocks} bloque(s) de cardio cronometrado ≥ ${CARDIO.minBlockSeconds / 60} min por semana en un fat_loss — mínimo ${CARDIO.blocksPerWeek}`)
+      }
+    }
+    if (instr) {
+      const es = typeof instr === 'object' ? instr.es ?? '' : String(instr)
+      const en = typeof instr === 'object' ? instr.en ?? '' : String(instr)
+      if (!NUTRITION_MARKER.es.test(es) || !NUTRITION_MARKER.en.test(en)) {
+        logic('fat_loss_nutrition', `instructions de un fat_loss sin el párrafo de nutrición (marcador «déficit» / "deficit") — la grasa la decide el déficit, no el entreno`)
+      }
+    }
+  }
+
+  // L6 — Dos días de calendario seguidos con el mismo patrón pesado.
+  for (const lp of phaseLogic) {
+    const days = lp.days.filter(d => d.weekday !== undefined).sort((a, b) => a.weekday - b.weekday)
+    for (let i = 1; i < days.length; i++) {
+      const a = days[i - 1]
+      const b = days[i]
+      if (b.weekday - a.weekday !== 1) continue
+      if (a.push > HEAVY_DAY_SETS && b.push > HEAVY_DAY_SETS) {
+        logic('heavy_consecutive_days', `${a.label} y ${b.label}: ${a.push} y ${b.push} series de empuje en dos días seguidos`)
+      }
+      if (a.vpull > HEAVY_DAY_SETS && b.vpull > HEAVY_DAY_SETS) {
+        logic('heavy_consecutive_days', `${a.label} y ${b.label}: ${a.vpull} y ${b.vpull} series de tirón vertical en dos días seguidos`)
+      }
+    }
+  }
+
+  // L7 — Frecuencia por patrón en muscle_gain.
+  if (meta?.goal_type === 'muscle_gain') {
+    for (const lp of phaseLogic) {
+      for (const pattern of CORE_PATTERNS) {
+        const n = lp.days.filter(d => d.patterns.has(pattern)).length
+        if (n > 0 && n < MIN_PATTERN_DAYS) {
+          logic('pattern_frequency', `fase ${lp.pn}: ${pattern} solo ${n} día/semana en un muscle_gain — cada patrón principal necesita ≥ ${MIN_PATTERN_DAYS}`)
+        }
+      }
+    }
+  }
+
+  // L8 — Ejercicio prometido en el texto que no está en el contenido.
+  const corpus = promisedText.filter(Boolean).join('\n')
+  const anyCardio = phaseLogic.some(lp => lp.cardioBlocks > 0)
+  for (const pr of PROMISES) {
+    if (!pr.text.test(corpus)) continue
+    const delivered = pr.cardio ? anyCardio : [...allIds].some(id => pr.ids.test(id))
+    if (!delivered) {
+      logic('promised_exercise', `el texto promete ${pr.label} y ningún ejercicio del contenido lo es`)
+    }
+  }
+
+  return { slug, errors, warnings, findings, totalExercises }
+}
+
+/** Entrada del catálogo (o un hueco inofensivo) para pintar mensajes. */
+function entry(id) {
+  return byId.get(id) ?? { difficulty: '?' }
+}
+
+/**
+ * El programa día a día, para leerlo entero de un vistazo (auditorías).
+ *
+ * En los cronometrados enseña el rango de `reps` («20-30 s») cuando existe y
+ * solo cae a `timer_seconds` si `reps` está vacío: leer «30 s» cuando la ficha
+ * dice «20-30 s» hacía que la auditoría midiera la dosis mal.
+ */
+export function digestProgram(slug, doc) {
+  const out = [`# ${slug} — ${textOf(doc.program?.name)} (${doc.program?.difficulty ?? '?'}, ${doc.program?.duration_weeks ?? '?'} sem)`]
+  for (const phase of doc.phases ?? []) {
+    out.push(`\n## Fase ${phase.phase_number} · ${textOf(phase.name)} · semanas ${phase.weeks ?? '?'}${phase.deload_last_week ? ' · descarga última semana' : ''}`)
+    for (const day of phase.days ?? []) {
+      out.push(`\n### ${day.day_id} · ${textOf(day.workout_title) || textOf(day.day_focus) || ''}${day.day_type ? ` [${day.day_type}]` : ''}`)
+      for (const ex of [...(day.exercises ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))) {
+        const dose = ex.is_timer
+          ? `${ex.sets}×${String(ex.reps ?? '').trim() || `${ex.timer_seconds} s`}${ex.reps && ex.timer_seconds ? ` (timer ${ex.timer_seconds} s)` : ''}`
+          : `${ex.sets}×${ex.reps}`
+        out.push(`- ${textOf(ex.name)} [${ex.exercise_id}] ${dose} · descanso ${ex.rest_seconds ?? 0} s · ${ex.priority}`)
+      }
+    }
+  }
+  return out.join('\n')
 }
 
 /** Lee y comprueba un `programs/<slug>.json` del disco. */
-function checkProgramFile(file) {
+function checkProgramFile(file, opts) {
   const slug = basename(file, '.json')
   const doc = JSON.parse(readFileSync(file, 'utf8'))
-  return checkProgram(slug, doc)
+  return checkProgram(slug, doc, opts)
 }
 
 // ── Ejecución ────────────────────────────────────────────────────────────────
@@ -399,6 +682,8 @@ const isMain = import.meta.url === `file://${process.argv[1]}`
 if (isMain) {
   const args = process.argv.slice(2)
   const asJson = args.includes('--json')
+  const strict = args.includes('--strict')
+  const asDigest = args.includes('--digest')
   const filters = args.filter(a => !a.startsWith('--'))
 
   const files = readdirSync(join(ROOT, 'programs'))
@@ -407,7 +692,15 @@ if (isMain) {
     .map(f => join(ROOT, 'programs', f))
     .sort()
 
-  const results = files.map(checkProgramFile)
+  if (asDigest) {
+    for (const file of files) {
+      console.log(digestProgram(basename(file, '.json'), JSON.parse(readFileSync(file, 'utf8'))))
+      console.log()
+    }
+    process.exit(0)
+  }
+
+  const results = files.map(f => checkProgramFile(f, { strict }))
 
   if (asJson) {
     console.log(JSON.stringify(results, null, 2))
@@ -423,7 +716,7 @@ if (isMain) {
       for (const w of r.warnings) console.log(`    aviso  ${w}`)
     }
     console.log(
-      `\n${'─'.repeat(70)}\n${results.length} programas · ${nErr} errores · ${nWarn} avisos\n`,
+      `\n${'─'.repeat(70)}\n${results.length} programas · ${nErr} errores · ${nWarn} avisos${strict ? ' (--strict)' : ''}\n`,
     )
     if (nErr) process.exit(1)
   }
