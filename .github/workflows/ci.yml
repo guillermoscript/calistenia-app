@@ -131,6 +131,14 @@ jobs:
       - name: PB hooks integration tests
         run: PB_BINARY=/tmp/pb/pocketbase node tests/pb_hooks/run.mjs
 
+      # Resiembra de contenido oficial (#712): aplica las migraciones sobre una
+      # base vacía y comprueba que reescribir un programa conserva su id, las
+      # copias de usuario y las inscripciones. Vive en este job porque necesita
+      # el binario de PocketBase ya cacheado arriba; usa su propio tmpdir, así
+      # que no toca el /tmp/pb_data del e2e de más abajo.
+      - name: Resiembra de programas (migración contra PB real)
+        run: PB_BINARY=/tmp/pb/pocketbase pnpm test:program-reseed
+
       - name: Start PocketBase (fresh data, migrations + hooks del repo)
         run: |
           /tmp/pb/pocketbase serve \
