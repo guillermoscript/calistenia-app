@@ -202,7 +202,20 @@ una cuerda. No hay que declarar material por usarlo, pero conviene decirlo en el
 Ninguno es `advanced`, así que ninguno dispara la regla `level_cap` en ningún
 nivel.
 
-Para buscar más: `node scripts/find-exercise.mjs <término>`.
+Para comprobarlos tú mismo, o para buscar otros:
+
+```console
+$ node scripts/find-exercise.mjs --check jump_rope high_knees mountain_climbers run shuttle_run jogging
+jump_rope                          full       ninguno                Salto de Cuerda
+high_knees                         full       ninguno                Rodillas Altas
+mountain_climbers                  core       ninguno                Escaladores
+run                                full       ninguno                Correr
+shuttle_run                        full       ninguno                Carrera de Ida y Vuelta
+jogging                            ✗ NO RESUELVE
+```
+
+`node scripts/find-exercise.mjs <término>` busca por nombre; `--cat <categoría>` y
+`--eq <material>` filtran.
 
 ---
 
