@@ -55,12 +55,51 @@
  *
  *   node scripts/generate-program-seed-migration.mjs           # escribe
  *   node scripts/generate-program-seed-migration.mjs --check   # solo comprueba
+ *   node scripts/generate-program-seed-migration.mjs --reseed <slug>[,<slug>]
  *
  * El modo `--check` sale con código 1 si el fichero commiteado no coincide con
  * lo que producen los `programs/*.json` de ahora. Sin él, editar un programa y
  * olvidar regenerar dejaría la migración atrás sin que nada avisara.
+ *
+ * ## `--reseed`: llevar contenido corregido a una base que ya lo tiene (#712)
+ *
+ * La siembra de arriba es idempotente por `name.es`: un programa que ya existe
+ * se salta ENTERO. Corregir `programs/<slug>.json` y regenerarla NO cambia
+ * producción. `--reseed` emite una migración APARTE que borra las filas hijas
+ * del programa y las reescribe con el contenido de ahora, conservando el
+ * `programs.id` (y con él las inscripciones de `user_programs` y las copias de
+ * usuario que lo acreditan en `forked_from`).
+ *
+ * Flujo completo:
+ *
+ *   1. editar programs/<slug>.json
+ *   2. pnpm programs:content:check
+ *   3. pnpm programs:reseed <slug>            # emite la migración de resiembra
+ *                                              y regenera la siembra 1786100000
+ *   4. cp -r pb_data /tmp/copia && ./pocketbase migrate up --dir /tmp/copia \
+ *        --migrationsDir $(pwd)/pb_migrations
+ *   5. commit: el JSON + la siembra regenerada + la migración de resiembra
+ *
+ * Cada resiembra es una INSTANTÁNEA histórica: se commitea y no se vuelve a
+ * generar. Por eso `--check` sigue mirando solo la siembra 1786100000.
+ *
+ * La segunda pasada es un no-op: la migración compara el `content_hash` que
+ * dejó grabado en `programs` y, si coincide, no borra ni escribe nada.
+ *
+ * ## Dato viejo en el cliente (lo que ESTA migración no arregla)
+ *
+ * Cambiar el contenido en PocketBase no basta para que el usuario lo vea: hay
+ * cuatro capas de caché por delante (memoria de #690) — el service worker, el
+ * precache de `/`, la caché persistida de React Query
+ * (`PERSIST_BUSTER` en `packages/core/lib/query-client.ts`) y el snapshot de la
+ * sesión activa. Decidido en #712: el PR de cierre de la épica #711 sube
+ * `PERSIST_BUSTER` UNA vez (no una por cada PR de contenido, para no chocar
+ * quince veces en la misma constante); `programs.content_hash` queda expuesto
+ * para que un follow-up invalide detalle y snapshot cuando cambie; y una sesión
+ * ya empezada arrastra el contenido viejo hasta que termine — aceptado.
  */
 
+import { createHash } from 'crypto'
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'fs'
 import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
@@ -514,8 +553,403 @@ migrate((app) => {
 `
 }
 
+// ─── Resiembra (`--reseed`, #712) ───────────────────────────────────────────
+
+/**
+ * Timestamp de `1787100000_programs_slug_content_hash.js`, la migración que
+ * añade `programs.slug` y `programs.content_hash`. Toda resiembra tiene que ir
+ * DESPUÉS: sin esas columnas su `SELECT` reventaría.
+ */
+export const SCHEMA_MIGRATION_TS = 1787100000
+
+/**
+ * Huella del contenido con el que se resembró un programa, la que queda grabada
+ * en `programs.content_hash` y convierte la segunda pasada en un no-op.
+ *
+ * Se calcula sobre la salida de `buildPayload()`, no sobre el `programs/*.json`
+ * crudo: lo que importa es lo que ACABA en la base. Dos JSON distintos que
+ * normalizan igual (un `day_id` legacy de #575, una prioridad escrita de otra
+ * forma) tienen que dar el mismo hash, o cada regeneración borraría y
+ * reescribiría cientos de filas para dejarlas idénticas.
+ *
+ * `JSON.stringify` basta como serialización canónica porque `buildPayload`
+ * construye los objetos siempre en el mismo orden de claves; no hay recorrido
+ * de `Object.keys` sobre datos de entrada.
+ *
+ * @param {object} payload salida de `buildPayload()`.
+ * @returns {string} sha256 en hexadecimal.
+ */
+export function contentHash(payload) {
+  return createHash('sha256').update(JSON.stringify(payload), 'utf-8').digest('hex')
+}
+
+/**
+ * Nombre del fichero de resiembra. A diferencia de la siembra —cuyo nombre va
+ * fijo porque se REGENERA— cada resiembra es una instantánea histórica nueva y
+ * necesita su propio timestamp.
+ *
+ * @param {string[]} slugs  programas incluidos, en orden.
+ * @param {number}   timestamp  unix en segundos.
+ */
+export function reseedFileName(slugs, timestamp) {
+  return `${timestamp}_reseed_${slugs.join('_')}.js`
+}
+
+/**
+ * Fuente de la migración de resiembra.
+ *
+ * Mismo estilo que `renderMigration`: un `JSON.parse()` por programa y cero
+ * decisiones en goja. La diferencia es que aquí TODO va en SQL crudo
+ * (`app.db().newQuery()`), como en `1786500000_repair_program_exercise_names.js`:
+ * escribir cientos de filas con la API de records dispararía los hooks de
+ * `program_exercises` una vez por fila.
+ *
+ * @param {object[]} payloads   salidas de `buildPayload()`.
+ * @param {{timestamp:number}} opts
+ * @returns {string} el fuente completo del fichero de migración.
+ */
+export function renderReseedMigration(payloads, { timestamp }) {
+  const slugs = payloads.map(p => p.slug)
+  const counts = countRows(payloads)
+  const tag = `[reseed_${slugs.join('_')}]`
+  const entries = payloads
+    .map(p => `  /* ${p.slug} */ { hash: ${JSON.stringify(contentHash(p))}, data: ${asJsonParseCall(p)} },`)
+    .join('\n')
+
+  return `/// <reference path="../pb_data/types.d.ts" />
+
+/**
+ * Resiembra el contenido oficial de: ${slugs.join(', ')} (issue #712).
+ *
+ * ⚠️ FICHERO GENERADO — no editar a mano.
+ *    Fuente:  programs/*.json + scripts/lib/program-catalog.mjs
+ *    Genera:  node scripts/generate-program-seed-migration.mjs --reseed ${slugs.join(',')} --ts ${timestamp}
+ *
+ * POR QUÉ EXISTE
+ * --------------
+ * \`1786100000_seed_official_programs.js\` es idempotente por \`name.es\`: un
+ * programa que ya está se salta ENTERO. Corregir \`programs/<slug>.json\` y
+ * regenerar la siembra no cambia nada en una base que ya sembró — producción
+ * lleva el contenido del día que se sembró. Esta migración sí lo cambia: borra
+ * las filas hijas del programa y las reescribe con el payload de abajo.
+ *
+ * INSTANTÁNEA HISTÓRICA
+ * ---------------------
+ * El payload es el de \`programs/<slug>.json\` en el momento de generarla, y no
+ * se regenera nunca (\`pnpm programs:seed:check\` solo vigila la siembra). Si el
+ * contenido vuelve a cambiar se emite OTRA migración de resiembra.
+ *
+ * EL \`programs.id\` NO CAMBIA
+ * --------------------------
+ * Del programa solo se ACTUALIZAN campos, así que las inscripciones de
+ * \`user_programs\` (relación \`required\` y sin cascade, #605), las copias de
+ * usuario que lo acreditan en \`forked_from\` y el historial de sesiones siguen
+ * apuntando a donde apuntaban. Los ids de las filas HIJAS sí cambian en cada
+ * resiembra real, y da igual: nada los referencia — los overrides
+ * (\`user_program_overrides\`) y las series guardan \`exercise_id\`, no el id de
+ * fila.
+ *
+ * SEGUNDA PASADA = NO-OP
+ * ----------------------
+ * Se compara el \`content_hash\` grabado en \`programs\` con el de este payload; si
+ * coinciden no se borra ni se escribe nada. Importa de verdad: \`pocketbase
+ * serve\` repasa las migraciones en cada arranque, y sin esta guarda cada
+ * reinicio borraría y recrearía cientos de filas.
+ *
+ * TODO EN SQL CRUDO, A PROPÓSITO
+ * ------------------------------
+ * Guardar con la API de records dispararía los hooks de \`program_exercises\` una
+ * vez por fila. Además el JSVM de PocketBase falla en silencio (un \`undefined\`
+ * no revienta, se guarda), así que aquí no se decide nada: los valores vienen
+ * ya normalizados desde Node.
+ *
+ * NO SE TOCAN \`is_active\`, \`is_featured\`, \`visibility\`, \`cover_image\`,
+ * \`created_by\` ni \`forked_from\`: son estado de la instalación (portada subida
+ * desde el editor en #618, visibilidad de #603), no contenido curado.
+ *
+ * Contenido: ${counts.programs} programa(s), ${counts.phases} fases, ${counts.dayConfigs} días y ${counts.exercises} ejercicios.
+ */
+
+// Un JSON.parse por programa: para goja una cadena es un nodo de AST trivial y
+// el trabajo lo hace el parser nativo. Ver la cabecera de la siembra.
+const RESEED = [
+${entries}
+]
+
+migrate((app) => {
+  const TAG = ${JSON.stringify(tag)}
+
+  for (let i = 0; i < RESEED.length; i++) {
+    const item = RESEED[i]
+    const p = item.data
+    const slug = p.slug
+
+    // Un try/catch POR PROGRAMA, y que no relanza: una migración que lanza deja
+    // a PocketBase sin arrancar. Si una falla, las demás siguen y el log dice
+    // cuál se quedó fuera; se reintenta borrando la fila de \`_migrations\`.
+    try {
+      // Se localiza por \`slug\` y, para bases donde el backfill de
+      // 1787100000 no llegó a poner uno, por \`name.es\` como en la siembra.
+      const found = arrayOf(new DynamicModel({ id: "", content_hash: "" }))
+      app.db()
+        .newQuery(
+          "SELECT id, content_hash FROM programs WHERE is_official = 1 AND " +
+          "(slug = {:slug} OR (slug = '' AND json_extract(name, '$.es') = {:name}))"
+        )
+        .bind({ slug: slug, name: p.program.name.es })
+        .all(found)
+
+      if (found.length === 0) {
+        console.log(TAG + " " + slug + ": no existe todavía; la siembra lo creará con este contenido.")
+        continue
+      }
+      if (found.length > 1) {
+        console.log(TAG + " " + slug + ": AMBIGUO, " + found.length + " programas oficiales casan. No se toca ninguno.")
+        continue
+      }
+
+      const programId = found[0].id
+      if (found[0].content_hash === item.hash) {
+        console.log(TAG + " " + slug + " (" + programId + "): sin cambios.")
+        continue
+      }
+
+      app.db().newQuery("DELETE FROM program_phases WHERE program = {:id}").bind({ id: programId }).execute()
+      app.db().newQuery("DELETE FROM program_exercises WHERE program = {:id}").bind({ id: programId }).execute()
+      app.db().newQuery("DELETE FROM program_day_config WHERE program = {:id}").bind({ id: programId }).execute()
+
+      let nPhases = 0
+      let nDays = 0
+      let nExercises = 0
+
+      for (let pi = 0; pi < p.phases.length; pi++) {
+        const phase = p.phases[pi]
+
+        // Sin \`id\`: el DEFAULT de la tabla genera 'r'||lower(hex(randomblob(7))),
+        // que es exactamente el formato de id de PocketBase.
+        app.db()
+          .newQuery(
+            "INSERT INTO program_phases (program, phase_number, name, weeks, color, sort_order) " +
+            "VALUES ({:program}, {:phase_number}, {:name}, {:weeks}, {:color}, {:sort_order})"
+          )
+          .bind({
+            program: programId,
+            phase_number: phase.phase_number,
+            name: JSON.stringify(phase.name),
+            weeks: phase.weeks,
+            color: phase.color,
+            sort_order: phase.sort_order,
+          })
+          .execute()
+        nPhases++
+
+        for (let di = 0; di < phase.days.length; di++) {
+          const day = phase.days[di]
+          const cfg = day.config
+
+          app.db()
+            .newQuery(
+              "INSERT INTO program_day_config (program, phase_number, day_id, day_name, day_focus, day_type, day_color, sort_order) " +
+              "VALUES ({:program}, {:phase_number}, {:day_id}, {:day_name}, {:day_focus}, {:day_type}, {:day_color}, {:sort_order})"
+            )
+            .bind({
+              program: programId,
+              phase_number: phase.phase_number,
+              day_id: cfg.day_id,
+              day_name: JSON.stringify(cfg.day_name),
+              day_focus: JSON.stringify(cfg.day_focus),
+              day_type: cfg.day_type,
+              day_color: cfg.day_color,
+              sort_order: cfg.sort_order,
+            })
+            .execute()
+          nDays++
+
+          for (let ei = 0; ei < day.exercises.length; ei++) {
+            const ex = day.exercises[ei]
+
+            app.db()
+              .newQuery(
+                "INSERT INTO program_exercises (program, phase_number, day_id, day_name, day_focus, day_type, " +
+                "workout_title, exercise_id, exercise_name, sets, reps, rest_seconds, muscles, note, youtube, " +
+                "priority, is_timer, timer_seconds, sort_order, section) VALUES " +
+                "({:program}, {:phase_number}, {:day_id}, {:day_name}, {:day_focus}, {:day_type}, " +
+                "{:workout_title}, {:exercise_id}, {:exercise_name}, {:sets}, {:reps}, {:rest_seconds}, " +
+                "{:muscles}, {:note}, {:youtube}, {:priority}, {:is_timer}, {:timer_seconds}, {:sort_order}, {:section})"
+              )
+              .bind({
+                program: programId,
+                phase_number: phase.phase_number,
+                day_id: cfg.day_id,
+                day_name: JSON.stringify(cfg.day_name),
+                day_focus: JSON.stringify(cfg.day_focus),
+                day_type: ex.day_type,
+                workout_title: JSON.stringify(ex.workout_title),
+                exercise_id: ex.exercise_id,
+                exercise_name: JSON.stringify(ex.exercise_name),
+                sets: ex.sets,
+                reps: ex.reps,
+                rest_seconds: ex.rest_seconds,
+                muscles: JSON.stringify(ex.muscles),
+                note: JSON.stringify(ex.note),
+                youtube: ex.youtube,
+                priority: ex.priority,
+                is_timer: ex.is_timer,
+                timer_seconds: ex.timer_seconds,
+                sort_order: ex.sort_order,
+                section: ex.section,
+              })
+              .execute()
+            nExercises++
+          }
+        }
+      }
+
+      app.db()
+        .newQuery(
+          "UPDATE programs SET name = {:name}, description = {:description}, instructions = {:instructions}, " +
+          "duration_weeks = {:duration_weeks}, difficulty = {:difficulty}, goal_type = {:goal_type}, " +
+          "skill = {:skill}, intensity = {:intensity}, days_per_week = {:days_per_week}, " +
+          "equipment_required = {:equipment_required}, contraindications = {:contraindications}, " +
+          "slug = {:slug}, content_hash = {:content_hash} WHERE id = {:id}"
+        )
+        .bind({
+          name: JSON.stringify(p.program.name),
+          description: JSON.stringify(p.program.description),
+          instructions: JSON.stringify(p.program.instructions),
+          duration_weeks: p.program.duration_weeks,
+          difficulty: p.program.difficulty,
+          goal_type: p.program.goal_type,
+          skill: p.program.skill || "",
+          intensity: p.program.intensity,
+          days_per_week: p.program.days_per_week,
+          equipment_required: JSON.stringify(p.program.equipment_required),
+          contraindications: JSON.stringify(p.program.contraindications),
+          slug: slug,
+          content_hash: item.hash,
+          id: programId,
+        })
+        .execute()
+
+      console.log(
+        TAG + " " + slug + " (" + programId + "): " + nPhases + " fases, " +
+        nDays + " días, " + nExercises + " ejercicios."
+      )
+    } catch (err) {
+      console.log(TAG + " " + slug + ": FALLO, contenido sin resembrar:", err)
+    }
+  }
+}, (app) => {
+  // Down VACÍO a propósito: no hay instantánea del contenido anterior de donde
+  // sacarlo. Para volver atrás: aplicar la resiembra previa de ese programa o
+  // restaurar un backup de \`pb_data\`.
+})
+`
+}
+
+// ─── CLI ────────────────────────────────────────────────────────────────────
+
+/**
+ * Parsea los argumentos. Exportada para que los tests puedan afirmar los
+ * errores de uso sin lanzar procesos.
+ *
+ * @param {string[]} argv  argumentos SIN `node` ni la ruta del script.
+ */
+export function parseArgs(argv) {
+  const out = { check: false, reseed: null, ts: null }
+  let collecting = false
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+
+    if (arg === '--check') { out.check = true; collecting = false; continue }
+    if (arg === '--reseed') { out.reseed = out.reseed || []; collecting = true; continue }
+    if (arg === '--ts') {
+      const raw = argv[++i]
+      if (raw === undefined) throw new Error('--ts necesita un timestamp unix en segundos.')
+      const ts = Number(raw)
+      if (!Number.isInteger(ts)) throw new Error(`--ts "${raw}" no es un entero.`)
+      out.ts = ts
+      collecting = false
+      continue
+    }
+    if (arg.startsWith('--')) throw new Error(`Opción desconocida: ${arg}`)
+
+    if (!collecting) throw new Error(`Argumento suelto sin opción: "${arg}". Usa --reseed <slug>[,<slug>].`)
+    for (const slug of arg.split(',')) {
+      const s = slug.trim()
+      // Repetir un slug duplicaría el programa en el nombre del fichero y en el
+      // payload; se ignora en silencio en vez de emitir algo raro.
+      if (s && !out.reseed.includes(s)) out.reseed.push(s)
+    }
+  }
+
+  if (out.reseed && out.reseed.length === 0) {
+    throw new Error('--reseed necesita al menos un slug. Usa --reseed <slug>[,<slug>].')
+  }
+  return out
+}
+
+/** Escribe la migración de resiembra (y regenera la siembra). */
+function runReseed(slugs, ts) {
+  const known = new Set(SKELETONS.map(s => s.slug))
+  const unknown = slugs.filter(s => !known.has(s))
+  if (unknown.length) {
+    throw new Error(
+      `Slug desconocido: ${unknown.join(', ')}.\n` +
+      `   Los válidos son los de scripts/lib/program-catalog.mjs:\n` +
+      `   ${SKELETONS.map(s => s.slug).join(', ')}`
+    )
+  }
+
+  const timestamp = ts ?? Math.floor(Date.now() / 1000)
+  if (timestamp <= SCHEMA_MIGRATION_TS) {
+    throw new Error(
+      `El timestamp ${timestamp} va ANTES de ${SCHEMA_MIGRATION_TS}_programs_slug_content_hash.js, ` +
+      `que es la que crea las columnas "slug" y "content_hash" que esta resiembra usa.`
+    )
+  }
+
+  const all = buildAllPayloads()
+  // Se ordenan como SKELETONS, no como los pidió quien llama: así el mismo
+  // conjunto de programas produce siempre el mismo fichero.
+  const payloads = all.filter(p => slugs.includes(p.slug))
+  const orderedSlugs = payloads.map(p => p.slug)
+
+  const file = reseedFileName(orderedSlugs, timestamp)
+  const target = resolve(MIGRATIONS_DIR, file)
+  if (existsSync(target)) {
+    throw new Error(`pb_migrations/${file} ya existe. Pasa otro --ts o borra el fichero.`)
+  }
+
+  writeFileSync(target, renderReseedMigration(payloads, { timestamp }), 'utf-8')
+
+  const counts = countRows(payloads)
+  const kb = Math.round(Buffer.byteLength(readFileSync(target, 'utf-8'), 'utf-8') / 1024)
+  console.log(`✅ pb_migrations/${file} (${kb} KB)`)
+  console.log(`   ${counts.programs} programa(s) · ${counts.phases} fases · ${counts.dayConfigs} días · ${counts.exercises} ejercicios`)
+  for (const p of payloads) console.log(`   ${p.slug}  sha256 ${contentHash(p).slice(0, 16)}…`)
+}
+
 function main() {
-  const check = process.argv.includes('--check')
+  const args = parseArgs(process.argv.slice(2))
+
+  if (args.check && args.reseed) {
+    throw new Error('--check y --reseed son incompatibles: uno comprueba, el otro escribe.')
+  }
+  if (args.ts !== null && !args.reseed) {
+    throw new Error('--ts solo tiene sentido con --reseed: la siembra lleva timestamp fijo.')
+  }
+
+  if (args.reseed) {
+    // La siembra se regenera SIEMPRE con la resiembra: el JSON que acabas de
+    // corregir tiene que llegar también a las bases nuevas, y así
+    // `pnpm programs:seed:check` no se queda en rojo tras el commit.
+    runReseed(args.reseed, args.ts)
+    console.log('')
+  }
+
+  const check = args.check
   const payloads = buildAllPayloads()
   const rendered = renderMigration(payloads)
   const target = resolve(MIGRATIONS_DIR, MIGRATION_FILE)

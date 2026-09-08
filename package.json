@@ -32,11 +32,13 @@
     "build:media": "node scripts/sync-exercise-media.mjs",
     "programs:seed": "node scripts/generate-program-seed-migration.mjs",
     "programs:seed:check": "node scripts/generate-program-seed-migration.mjs --check",
+    "programs:reseed": "node scripts/generate-program-seed-migration.mjs --reseed",
     "programs:clean-test": "node scripts/clean-test-programs.mjs",
     "programs:content:check": "node scripts/check-program-content.mjs",
     "programs:repair": "node scripts/repair-program-timers-muscles.mjs",
     "programs:repair:check": "node scripts/repair-program-timers-muscles.mjs --check",
-    "test:program-content": "pnpm --filter @calistenia/core exec vitest run ../../scripts/check-program-content.test.mjs --root ../../scripts"
+    "test:program-content": "pnpm --filter @calistenia/core exec vitest run ../../scripts/check-program-content.test.mjs --root ../../scripts",
+    "test:program-reseed": "pnpm --filter @calistenia/core exec vitest run ../../scripts/reseed-program.test.mjs --root ../../scripts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
