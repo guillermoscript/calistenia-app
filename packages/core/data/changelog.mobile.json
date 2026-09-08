@@ -1,6 +1,86 @@
 {
-  "generated": "2026-09-03T19:55:55.414Z",
+  "generated": "2026-09-08T01:58:49.640Z",
   "versions": [
+    {
+      "version": "1.13.1",
+      "date": "2026-09-08",
+      "summary": {
+        "es": "Llega también todo lo de la versión anterior: tu primer entreno nada más entrar, recordatorios a tu hora y las notificaciones arregladas. Y como novedad, tus gráficas dejan de duplicar ejercicios.",
+        "en": "This one also brings everything from the previous version: your first workout right after sign-up, reminders at your time and notifications fixed. New here: your charts no longer duplicate exercises."
+      },
+      "highlights": [
+        {
+          "icon": "👋",
+          "type": "feat",
+          "title": {
+            "es": "Cuéntanos cómo llegaste",
+            "en": "Tell us how you found us"
+          },
+          "body": {
+            "es": "En la pantalla de bienvenida puedes decir por dónde conociste la app. Es un toque y se puede saltar.",
+            "en": "On the welcome screen you can tell us where you heard about the app. One tap, and you can skip it."
+          }
+        },
+        {
+          "icon": "📊",
+          "type": "fix",
+          "title": {
+            "es": "Un ejercicio, una sola línea",
+            "en": "One exercise, one row"
+          },
+          "body": {
+            "es": "En las gráficas y en tus estadísticas un mismo ejercicio podía salir dos veces según cómo se hubiera guardado la serie. Ahora se agrupan por el ejercicio real.",
+            "en": "In your charts and stats the same exercise could show up twice depending on how the set was saved. Now they group by the actual exercise."
+          }
+        },
+        {
+          "icon": "📚",
+          "type": "fix",
+          "title": {
+            "es": "Catálogo sin huecos",
+            "en": "No gaps in the catalog"
+          },
+          "body": {
+            "es": "Algunos ejercicios de los programas no tenían ficha en el catálogo y aparecían con su nombre interno. Rellenados.",
+            "en": "Some exercises used by the programs had no catalog entry and showed their internal name. Filled in."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Preguntar «¿cómo conociste la app?» en la bienvenida (#586)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "570e7c0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Fusionar series por identidad resuelta en el servidor (#702) (#703)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "d59a92c"
+            },
+            {
+              "description": "Fusionar series por identidad resuelta y cerrar huecos del catálogo (#692) (#701)",
+              "scope": "catalogo",
+              "breaking": false,
+              "hash": "108acc2"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.13.0",
       "date": "2026-09-03",

@@ -9,6 +9,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.13.1] - 2026-09-08
+
+_Llega también todo lo de la versión anterior: tu primer entreno nada más entrar, recordatorios a tu hora y las notificaciones arregladas. Y como novedad, tus gráficas dejan de duplicar ejercicios._
+
+### Añadido
+
+- **Cuéntanos cómo llegaste** — En la pantalla de bienvenida puedes decir por dónde conociste la app. Es un toque y se puede saltar.
+
+### Corregido
+
+- **Un ejercicio, una sola línea** — En las gráficas y en tus estadísticas un mismo ejercicio podía salir dos veces según cómo se hubiera guardado la serie. Ahora se agrupan por el ejercicio real.
+- **Catálogo sin huecos** — Algunos ejercicios de los programas no tenían ficha en el catálogo y aparecían con su nombre interno. Rellenados.
+
 ## [1.13.0] - 2026-09-03
 
 _El onboarding termina con tu primer entreno corto y un recordatorio a tu hora. Además: las notificaciones de seguidores, reacciones y comentarios vuelven a llegar, y los programas se ven en español y con sus cronómetros._
@@ -404,7 +417,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...HEAD
+[1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
 [1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
 [1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3
 [1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2

@@ -9,6 +9,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.13.1] - 2026-09-08
+
+_This one also brings everything from the previous version: your first workout right after sign-up, reminders at your time and notifications fixed. New here: your charts no longer duplicate exercises._
+
+### Added
+
+- **Tell us how you found us** — On the welcome screen you can tell us where you heard about the app. One tap, and you can skip it.
+
+### Fixed
+
+- **One exercise, one row** — In your charts and stats the same exercise could show up twice depending on how the set was saved. Now they group by the actual exercise.
+- **No gaps in the catalog** — Some exercises used by the programs had no catalog entry and showed their internal name. Filled in.
+
 ## [1.13.0] - 2026-09-03
 
 _Onboarding now ends with a short first workout and a reminder at your time. Also: follow, reaction and comment notifications arrive again, and programs show in Spanish with their timers._
@@ -404,7 +417,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...HEAD
+[1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
 [1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
 [1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3
 [1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2
