@@ -139,6 +139,12 @@ jobs:
       - name: Resiembra de programas (migración contra PB real)
         run: PB_BINARY=/tmp/pb/pocketbase pnpm test:program-reseed
 
+      # Etiquetas del catálogo (#713): vocabulario, cobertura nivel × objetivo,
+      # penalizaciones del «PARA TI» con el catálogo REAL y la migración de
+      # datos 1788881000 aplicada sobre filas con los valores viejos.
+      - name: Etiquetas de programas (catálogo + migración contra PB real)
+        run: PB_BINARY=/tmp/pb/pocketbase pnpm test:program-catalog
+
       - name: Start PocketBase (fresh data, migrations + hooks del repo)
         run: |
           /tmp/pb/pocketbase serve \
