@@ -145,6 +145,9 @@ jobs:
       - name: Etiquetas de programas (catálogo + migración contra PB real)
         run: PB_BINARY=/tmp/pb/pocketbase pnpm test:program-catalog
 
+      - name: Migración de datos de exercises_catalog (#714) contra PB real
+        run: PB_BINARY=/tmp/pb/pocketbase pnpm test:catalog-migration
+
       - name: Start PocketBase (fresh data, migrations + hooks del repo)
         run: |
           /tmp/pb/pocketbase serve \

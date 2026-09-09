@@ -171,7 +171,7 @@ export const WORKOUTS: WorkoutsMap = {
     phase: 3, day: "vie", title: "Skills Day",
     exercises: [
       { id: "lsit_30s", name: "L-sit 30s", sets: 5, reps: "30s", rest: 120, muscles: "Core, flexores, hombros", note: "Objetivo de la fase: 30s continuos con piernas rectas.", youtube: "L-sit 30 seconds tutorial progression", priority: "high", isTimer: true, timerSeconds: 30, equipment: ['paralelas'] },
-      { id: "handstand_free", name: "Handstand Libre (intentos)", sets: "múltiples", reps: "intentos 5-15s", rest: 60, muscles: "Equilibrio, hombros, core", note: "Practica el balance libre. Múltiples intentos con descanso.", youtube: "freestanding handstand tutorial balance", priority: "high", equipment: ['ninguno'] },
+      { id: "handstand_free", name: "Handstand Libre (intentos)", sets: "múltiples", reps: "5-15s", rest: 60, muscles: "Equilibrio, hombros, core", note: "Practica el balance libre. Múltiples intentos con descanso.", youtube: "freestanding handstand tutorial balance", priority: "high", isTimer: true, timerSeconds: 10, equipment: ['ninguno'] },
       { id: "human_flag_prog", name: "Human Flag Progresión", sets: 3, reps: "5-10s", rest: 120, muscles: "Oblicuos, hombros, dorsal", note: "Empieza con tucked. Uno de los skills más impresionantes.", youtube: "human flag progression tutorial beginners", priority: "med", isTimer: true, timerSeconds: 8, equipment: ['barra_dominadas'] },
       { id: "front_lever_single", name: "Front Lever Single Leg", sets: 3, reps: "10-15s", rest: 120, muscles: "Dorsal, core", note: "Una pierna extendida. Progresión al front lever completo.", youtube: "front lever single leg tutorial progression", priority: "med", isTimer: true, timerSeconds: 12, equipment: ['barra_dominadas'] },
     ]
@@ -208,7 +208,7 @@ export const WORKOUTS: WorkoutsMap = {
     phase: 4, day: "jue", title: "Peak Legs",
     exercises: [
       { id: "pistol_vol", name: "Pistol Squat Volumen", sets: 5, reps: "8/lado", rest: 90, muscles: "Cuádriceps, glúteo", note: "5 series de 8. Máximo volumen de pierna en calistenia.", youtube: "pistol squat volume training tutorial", priority: "high", equipment: ['ninguno'] },
-      { id: "nordic_full", name: "Nordic Curl Full", sets: 4, reps: "8-10", rest: 120, muscles: "Isquiotibiales", note: "Sin usar las manos al final. Fuerza excéntrica máxima.", youtube: "nordic hamstring curl advanced", priority: "high", equipment: ['ninguno'] },
+      { id: "nordic_full", name: "Nordic Curl Completo sin manos", sets: 4, reps: "8-10", rest: 120, muscles: "Isquiotibiales", note: "Sin usar las manos al final. Fuerza excéntrica máxima.", youtube: "nordic hamstring curl advanced", priority: "high", equipment: ['ninguno'] },
       { id: "shrimp_full", name: "Shrimp Squat Completo", sets: 3, reps: "8/lado", rest: 90, muscles: "Cuádriceps, tobillo, equilibrio", note: "Rodilla trasera toca el suelo suavemente.", youtube: "shrimp squat full tutorial", priority: "med", equipment: ['ninguno'] },
       { id: "box_jump", name: "Box Jump (silla sólida)", sets: 4, reps: "8", rest: 90, muscles: "Explosividad total", note: "Salta sobre una silla sólida o escalón. Aterriza suave.", youtube: "box jump tutorial plyometric form", priority: "med", equipment: ['escalon'] },
     ]

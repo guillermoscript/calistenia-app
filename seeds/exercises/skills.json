@@ -144,9 +144,11 @@
           },
           "difficulty_level": "intermediate",
           "equipment": [],
+          "is_timer": true,
           "progression_order": 5,
           "default_sets": 3,
-          "default_reps": "3-5",
+          "default_reps": "5-15s",
+          "default_timer_seconds": 10,
           "default_rest_seconds": 120,
           "target_reps_to_advance": 8,
           "sessions_at_target": 3,
@@ -1281,6 +1283,35 @@
       "exercises": [
         {
           "name": {
+            "es": "German Hang (colgado invertido)",
+            "en": "German Hang"
+          },
+          "slug": "german-hang",
+          "description": {
+            "es": "Colgado de la barra, pasa las piernas por dentro de los brazos hasta quedar colgando boca abajo con los hombros en extensión máxima y los brazos rectos detrás del cuerpo. Aguanta la posición respirando. Escalón previo a skin the cat y al back lever.",
+            "en": "Hanging from the bar, bring your legs through your arms until you hang upside down with the shoulders in full extension and straight arms behind the body. Hold the position while breathing. Prerequisite for skin the cat and the back lever."
+          },
+          "muscles": {
+            "es": "Hombros, pecho, bíceps (movilidad)",
+            "en": "Shoulders, chest, biceps (mobility)"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "10-20s",
+          "default_timer_seconds": 15,
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 0,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
             "es": "Skin the Cat",
             "en": "Skin the Cat"
           },
@@ -1297,7 +1328,7 @@
           "equipment": [
             "pull_up_bar"
           ],
-          "progression_order": 1,
+          "progression_order": 2,
           "default_sets": 3,
           "default_reps": "3-5",
           "default_rest_seconds": 120,
@@ -1325,7 +1356,7 @@
             "rings"
           ],
           "is_timer": true,
-          "progression_order": 2,
+          "progression_order": 3,
           "default_sets": 4,
           "default_reps": "1",
           "default_rest_seconds": 90,
@@ -1354,7 +1385,7 @@
             "rings"
           ],
           "is_timer": true,
-          "progression_order": 3,
+          "progression_order": 4,
           "default_sets": 4,
           "default_reps": "1",
           "default_rest_seconds": 90,
@@ -1383,7 +1414,7 @@
             "rings"
           ],
           "is_timer": true,
-          "progression_order": 4,
+          "progression_order": 5,
           "default_sets": 5,
           "default_reps": "1",
           "default_rest_seconds": 120,
@@ -1411,7 +1442,7 @@
           "equipment": [
             "pull_up_bar"
           ],
-          "progression_order": 5,
+          "progression_order": 6,
           "default_sets": 3,
           "default_reps": "3-5",
           "default_rest_seconds": 120,
@@ -1438,7 +1469,7 @@
           "equipment": [
             "pull_up_bar"
           ],
-          "progression_order": 6,
+          "progression_order": 7,
           "default_sets": 3,
           "default_reps": "3-5",
           "default_rest_seconds": 120,

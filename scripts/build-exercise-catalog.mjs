@@ -12,6 +12,8 @@
  *     normalized-name equality) are enriched in place; the rest are added
  *     as new `source: 'exercisedb'` entries. See
  *     scripts/prepare-exercisedb-seed.mjs for the seed's provenance.
+ *     seeds/exercisedb/_overrides.json then patches equipment / difficulty /
+ *     text of individual ExerciseDB entries (they are not in base.json).
  *   - Writes identical JSON to all 3 catalog copies
  *
  * --refresh-wger flag = ONLINE: fetches from wger API (old behavior), THEN merges seeds.
@@ -37,6 +39,10 @@ const ID_MAP_PATH = join(SEEDS_DIR, '_id-map.json')
 // ExerciseDB layer (seeds/exercisedb/) — see scripts/prepare-exercisedb-seed.mjs
 const EXDB_PATH = join(ROOT, 'seeds/exercisedb/exercises.json')
 const EXDB_MATCHES_PATH = join(ROOT, 'seeds/exercisedb/_matches.json')
+// Curated per-entry corrections for ExerciseDB rows that are NOT persisted in
+// base.json (they are rebuilt from the seed on every run, so editing the output
+// would be lost). Keyed by final catalog id. See #714.
+const EXDB_OVERRIDES_PATH = join(ROOT, 'seeds/exercisedb/_overrides.json')
 // Curated es descriptions for wger entries whose upstream has no es translation
 // (the fetch falls back to `es: enDesc`, which leaks English into the Spanish UI)
 const WGER_ES_OVERRIDES_PATH = join(ROOT, 'seeds/wger-es-overrides.json')
@@ -67,7 +73,7 @@ const SEED_FILES = Object.keys(SEED_CAT_MAP).sort()
 
 // ── Equipment mapping (seed English keys → canonical Spanish ids) ─────────────
 const EQUIP_MAP = {
-  'jump_rope': 'ninguno',        // LOSSY — jump_rope has no canonical id
+  'jump_rope': 'cuerda',         // #714: antes se perdía como 'ninguno'
   'pull_up_bar': 'barra_dominadas',
   'bench': 'banco',
   'rings': 'anillas',
@@ -107,9 +113,6 @@ function mapEquipment(equipArr) {
   const result = new Set()
   for (const e of equipArr) {
     if (EQUIP_MAP[e] !== undefined) {
-      if (e === 'jump_rope') {
-        LOSSY_MAP_LOG.push(`jump_rope → ninguno (lossy: no canonical id for jump rope)`)
-      }
       result.add(EQUIP_MAP[e])
     } else if (CANONICAL_EQUIPMENT.has(e)) {
       result.add(e)
@@ -682,18 +685,22 @@ function mergeSeeds(baseList, idMap, allSeeds) {
   for (const { canonicalId, slug, entry, category } of newEntries) {
     const nameEs = entry.name?.es || entry.name?.en || slug
     const nameEn = entry.name?.en || entry.name?.es || slug
+    const seedTimerSeconds = Number(entry.default_timer_seconds) || 0
 
     const newEx = {
       id: canonicalId,
       name: { es: nameEs || nameEn, en: nameEn || nameEs },
       muscles: entry.muscles || { es: 'General', en: 'General' },
       sets: entry.default_sets ?? 3,
-      reps: entry.default_reps ?? '8-12',
+      reps: entry.default_reps ?? (seedTimerSeconds ? `${seedTimerSeconds}s` : '8-12'),
       rest: entry.default_rest_seconds ?? 60,
       note: { es: '', en: '' },
       description: entry.description || { es: '', en: '' },
       priority: 'med',
-      isTimer: false,
+      // Isometric holds declare is_timer / default_timer_seconds in the seed;
+      // before #714 every new seed entry was stamped isTimer:false.
+      isTimer: !!entry.is_timer || seedTimerSeconds > 0,
+      ...(seedTimerSeconds > 0 ? { timerSeconds: seedTimerSeconds } : {}),
       category,
       difficulty: mapDifficulty(entry.difficulty_level),
       equipment: mapEquipment(entry.equipment),
@@ -989,7 +996,59 @@ function mergeExercisedb(baseList) {
   }
 
   if (exdbSkippedDup > 0) console.log(`  Skipped upstream duplicate rows: ${exdbSkippedDup}`)
-  return { exdbEnriched, exdbNew }
+  const exdbOverridden = applyExercisedbOverrides(baseList)
+  return { exdbEnriched, exdbNew, exdbOverridden }
+}
+
+/**
+ * Curated corrections for `source: 'exercisedb'` entries (#714).
+ *
+ * Those rows are rebuilt from seeds/exercisedb/exercises.json on every run and
+ * never persisted in base.json, so editing the output would be lost on the
+ * next build. The upstream dataset labels every row done without a machine
+ * as "body weight" — including cable rows and dumbbell rows — and the
+ * program validator trusts that label. `_overrides.json` is keyed by the
+ * FINAL catalog id and may set: equipment (canonical ids), difficulty,
+ * description / note ({es,en}), isTimer, timerSeconds, reps. Throws if an id
+ * is unknown or is not an ExerciseDB entry, so a typo cannot silently do nothing.
+ */
+function applyExercisedbOverrides(baseList) {
+  let data
+  try {
+    data = JSON.parse(readFileSync(EXDB_OVERRIDES_PATH, 'utf8'))
+  } catch {
+    return 0
+  }
+  const overrides = data.overrides || {}
+  const byId = new Map(baseList.map(e => [e.id, e]))
+  const ALLOWED = new Set(['equipment', 'difficulty', 'description', 'note', 'isTimer', 'timerSeconds', 'reps'])
+  let n = 0
+  for (const [id, patch] of Object.entries(overrides)) {
+    const ex = byId.get(id)
+    if (!ex) throw new Error(`_overrides.json: "${id}" is not in the catalog`)
+    if (ex.source !== 'exercisedb') {
+      throw new Error(`_overrides.json: "${id}" is source "${ex.source}" — fix it in base.json / its seed instead`)
+    }
+    for (const [k, v] of Object.entries(patch)) {
+      if (k.startsWith('_')) continue
+      if (!ALLOWED.has(k)) throw new Error(`_overrides.json: "${id}" has unsupported field "${k}"`)
+      if (k === 'equipment') {
+        for (const eq of v) {
+          if (!CANONICAL_EQUIPMENT.has(eq) && !Object.values(EXDB_EQUIP_MAP).includes(eq)) {
+            throw new Error(`_overrides.json: "${id}" uses unknown equipment "${eq}"`)
+          }
+        }
+        ex.equipment = [...v]
+      } else if (k === 'difficulty') {
+        ex.difficulty = mapDifficulty(v)
+      } else {
+        ex[k] = v
+      }
+    }
+    n++
+  }
+  if (n > 0) console.log(`  ExerciseDB curated overrides applied: ${n}`)
+  return n
 }
 
 // ── Muscle-group taxonomy ─────────────────────────────────────────────────────
@@ -1139,7 +1198,9 @@ const FAMILY_PATTERNS = [
   ['back_lever', /back lever/],
   ['planche', /planche/],
   ['l_sit', /\bl[- ]?sit/],
-  ['handstand', /handstand|pino/],
+  // `\bpino\b`: sin límite de palabra «su-pino» (chin-up en agarre supino) caía
+  // aquí en vez de en pull_up (#714).
+  ['handstand', /handstand|\bpino\b/],
   ['muscle_up', /muscle[- ]?up/],
   ['push_up', /push[- ]?up|pushup|flexion/],
   ['pull_up', /pull[- ]?up|pullup|chin[- ]?up|chinup|dominada/],
