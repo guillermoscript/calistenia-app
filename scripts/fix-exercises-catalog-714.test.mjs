@@ -25,6 +25,9 @@ const HAS_PB = existsSync(PB_BINARY)
 function migrateUp(dataDir) {
   const r = spawnSync(PB_BINARY, ['migrate', 'up', '--dir', dataDir, '--migrationsDir', REPO_MIGRATIONS], {
     encoding: 'utf8',
+    // Sobre un directorio vacío se aplican TODAS las migraciones y sus logs
+    // pasan del 1 MB por defecto: en CI reventaba con ENOBUFS.
+    maxBuffer: 64 * 1024 * 1024,
   })
   if (r.error) throw r.error
   if (r.status !== 0) throw new Error(`migrate up falló:\n${r.stdout}\n${r.stderr}`)
@@ -32,7 +35,7 @@ function migrateUp(dataDir) {
 }
 
 function sqlQuery(db, query) {
-  const r = spawnSync('sqlite3', ['-batch', '-json', db, query], { encoding: 'utf8' })
+  const r = spawnSync('sqlite3', ['-batch', '-json', db, query], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
   if (r.error) throw r.error
   if (r.status !== 0) throw new Error(`sqlite3 falló:\n${query}\n${r.stderr || r.stdout}`)
   const out = r.stdout.trim()
