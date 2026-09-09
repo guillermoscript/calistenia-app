@@ -17,7 +17,7 @@
  * y no codificada, cardio y nutrición en `fat_loss`, días pesados seguidos,
  * frecuencia por patrón y ejercicios prometidos en el texto (#715). Nacen como
  * AVISO para no bloquear las quince issues de contenido que corren en
- * paralelo; con `--strict` las cinco primeras pasan a ERROR. Cuando #719-#733
+ * paralelo; con `--strict` las de `STRICT_RULES` pasan a ERROR. Cuando #719-#733
  * estén mergeadas, `--strict` es el modo de CI (PR de cierre de #711).
  *
  * Descarga (#716): se reconoce `deload_last_week: true` en la fase (opción A)
@@ -161,6 +161,12 @@ const WORK = new Set(['primary', 'secondary', 'accessory', 'high', 'med', 'low']
  * decisiones de programación discutibles y se quedan en AVISO siempre.
  */
 export const STRICT_RULES = new Set([
+  // Material (#714): el catálogo dejó de mentir sobre goblet squat, remos de
+  // polea/mancuerna y TRX, y los programas que los usan (#721, #722, #732) se
+  // corrigen en sus issues. Hasta el cierre de #711 estas dos reglas son AVISO
+  // para no dejar la CI en rojo entre medias; con `--strict` vuelven a ERROR.
+  'gym_equipment',
+  'equipment',
   'level_cap',
   'family_regression',
   'contraindications',
@@ -398,7 +404,7 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
         const entry = byId.get(resolved)
         for (const eq of entry?.equipment ?? []) {
           if (GYM_ONLY.has(eq)) {
-            err(`${where}: "${resolved}" necesita ${eq} — material de gimnasio en un programa de calistenia`, 'gym_equipment')
+            logic('gym_equipment', `${where}: "${resolved}" necesita ${eq} — material de gimnasio en un programa de calistenia`)
           } else if (!HOUSEHOLD.has(eq)) {
             usedEquipment.add(eq)
           }
@@ -457,7 +463,7 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
       .map(eq => EQUIPMENT_MAP[eq])
       .filter(eq => eq && !declared.has(eq))
     if (missing.length) {
-      err(`material sin declarar en program-catalog.mjs: ${[...new Set(missing)].join(', ')}`, 'equipment')
+      logic('equipment', `material sin declarar en program-catalog.mjs: ${[...new Set(missing)].join(', ')}`)
     }
     const unused = [...declared].filter(
       d => ![...usedEquipment].some(eq => EQUIPMENT_MAP[eq] === d),

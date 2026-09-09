@@ -62,7 +62,7 @@
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "fitball"
           ],
           "source": "wger",
           "wger_id": 165,
@@ -97,7 +97,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 95,
@@ -530,7 +530,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "lastre"
           ],
           "source": "wger",
           "wger_id": 124,
@@ -594,7 +594,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "maquina"
           ],
           "source": "wger",
           "wger_id": 148,
@@ -627,7 +627,8 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "mancuernas",
+            "banco"
           ],
           "source": "wger",
           "wger_id": 208,
@@ -660,7 +661,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 237,
@@ -727,7 +728,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra"
           ],
           "source": "wger",
           "wger_id": 289,
@@ -826,7 +827,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "lastre"
           ],
           "source": "wger",
           "wger_id": 1079,
@@ -898,7 +899,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 805,
@@ -1142,7 +1143,11 @@
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Nordic%20Curl%20(Regresi%C3%B3n)%20exercise%20tutorial",
           "youtube_query": "nordic curl tutorial hamstrings beginners",
-          "images": []
+          "images": [],
+          "description": {
+            "es": "Regresión del nordic curl: de rodillas, con los pies anclados bajo un sofá o sujetos por un compañero, baja el tronco hacia el suelo lo más lento que puedas y usa las manos para amortiguar y volver. Solo se entrena la fase excéntrica.",
+            "en": "Nordic curl regression: kneeling with your feet anchored under a couch or held by a partner, lower your torso toward the floor as slowly as you can and use your hands to catch yourself and push back up. Eccentric phase only."
+          }
         },
         {
           "id": "nordic_adv",
@@ -1164,7 +1169,7 @@
           "priority": "high",
           "isTimer": false,
           "category": "legs",
-          "difficulty": "intermediate",
+          "difficulty": "advanced",
           "equipment": [
             "ninguno"
           ],
@@ -1176,8 +1181,8 @@
         {
           "id": "nordic_full",
           "name": {
-            "es": "Nordic Curl Full",
-            "en": "Nordic Curl Full"
+            "es": "Nordic Curl Completo sin manos",
+            "en": "Full Nordic Curl (no hands)"
           },
           "muscles": {
             "es": "Isquiotibiales",
@@ -1193,14 +1198,18 @@
           "priority": "high",
           "isTimer": false,
           "category": "legs",
-          "difficulty": "intermediate",
+          "difficulty": "advanced",
           "equipment": [
             "ninguno"
           ],
           "source": "local",
-          "youtube_search": "https://www.youtube.com/results?search_query=Nordic%20Curl%20Full%20exercise%20tutorial",
+          "youtube_search": "https://www.youtube.com/results?search_query=Full%20Nordic%20Curl%20no%20hands%20exercise%20tutorial",
           "youtube_query": "nordic hamstring curl advanced",
-          "images": []
+          "images": [],
+          "description": {
+            "es": "Nordic curl con fase excéntrica y concéntrica completas sin apoyar las manos en ningún punto. Pies anclados bajo un sofá o sujetos por un compañero. Es el escalón final: antes viene el nordic completo con ayuda de manos.",
+            "en": "Nordic curl with full eccentric and concentric phases without touching the floor with your hands at any point. Feet anchored under a couch or held by a partner. Final step of the chain: the full nordic with hand assistance comes before it."
+          }
         },
         {
           "id": "pistol_free",
@@ -2676,7 +2685,7 @@
           "timerSeconds": 30,
           "category": "movilidad",
           "difficulty": "beginner",
-          "equipment": ["ninguno"],
+          "equipment": ["pared"],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Pectoral%20Stretch%20exercise%20tutorial",
           "youtube_query": "pectoral stretch doorway chest",
@@ -2733,7 +2742,7 @@
           "timerSeconds": 30,
           "category": "movilidad",
           "difficulty": "beginner",
-          "equipment": ["ninguno"],
+          "equipment": ["pared"],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Biceps%20Stretch%20exercise%20tutorial",
           "youtube_query": "biceps stretch wall",
@@ -2809,7 +2818,7 @@
           "timerSeconds": 30,
           "category": "movilidad",
           "difficulty": "beginner",
-          "equipment": ["ninguno"],
+          "equipment": ["pared"],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Calf%20Stretch%20exercise%20tutorial",
           "youtube_query": "calf stretch wall standing",
@@ -3177,7 +3186,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "wger",
           "wger_id": 1198,
@@ -3243,7 +3252,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 394,
@@ -3279,7 +3288,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 803,
@@ -4400,14 +4409,15 @@
             "en": "Balance, shoulders, core"
           },
           "sets": 3,
-          "reps": "intentos 5-15s",
+          "reps": "5-15s",
           "rest": 60,
           "note": {
             "es": "Practica el balance libre. Múltiples intentos con descanso.",
             "en": "Practice free balance. Multiple attempts with rest."
           },
           "priority": "high",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [

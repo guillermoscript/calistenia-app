@@ -39,12 +39,12 @@
           "name": { "es": "Sentadilla Goblet", "en": "Goblet Squat" },
           "slug": "goblet-squat",
           "description": {
-            "es": "Sentadilla sosteniendo un peso frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
-            "en": "Squat holding a weight at chest height. The front-loaded position helps keep your torso upright and improve depth."
+            "es": "Sentadilla sosteniendo una kettlebell o una mancuerna frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
+            "en": "Squat holding a kettlebell or a dumbbell at chest height. The front-loaded position helps keep your torso upright and improve depth."
           },
           "muscles": { "es": "Cuádriceps, glúteos, core", "en": "Quads, glutes, core" },
           "difficulty_level": "beginner",
-          "equipment": [],
+          "equipment": ["kettlebell"],
           "progression_order": 2,
           "default_sets": 3,
           "default_reps": "10-15",

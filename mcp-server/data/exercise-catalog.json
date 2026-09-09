@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-09-03T20:47:22.289Z",
-  "total_count": 1576,
+  "generated_at": "2026-09-09T01:55:41.476Z",
+  "total_count": 1579,
   "local_count": 148,
   "wger_count": 20,
   "exercisedb_count": 1271,
-  "with_muscle_groups": 1552,
-  "with_family": 1075,
+  "with_muscle_groups": 1555,
+  "with_family": 1076,
   "with_images": 8,
   "with_curated_video": 2,
-  "with_youtube_query": 1576,
+  "with_youtube_query": 1579,
   "with_sequence": 1,
   "with_muscle_map": 1,
   "categories": {
@@ -41,7 +41,7 @@
           "category": "core",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "rueda_abdominal"
           ],
           "source": "seed",
           "youtube_search": "https://www.youtube.com/results?search_query=Standing%20Ab%20Wheel%20Rollout%20exercise%20tutorial",
@@ -254,7 +254,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0282",
@@ -664,7 +664,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0495",
@@ -1830,7 +1830,7 @@
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0277",
@@ -2025,7 +2025,7 @@
             "en": "Erectors, glutes"
           },
           "sets": 3,
-          "reps": "8-12",
+          "reps": "30s",
           "rest": 60,
           "note": {
             "es": "",
@@ -2036,7 +2036,8 @@
             "en": "Lying face down, lift arms and legs off the floor arching your back. Hollow body complement that strengthens the entire posterior chain."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
@@ -2078,7 +2079,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2333",
@@ -2124,7 +2125,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2355",
@@ -2351,7 +2352,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "paralelas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0709",
@@ -2837,7 +2838,7 @@
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "fitball"
           ],
           "source": "wger",
           "wger_id": 165,
@@ -2967,7 +2968,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 95,
@@ -3056,7 +3057,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0467",
@@ -3230,7 +3231,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0474",
@@ -3274,7 +3275,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0476",
@@ -3365,7 +3366,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0491",
@@ -3409,7 +3410,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1764",
@@ -3760,7 +3761,7 @@
             "en": "Core, hip flexors"
           },
           "sets": 3,
-          "reps": "8-12",
+          "reps": "15s",
           "rest": 60,
           "note": {
             "es": "",
@@ -3771,7 +3772,8 @@
             "en": "Hold straight legs at 90 degrees while hanging from the bar in an L position. Intense isometric for core and hip flexors."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
@@ -3859,7 +3861,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0475",
@@ -3904,7 +3906,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0689",
@@ -4080,7 +4082,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0620",
@@ -4391,7 +4393,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "paralelas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0826",
@@ -4482,7 +4484,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0570",
@@ -4619,7 +4621,7 @@
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0807",
@@ -4664,7 +4666,7 @@
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0691",
@@ -4934,7 +4936,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "trx"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0805",
@@ -6396,7 +6398,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "anillas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3314",
@@ -6847,7 +6849,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0473",
@@ -6956,7 +6958,7 @@
             "en": "Adductors, obliques"
           },
           "sets": 3,
-          "reps": "8-12",
+          "reps": "30s",
           "rest": 60,
           "note": {
             "es": "",
@@ -6967,7 +6969,8 @@
             "en": "Side plank with your top leg resting on a bench. Strengthens the adductors while working obliques and lateral stability."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
@@ -7356,7 +7359,7 @@
             "en": "Total core, glutes (max tension)"
           },
           "sets": 3,
-          "reps": "8-12",
+          "reps": "30s",
           "rest": 60,
           "note": {
             "es": "",
@@ -7367,7 +7370,8 @@
             "en": "Maximum-tension plank: squeeze glutes, quads, and drive elbows toward knees without moving. Short holds with full-body contraction."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
@@ -7483,7 +7487,7 @@
             "en": "Total core, stabilizers"
           },
           "sets": 3,
-          "reps": "8-12",
+          "reps": "30s",
           "rest": 60,
           "note": {
             "es": "",
@@ -7494,7 +7498,8 @@
             "en": "Plank with hands or forearms on rings. The ring instability multiplies core stabilizer activation."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
@@ -7884,7 +7889,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "rueda_abdominal"
           ],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Ab%20Wheel%20Rollout%20exercise%20tutorial",
@@ -8645,7 +8650,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 237,
@@ -9226,7 +9231,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "rodillo"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3637",
@@ -9417,7 +9422,8 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "mancuernas",
+            "banco"
           ],
           "source": "wger",
           "wger_id": 208,
@@ -9456,7 +9462,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "maquina"
           ],
           "source": "wger",
           "wger_id": 148,
@@ -9634,7 +9640,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 805,
@@ -9673,7 +9679,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "lastre"
           ],
           "source": "wger",
           "wger_id": 1079,
@@ -10109,7 +10115,7 @@
           "category": "full",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3636",
@@ -10155,11 +10161,12 @@
             "en": "Continuous jumps passing the rope under your feet. Excellent for coordination, calves, and cardiovascular endurance."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 60,
           "category": "full",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "cuerda"
           ],
           "source": "seed",
           "youtube_search": "https://www.youtube.com/results?search_query=Jump%20Rope%20exercise%20tutorial",
@@ -10577,7 +10584,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "lastre"
           ],
           "source": "wger",
           "wger_id": 124,
@@ -10617,7 +10624,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra"
           ],
           "source": "wger",
           "wger_id": 289,
@@ -10713,7 +10720,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0555",
@@ -11564,7 +11571,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banda_elastica"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0628",
@@ -12069,7 +12076,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0496",
@@ -12116,7 +12123,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "maquina"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2400",
@@ -12706,7 +12713,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1386",
@@ -12883,7 +12890,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1387",
@@ -13022,7 +13029,8 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "escalon",
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0284",
@@ -13901,7 +13909,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1373",
@@ -13946,7 +13954,8 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "escalon",
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1490",
@@ -14489,7 +14498,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "maquina"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3193",
@@ -14794,7 +14803,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0130",
@@ -15568,7 +15577,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1423",
@@ -15794,7 +15803,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0624",
@@ -15883,6 +15892,10 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Nordic%20Curl%20(Regresi%C3%B3n)%20exercise%20tutorial",
           "youtube_query": "nordic curl tutorial hamstrings beginners",
           "images": [],
+          "description": {
+            "es": "Regresión del nordic curl: de rodillas, con los pies anclados bajo un sofá o sujetos por un compañero, baja el tronco hacia el suelo lo más lento que puedas y usa las manos para amortiguar y volver. Solo se entrena la fase excéntrica.",
+            "en": "Nordic curl regression: kneeling with your feet anchored under a couch or held by a partner, lower your torso toward the floor as slowly as you can and use your hands to catch yourself and push back up. Eccentric phase only."
+          },
           "muscle_groups": [
             "isquios"
           ],
@@ -15967,8 +15980,8 @@
         {
           "id": "nordic_full",
           "name": {
-            "es": "Nordic Curl Full",
-            "en": "Nordic Curl Full"
+            "es": "Nordic Curl Completo sin manos",
+            "en": "Full Nordic Curl (no hands)"
           },
           "muscles": {
             "es": "Isquiotibiales",
@@ -15984,14 +15997,18 @@
           "priority": "high",
           "isTimer": false,
           "category": "legs",
-          "difficulty": "intermediate",
+          "difficulty": "advanced",
           "equipment": [
             "ninguno"
           ],
           "source": "local",
-          "youtube_search": "https://www.youtube.com/results?search_query=Nordic%20Curl%20Full%20exercise%20tutorial",
+          "youtube_search": "https://www.youtube.com/results?search_query=Full%20Nordic%20Curl%20no%20hands%20exercise%20tutorial",
           "youtube_query": "nordic hamstring curl advanced",
           "images": [],
+          "description": {
+            "es": "Nordic curl con fase excéntrica y concéntrica completas sin apoyar las manos en ningún punto. Pies anclados bajo un sofá o sujetos por un compañero. Es el escalón final: antes viene el nordic completo con ayuda de manos.",
+            "en": "Nordic curl with full eccentric and concentric phases without touching the floor with your hands at any point. Feet anchored under a couch or held by a partner. Final step of the chain: the full nordic with hand assistance comes before it."
+          },
           "muscle_groups": [
             "isquios"
           ],
@@ -18197,7 +18214,7 @@
           "category": "legs",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3523",
@@ -18676,7 +18693,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "escalon"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1374",
@@ -20857,7 +20874,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "trx"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0809",
@@ -21438,15 +21455,15 @@
           "category": "legs",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "kettlebell"
           ],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Sentadilla%20Goblet%20exercise%20tutorial",
           "youtube_query": "goblet squat bodyweight tutorial form",
           "images": [],
           "description": {
-            "es": "Sentadilla sosteniendo un peso frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
-            "en": "Squat holding a weight at chest height. The front-loaded position helps keep your torso upright and improve depth."
+            "es": "Sentadilla sosteniendo una kettlebell o una mancuerna frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
+            "en": "Squat holding a kettlebell or a dumbbell at chest height. The front-loaded position helps keep your torso upright and improve depth."
           },
           "seed_slug": "goblet-squat",
           "muscle_groups": [
@@ -22059,7 +22076,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3132",
@@ -23018,7 +23035,7 @@
           "category": "legs",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "otro"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0020",
@@ -24379,7 +24396,7 @@
           "category": "lumbar",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1364",
@@ -25182,7 +25199,7 @@
           "category": "lumbar",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0489",
@@ -25228,7 +25245,7 @@
           "category": "lumbar",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0488",
@@ -27205,7 +27222,7 @@
           "category": "movilidad",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1377",
@@ -27250,7 +27267,7 @@
           "category": "movilidad",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1407",
@@ -27295,7 +27312,7 @@
           "category": "movilidad",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1390",
@@ -27340,7 +27357,7 @@
           "category": "movilidad",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1398",
@@ -28931,7 +28948,7 @@
           "category": "movilidad",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1358",
@@ -30094,7 +30111,7 @@
       ]
     },
     "pull": {
-      "count": 387,
+      "count": 389,
       "exercises": [
         {
           "id": "active_hang_scapular",
@@ -30118,7 +30135,8 @@
             "en": "Hang from the bar and actively depress your scapulae without bending your elbows. Activates lats and teaches scapular control."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 20,
           "category": "pull",
           "difficulty": "beginner",
           "equipment": [
@@ -30529,7 +30547,7 @@
             "antebrazos",
             "espalda"
           ],
-          "family": "handstand"
+          "family": "pull_up"
         },
         {
           "id": "wrist_circles",
@@ -30573,6 +30591,45 @@
           "images": [],
           "muscle_groups": [
             "antebrazos"
+          ]
+        },
+        {
+          "id": "false_grip_hang",
+          "name": {
+            "es": "Colgado en Agarre Falso",
+            "en": "False Grip Hang"
+          },
+          "muscles": {
+            "es": "Antebrazos, agarre, dorsal",
+            "en": "Forearms, grip, lats"
+          },
+          "sets": 3,
+          "reps": "15-30s",
+          "rest": 90,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Cuélgate de la barra o las anillas con la muñeca por encima del agarre, apoyando el talón de la mano sobre él (agarre falso). Mantén los brazos rectos y el cuerpo quieto. Base del muscle-up estricto: enseña a la muñeca a soportar la transición.",
+            "en": "Hang from the bar or rings with the wrist over the grip, resting the heel of the hand on it (false grip). Keep the arms straight and the body still. Foundation of the strict muscle-up: it teaches the wrist to bear the transition."
+          },
+          "priority": "med",
+          "isTimer": true,
+          "timerSeconds": 20,
+          "category": "pull",
+          "difficulty": "beginner",
+          "equipment": [
+            "barra_dominadas"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=False%20Grip%20Hang%20exercise%20tutorial",
+          "youtube_query": "False Grip Hang exercise tutorial",
+          "images": [],
+          "seed_slug": "false-grip-hang",
+          "muscle_groups": [
+            "antebrazos",
+            "espalda"
           ]
         },
         {
@@ -33422,7 +33479,7 @@
             "biceps",
             "antebrazos"
           ],
-          "family": "handstand"
+          "family": "biceps_curl"
         },
         {
           "id": "bodyweight_side_lying_biceps_curl",
@@ -33540,7 +33597,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "mancuernas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1770",
@@ -38001,7 +38058,7 @@
             "biceps",
             "antebrazos"
           ],
-          "family": "handstand"
+          "family": "biceps_curl"
         },
         {
           "id": "cable_lying_close_grip_curl",
@@ -38164,7 +38221,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0638",
@@ -38341,7 +38398,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0674",
@@ -38388,7 +38445,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0627",
@@ -38529,7 +38586,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1327",
@@ -38576,7 +38633,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0678",
@@ -38670,7 +38727,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3418",
@@ -38717,7 +38774,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0466",
@@ -38765,7 +38822,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0140",
@@ -38812,7 +38869,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0670",
@@ -39128,7 +39185,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1367",
@@ -39175,7 +39232,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1763",
@@ -39222,7 +39279,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0139",
@@ -39269,7 +39326,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0253",
@@ -39357,7 +39414,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0720",
@@ -39443,7 +39500,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3019",
@@ -39490,7 +39547,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0688",
@@ -40535,7 +40592,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1355",
@@ -40579,7 +40636,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 803,
@@ -41205,7 +41262,7 @@
             "antebrazos",
             "espalda"
           ],
-          "family": "handstand"
+          "family": "pulldown"
         },
         {
           "id": "band_fixed_back_underhand_pulldown",
@@ -41253,7 +41310,7 @@
             "biceps",
             "espalda"
           ],
-          "family": "handstand"
+          "family": "pulldown"
         },
         {
           "id": "lever_front_pulldown",
@@ -41491,7 +41548,7 @@
             "antebrazos",
             "espalda"
           ],
-          "family": "handstand"
+          "family": "pulldown"
         },
         {
           "id": "cable_straight_arm_pulldown",
@@ -42372,7 +42429,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1401",
@@ -42421,7 +42478,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0558",
@@ -43634,7 +43691,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "toalla"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1773",
@@ -44233,7 +44290,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 394,
@@ -44418,7 +44475,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3166",
@@ -44465,7 +44522,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "toalla"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3165",
@@ -44512,7 +44569,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "mancuernas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3162",
@@ -44559,7 +44616,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "toalla"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3161",
@@ -44606,7 +44663,7 @@
           "category": "pull",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "mancuernas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3156",
@@ -44653,7 +44710,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3158",
@@ -44717,6 +44774,46 @@
           "muscle_groups": [
             "hombros",
             "biceps",
+            "espalda"
+          ],
+          "family": "row"
+        },
+        {
+          "id": "false_grip_row",
+          "name": {
+            "es": "Remo en Agarre Falso",
+            "en": "False Grip Row"
+          },
+          "muscles": {
+            "es": "Dorsal, bíceps, antebrazos",
+            "en": "Lats, biceps, forearms"
+          },
+          "sets": 3,
+          "reps": "6-10",
+          "rest": 90,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Remo invertido con la barra baja o las anillas, sujetando con agarre falso (muñeca por encima del agarre). Tira hasta que el pecho toque las manos manteniendo las muñecas dobladas todo el recorrido. Escalón entre el colgado en agarre falso y el muscle-up negativo.",
+            "en": "Inverted row on a low bar or rings holding a false grip (wrist over the grip). Pull until the chest touches the hands keeping the wrists bent through the whole range. Step between the false grip hang and the negative muscle-up."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "pull",
+          "difficulty": "intermediate",
+          "equipment": [
+            "barra_dominadas"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=False%20Grip%20Row%20exercise%20tutorial",
+          "youtube_query": "False Grip Row exercise tutorial",
+          "images": [],
+          "seed_slug": "false-grip-row",
+          "muscle_groups": [
+            "biceps",
+            "antebrazos",
             "espalda"
           ],
           "family": "row"
@@ -44974,7 +45071,7 @@
           "category": "pull",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "toalla"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3167",
@@ -45069,7 +45166,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "trx"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0808",
@@ -46009,7 +46106,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0499",
@@ -46056,7 +46153,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "trx"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0498",
@@ -46103,7 +46200,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2300",
@@ -46150,7 +46247,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2298",
@@ -46197,7 +46294,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "wger",
           "wger_id": 1198,
@@ -46240,7 +46337,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "maquina"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0497",
@@ -47316,7 +47413,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3295",
@@ -47665,7 +47762,8 @@
             "en": "Passive hang from the bar with fully extended arms. Builds grip strength and spinal decompression."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "pull",
           "difficulty": "beginner",
           "equipment": [
@@ -49352,7 +49450,7 @@
             "hombros",
             "espalda"
           ],
-          "family": "handstand"
+          "family": "chest_fly"
         },
         {
           "id": "lever_seated_fly",
@@ -55598,7 +55696,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0490",
@@ -55743,7 +55841,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3011",
@@ -55976,7 +56074,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "escalon"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3785",
@@ -56023,7 +56121,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0494",
@@ -56070,7 +56168,7 @@
           "category": "push",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "anillas"
           ],
           "source": "seed",
           "youtube_search": "https://www.youtube.com/results?search_query=Maltese%20Push-up%20exercise%20tutorial",
@@ -56622,7 +56720,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0659",
@@ -56669,7 +56767,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "pared"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0658",
@@ -57460,7 +57558,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "trx"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0806",
@@ -57857,7 +57955,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0137",
@@ -57903,7 +58001,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "paralelas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0672",
@@ -57950,7 +58048,7 @@
           "category": "push",
           "difficulty": "advanced",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0639",
@@ -58045,7 +58143,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "3287",
@@ -58092,7 +58190,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "paralelas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0251",
@@ -58139,7 +58237,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "paralelas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1430",
@@ -58280,7 +58378,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "paralelas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2363",
@@ -58327,7 +58425,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "exercisedb",
           "exercisedb_id": "2462",
@@ -58374,7 +58472,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0813",
@@ -58421,7 +58519,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0812",
@@ -58656,7 +58754,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0815",
@@ -58785,7 +58883,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0129",
@@ -58973,7 +59071,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "1753",
@@ -68447,7 +68545,7 @@
           "category": "push",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "banco"
           ],
           "source": "exercisedb",
           "exercisedb_id": "0492",
@@ -68797,7 +68895,7 @@
       ]
     },
     "skill": {
-      "count": 62,
+      "count": 63,
       "exercises": [
         {
           "id": "advanced_tuck_planche",
@@ -68821,7 +68919,8 @@
             "en": "Planche with knees tucked but back flat and horizontal. Greater shoulder demand than the basic tuck planche."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -68860,7 +68959,8 @@
             "en": "Back lever with knees tucked but hips more open. Greater shoulder and chest demand than the tucked version."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -68899,7 +68999,8 @@
             "en": "Full horizontal hang face-down with a completely straight body. Requires great flexibility and shoulder extension strength."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -68987,7 +69088,8 @@
             "en": "Back lever with legs straddled and extended. Precursor to the full back lever with a shorter lever arm."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -69027,7 +69129,8 @@
             "en": "Horizontal hang face-down with knees tucked. First back lever progression that teaches the inverted position."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -69067,7 +69170,8 @@
             "en": "Similar to crow pose but with fully extended arms. Requires greater shoulder strength and balance control."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 20,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -69105,7 +69209,8 @@
             "en": "Lateral hand balance with legs stacked on one arm. Works the obliques and asymmetric balance."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -69182,7 +69287,8 @@
             "en": "Front lever with knees tucked but hips more extended than the tucked version. Progressively increases the lever arm."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -69390,7 +69496,8 @@
             "en": "Front lever with legs straddled and extended. Reduces leverage compared to full while maintaining high difficulty."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -69469,7 +69576,8 @@
             "en": "Full horizontal support with a straight body and legs together. One of the most impressive strength skills in calisthenics."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 5,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -69496,6 +69604,46 @@
             "core"
           ],
           "family": "planche"
+        },
+        {
+          "id": "german_hang",
+          "name": {
+            "es": "German Hang (colgado invertido)",
+            "en": "German Hang"
+          },
+          "muscles": {
+            "es": "Hombros, pecho, bíceps (movilidad)",
+            "en": "Shoulders, chest, biceps (mobility)"
+          },
+          "sets": 3,
+          "reps": "10-20s",
+          "rest": 90,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Colgado de la barra, pasa las piernas por dentro de los brazos hasta quedar colgando boca abajo con los hombros en extensión máxima y los brazos rectos detrás del cuerpo. Aguanta la posición respirando. Escalón previo a skin the cat y al back lever.",
+            "en": "Hanging from the bar, bring your legs through your arms until you hang upside down with the shoulders in full extension and straight arms behind the body. Hold the position while breathing. Prerequisite for skin the cat and the back lever."
+          },
+          "priority": "med",
+          "isTimer": true,
+          "timerSeconds": 15,
+          "category": "skill",
+          "difficulty": "intermediate",
+          "equipment": [
+            "barra_dominadas"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=German%20Hang%20exercise%20tutorial",
+          "youtube_query": "German Hang exercise tutorial",
+          "images": [],
+          "seed_slug": "german-hang",
+          "muscle_groups": [
+            "pecho",
+            "hombros",
+            "biceps"
+          ]
         },
         {
           "id": "handstand_60",
@@ -69590,7 +69738,8 @@
             "en": "Handstand with your back resting against the wall for safety. Lets you practice vertical alignment without fear of falling."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "skill",
           "difficulty": "beginner",
           "equipment": [
@@ -69629,7 +69778,8 @@
             "en": "Handstand facing the wall, forcing better alignment. More demanding than the back-to-wall version as it requires greater shoulder control."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -69695,14 +69845,15 @@
             "en": "Balance, shoulders, core"
           },
           "sets": 3,
-          "reps": "intentos 5-15s",
+          "reps": "5-15s",
           "rest": 60,
           "note": {
             "es": "Practica el balance libre. Múltiples intentos con descanso.",
             "en": "Practice free balance. Multiple attempts with rest."
           },
           "priority": "high",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -69883,7 +70034,8 @@
             "en": "Human flag with a completely straight and horizontal body. Demonstrates exceptional lateral strength in obliques, shoulders, and lats."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 5,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -69957,7 +70109,8 @@
             "en": "Human flag with legs straddled and extended. Reduces leverage compared to full flag while demanding lateral control."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 8,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -69995,7 +70148,8 @@
             "en": "Human flag with knees tucked to reduce leverage. First progression to learn the lateral pole position."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -70034,7 +70188,8 @@
             "en": "Progressive work toward the iron cross on rings with arms extended laterally. Requires extreme chest, shoulder, and bicep strength."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 5,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -70143,7 +70298,8 @@
             "en": "L-sit on rings, where instability increases stabilizer activation. Harder variation than on bar or parallel bars."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 20,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -70181,7 +70337,8 @@
             "en": "L-sit hanging from a bar with legs parallel to the ground. Combines grip strength with hip compression."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 20,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -70221,7 +70378,8 @@
             "en": "Full L-sit on parallel bars with both legs extended. Bars make gripping easier and allow better scapular depression."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 20,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -70332,7 +70490,8 @@
             "en": "L-sit with one leg extended and the other tucked, alternating sides. Increases compression demand compared to the tucked L-sit."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -70371,7 +70530,8 @@
             "en": "Support hold with legs raised behind the body, past vertical. One of the most difficult compression skills in calisthenics."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -70547,7 +70707,8 @@
             "en": "Inverted plank with feet on the wall and chest facing it. First step to get comfortable in an inverted position."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 30,
           "category": "skill",
           "difficulty": "beginner",
           "equipment": [
@@ -70987,7 +71148,8 @@
             "en": "Ring support hold with palms turned out (RTO). Significantly increases bicep and stabilizer activation compared to regular support."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 20,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -71024,7 +71186,8 @@
             "en": "Planche with legs straddled and extended. Slightly reduces leverage compared to the full planche."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 8,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [
@@ -71183,7 +71346,8 @@
             "en": "Support hold with knees tucked to chest, feet off the ground. First progression to build the compression strength needed for L-sit."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "beginner",
           "equipment": [
@@ -71222,7 +71386,8 @@
             "en": "Support hold with legs extended above horizontal, forming a V shape. Advanced L-sit progression demanding extreme compression."
           },
           "priority": "med",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 15,
           "category": "skill",
           "difficulty": "advanced",
           "equipment": [

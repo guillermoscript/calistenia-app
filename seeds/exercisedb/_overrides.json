@@ -1,0 +1,637 @@
+{
+  "_comment": "Correcciones curadas para entradas source:exercisedb (#714). Se aplican al final de mergeExercisedb en build-exercise-catalog.mjs, por id FINAL del catálogo. Estas filas no viven en base.json: se reconstruyen desde exercises.json en cada build, así que editar la salida se pierde. Campos admitidos: equipment (ids canónicos), difficulty, description/note ({es,en}), isTimer, timerSeconds, reps. Regenerar con `pnpm build:catalog` y la migración de PB correspondiente. Barrido de material de #714: 453 entradas «ninguno» revisadas contra nombre/descripción/nota; se etiquetan las que exigen material de forma literal, no las que lo dan como opcional.",
+  "overrides": {
+    "scapular_pull_up": {
+      "_why": "La descripción cuelga de una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "suspended_row": {
+      "_why": "Exige un entrenador de suspensión (TRX/anillas).",
+      "equipment": [
+        "trx"
+      ]
+    },
+    "bodyweight_standing_row": {
+      "_why": "Remo de pie tirando de una barra o agarraderas hacia el cuerpo: es un remo en polea, no un ejercicio sin material.",
+      "equipment": [
+        "polea"
+      ]
+    },
+    "bodyweight_standing_one_arm_row": {
+      "_why": "La descripción sujeta una mancuerna.",
+      "equipment": [
+        "mancuernas"
+      ]
+    },
+    "arm_slingers_hanging_bent_knee_legs": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "arm_slingers_hanging_straight_legs": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "bench_pull_ups": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "biceps_narrow_pull_ups": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "biceps_pull_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "chin_ups_narrow_parallel_grip": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "close_grip_chin_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "front_lever_reps": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "gironda_sternum_chin": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "gorilla_chin": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "hanging_leg_hip_raise": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "hanging_pike": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "hanging_straight_leg_hip_raise": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "hanging_straight_leg_raise": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "hanging_straight_twisting_leg_hip_raise": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "kipping_muscle_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "l_pull_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "mixed_grip_chin_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "muscle_up_on_vertical_bar": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "one_arm_chin_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "rear_pull_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "reverse_grip_pull_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "rocky_pull_up_pulldown": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "shoulder_grip_pull_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "side_to_side_chin": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "suspended_reverse_crunch": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "wide_grip_rear_pull_up": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "inverted_row": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "inverted_row_bent_knees": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "chest_dip_on_straight_bar": {
+      "_why": "Cuelga de / tira hacia una barra de dominadas.",
+      "equipment": [
+        "barra_dominadas"
+      ]
+    },
+    "bodyweight_standing_close_grip_row": {
+      "_why": "Tira de una barra o agarraderas hacia el cuerpo de pie: remo en polea.",
+      "equipment": [
+        "polea"
+      ]
+    },
+    "biceps_leg_concentration_curl": {
+      "_why": "La descripción sujeta una mancuerna.",
+      "equipment": [
+        "mancuernas"
+      ]
+    },
+    "bodyweight_standing_close_grip_one_arm_row": {
+      "_why": "La descripción sujeta una mancuerna.",
+      "equipment": [
+        "mancuernas"
+      ]
+    },
+    "bench_dip_knees_bent": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "bench_hip_extension": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "body_up": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "decline_crunch": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "decline_sit_up": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "elbow_dips": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "glute_bridge_two_legs_on_bench_male": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "hyperextension": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "hyperextension_on_bench": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "incline_close_grip_push_up": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "incline_leg_hip_raise_leg_straight": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "incline_push_up_depth_jump": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "incline_reverse_grip_push_up": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "incline_scapula_push_up": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "incline_twisting_sit_up": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "inverse_leg_curl_bench_support": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "inverted_row_on_bench": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "kick_out_sit": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "leg_pull_in_flat_bench": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "lying_leg_raise_flat_bench": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "one_arm_dip": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "reverse_hyper_on_flat_bench": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "seated_calf_stretch_male": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "seated_leg_raise": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "three_bench_dip": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "triceps_dip_bench_leg": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "triceps_dip_between_benches": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "triceps_dips_floor": {
+      "_why": "La descripción usa un banco (o silla).",
+      "equipment": [
+        "banco"
+      ]
+    },
+    "chest_dip": {
+      "_why": "Se hace en barras paralelas.",
+      "equipment": [
+        "paralelas"
+      ]
+    },
+    "chest_dip_on_dip_pull_up_cage": {
+      "_why": "Se hace en barras paralelas.",
+      "equipment": [
+        "paralelas"
+      ]
+    },
+    "reverse_dip": {
+      "_why": "Se hace en barras paralelas.",
+      "equipment": [
+        "paralelas"
+      ]
+    },
+    "side_hip_on_parallel_bars": {
+      "_why": "Se hace en barras paralelas.",
+      "equipment": [
+        "paralelas"
+      ]
+    },
+    "vertical_leg_raise_on_parallel_bars": {
+      "_why": "Se hace en barras paralelas.",
+      "equipment": [
+        "paralelas"
+      ]
+    },
+    "wide_grip_chest_dip_on_high_parallel_bars": {
+      "_why": "Se hace en barras paralelas.",
+      "equipment": [
+        "paralelas"
+      ]
+    },
+    "glute_ham_raise": {
+      "_why": "Exige una máquina (GHR, Smith o polea de dominadas).",
+      "equipment": [
+        "maquina"
+      ]
+    },
+    "inverse_leg_curl_on_pull_up_cable_machine": {
+      "_why": "Exige una máquina (GHR, Smith o polea de dominadas).",
+      "equipment": [
+        "maquina"
+      ]
+    },
+    "inverted_row_v_2": {
+      "_why": "Exige una máquina (GHR, Smith o polea de dominadas).",
+      "equipment": [
+        "maquina"
+      ]
+    },
+    "inverted_row_with_straps": {
+      "_why": "Exige un entrenador de suspensión.",
+      "equipment": [
+        "trx"
+      ]
+    },
+    "suspended_abdominal_fallout": {
+      "_why": "Exige un entrenador de suspensión.",
+      "equipment": [
+        "trx"
+      ]
+    },
+    "suspended_push_up": {
+      "_why": "Exige un entrenador de suspensión.",
+      "equipment": [
+        "trx"
+      ]
+    },
+    "suspended_split_squat": {
+      "_why": "Exige un entrenador de suspensión.",
+      "equipment": [
+        "trx"
+      ]
+    },
+    "bodyweight_squatting_row_with_towel": {
+      "_why": "El nombre lo dice: con toalla.",
+      "equipment": [
+        "toalla"
+      ]
+    },
+    "bodyweight_standing_one_arm_row_with_towel": {
+      "_why": "El nombre lo dice: con toalla.",
+      "equipment": [
+        "toalla"
+      ]
+    },
+    "bodyweight_standing_row_with_towel": {
+      "_why": "El nombre lo dice: con toalla.",
+      "equipment": [
+        "toalla"
+      ]
+    },
+    "one_arm_towel_row": {
+      "_why": "El nombre lo dice: con toalla.",
+      "equipment": [
+        "toalla"
+      ]
+    },
+    "bodyweight_standing_calf_raise": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "calf_push_stretch_with_hands_against_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "calf_stretch_with_hands_against_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "high_knee_against_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "march_sit_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "one_arm_against_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "one_leg_donkey_calf_raise": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "one_leg_floor_calf_raise": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "potty_squat_with_support": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "push_up_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "push_up_wall_v_2": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "seated_side_crunch_wall": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "side_lying_floor_stretch": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "standing_calves_calf_stretch": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "standing_pelvic_tilt": {
+      "_why": "Apoyo o empuje contra una pared.",
+      "equipment": [
+        "pared"
+      ]
+    },
+    "box_jump_down_with_one_leg_stabilization": {
+      "_why": "Exige un cajón, escalón o plataforma.",
+      "equipment": [
+        "escalon"
+      ]
+    },
+    "incline_push_up_on_box": {
+      "_why": "Exige un cajón, escalón o plataforma.",
+      "equipment": [
+        "escalon"
+      ]
+    },
+    "monster_walk": {
+      "_why": "Banda elástica en los tobillos.",
+      "equipment": [
+        "banda_elastica"
+      ]
+    },
+    "straddle_maltese": {
+      "_why": "Se hace en anillas.",
+      "equipment": [
+        "anillas"
+      ]
+    },
+    "wheel_run": {
+      "_why": "Manos sobre un rodillo.",
+      "equipment": [
+        "rodillo"
+      ]
+    },
+    "balance_board": {
+      "_why": "Tabla de equilibrio: no hay id canónico.",
+      "equipment": [
+        "otro"
+      ]
+    },
+    "donkey_calf_raise": {
+      "_why": "Escalón para el gemelo y pared para apoyarse.",
+      "equipment": [
+        "escalon",
+        "pared"
+      ]
+    },
+    "standing_calf_raise_on_a_staircase": {
+      "_why": "Escalón para el gemelo y pared para apoyarse.",
+      "equipment": [
+        "escalon",
+        "pared"
+      ]
+    }
+  }
+}

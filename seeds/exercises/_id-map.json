@@ -261,5 +261,8 @@
   "ring-turned-out-support": "ring_turned_out_support",
   "iron-cross-progression": "iron_cross_progression",
   "muscle-up-to-l-sit": "muscle_up_to_l_sit",
-  "hefesto": "hefesto"
+  "hefesto": "hefesto",
+  "german-hang": "german_hang",
+  "false-grip-hang": "false_grip_hang",
+  "false-grip-row": "false_grip_row"
 }

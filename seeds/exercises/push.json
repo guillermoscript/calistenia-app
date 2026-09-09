@@ -367,7 +367,7 @@
           },
           "muscles": { "es": "Hombros, pecho, bíceps", "en": "Shoulders, chest, biceps" },
           "difficulty_level": "advanced",
-          "equipment": [],
+          "equipment": ["rings"],
           "progression_order": 19,
           "default_sets": 3,
           "default_reps": "3-5",
