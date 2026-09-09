@@ -32,6 +32,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
 const REPO_MIGRATIONS = resolve(ROOT, 'pb_migrations')
 const RELABEL_MIGRATION = '1788881000_relabel_official_programs.js'
+const FOR_WOMEN_MIGRATION = '1789300000_programs_for_women_sort_order.js'
 
 const PB_BINARY = process.env.PB_BINARY || resolve(ROOT, 'pocketbase')
 const HAS_PB = existsSync(PB_BINARY)
@@ -49,6 +50,9 @@ const CATALOG = SKELETONS.map(s => ({
   days_per_week: s.days_per_week,
   equipment_required: s.equipment_required,
   contraindications: s.contraindications,
+  is_official: true,
+  for_women: s.for_women,
+  sort_order: s.sort_order,
 }))
 
 const SIX_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
@@ -289,6 +293,176 @@ describe.skipIf(!HAS_PB)('1788881000_relabel_official_programs sobre PocketBase 
   it('la copia de usuario queda intacta, columna por columna', () => {
     expect(s.copiaDespues).toEqual(s.copiaAntes)
     expect(s.copiaDespues[0].contraindications).toBe('[]')
+  })
+})
+
+// ─── 3. #717: variantes «Mujer ·», sexo y desempate con el catálogo real ─────
+
+const LEVELS_717 = ['principiante', 'intermedio', 'avanzado']
+const GOALS_717 = ['perder_grasa', 'ganar_musculo', 'mantener']
+
+describe('etiquetas de #717 en SKELETONS', () => {
+  it('for_women marca exactamente los tres «Mujer ·»', () => {
+    expect(SKELETONS.filter(s => s.for_women).map(s => s.slug).sort()).toEqual([
+      'mujer-fuerza-funcional', 'mujer-full-body-toning', 'mujer-gluteo-tonificacion',
+    ])
+    for (const s of SKELETONS) expect(typeof s.for_women, s.slug).toBe('boolean')
+  })
+
+  it('sort_order es entero positivo y único', () => {
+    const orders = SKELETONS.map(s => s.sort_order)
+    for (const o of orders) expect(Number.isInteger(o) && o > 0).toBe(true)
+    expect(new Set(orders).size).toBe(orders.length)
+  })
+
+  it('cada celda con variante «Mujer ·» tiene también un genérico', () => {
+    for (const w of SKELETONS.filter(s => s.for_women)) {
+      const generic = SKELETONS.filter(s => !s.for_women && s.difficulty === w.difficulty && s.goal_type === w.goal_type)
+      expect(generic, w.slug).toHaveLength(1)
+    }
+  })
+})
+
+describe('«PARA TI» con los 15 reales y el sexo (#717)', () => {
+  it.each([
+    ['principiante', 'ganar_musculo', 'mujer-gluteo-tonificacion', 'principiante-ganar-musculo'],
+    ['principiante', 'mantener', 'mujer-full-body-toning', 'principiante-fundamentos'],
+    ['intermedio', 'ganar_musculo', 'mujer-fuerza-funcional', 'intermedio-hipertrofia'],
+  ])('%s + %s: usuaria → %s, el resto → %s', (level, primary_goal, women, generic) => {
+    expect(matchUserToPrograms({ level, primary_goal, sex: 'female', training_days: SIX_DAYS }, CATALOG).primary?.id).toBe(women)
+    expect(matchUserToPrograms({ level, primary_goal, sex: 'male', training_days: SIX_DAYS }, CATALOG).primary?.id).toBe(generic)
+    expect(matchUserToPrograms({ level, primary_goal, training_days: SIX_DAYS }, CATALOG).primary?.id).toBe(generic)
+  })
+
+  it('usuaria en celda sin variante recibe el genérico (principiante + perder grasa → Quema Grasa)', () => {
+    expect(matchUserToPrograms({ level: 'principiante', primary_goal: 'perder_grasa', sex: 'female' }, CATALOG).primary?.id).toBe('principiante-quema-grasa')
+  })
+
+  it('todas las celdas tienen primary salvo intermedio + mantener (Balance Total, fuera del catálogo), con cualquier orden de entrada', () => {
+    const reversed = [...CATALOG].reverse()
+    for (const level of LEVELS_717) {
+      for (const primary_goal of GOALS_717) {
+        for (const sex of ['female', 'male', undefined]) {
+          const user = { level, primary_goal, sex }
+          const a = matchUserToPrograms(user, CATALOG).primary?.id ?? null
+          const b = matchUserToPrograms(user, reversed).primary?.id ?? null
+          expect(b, `${level} × ${primary_goal} × ${sex}`).toBe(a)
+          if (level === 'intermedio' && primary_goal === 'mantener') expect(a).toBeNull()
+          else expect(a, `${level} × ${primary_goal} × ${sex}`).not.toBeNull()
+        }
+      }
+    }
+  })
+})
+
+describe.skipIf(!HAS_PB)('1789300000_programs_for_women_sort_order sobre PocketBase real', () => {
+  const s = {}
+  const readFlags = db => Object.fromEntries(
+    sqlQuery(db, "SELECT slug, for_women, sort_order FROM programs WHERE is_official = 1 AND slug != '' ORDER BY slug")
+      .map(r => [r.slug, { for_women: Number(r.for_women), sort_order: Number(r.sort_order) }]),
+  )
+  const readBalance = db => sqlQuery(db,
+    "SELECT slug, goal_type, intensity, days_per_week, equipment_required, contraindications, for_women, sort_order " +
+    "FROM programs WHERE json_extract(name, '$.es') = 'Intermedio – Balance Total'")
+
+  beforeAll(() => {
+    s.tmp = mkdtempSync(join(tmpdir(), 'for-women-717-'))
+    s.dataDir = join(s.tmp, 'pb_data')
+    s.db = join(s.dataDir, 'data.db')
+    s.migDir = join(s.tmp, 'pb_migrations')
+    mkdirSync(s.dataDir, { recursive: true })
+    mkdirSync(s.migDir, { recursive: true })
+
+    // 1 ── Instalación limpia: esquema + siembra + todas las migraciones.
+    for (const f of readdirSync(REPO_MIGRATIONS)) cpSync(join(REPO_MIGRATIONS, f), join(s.migDir, f))
+    s.salida1 = migrateUp(s.dataDir, s.migDir)
+    s.flags = readFlags(s.db)
+    s.balanceAntes = readBalance(s.db)
+
+    // 2 ── El preexistente de prod: «Balance Total» sin slug ni etiquetas,
+    //      como lo dejó 1776600000 (su backfill nunca casó). Se clona una fila
+    //      oficial y se le cambian nombre e identidad.
+    const cols = sqlQuery(s.db, 'PRAGMA table_info(programs)').map(c => c.name)
+    s.btId = 'bt717_' + Date.now().toString(36)
+    const select = cols.map(c => {
+      if (c === 'id') return sqlStr(s.btId)
+      if (c === 'name') return sqlStr(JSON.stringify({ es: 'Intermedio – Balance Total', en: 'Intermediate – Total Balance' }))
+      if (c === 'slug' || c === 'content_hash' || c === 'goal_type' || c === 'intensity') return "''"
+      if (c === 'days_per_week' || c === 'sort_order' || c === 'for_women') return '0'
+      if (c === 'equipment_required' || c === 'contraindications') return "'[]'"
+      if (c === 'is_official' || c === 'is_featured') return '1'
+      return `\`${c}\``
+    }).join(', ')
+    sqlExec(s.db, `INSERT INTO programs (${cols.map(c => `\`${c}\``).join(', ')}) SELECT ${select} FROM programs WHERE slug = 'intermedio-hipertrofia' AND is_official = 1;`)
+
+    // 3 ── Segunda pasada: el mismo cuerpo bajo otro timestamp.
+    const again = '1789300001_for_women_again.js'
+    writeFileSync(join(s.migDir, again), readFileSync(join(REPO_MIGRATIONS, FOR_WOMEN_MIGRATION), 'utf8'), 'utf8')
+    s.salida2 = migrateUp(s.dataDir, s.migDir)
+    s.balanceDespues = readBalance(s.db)
+    s.flags2 = readFlags(s.db)
+
+    // 4 ── Tercera pasada: ya no hay nada que tocar.
+    const third = '1789300002_for_women_third.js'
+    writeFileSync(join(s.migDir, third), readFileSync(join(REPO_MIGRATIONS, FOR_WOMEN_MIGRATION), 'utf8'), 'utf8')
+    s.salida3 = migrateUp(s.dataDir, s.migDir)
+    s.balanceTercera = readBalance(s.db)
+  }, 300_000)
+
+  afterAll(() => {
+    if (s.tmp) rmSync(s.tmp, { recursive: true, force: true })
+  })
+
+  it('crea los dos campos y etiqueta los 15 oficiales como SKELETONS', () => {
+    expect(s.salida1).toMatch(/\[programs_for_women_sort_order\] campos añadidos: 2/)
+    expect(s.salida1).toMatch(/\[programs_for_women_sort_order\] 15 filas etiquetadas de 15/)
+    expect(Object.keys(s.flags)).toHaveLength(15)
+    for (const sk of SKELETONS) {
+      expect(s.flags[sk.slug], sk.slug).toEqual({ for_women: sk.for_women ? 1 : 0, sort_order: sk.sort_order })
+    }
+  })
+
+  it('en una instalación limpia no hay Balance Total y lo dice', () => {
+    expect(s.balanceAntes).toHaveLength(0)
+    expect(s.salida1).toMatch(/Balance Total: 0 fila\(s\)/)
+  })
+
+  it('al preexistente le pone slug, goal_type maintain y el resto de etiquetas', () => {
+    expect(s.salida2).toMatch(/Balance Total: 1 fila\(s\)/)
+    expect(s.balanceDespues).toHaveLength(1)
+    const bt = s.balanceDespues[0]
+    expect(bt.slug).toBe('intermedio-balance-total')
+    expect(bt.goal_type).toBe('maintain')
+    expect(bt.intensity).toBe('moderate')
+    expect(Number(bt.days_per_week)).toBe(6)
+    expect(JSON.parse(bt.equipment_required)).toEqual(['pull_bar', 'parallel_bars', 'bands'])
+    expect(JSON.parse(bt.contraindications)).toEqual(['lower_back'])
+    expect(Number(bt.for_women)).toBe(0)
+    expect(Number(bt.sort_order)).toBe(55)
+  })
+
+  it('con Balance Total etiquetado, intermedio + mantener tiene primary', () => {
+    const bt = s.balanceDespues[0]
+    const withBalance = [...CATALOG, {
+      id: bt.slug, name: 'Intermediate – Total Balance', description: '', duration_weeks: 12,
+      difficulty: 'intermediate', goal_type: bt.goal_type, intensity: bt.intensity,
+      days_per_week: Number(bt.days_per_week), equipment_required: JSON.parse(bt.equipment_required),
+      contraindications: JSON.parse(bt.contraindications), is_official: true,
+      for_women: Number(bt.for_women) === 1, sort_order: Number(bt.sort_order),
+    }]
+    for (const sex of ['female', 'male', undefined]) {
+      expect(matchUserToPrograms({ level: 'intermedio', primary_goal: 'mantener', sex }, withBalance).primary?.id).toBe('intermedio-balance-total')
+    }
+  })
+
+  it('la segunda y la tercera pasada no tocan los 15, y la tercera tampoco a Balance Total', () => {
+    expect(s.salida2).toMatch(/\[programs_for_women_sort_order\] campos añadidos: 0/)
+    expect(s.salida2).toMatch(/\[programs_for_women_sort_order\] 0 filas etiquetadas de 15/)
+    // Balance Total ya lleva slug tras la segunda pasada y entra en el listado.
+    const { 'intermedio-balance-total': _bt, ...flags2SinBalance } = s.flags2
+    expect(flags2SinBalance).toEqual(s.flags)
+    expect(s.salida3).toMatch(/Balance Total: 0 fila\(s\)/)
+    expect(s.balanceTercera).toEqual(s.balanceDespues)
   })
 })
 

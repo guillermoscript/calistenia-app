@@ -426,6 +426,8 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
       : undefined,
     is_official:    p.is_official || false,
     is_featured:    p.is_featured || false,
+    for_women:      p.for_women || false,
+    sort_order:     typeof p.sort_order === 'number' ? p.sort_order : undefined,
     visibility:     p.visibility || undefined,
     difficulty:     p.difficulty || undefined,
     cover_image:    p.cover_image || undefined,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchUserToPrograms, inferGoalType, LEVEL_TO_DIFFICULTY } from './matchPrograms'
+import { matchUserToPrograms, inferGoalType, rankCandidates, LEVEL_TO_DIFFICULTY } from './matchPrograms'
 import type { ProgramMeta } from '../types'
 
 const P = (overrides: Partial<ProgramMeta>): ProgramMeta => ({
@@ -221,5 +221,126 @@ describe('matchUserToPrograms — penalties', () => {
     }, catalog)
     const penalties = r.penalties.get('i-maint') || []
     expect(penalties).not.toContain('high_frequency')
+  })
+})
+
+// ─── #717: sexo y desempate determinista ─────────────────────────────────────
+
+const LEVELS = ['principiante', 'intermedio', 'avanzado'] as const
+const GOALS = ['perder_grasa', 'ganar_musculo', 'mantener'] as const
+const SEXES = ['female', 'male', undefined] as const
+
+/** Los 9 genéricos + una variante «Mujer ·» en tres celdas, como el catálogo real. */
+const catalog717: ProgramMeta[] = [
+  ...catalog.map(p => ({ ...p, is_official: true })),
+  P({ id: 'w-gain', name: 'Women · Glutes', difficulty: 'beginner', goal_type: 'muscle_gain', is_official: true, for_women: true }),
+  P({ id: 'w-maint', name: 'Women · Toning', difficulty: 'beginner', goal_type: 'maintain', is_official: true, for_women: true }),
+  P({ id: 'w-i-gain', name: 'Women · Strength', difficulty: 'intermediate', goal_type: 'muscle_gain', is_official: true, for_women: true }),
+]
+
+function shuffled<T>(list: T[], seed: number): T[] {
+  const out = [...list]
+  let s = seed
+  for (let i = out.length - 1; i > 0; i--) {
+    s = (s * 1103515245 + 12345) % 2147483648
+    const j = s % (i + 1)
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+describe('matchUserToPrograms — sexo (#717)', () => {
+  it('usuaria principiante + ganar músculo recibe la variante «Mujer ·»', () => {
+    const r = matchUserToPrograms({ level: 'principiante', primary_goal: 'ganar_musculo', sex: 'female' }, catalog717)
+    expect(r.primary?.id).toBe('w-gain')
+  })
+
+  it('usuario principiante + ganar músculo recibe el genérico', () => {
+    const r = matchUserToPrograms({ level: 'principiante', primary_goal: 'ganar_musculo', sex: 'male' }, catalog717)
+    expect(r.primary?.id).toBe('b-gain')
+  })
+
+  it('sin sexo (no pasó por básicos) recibe el genérico', () => {
+    const r = matchUserToPrograms({ level: 'principiante', primary_goal: 'ganar_musculo' }, catalog717)
+    expect(r.primary?.id).toBe('b-gain')
+  })
+
+  it('usuaria en una celda sin variante recibe el genérico, no null', () => {
+    const r = matchUserToPrograms({ level: 'avanzado', primary_goal: 'perder_grasa', sex: 'female' }, catalog717)
+    expect(r.primary?.id).toBe('a-fat')
+  })
+
+  it('las tres celdas con variante la dan a la usuaria y el genérico al resto', () => {
+    const cases: Array<[typeof LEVELS[number], typeof GOALS[number], string, string]> = [
+      ['principiante', 'ganar_musculo', 'w-gain', 'b-gain'],
+      ['principiante', 'mantener', 'w-maint', 'b-maint'],
+      ['intermedio', 'ganar_musculo', 'w-i-gain', 'i-gain'],
+    ]
+    for (const [level, primary_goal, women, generic] of cases) {
+      expect(matchUserToPrograms({ level, primary_goal, sex: 'female' }, catalog717).primary?.id).toBe(women)
+      expect(matchUserToPrograms({ level, primary_goal, sex: 'male' }, catalog717).primary?.id).toBe(generic)
+      expect(matchUserToPrograms({ level, primary_goal }, catalog717).primary?.id).toBe(generic)
+    }
+  })
+})
+
+describe('matchUserToPrograms — desempate determinista (#717)', () => {
+  it('cada nivel × objetivo × sexo tiene primary, y no depende del orden de la lista', () => {
+    for (const level of LEVELS) {
+      for (const primary_goal of GOALS) {
+        for (const sex of SEXES) {
+          const user = { level, primary_goal, sex }
+          const ref = matchUserToPrograms(user, catalog717).primary
+          expect(ref, `${level} × ${primary_goal} × ${sex}`).not.toBeNull()
+          for (const seed of [1, 7, 42]) {
+            expect(matchUserToPrograms(user, shuffled(catalog717, seed)).primary?.id).toBe(ref!.id)
+          }
+          expect(matchUserToPrograms(user, [...catalog717].reverse()).primary?.id).toBe(ref!.id)
+        }
+      }
+    }
+  })
+
+  it('un oficial gana a un programa de la comunidad de la misma celda aunque vaya después', () => {
+    const community = P({ id: 'zz-community', name: 'AAA mi rutina', difficulty: 'beginner', goal_type: 'fat_loss', is_official: false, is_featured: true })
+    const r = matchUserToPrograms({ level: 'principiante', primary_goal: 'perder_grasa' }, [community, ...catalog717])
+    expect(r.primary?.id).toBe('b-fat')
+  })
+
+  it('a igual sexo, gana el destacado; a igual destacado, el sort_order más bajo; sin sort_order, el nombre', () => {
+    const cell = [
+      P({ id: 'c', name: 'Charlie', difficulty: 'beginner', goal_type: 'fat_loss', is_official: true }),
+      P({ id: 'b', name: 'Bravo', difficulty: 'beginner', goal_type: 'fat_loss', is_official: true, sort_order: 20 }),
+      P({ id: 'a', name: 'Alpha', difficulty: 'beginner', goal_type: 'fat_loss', is_official: true, sort_order: 30 }),
+      P({ id: 'f', name: 'Zulu', difficulty: 'beginner', goal_type: 'fat_loss', is_official: true, is_featured: true }),
+    ]
+    const user = { level: 'principiante', primary_goal: 'perder_grasa' }
+    expect(matchUserToPrograms(user, cell).primary?.id).toBe('f')
+    expect(matchUserToPrograms(user, cell.filter(p => p.id !== 'f')).primary?.id).toBe('b')
+    expect(matchUserToPrograms(user, cell.filter(p => p.id !== 'f' && p.id !== 'b')).primary?.id).toBe('a')
+    expect(matchUserToPrograms(user, cell.filter(p => !p.sort_order && !p.is_featured)).primary?.id).toBe('c')
+  })
+
+  it('la afinidad de sexo manda sobre el destacado', () => {
+    const cell = [
+      P({ id: 'g', name: 'Generic', difficulty: 'beginner', goal_type: 'fat_loss', is_official: true, is_featured: true }),
+      P({ id: 'w', name: 'Women', difficulty: 'beginner', goal_type: 'fat_loss', is_official: true, for_women: true }),
+    ]
+    expect(matchUserToPrograms({ level: 'principiante', primary_goal: 'perder_grasa', sex: 'female' }, cell).primary?.id).toBe('w')
+    expect(matchUserToPrograms({ level: 'principiante', primary_goal: 'perder_grasa', sex: 'male' }, cell).primary?.id).toBe('g')
+  })
+
+  it('rankCandidates devuelve una copia y no reordena la lista de entrada', () => {
+    const input = [catalog717[1], catalog717[0]]
+    const before = input.map(p => p.id)
+    rankCandidates(input, { sex: 'female' })
+    expect(input.map(p => p.id)).toEqual(before)
+  })
+
+  it('el skill track secundario tampoco depende del orden', () => {
+    const user = { level: 'principiante', primary_goal: 'ganar_musculo', focus_areas: ['pull_up'] }
+    const ref = matchUserToPrograms(user, catalog717).secondary?.id
+    expect(ref).toBe('sk-pull')
+    expect(matchUserToPrograms(user, [...catalog717].reverse()).secondary?.id).toBe(ref)
   })
 })

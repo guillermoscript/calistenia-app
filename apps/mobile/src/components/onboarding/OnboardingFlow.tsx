@@ -305,6 +305,9 @@ export function OnboardingFlow() {
     injuries: health.injuries.length ? health.injuries : savedHealth.injuries,
     medical_conditions: health.medical_conditions.length ? health.medical_conditions : savedHealth.medical_conditions,
     primary_goal: goals.primary_goal || (user as Record<string, unknown>)?.primary_goal as string | undefined,
+    // Del estado del formulario y no de `users` (#717): el sexo es PII y vive
+    // en `nutrition_goals` (#676). Sin paso de básicos, programa genérico.
+    sex: basics.sex || undefined,
   }
 
   return (

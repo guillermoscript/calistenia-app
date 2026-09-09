@@ -375,6 +375,10 @@ export default function OnboardingFlow({
               weight: user?.weight,
               goal_weight: user?.goal_weight,
               primary_goal: goals.primary_goal || user?.primary_goal,
+              // Del estado del formulario y no de `users` (#717): el sexo es
+              // PII y vive en `nutrition_goals` (#676). Quien no pasó por el
+              // paso de básicos recibe el programa genérico de su celda.
+              sex: basics.sex || undefined,
               focus_areas: user?.focus_areas,
               training_days: user?.training_days,
               injuries: health.injuries.length ? health.injuries : savedHealth.injuries,
