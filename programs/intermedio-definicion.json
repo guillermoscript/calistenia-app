@@ -84,7 +84,7 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Inclínate ligeramente al frente para más pecho. Si no llegas a 8, apoya la punta de un pie en el suelo.",
+              "note": "Inclínate ligeramente al frente para más pecho. Si no llegas a 8, apoya la punta de un pie en el suelo. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "dips_parallel"
             },
             {
@@ -343,7 +343,7 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pausa de 3 s abajo, mantener tensión, subir sin rebote",
+              "note": "Pausa de 3 s abajo, mantener tensión, subir sin rebote. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "squat_pause"
             },
             {
@@ -503,7 +503,7 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Rango completo, codos a 90°",
+              "note": "Rango completo, codos a 90°. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "dips_parallel"
             },
             {
@@ -605,16 +605,16 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Saltos de Tijera",
-              "muscles": "Cardio, activación general",
+              "name": "Rodillas Altas",
+              "muscles": "Cardio, core, flexores cadera",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Subir frecuencia cardíaca progresivamente",
-              "exercise_id": "jumping_jacks"
+              "note": "Marcha en el sitio con rodillas altas, sin saltar: subir pulsaciones progresivamente",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 2,
@@ -644,6 +644,19 @@
             },
             {
               "sort_order": 4,
+              "name": "Rutina de Movilidad de Muñecas",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "note": "Muñecas listas para apoyar las manos",
+              "exercise_id": "wrist_mobility"
+            },
+            {
+              "sort_order": 5,
               "name": "Zancada Estática (Split Squat)",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
@@ -655,7 +668,7 @@
               "exercise_id": "split_squats"
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "name": "Subida al Escalón",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
@@ -667,7 +680,7 @@
               "exercise_id": "step_up_2"
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "name": "Push-up Estándar",
               "muscles": "Pecho, tríceps, deltoides anterior",
               "sets": 3,
@@ -679,7 +692,7 @@
               "exercise_id": "pushup_std"
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Remo Australiano",
               "muscles": "Espalda media, bíceps",
               "sets": 3,
@@ -691,7 +704,7 @@
               "exercise_id": "australian_pullup"
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Abdominales en V",
               "muscles": "Core, recto abdominal",
               "sets": 3,
@@ -703,7 +716,7 @@
               "exercise_id": "v_ups"
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "name": "Hollow Body Hold",
               "muscles": "Core completo",
               "sets": 3,
@@ -716,7 +729,7 @@
               "exercise_id": "hollow_hold"
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Escaladores",
               "muscles": "Core, cardio, hombros",
               "sets": 3,
@@ -729,7 +742,7 @@
               "exercise_id": "mountain_climbers"
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Estiramiento en Pike",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,
@@ -742,7 +755,7 @@
               "exercise_id": "pike_stretch"
             },
             {
-              "sort_order": 12,
+              "sort_order": 13,
               "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera, psoas",
               "sets": 1,
@@ -755,7 +768,7 @@
               "exercise_id": "hip_flexor_stretch"
             },
             {
-              "sort_order": 13,
+              "sort_order": 14,
               "name": "Respiración Profunda",
               "muscles": "Recuperación general",
               "sets": 1,
@@ -833,7 +846,7 @@
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con remo australiano: 30 s y pasa al remo",
+              "note": "Superset con remo australiano: 30 s y pasa al remo. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "dips_parallel"
             },
             {
@@ -1017,7 +1030,7 @@
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Agarre supino, series rectas con 75 s. Si llegas a 8 en todas, en la fase 3 pasas a agarre ancho.",
+              "note": "Agarre supino, series rectas con 75 s. En la fase 3 el chin-up sigue igual con 60 s; es la dominada del superset la que pasa a agarre ancho.",
               "exercise_id": "chinup"
             },
             {
@@ -1128,7 +1141,7 @@
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con curl femoral deslizante. Pausa de 3 s abajo",
+              "note": "Superset con curl femoral deslizante. Pausa de 3 s abajo. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "squat_pause"
             },
             {
@@ -1288,7 +1301,7 @@
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con dominada ancha: 30 s y a la barra",
+              "note": "Superset con dominada ancha: 30 s y a la barra. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "dips_parallel"
             },
             {
@@ -1403,16 +1416,16 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Saltos de Tijera",
-              "muscles": "Cardio, activación general",
+              "name": "Rodillas Altas",
+              "muscles": "Cardio, core, flexores cadera",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Subir frecuencia cardíaca",
-              "exercise_id": "jumping_jacks"
+              "note": "Marcha en el sitio con rodillas altas, sin saltar: subir pulsaciones progresivamente",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 2,
@@ -1442,6 +1455,19 @@
             },
             {
               "sort_order": 4,
+              "name": "Rutina de Movilidad de Muñecas",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "note": "Muñecas listas para apoyar las manos",
+              "exercise_id": "wrist_mobility"
+            },
+            {
+              "sort_order": 5,
               "name": "Sentadilla Búlgara",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
@@ -1453,7 +1479,7 @@
               "exercise_id": "bulgarian"
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "name": "Subida al Escalón",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
@@ -1465,10 +1491,10 @@
               "exercise_id": "step_up_2"
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "name": "Push-up Estándar",
               "muscles": "Pecho, tríceps, deltoides anterior",
-              "sets": 3,
+              "sets": 2,
               "reps": "12-15",
               "rest_seconds": 45,
               "priority": "secondary",
@@ -1477,7 +1503,7 @@
               "exercise_id": "pushup_std"
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Hollow Body Hold",
               "muscles": "Core completo",
               "sets": 3,
@@ -1490,7 +1516,7 @@
               "exercise_id": "hollow_hold"
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Escaladores",
               "muscles": "Core, cardio, hombros",
               "sets": 3,
@@ -1503,7 +1529,7 @@
               "exercise_id": "mountain_climbers"
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "name": "Estiramiento en Pike",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,
@@ -1516,7 +1542,7 @@
               "exercise_id": "pike_stretch"
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera, psoas",
               "sets": 1,
@@ -1529,7 +1555,7 @@
               "exercise_id": "hip_flexor_stretch"
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Respiración Profunda",
               "muscles": "Recuperación general",
               "sets": 1,
@@ -1649,7 +1675,7 @@
               "sort_order": 8,
               "name": "Wall HSPU Negativas",
               "muscles": "Hombros, tríceps, core",
-              "sets": 3,
+              "sets": 2,
               "reps": "4-6",
               "rest_seconds": 60,
               "priority": "secondary",
@@ -1913,7 +1939,7 @@
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con curl femoral deslizante. Pausa de 3 s abajo",
+              "note": "Superset con curl femoral deslizante. Pausa de 3 s abajo. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "squat_pause"
             },
             {
@@ -2073,7 +2099,7 @@
               "rest_seconds": 30,
               "priority": "primary",
               "is_timer": false,
-              "note": "Superset con dominada: 30 s y a la barra",
+              "note": "Superset con dominada: 30 s y a la barra. Deja 1-2 repeticiones en reserva.",
               "exercise_id": "dips_parallel"
             },
             {
@@ -2188,16 +2214,16 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Saltos de Tijera",
-              "muscles": "Cardio, activación general",
+              "name": "Rodillas Altas",
+              "muscles": "Cardio, core, flexores cadera",
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Subir frecuencia cardíaca progresivamente",
-              "exercise_id": "jumping_jacks"
+              "note": "Marcha en el sitio con rodillas altas, sin saltar: subir pulsaciones progresivamente",
+              "exercise_id": "high_knees"
             },
             {
               "sort_order": 2,
@@ -2227,6 +2253,19 @@
             },
             {
               "sort_order": 4,
+              "name": "Rutina de Movilidad de Muñecas",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "note": "Muñecas listas para apoyar las manos",
+              "exercise_id": "wrist_mobility"
+            },
+            {
+              "sort_order": 5,
               "name": "Sentadilla Búlgara",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
@@ -2238,7 +2277,7 @@
               "exercise_id": "bulgarian"
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "name": "Subida al Escalón",
               "muscles": "Cuádriceps, glúteos",
               "sets": 3,
@@ -2250,10 +2289,10 @@
               "exercise_id": "step_up_2"
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "name": "Push-up Estándar",
               "muscles": "Pecho, tríceps, deltoides anterior",
-              "sets": 3,
+              "sets": 2,
               "reps": "15",
               "rest_seconds": 45,
               "priority": "secondary",
@@ -2262,7 +2301,7 @@
               "exercise_id": "pushup_std"
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Marcha del Oso",
               "muscles": "Full body, core, cardio",
               "sets": 3,
@@ -2275,7 +2314,7 @@
               "exercise_id": "bear_crawl"
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Hollow Body Hold",
               "muscles": "Core completo",
               "sets": 3,
@@ -2288,7 +2327,7 @@
               "exercise_id": "hollow_hold"
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "name": "Escaladores",
               "muscles": "Core, cardio, hombros",
               "sets": 3,
@@ -2301,7 +2340,7 @@
               "exercise_id": "mountain_climbers"
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento en Pike",
               "muscles": "Isquiotibiales, espalda baja",
               "sets": 1,
@@ -2314,7 +2353,7 @@
               "exercise_id": "pike_stretch"
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "name": "Estiramiento de Flexor de Cadera",
               "muscles": "Flexores de cadera, psoas",
               "sets": 1,
@@ -2327,7 +2366,7 @@
               "exercise_id": "hip_flexor_stretch"
             },
             {
-              "sort_order": 12,
+              "sort_order": 13,
               "name": "Respiración Profunda",
               "muscles": "Recuperación general",
               "sets": 1,
