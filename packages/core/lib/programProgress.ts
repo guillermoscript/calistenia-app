@@ -162,6 +162,23 @@ export interface ProgramProgressInput {
    */
   phaseOverride?: number | null
 }
+/**
+ * ¿Es `week` la semana de descarga de la fase `phaseNumber`? (#716)
+ *
+ * Lo es cuando la fase lleva `deloadLastWeek` y `week` es la ÚLTIMA de su
+ * rango `weeks`. Va por fase y no por «fase en curso» a propósito: la pantalla
+ * de entreno deja mirar otras fases, y la pregunta correcta para cada una es
+ * «¿estamos en TU última semana?», no «¿estamos en la última de la actual?».
+ * Sin rango reconocible no hay descarga: mejor la sesión entera que una
+ * reducción que nadie pidió.
+ */
+export function isDeloadWeek(phases: readonly Phase[], phaseNumber: number, week: number | null): boolean {
+  if (week === null || !Number.isFinite(week)) return false
+  const phase = phases.find(p => p.id === phaseNumber)
+  if (!phase?.deloadLastWeek) return false
+  const range = parsePhaseWeeks(phase.weeks)
+  return !!range && week === range.to
+}
 
 /** De dónde sale `currentPhase`, para que la UI pueda decir «automática». */
 export type PhaseSource = 'override' | 'derived' | 'fallback'
@@ -182,6 +199,12 @@ export interface ProgramProgress {
   /** Fase a usar en las claves `p{fase}_{día}`. Siempre >= 1. */
   currentPhase: number
   phaseSource: PhaseSource
+  /**
+   * La semana en curso es la de descarga de `currentPhase` (#716): última
+   * semana de una fase con `deloadLastWeek`. Nunca `true` antes de empezar ni
+   * con el programa terminado.
+   */
+  isDeloadWeek: boolean
   /** Ventana de la semana en curso (la última si el programa terminó). */
   weekWindow: WeekWindow | null
   /** Entrenos completados dentro de `weekWindow`, deduplicados. */
@@ -205,6 +228,7 @@ const EMPTY: ProgramProgress = {
   totalWeeks: 0,
   currentPhase: 1,
   phaseSource: 'fallback',
+  isDeloadWeek: false,
   weekWindow: null,
   sessionsThisWeek: 0,
   plannedThisWeek: 0,
@@ -335,6 +359,7 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
     totalWeeks: windows.length,
     currentPhase: phase,
     phaseSource: source,
+    isDeloadWeek: hasStarted && !isCompleted && isDeloadWeek(phases, phase, currentWeek),
     weekWindow: activeWindow,
     sessionsThisWeek,
     plannedThisWeek,

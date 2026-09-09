@@ -4913,6 +4913,8 @@
   "programProgress.programCompleted": "Programa completado",
   "programProgress.thisWeek": "{{done}} de {{planned}} esta semana",
   "programProgress.weekDone": "Semana completada",
+  "programProgress.deloadWeek": "Semana de descarga",
+  "programProgress.deloadHint": "Mitad de series: recupera sin perder el ritmo",
   "progression.suggestedReps": "Sugerido: {{sets}}×{{reps}}",
   "progression.suggestedSeconds": "Sugerido: {{sets}}×{{seconds}} s",
   "progression.tryVariant": "Prueba: {{name}}",

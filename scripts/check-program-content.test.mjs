@@ -515,12 +515,20 @@ describe('checkProgram — descarga prometida sin codificar (L4, #716 / #715)', 
     expect(findingsFor(result, 'deload_promise').some(f => f.message.includes('promete una descarga y ninguna fase la codifica'))).toBe(true)
   })
 
-  it('con `day_type: "deload"` en un día, la promesa queda codificada y no dispara', () => {
+  it('con `deload_last_week: true` en una fase, la promesa queda codificada y no dispara', () => {
+    const doc = baseProgram()
+    doc.program.instructions.es = 'Sube el peso cada semana. Incluye una semana de descarga al final del bloque.'
+    doc.phases[0].deload_last_week = true
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'deload_promise')).toEqual([])
+  })
+
+  it('un `day_type: "deload"` NO cuenta: el motor no lo implementa (#716)', () => {
     const doc = baseProgram()
     doc.program.instructions.es = 'Sube el peso cada semana. Incluye una semana de descarga al final del bloque.'
     doc.phases[0].days[0].day_type = 'deload'
     const result = checkProgram(SLUG, doc)
-    expect(findingsFor(result, 'deload_promise')).toEqual([])
+    expect(findingsFor(result, 'deload_promise').length).toBe(1)
   })
 })
 

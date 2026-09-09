@@ -322,6 +322,12 @@ export default function TodayScreen() {
                   {activeProgram.name}{phaseMeta ? ` · ${t('workout.phaseLabel', { phase })}` : ''}
                   {canTrainToday && !doneToday ? ` · ${t('workout.exerciseCount', { count: workout!.exercises.length })}` : ''}
                 </Text>
+                {/* #716: el día ya viene con la mitad de series (`workout.deload`). */}
+                {!!workout?.deload && canTrainToday && !doneToday && (
+                  <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-lime">
+                    {t('programProgress.deloadWeek')} · {t('programProgress.deloadHint')}
+                  </Text>
+                )}
                 {isResume && !doneToday && (
                   <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-lime">
                     {t('warmupCooldown.transitions.continue')}

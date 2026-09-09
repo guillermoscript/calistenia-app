@@ -87,6 +87,7 @@ migrate((app) => {
         weeks: phase.weeks,
         color: phase.color,
         sort_order: phase.sort_order,
+        deload_last_week: phase.deload_last_week === true,
       })
 
       for (let di = 0; di < phase.days.length; di++) {

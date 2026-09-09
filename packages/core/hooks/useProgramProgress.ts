@@ -27,10 +27,12 @@ import { qk } from '../lib/query-keys'
 import {
   completedWorkoutsFromProgress,
   computeProgramProgress,
+  isDeloadWeek,
   type ProgramProgress,
 } from '../lib/programProgress'
+import { applyDeload } from '../lib/deload'
 import type { ActiveEnrollment } from './usePrograms'
-import type { Phase, ProgramMeta, ProgressMap, WeekDay } from '../types'
+import type { Phase, ProgramMeta, ProgressMap, WeekDay, Workout } from '../types'
 
 export interface UseProgramProgressArgs {
   userId: string | null
@@ -133,4 +135,34 @@ export function useProgramProgress({
   }, [userId, enrollmentId, shouldClose, qc])
 
   return { programProgress, setPhaseOverride }
+}
+
+/**
+ * `getWorkout` con la semana de descarga aplicada (#716).
+ *
+ * Envuelve el `getWorkout` de `usePrograms`, que no puede saber en qué semana
+ * está el usuario: la semana sale de `programProgress`, que se calcula DESPUÉS
+ * con las fases que `usePrograms` devuelve. Va aquí y no en cada contexto para
+ * que web y móvil no lleven dos copias.
+ *
+ * Los resultados se cachean por clave `p{fase}_{día}` mientras no cambien las
+ * entradas: `WorkoutPage` llama a `getWorkout` en cada render y varios efectos
+ * dependen de la identidad del `Workout` (el evento `workout_day_viewed`, la
+ * duración estimada). Devolver un objeto nuevo cada vez los dispararía en bucle.
+ */
+export function useDeloadGetWorkout(
+  getWorkout: (phaseNumber: number, dayId: string) => Workout | null,
+  phases: Phase[],
+  programProgress: Pick<ProgramProgress, 'currentWeek' | 'isCompleted' | 'hasStarted'>,
+): (phaseNumber: number, dayId: string) => Workout | null {
+  const week = programProgress.hasStarted && !programProgress.isCompleted ? programProgress.currentWeek : null
+  const cache = useMemo(() => new Map<string, Workout | null>(), [getWorkout, phases, week])
+  return useCallback((phaseNumber: number, dayId: string) => {
+    const key = `p${phaseNumber}_${dayId}`
+    if (cache.has(key)) return cache.get(key)!
+    const raw = getWorkout(phaseNumber, dayId)
+    const out = raw && isDeloadWeek(phases, phaseNumber, week) ? applyDeload(raw) : raw
+    cache.set(key, out)
+    return out
+  }, [cache, getWorkout, phases, week])
 }

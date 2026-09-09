@@ -93,6 +93,7 @@ function toPhases(rows: RecordModel[]): Phase[] {
     weeks: String(ph.weeks ?? ""),
     color: String(ph.color ?? ""),
     bg: String(ph.bg_color ?? ""),
+    deloadLastWeek: ph.deload_last_week === true,
   }));
 }
 

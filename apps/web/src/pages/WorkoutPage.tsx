@@ -307,6 +307,15 @@ export default function WorkoutPage() {
                   {t('workout.phaseLabel', { phase: selectedPhase })} · {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.nameKey ? t(d.nameKey) : d?.name ?? '' })().toUpperCase()} · {t('workout.exerciseCount', { count: workout.exercises.length })}{workoutDuration > 0 ? ` · ~${workoutDuration} ${t('common.minutes')}` : ''}
                 </div>
                 <div className="font-bebas text-[26px] md:text-[32px] leading-none">{workout.title}</div>
+                {/* #716: el día ya viene con la mitad de series (`workout.deload`). */}
+                {workout.deload && (
+                  <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-md bg-[hsl(var(--lime))]/15 text-[hsl(var(--lime))] font-mono text-[10px] tracking-widest uppercase">
+                      {t('programProgress.deloadWeek')}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">{t('programProgress.deloadHint')}</span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2.5 flex-wrap w-full md:w-auto">
                 {!isDone && (
