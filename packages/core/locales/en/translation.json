@@ -4913,6 +4913,8 @@
   "programProgress.programCompleted": "Program completed",
   "programProgress.thisWeek": "{{done}} of {{planned}} this week",
   "programProgress.weekDone": "Week complete",
+  "programProgress.deloadWeek": "Deload week",
+  "programProgress.deloadHint": "Half the sets: recover without losing the rhythm",
   "progression.suggestedReps": "Suggested: {{sets}}×{{reps}}",
   "progression.suggestedSeconds": "Suggested: {{sets}}×{{seconds}}s",
   "progression.tryVariant": "Try: {{name}}",

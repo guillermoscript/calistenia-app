@@ -23,7 +23,7 @@ export default function ProgramProgressBar({ progress, className, compact = fals
   const { t } = useTranslation()
   if (progress.totalWeeks <= 0) return null
 
-  const { currentWeek, totalWeeks, percent, sessionsThisWeek, plannedThisWeek, isCompleted, hasStarted } = progress
+  const { currentWeek, totalWeeks, percent, sessionsThisWeek, plannedThisWeek, isCompleted, hasStarted, isDeloadWeek } = progress
   // Antes de empezar `currentWeek` es null: la etiqueta lo dice en vez de
   // inventarse una «Semana 0».
   const label = isCompleted
@@ -74,6 +74,18 @@ export default function ProgramProgressBar({ progress, className, compact = fals
           style={{ width: `${percent}%` }}
         />
       </View>
+      {/* #716: última semana de una fase con descarga. El motor ya sirve la
+          mitad de series; esto solo lo anuncia. */}
+      {isDeloadWeek && (
+        <View className="mt-1.5 flex-row items-baseline gap-2">
+          <Text className="font-mono text-[10px] uppercase tracking-widest text-lime">
+            {t('programProgress.deloadWeek')}
+          </Text>
+          {!compact && (
+            <Text className="text-[11px] text-muted-foreground">{t('programProgress.deloadHint')}</Text>
+          )}
+        </View>
+      )}
     </View>
   )
 }

@@ -50,6 +50,8 @@ function buildPhases(phaseRecords: RecordModel[]): Phase[] {
       weeks: p.weeks,
       color: p.color,
       bg:    p.bg_color,
+      // #716: ausente en filas anteriores a la migración y en la caché en disco.
+      deloadLastWeek: p.deload_last_week === true,
     }))
 }
 
@@ -819,6 +821,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           data: {
             program: newProgram.id, phase_number: p.phase_number, name: p.name,
             weeks: p.weeks, color: p.color, bg_color: p.bg_color, sort_order: p.sort_order,
+            deload_last_week: p.deload_last_week === true,
           } as Record<string, unknown>,
         })),
         ...srcDayConfigs.map(dc => {

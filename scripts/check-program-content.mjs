@@ -20,9 +20,12 @@
  * paralelo; con `--strict` las de `STRICT_RULES` pasan a ERROR. Cuando #719-#733
  * estén mergeadas, `--strict` es el modo de CI (PR de cierre de #711).
  *
- * Descarga (#716): se reconoce `deload_last_week: true` en la fase (opción A)
- * o `day_type: 'deload'` en un día (opción B). Una issue de contenido que
- * prometa descarga en `instructions` debe codificarla así o quitar la promesa.
+ * Descarga (#716, decidido e implementado): `deload_last_week: true` en la fase
+ * es la ÚNICA codificación. El motor sirve la mitad de series en la última
+ * semana del rango `weeks` de esa fase y las pantallas lo anuncian. Un
+ * `day_type: 'deload'` NO existe en el motor: aquí ya no cuenta como descarga.
+ * Una issue de contenido (#719-#733) que prometa descarga en `instructions`
+ * debe (a) poner el flag en las fases donde la promete o (b) quitar la promesa.
  *
  * Cada hallazgo lleva un `rule` estable (ver `STRICT_RULES` y los ids de cada
  * llamada) para que `--json` se pueda filtrar por programa y regla.
@@ -316,7 +319,6 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
       // El id del ejercicio anterior EN ORDEN, para la comprobación 2b.
       let previousId = null
       const dayType = String(day.day_type ?? '').toLowerCase()
-      if (dayType === 'deload') { lp.deload = true; anyDeloadEncoded = true }
       if (dayType === 'circuit') lp.cardioBlocks++
       const ld = { label: `fase ${pn} · ${day.day_id}`, weekday: WEEKDAY_INDEX[String(day.day_id ?? '').toLowerCase()], push: 0, vpull: 0, patterns: new Set() }
       lp.days.push(ld)
@@ -582,7 +584,7 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
 
   // L4 — Promesa de descarga sin codificar (#716).
   if (instr && DELOAD_RE.test(textOf(instr)) && !anyDeloadEncoded) {
-    logic('deload_promise', `instructions promete una descarga y ninguna fase la codifica (deload_last_week en la fase o day_type "deload") — codifícala o quita la promesa`)
+    logic('deload_promise', `instructions promete una descarga y ninguna fase la codifica (deload_last_week: true en la fase) — codifícala o quita la promesa`)
   }
 
   // L5 — fat_loss: cardio real y párrafo de nutrición (#718).

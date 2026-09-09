@@ -3,7 +3,7 @@ import { createContext, use, useCallback, useEffect, useMemo, type ReactNode } f
 import { useTranslation } from 'react-i18next'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms, type ActiveEnrollment } from '@calistenia/core/hooks/usePrograms'
-import { useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
+import { useDeloadGetWorkout, useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
 import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, CircuitDefinition, ExerciseTiming } from '@calistenia/core/types'
@@ -94,7 +94,7 @@ interface WorkoutProviderProps {
 
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
-    programs, activeProgram, activeEnrollment, phases, weekDays, cardioDayConfigs, circuitDayConfigs, getWorkout,
+    programs, activeProgram, activeEnrollment, phases, weekDays, cardioDayConfigs, circuitDayConfigs, getWorkout: rawGetWorkout,
     selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
@@ -110,6 +110,11 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     userId, activeProgram, activeEnrollment, phases, weekDays, progress,
     settingsPhase: settings.phase,
   })
+
+  // #716: en la última semana de una fase con `deload_last_week` el día sale
+  // con la mitad de series y `workout.deload`. Se envuelve AQUÍ, después de
+  // saber la semana, y es lo que reciben todos los consumidores del día.
+  const getWorkout = useDeloadGetWorkout(rawGetWorkout, phases, programProgress)
 
   // Wrap logSet to auto-detect PRs
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string): Promise<PREvent | null> => {

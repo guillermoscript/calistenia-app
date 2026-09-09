@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   computeProgramProgress,
   dayIdFromDateStr,
+  isDeloadWeek,
   parsePhaseWeeks,
   phaseForWeek,
   resolvePhase,
@@ -323,5 +324,49 @@ describe('computeProgramProgress', () => {
     const r = computeProgramProgress(input({ today: '2026-06-04', weekDays: allRest }))
     expect(r.plannedThisWeek).toBe(0)
     expect(r.nextDay).toBeNull()
+  })
+})
+
+describe('isDeloadWeek (#716)', () => {
+  const WITH_DELOAD: Phase[] = [
+    { ...PHASES[0], deloadLastWeek: true },
+    PHASES[1],
+    { ...PHASES[2], deloadLastWeek: true },
+  ]
+
+  it('solo la última semana del rango de una fase con el flag', () => {
+    expect(isDeloadWeek(WITH_DELOAD, 1, 4)).toBe(true)
+    expect(isDeloadWeek(WITH_DELOAD, 1, 3)).toBe(false)
+    expect(isDeloadWeek(WITH_DELOAD, 1, 5)).toBe(false)
+    expect(isDeloadWeek(WITH_DELOAD, 3, 12)).toBe(true)
+  })
+
+  it('una fase sin flag nunca descarga, aunque sea su última semana', () => {
+    expect(isDeloadWeek(WITH_DELOAD, 2, 8)).toBe(false)
+    expect(isDeloadWeek(PHASES, 1, 4)).toBe(false)
+  })
+
+  it('va por la fase preguntada, no por la fase en curso', () => {
+    // Semana 4: la fase 1 descarga; mirar la fase 3 desde la pestaña no.
+    expect(isDeloadWeek(WITH_DELOAD, 3, 4)).toBe(false)
+  })
+
+  it('sin semana, sin fase o sin rango reconocible: false', () => {
+    expect(isDeloadWeek(WITH_DELOAD, 1, null)).toBe(false)
+    expect(isDeloadWeek(WITH_DELOAD, 9, 4)).toBe(false)
+    expect(isDeloadWeek([{ ...PHASES[0], weeks: 'todas', deloadLastWeek: true }], 1, 4)).toBe(false)
+  })
+
+  it('computeProgramProgress lo expone para la semana en curso', () => {
+    // W4 = 24–30 jun (fase 1 acaba en la 4); W5 empieza el 1 jul.
+    expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-06-25' })).isDeloadWeek).toBe(true)
+    expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-06-20' })).isDeloadWeek).toBe(false)
+    expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-07-01' })).isDeloadWeek).toBe(false)
+  })
+
+  it('nunca antes de empezar ni con el programa terminado', () => {
+    expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-05-01' })).isDeloadWeek).toBe(false)
+    // Terminado: currentWeek se queda en 12 (última de la fase 3, con flag), pero no descarga.
+    expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-09-01' })).isDeloadWeek).toBe(false)
   })
 })

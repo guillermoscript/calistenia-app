@@ -363,6 +363,10 @@ export function buildPayload({ entry, file, data }) {
       weeks: phase.weeks,
       color: phase.color || '',
       sort_order: phase.phase_number,
+      // #716: la última semana del rango es de descarga. Solo cuando está
+      // puesto, para que los programas que no lo usan no cambien de payload (ni
+      // de `content_hash`, ni la siembra 1786100000 que vigila `--check`).
+      ...(phase.deload_last_week === true ? { deload_last_week: true } : {}),
       days,
     }
   })
@@ -481,6 +485,7 @@ migrate((app) => {
         weeks: phase.weeks,
         color: phase.color,
         sort_order: phase.sort_order,
+        deload_last_week: phase.deload_last_week === true,
       })
 
       for (let di = 0; di < phase.days.length; di++) {
@@ -729,8 +734,8 @@ migrate((app) => {
         // que es exactamente el formato de id de PocketBase.
         app.db()
           .newQuery(
-            "INSERT INTO program_phases (program, phase_number, name, weeks, color, sort_order) " +
-            "VALUES ({:program}, {:phase_number}, {:name}, {:weeks}, {:color}, {:sort_order})"
+            "INSERT INTO program_phases (program, phase_number, name, weeks, color, sort_order, deload_last_week) " +
+            "VALUES ({:program}, {:phase_number}, {:name}, {:weeks}, {:color}, {:sort_order}, {:deload_last_week})"
           )
           .bind({
             program: programId,
@@ -739,6 +744,8 @@ migrate((app) => {
             weeks: phase.weeks,
             color: phase.color,
             sort_order: phase.sort_order,
+            // #716. La columna la crea 1786099990, anterior a toda resiembra.
+            deload_last_week: phase.deload_last_week === true ? 1 : 0,
           })
           .execute()
         nPhases++

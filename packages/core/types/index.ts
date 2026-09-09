@@ -61,6 +61,12 @@ export interface Workout {
   day: DayId
   title: string
   exercises: Exercise[]
+  /**
+   * `true` cuando `applyDeload` (#716) ya ha reducido las series: la semana en
+   * curso es la última de una fase con `deload_last_week`. Las pantallas lo
+   * usan para el badge «Semana de descarga»; no lo pone ningún dato de PB.
+   */
+  deload?: boolean
 }
 
 /** Keyed as `p${phase}_${day}`, e.g. "p1_lun" */
@@ -73,6 +79,11 @@ export interface Phase {
   weeks: string
   color: string
   bg: string
+  /**
+   * `program_phases.deload_last_week` (#716): la última semana del rango
+   * `weeks` es de descarga. Ausente = `false`.
+   */
+  deloadLastWeek?: boolean
 }
 
 export interface CardioDayConfig {

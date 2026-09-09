@@ -1256,6 +1256,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             color: phase.color || "",
             bg_color: phase.bg_color || "",
             sort_order: phase.sort_order,
+            deload_last_week: phase.deload_last_week === true,
           });
         }
 
