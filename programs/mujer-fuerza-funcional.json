@@ -13,7 +13,7 @@
     ],
     "color": "#F472B6",
     "instructions": {
-      "es": "Progresión: sube 1 repetición por serie y por semana, dentro del rango de la fase y sin salirte de él por arriba. Cuando llegues al tope del rango en todas las series dos semanas seguidas, pasa a la variante más exigente que te sugiere la nota del ejercicio (de dominada asistida con banda a dominada estricta, de dip con banda a dip libre, de pistol con apoyo a pistol libre). Descarga: la última semana de la fase 1 y de la fase 2 —las semanas 4 y 8— es de descarga y la app te reduce las series a la mitad automáticamente. La fase 3 cierra el ciclo sin descarga: cuando termines, tómate 5-7 días suaves antes de empezar otro bloque. Las dos habilidades que da nombre al programa se entrenan dos veces por semana de principio a fin. La dominada empieza en negativas y asistida con banda y acaba en 4×4-6 estrictas; el dip empieza asistido con banda en la semana 1, pasa a dip libre en la semana 5 y acaba en 4×8-10 con tres segundos de bajada. La potencia de pierna entra en la semana 5 con sentadilla con salto al principio del día de piernas, con las piernas frescas. Para quién es: mujeres con base de calistenia que ya hacen alguna dominada y flexión y quieren fuerza real —dominadas estrictas, dips completos y un core que aguanta cargas—, no una versión suave de un programa de hombre. El sesgo hacia el tirón es intencional: compensa las horas sentada y el patrón de empuje que ya domina la vida diaria. Material: una barra de dominadas, una banda elástica y unas paralelas o dos sillas estables. La banda no es decorativa: es la asistencia de las dominadas y de los dips de la fase 1, y baja de grosor a medida que ganas fuerza. Necesitas además una superficie elevada y estable —una silla, el sofá o el borde de la cama— para el pistol asistido, la flexión en pike y el dragon flag negativo.",
+      "es": "Progresión: sube 1 repetición por serie y por semana, dentro del rango de la fase y sin salirte de él por arriba. Cuando llegues al tope del rango en todas las series dos semanas seguidas, pasa a la variante más exigente que te sugiere la nota del ejercicio (de dominada asistida con banda a dominada estricta, de dip con banda a dip libre, de pistol con apoyo a pistol libre). Si la nota no ofrece variante y el rango es corto —la dominada estricta vive en 2-3 y luego en 3-4—, quédate en el tope y quita ayuda o alarga la bajada hasta que cambie la fase; en la sentadilla con salto, que va a repeticiones fijas, lo que sube es la altura del salto, no el número. Descarga: la última semana de la fase 1 y de la fase 2 —las semanas 4 y 8— es de descarga y la app te reduce las series a la mitad automáticamente. La fase 3 cierra el ciclo sin descarga: cuando termines, tómate 5-7 días suaves antes de empezar otro bloque. Las dos habilidades que da nombre al programa se entrenan dos veces por semana de principio a fin. La dominada empieza en negativas y asistida con banda y acaba en 4×4-6 estrictas; el dip empieza asistido con banda en la semana 1, pasa a dip libre en la semana 5 y acaba en 4×8-10 con tres segundos de bajada. La potencia de pierna entra en la semana 5 con sentadilla con salto al principio del día de piernas, con las piernas frescas. Para quién es: mujeres con base de calistenia que ya hacen alguna dominada y flexión y quieren fuerza real —dominadas estrictas, dips completos y un core que aguanta cargas—, no una versión suave de un programa de hombre. El sesgo hacia el tirón es intencional: compensa las horas sentada y el patrón de empuje que ya domina la vida diaria. Material: una barra de dominadas, una banda elástica y unas paralelas o dos sillas estables. La banda no es decorativa: es la asistencia de las dominadas y de los dips de la fase 1, y baja de grosor a medida que ganas fuerza. Necesitas además una superficie elevada y estable —una silla, el sofá o el borde de la cama— para el pistol asistido, la flexión en pike y el dragon flag negativo.",
       "en": "Progression: add 1 rep per set per week, staying inside the phase rep range. Once you hit the top of the range on every set for two weeks running, move to the harder variation the exercise note suggests (band-assisted pull-up to strict pull-up, band-assisted dip to free dip, assisted pistol to free pistol). Deload: the last week of phase 1 and of phase 2 — weeks 4 and 8 — is a deload week and the app halves your sets automatically. Phase 3 closes the block with no deload: when you finish, take 5-7 easy days before starting another one. The two skills the program is named after are trained twice a week from start to finish. The pull-up starts as negatives and band-assisted reps and ends at 4×4-6 strict; the dip starts band-assisted in week 1, goes free in week 5 and ends at 4×8-10 with a three-second lowering. Leg power enters in week 5 with jump squats at the start of leg day, on fresh legs. Who it is for: women with a calisthenics base who already do a pull-up or two and some push-ups and want real strength — strict pull-ups, full dips and a core that holds load — not a softened version of a men's program. The pull bias is intentional: it offsets the hours spent sitting and the pushing pattern daily life already trains. Equipment: a pull-up bar, a resistance band and parallel bars or two stable chairs. The band is not decoration: it is the assistance for the phase 1 pull-ups and dips, and it gets thinner as you get stronger. You also need a stable raised surface — a chair, the sofa or the edge of the bed — for the assisted pistol, the pike push-up and the negative dragon flag."
     }
   },
@@ -76,26 +76,10 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps, romboides",
-              "note": "Repeticiones estrictas, sin balanceo. Si todavía no llegas a 2, haz las tres series con la banda del ejercicio siguiente y vuelve a probar sin banda cada semana."
+              "note": "Repeticiones estrictas, sin balanceo. Si todavía no llegas a 2, haz las tres series con la banda del ejercicio de más abajo y vuelve a probar sin banda cada semana."
             },
             {
               "sort_order": 4,
-              "exercise_id": "assisted_pull_up_band",
-              "name": {
-                "es": "Pull-up Asistida (banda)",
-                "en": "Assisted Pull-up (band)"
-              },
-              "sets": 3,
-              "reps": "5-7",
-              "rest_seconds": 90,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, bíceps",
-              "note": "Pisa la banda con un pie o apoya en ella la rodilla. Es el escalón que falta entre la negativa y la dominada estricta: aquí sí haces el movimiento completo de subida. Baja de grosor de banda antes que subir repeticiones."
-            },
-            {
-              "sort_order": 5,
               "exercise_id": "neg_pullup",
               "name": {
                 "es": "Dominada Negativa",
@@ -109,6 +93,22 @@
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
               "note": "Sube con impulso o desde un escalón y baja contando cuatro segundos. Solo la bajada: no intentes subir."
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "assisted_pull_up_band",
+              "name": {
+                "es": "Pull-up Asistida (banda)",
+                "en": "Assisted Pull-up (band)"
+              },
+              "sets": 3,
+              "reps": "5-7",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, bíceps",
+              "note": "Pisa la banda con un pie o apoya en ella la rodilla. Es el escalón que falta entre la negativa y la dominada estricta: aquí sí haces el movimiento completo de subida. Baja de grosor de banda antes que subir repeticiones."
             },
             {
               "sort_order": 6,
@@ -574,13 +574,13 @@
                 "en": "Assisted Dips (band)"
               },
               "sets": 3,
-              "reps": "8-10",
+              "reps": "6-8",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho",
-              "note": "Segunda sesión de dip de la semana. Usa una banda más fina que el martes si puedes: la asistencia baja antes que las repeticiones."
+              "note": "Segunda sesión de dip de la semana, con las mismas repeticiones que el martes pero con una banda más fina si puedes: en este programa la asistencia baja antes que las repeticiones."
             },
             {
               "sort_order": 5,
@@ -941,7 +941,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Oblicuos, core rotacional",
-              "note": "Tumbada, brazos en cruz y hombros pegados al suelo: baja las piernas juntas a un lado sin despegar la espalda. Es el escalón previo al limpiaparabrisas colgado y aquí llega con el agarre y el core frescos."
+              "note": "Tumbada, brazos en cruz y hombros pegados al suelo: baja las piernas juntas a un lado sin despegar la espalda. Va al final del día a propósito: es control, no fuerza, y se hace mejor con el core ya caliente. Baja solo hasta donde el hombro contrario no se levante."
             },
             {
               "sort_order": 10,
@@ -1185,6 +1185,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "front_lever_tuck",
+              "name": {
+                "es": "Front Lever Agrupado",
+                "en": "Front Lever Tuck"
+              },
+              "sets": 3,
+              "reps": "15 s",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 15,
+              "muscles": "Dorsal, core, hombros",
+              "note": "Colgada de la barra, rodillas al pecho y cuerpo horizontal. Sale directamente del hollow hold que llevas haciendo desde la semana 1: mantén la lumbar plana y los brazos rectos."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "pullup_strict",
               "name": {
                 "es": "Pull-up Estricto",
@@ -1200,7 +1216,7 @@
               "note": "Segunda sesión de tirón estricto de la semana."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "dips_parallel",
               "name": {
                 "es": "Dips en Barras Paralelas",
@@ -1216,7 +1232,7 @@
               "note": "Segunda sesión de dip de la semana, ya sin banda."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "lsit_45",
               "name": {
                 "es": "L-sit 45° — Objetivo",
@@ -1230,22 +1246,6 @@
               "timer_seconds": 20,
               "muscles": "Core, flexores de cadera, tríceps",
               "note": "Apoyo en paralelas, piernas a 45°: paso intermedio hacia el L-sit completo."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "front_lever_tuck",
-              "name": {
-                "es": "Front Lever Agrupado",
-                "en": "Front Lever Tuck"
-              },
-              "sets": 3,
-              "reps": "15 s",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": true,
-              "timer_seconds": 15,
-              "muscles": "Dorsal, core, hombros",
-              "note": "Colgada de la barra, rodillas al pecho y cuerpo horizontal. Sale directamente del hollow hold que llevas haciendo desde la semana 1: mantén la lumbar plana y los brazos rectos."
             },
             {
               "sort_order": 7,
@@ -1358,7 +1358,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Agarre estrecho, más énfasis en el bíceps. Solo dos series: con las cuatro anteriores ya son seis series de dominada al máximo, que es todo lo que se sostiene con técnica en una sesión. Las negativas que vienen después no cuentan como serie máxima: son excéntrico controlado."
+              "note": "Agarre estrecho, más énfasis en el bíceps. Solo dos series: con las cuatro de dominada estricta ya son seis series al máximo, que es todo lo que se sostiene con técnica en una sesión. Las negativas de antes no cuentan: son excéntrico controlado."
             },
             {
               "sort_order": 5,
@@ -1374,7 +1374,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Trabajo excéntrico para cerrar el día: sube desde un escalón y baja contando seis segundos, dos más que en la fase 1. Es el complemento del tirón pesado, no una serie más al máximo."
+              "note": "Trabajo excéntrico para cerrar el tirón pesado: sube desde un escalón y baja contando seis segundos, dos más que en la fase 1. No cuenta como serie al máximo."
             },
             {
               "sort_order": 6,
@@ -1406,7 +1406,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, core, estabilidad de hombro",
-              "note": "En posición de plancha, rema alternando brazos sin rotar la cadera."
+              "note": "En posición de plancha, rema alternando brazos sin rotar la cadera. Si la muñeca molesta, apóyate sobre los puños o sobre dos mancuernas."
             },
             {
               "sort_order": 8,
@@ -1494,7 +1494,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho, hombro",
-              "note": "Primero del día y con el tríceps fresco. Baja contando tres segundos: la fase final progresa en tiempo bajo tensión además de en repeticiones."
+              "note": "Primero del día y con el tríceps fresco. Baja contando tres segundos hasta los 90° de codo, con los hombros lejos de las orejas: la fase final progresa en tiempo bajo tensión además de en repeticiones."
             },
             {
               "sort_order": 4,
@@ -1526,7 +1526,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, tríceps",
-              "note": "Pies elevados en una silla estable, el sofá o el borde de la cama; cadera alta y la cabeza baja entre las manos. Si la muñeca molesta, apoya en los puños o baja la altura de los pies."
+              "note": "Empieza con los pies en el SUELO en la primera semana —cadera alta, cabeza baja entre las manos— y solo cuando completes 8 limpias sube los pies a una silla estable, el sofá o el borde de la cama. Si la muñeca molesta, apoya en los puños o baja la altura."
             },
             {
               "sort_order": 6,
@@ -1614,7 +1614,7 @@
           "day_id": "jue",
           "day_name": "Jueves",
           "day_focus": "Piernas Élite + Core Lateral",
-          "workout_title": "Potencia y Fuerza de Pierna",
+          "workout_title": "Pierna Élite: Salto y Unilateral",
           "exercises": [
             {
               "sort_order": 1,
@@ -1710,7 +1710,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, equilibrio",
-              "note": "Sin apoyo. Es el escalón que llevas preparando desde la semana 1 con el pistol asistido: si aún no salen 6 limpias, sigue con la superficie más baja que controles y quita el apoyo cuando llegues a 8."
+              "note": "Sin apoyo. Es el escalón que llevas preparando desde la semana 1 con el pistol asistido: si aún no salen 6 limpias, sigue con la superficie más baja que controles y quita el apoyo cuando llegues a 8. La rodilla sigue la punta del pie y no se va hacia dentro; si pincha, vuelve al apoyo."
             },
             {
               "sort_order": 7,
@@ -1834,6 +1834,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "front_lever_tuck",
+              "name": {
+                "es": "Front Lever Agrupado",
+                "en": "Front Lever Tuck"
+              },
+              "sets": 3,
+              "reps": "25 s",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 25,
+              "muscles": "Dorsal, core, hombros",
+              "note": "Primero del día, con el agarre y el dorsal frescos: es el hold que más los exige. El mismo agrupado de la fase 2 con diez segundos más de aguante; si los 25 s salen limpios, empieza a estirar una pierna."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "pullup_strict",
               "name": {
                 "es": "Pull-up Estricto",
@@ -1849,7 +1865,7 @@
               "note": "Segunda sesión de tirón estricto de la semana, en la fase final del programa."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "dips_parallel",
               "name": {
                 "es": "Dips en Barras Paralelas",
@@ -1862,10 +1878,10 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho, hombro",
-              "note": "Segunda sesión de dip de la semana y cierre del programa: cuatro series de 8-10 sin ayuda y con tres segundos de bajada, cuando en la semana 1 hacía falta la banda para una sola."
+              "note": "Segunda sesión de dip de la semana y cierre del programa: cuatro series de 8-10 sin ayuda y con tres segundos de bajada, cuando en la semana 1 no salía ninguna sin banda. Mantén los 90° de codo y los hombros lejos de las orejas."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "lsit_full",
               "name": {
                 "es": "L-sit Paralelas/Sillas",
@@ -1878,23 +1894,7 @@
               "is_timer": true,
               "timer_seconds": 20,
               "muscles": "Core, flexores cadera, hombros",
-              "note": "L-sit completo en las paralelas o entre dos sillas: piernas rectas y paralelas al suelo. Mismo tiempo que el L-sit a 45° de la fase 2, pero con las piernas extendidas: ahí está el salto, no en el cronómetro."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "front_lever_tuck",
-              "name": {
-                "es": "Front Lever Agrupado",
-                "en": "Front Lever Tuck"
-              },
-              "sets": 3,
-              "reps": "25 s",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": true,
-              "timer_seconds": 25,
-              "muscles": "Dorsal, core, hombros",
-              "note": "El mismo agrupado de la fase 2 con diez segundos más de aguante. Si los 25 s salen limpios, empieza a estirar una pierna."
+              "note": "L-sit completo en las paralelas o entre dos sillas: piernas rectas y paralelas al suelo. Va después de la barra porque aquí el peso lo llevan las manos apoyadas, no el agarre. Mismo tiempo que el L-sit a 45° de la fase 2, pero con las piernas extendidas: ahí está el salto, no en el cronómetro."
             },
             {
               "sort_order": 7,
