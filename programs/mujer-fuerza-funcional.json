@@ -102,7 +102,7 @@
                 "en": "Negative Pull-up"
               },
               "sets": 2,
-              "reps": "3 (descenso 5 s)",
+              "reps": "3 (descenso 4 s)",
               "rest_seconds": 75,
               "priority": "secondary",
               "is_timer": false,
@@ -286,11 +286,11 @@
                 "en": "Plank"
               },
               "sets": 3,
-              "reps": "30 s",
+              "reps": "45 s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": true,
-              "timer_seconds": 30,
+              "timer_seconds": 45,
               "muscles": "Core, transverso abdominal",
               "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
             },
@@ -390,13 +390,13 @@
                 "en": "Single-Leg RDL"
               },
               "sets": 3,
-              "reps": "8-10 por pierna",
+              "reps": "6-8 por pierna",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Bisagra de cadera a una pierna, espalda neutra."
+              "note": "Bisagra de cadera a una pierna, espalda neutra. Baja hasta donde puedas mantener la espalda recta, no más."
             },
             {
               "sort_order": 5,
@@ -845,7 +845,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Pecho, tríceps, hombro",
-              "note": "Desplaza el peso hacia un lado mientras el otro brazo se mantiene extendido."
+              "note": "Desplaza el peso hacia un lado mientras el otro brazo se mantiene extendido. Si no controlas la bajada, reduce el desplazamiento o apoya las rodillas: es una flexión a un brazo a medias, no una flexión ancha."
             },
             {
               "sort_order": 5,
@@ -887,11 +887,11 @@
                 "en": "Plank"
               },
               "sets": 2,
-              "reps": "45 s",
+              "reps": "60 s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": true,
-              "timer_seconds": 45,
+              "timer_seconds": 60,
               "muscles": "Core, transverso abdominal",
               "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
             },
@@ -909,7 +909,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Core profundo, coordinación",
-              "note": ""
+              "note": "El hollow que ya mantienes, ahora en movimiento: balancéate sin doblar rodillas ni codos y sin que la lumbar se despegue del suelo."
             },
             {
               "sort_order": 9,
@@ -1029,7 +1029,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Bisagra de cadera a una pierna, espalda neutra."
+              "note": "Sube el rango y busca más recorrido: la mano baja un palmo más que en la fase 1 sin que la espalda se redondee."
             },
             {
               "sort_order": 6,
@@ -1239,7 +1239,7 @@
                 "en": "Reverse Lunge"
               },
               "sets": 2,
-              "reps": "8 por pierna",
+              "reps": "10 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
@@ -1352,7 +1352,7 @@
                 "en": "Negative Pull-up"
               },
               "sets": 2,
-              "reps": "3 (descenso 5 s)",
+              "reps": "4 (descenso 6 s)",
               "rest_seconds": 75,
               "priority": "secondary",
               "is_timer": false,
@@ -1400,13 +1400,13 @@
                 "en": "Seated Band Row"
               },
               "sets": 2,
-              "reps": "15",
+              "reps": "18",
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, romboides, bíceps",
-              "note": "Espalda recta, tira del codo hacia atrás sin balancear el torso."
+              "note": "Rango alto para cerrar el día: espalda recta, tira del codo hacia atrás sin balancear el torso y aprieta un segundo al final."
             },
             {
               "sort_order": 9,
@@ -1536,11 +1536,11 @@
                 "en": "Plank"
               },
               "sets": 2,
-              "reps": "60 s",
+              "reps": "75 s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": true,
-              "timer_seconds": 60,
+              "timer_seconds": 75,
               "muscles": "Core, transverso abdominal",
               "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
             },
@@ -1672,13 +1672,13 @@
                 "en": "Single-Leg RDL"
               },
               "sets": 3,
-              "reps": "8-10 por pierna",
+              "reps": "10-12 por pierna",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Bisagra de cadera a una pierna, espalda neutra."
+              "note": "Rango alto y pausa de un segundo abajo. Si las doce salen fáciles, sujeta algo con peso contra el pecho."
             },
             {
               "sort_order": 6,
@@ -1888,7 +1888,7 @@
                 "en": "Reverse Lunge"
               },
               "sets": 2,
-              "reps": "8 por pierna",
+              "reps": "12 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
