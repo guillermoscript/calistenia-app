@@ -117,7 +117,7 @@
                 "es": "Retracción Escapular",
                 "en": "Scapular Retraction"
               },
-              "sets": 3,
+              "sets": 2,
               "reps": "8-10",
               "rest_seconds": 45,
               "priority": "secondary",
@@ -144,6 +144,22 @@
             },
             {
               "sort_order": 8,
+              "exercise_id": "resistance_band_seated_straight_back_row",
+              "name": {
+                "es": "Remo Sentado con Banda",
+                "en": "Seated Band Row"
+              },
+              "sets": 2,
+              "reps": "12",
+              "rest_seconds": 30,
+              "priority": "accessory",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, romboides, bíceps",
+              "note": "El único tirón horizontal de la fase: sentada, espalda recta, tira del codo hacia atrás sin balancear el torso. Es lo que compensa de verdad las horas sentada, más que la dominada."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "pectoral_stretch",
               "name": {
                 "es": "Estiramiento de Pectorales",
@@ -159,7 +175,7 @@
               "note": "Estira el pecho tras el trabajo de tirón."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "exercise_id": "lat_stretch",
               "name": {
                 "es": "Estiramiento de Dorsales",
@@ -216,6 +232,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "assisted_dips_band",
+              "name": {
+                "es": "Dips Asistidos (banda)",
+                "en": "Assisted Dips (band)"
+              },
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho",
+              "note": "Primero del día y con el tríceps fresco: es una de las dos habilidades del programa. Pasa la banda por las paralelas (o entre dos sillas) y apoya en ella las rodillas o los pies. Baja hasta 90° de codo con los hombros lejos de las orejas. Esta es tu ruta de entrada al dip: cuando completes 3×8 con la banda fina, estás lista para el dip libre de la fase 2."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "diamond_pushup",
               "name": {
                 "es": "Push-up Diamante",
@@ -231,7 +263,7 @@
               "note": "Manos en rombo bajo el pecho: exige más al tríceps."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "pushup_std",
               "name": {
                 "es": "Push-up Estándar",
@@ -245,22 +277,6 @@
               "timer_seconds": 0,
               "muscles": "Pecho, hombros, tríceps",
               "note": "Cuerpo en línea recta de cabeza a talones."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "assisted_dips_band",
-              "name": {
-                "es": "Dips Asistidos (banda)",
-                "en": "Assisted Dips (band)"
-              },
-              "sets": 3,
-              "reps": "6-8",
-              "rest_seconds": 90,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Tríceps, pecho",
-              "note": "Pasa la banda por las paralelas (o entre dos sillas) y apoya en ella las rodillas o los pies. Baja hasta 90° de codo con los hombros lejos de las orejas. Esta es tu ruta de entrada al dip: cuando completes 3×8 con la banda fina, estás lista para el dip libre de la fase 2."
             },
             {
               "sort_order": 6,
@@ -817,6 +833,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "dips_parallel",
+              "name": {
+                "es": "Dips en Barras Paralelas",
+                "en": "Parallel Bar Dips"
+              },
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho, hombro",
+              "note": "Primero del día y con el tríceps fresco. Primer dip sin banda: baja hasta 90° de codo y controla la subida. Si no completas 6 limpios, haz esa serie con la banda de la fase 1 y quítala en cuanto puedas."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "diamond_pushup",
               "name": {
                 "es": "Push-up Diamante",
@@ -832,7 +864,7 @@
               "note": "Manos en rombo bajo el pecho: exige más al tríceps."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "archer_pushup",
               "name": {
                 "es": "Archer Push-up (Regresión)",
@@ -846,22 +878,6 @@
               "timer_seconds": 0,
               "muscles": "Pecho, tríceps, hombro",
               "note": "Desplaza el peso hacia un lado mientras el otro brazo se mantiene extendido. Si no controlas la bajada, reduce el desplazamiento o apoya las rodillas: es una flexión a un brazo a medias, no una flexión ancha."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "dips_parallel",
-              "name": {
-                "es": "Dips en Barras Paralelas",
-                "en": "Parallel Bar Dips"
-              },
-              "sets": 3,
-              "reps": "6-8",
-              "rest_seconds": 90,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Tríceps, pecho, hombro",
-              "note": "Primer dip sin banda. Baja hasta 90° de codo y controla la subida. Si no completas 6 limpios, haz esa serie con la banda de la fase 1 y quítala en cuanto puedas."
             },
             {
               "sort_order": 6,
@@ -1466,6 +1482,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "dips_parallel",
+              "name": {
+                "es": "Dips en Barras Paralelas",
+                "en": "Parallel Bar Dips"
+              },
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho, hombro",
+              "note": "Primero del día y con el tríceps fresco. Baja contando tres segundos: la fase final progresa en tiempo bajo tensión además de en repeticiones."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "diamond_pushup",
               "name": {
                 "es": "Push-up Diamante",
@@ -1481,7 +1513,7 @@
               "note": "Manos en rombo bajo el pecho: exige más al tríceps."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "pike_hspu",
               "name": {
                 "es": "Flexión Vertical en Pike (HSPU)",
@@ -1495,22 +1527,6 @@
               "timer_seconds": 0,
               "muscles": "Hombros, tríceps",
               "note": "Pies elevados en una silla estable, el sofá o el borde de la cama; cadera alta y la cabeza baja entre las manos. Si la muñeca molesta, apoya en los puños o baja la altura de los pies."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "dips_parallel",
-              "name": {
-                "es": "Dips en Barras Paralelas",
-                "en": "Parallel Bar Dips"
-              },
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 120,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Tríceps, pecho, hombro",
-              "note": "Baja contando tres segundos. La fase final progresa en tiempo bajo tensión además de en repeticiones: mismo ejercicio, bajada mucho más lenta."
             },
             {
               "sort_order": 6,
@@ -1530,6 +1546,22 @@
             },
             {
               "sort_order": 7,
+              "exercise_id": "dragon_flag",
+              "name": {
+                "es": "Dragon Flag Negativo",
+                "en": "Negative Dragon Flag"
+              },
+              "sets": 3,
+              "reps": "3 (descenso 5 s)",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core completo",
+              "note": "Tumbada, agárrate a algo firme detrás de la cabeza (las patas del sofá, el borde de la cama o un banco). Sube el cuerpo apoyando solo los omóplatos y baja recta contando cinco segundos. Solo la bajada. Si no controlas los cinco segundos, hazlo con las rodillas al pecho hasta que salga."
+            },
+            {
+              "sort_order": 8,
               "exercise_id": "plank",
               "name": {
                 "es": "Plancha",
@@ -1545,7 +1577,7 @@
               "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "exercise_id": "hollow_rock",
               "name": {
                 "es": "Hollow Body Rock",
@@ -1558,23 +1590,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Core profundo, coordinación",
-              "note": "Mismo hollow de siempre, ahora en movimiento: balancéate manteniendo la lumbar pegada al suelo y sin doblar rodillas ni codos."
-            },
-            {
-              "sort_order": 9,
-              "exercise_id": "dragon_flag",
-              "name": {
-                "es": "Dragon Flag Negativo",
-                "en": "Negative Dragon Flag"
-              },
-              "sets": 3,
-              "reps": "3 (descenso 5 s)",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Core completo",
-              "note": "Tumbada, agárrate a algo firme detrás de la cabeza (las patas del sofá, el borde de la cama o un banco). Sube el cuerpo apoyando solo los omóplatos y baja recta contando cinco segundos. Solo la bajada. Si no controlas los cinco segundos, hazlo con las rodillas al pecho hasta que salga."
+              "note": "Mismo movimiento de la fase 2 con más repeticiones: si la lumbar se despega o las rodillas se doblan, para la serie ahí."
             },
             {
               "sort_order": 10,
@@ -1846,7 +1862,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho, hombro",
-              "note": "Segunda sesión de dip de la semana y cierre del programa: cuatro series de 8-10 sin ayuda, cuando en la semana 1 hacía falta la banda para una sola."
+              "note": "Segunda sesión de dip de la semana y cierre del programa: cuatro series de 8-10 sin ayuda y con tres segundos de bajada, cuando en la semana 1 hacía falta la banda para una sola."
             },
             {
               "sort_order": 5,
