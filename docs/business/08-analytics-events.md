@@ -386,6 +386,36 @@ This repository defines the report names, steps, filters, and breakdowns. The
 OpenPanel workspace still needs an authenticated operator to create/save the
 dashboard and confirm the exact UI labels.
 
+### Mobile acquisition attribution
+
+OpenPanel derives Refs / Source / Medium / Campaign from two payload properties,
+and both expect web shapes: `__referrer` must be an **absolute http(s) URL**
+(the worker does `new URL(...).hostname` to look it up, and the dashboard only
+renders a favicon when the resulting name contains `http` or looks like a
+domain), and the UTM breakdowns come from the **query string of `__path`** —
+`parsePath()` splits query from path, so UTMs there never pollute the Pages
+report.
+
+`@openpanel/react-native` violates the first rule: it puts Android's raw Play
+install referrer (`utm_source=google-play&utm_medium=organic` — a query string,
+not a URL) straight into `__referrer`, so the panel printed that string verbatim
+as the referrer name, with no icon. `apps/mobile/src/lib/install-referrer.ts`
+normalizes it (#746):
+
+| Play install referrer | `__referrer` | `__path` query | Refs row |
+|---|---|---|---|
+| `utm_source=google-play&utm_medium=organic` | `https://play.google.com` | `utm_source=play.google.com&utm_medium=organic` | `play.google.com` + favicon |
+| `utm_source=(not set)&…` | *(none)* | *(none)* | `Direct / Not set`, as on web |
+| `utm_source=facebook&utm_medium=cpc&…` | *(none)* | passed through verbatim | `Facebook`, type `social` |
+
+The install referrer is **permanent**, so it is attributed to the **first session
+only** (marked spent in AsyncStorage under `analytics_install_attributed`);
+otherwise every mobile session ever would be credited to Play. Later events in
+that session don't need it — the worker inherits the referrer from the session's
+`session_start`. That is also why the guest event queue waits (max 2s) for the
+attribution to resolve before flushing: the session's referrer is whatever its
+first event carried.
+
 ## QA checklist
 
 ### Web
@@ -463,6 +493,11 @@ dashboard and confirm the exact UI labels.
   emits. Android and `expo-sharing` image paths report `result=opened` because
   their APIs cannot distinguish delivery from dismissal.
 - Repeat the share flow while offline, reconnect, and confirm buffered delivery.
+- Acquisition attribution (#746): install a fresh build **from Play** (a
+  sideloaded APK has no install referrer) and confirm the OpenPanel Refs tab
+  shows `play.google.com` with a favicon — never a raw `utm_source=…` string —
+  and that Source/Medium fill in. Kill and reopen the app 30+ minutes later and
+  confirm the new session is *not* attributed again.
 - Open the challenges list, join a challenge, complete a contributing workout,
   and confirm the challenge events.
 - Select a program, complete every non-rest day in one phase (including any

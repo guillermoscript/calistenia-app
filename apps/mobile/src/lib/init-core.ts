@@ -20,6 +20,7 @@ import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { isForeground, onForeground, onBackground } from './lifecycle'
 import { registerPushTokenAsync } from './push-registration'
+import { attachInstallAttribution, currentInstallAttribution, pathWithAttribution } from './install-referrer'
 import { CANONICAL_ANALYTICS_EVENTS, setActiveAnalyticsProfileId, shouldSendAnalytics, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // El catálogo de ejercicios va en el bundle de RN de todas formas, así que se
@@ -147,16 +148,42 @@ const op = new OpenPanel({
   filter: shouldSendAnalytics,
 })
 
+// ─── Atribución de instalación (#746) ────────────────────────────────────────
+// El SDK de RN mete el install referrer de Play CRUDO en `__referrer` y el panel
+// espera una URL, así que la pestaña Refs enseñaba `utm_source=google-play&…` en
+// vez de una URL con favicon. `attachInstallAttribution` envuelve
+// `setGlobalProperties` para que solo salgan URLs absolutas, y resuelve la
+// atribución (solo la PRIMERA sesión tras instalar; ver install-referrer.ts).
+// En dev no se engancha: no se manda nada al panel y no tiene sentido gastar la
+// atribución —ni molestar al servicio de Play— en cada arranque de Metro.
+const installAttributionReady = __DEV__ ? Promise.resolve(null) : attachInstallAttribution(op)
+
+// El referrer de una sesión lo fija su primer evento, así que la cola no se
+// suelta hasta que la atribución esté resuelta. El tope evita que un servicio de
+// Play que no responde deje los eventos encolados para siempre; una vez gastada
+// la atribución esto resuelve en una lectura de AsyncStorage.
+const ATTRIBUTION_WAIT_MS = 2_000
+function afterInstallAttribution(fn: () => void) {
+  let ran = false
+  const run = () => { if (!ran) { ran = true; fn() } }
+  installAttributionReady.then(run, run)
+  setTimeout(run, ATTRIBUTION_WAIT_MS)
+}
+
 /**
  * Screen view de OpenPanel respetando el gating de __DEV__ (igual que track).
  * La web auto-trackea screen views; en RN hay que llamarlo a mano desde el layout.
+ *
+ * Durante la primera sesión la ruta lleva colgados los `utm_*` de la instalación:
+ * el worker separa query de path, así que el informe de Pages no se entera y las
+ * pestañas Source/Medium/Campaign —vacías hasta ahora en móvil— se llenan.
  */
 export function trackScreen(route: string, properties?: Record<string, unknown>) {
   if (__DEV__) {
     console.log('[analytics] screen_view', route, properties ?? '')
     return
   }
-  op.screenView(route, properties)
+  op.screenView(pathWithAttribution(route, currentInstallAttribution()), properties)
 }
 
 initCore({
@@ -245,7 +272,10 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
       Sentry.setUser(null)
       setActiveAnalyticsProfileId(null)
       // Invitado: soltar la cola para no perder los eventos de onboarding/login.
-      if (!__DEV__) op.ready()
+      // Tras esperar a la atribución de instalación (#746): en una instalación
+      // nueva el usuario es justo esto, un invitado, y si el primer evento sale
+      // sin referrer la sesión entera se queda sin él.
+      if (!__DEV__) afterInstallAttribution(() => op.ready())
     }
   }
 
