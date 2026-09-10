@@ -897,6 +897,22 @@
             },
             {
               "sort_order": 8,
+              "exercise_id": "hollow_rock",
+              "name": {
+                "es": "Hollow Body Rock",
+                "en": "Hollow Body Rock"
+              },
+              "sets": 2,
+              "reps": "15-20",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core profundo, coordinación",
+              "note": ""
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "lying_windshield_wipers",
               "name": {
                 "es": "Windshield Wipers Tumbado",
@@ -912,7 +928,7 @@
               "note": "Tumbada, brazos en cruz y hombros pegados al suelo: baja las piernas juntas a un lado sin despegar la espalda. Es el escalón previo al limpiaparabrisas colgado y aquí llega con el agarre y el core frescos."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "exercise_id": "pectoral_stretch",
               "name": {
                 "es": "Estiramiento de Pectorales",
@@ -1530,6 +1546,22 @@
             },
             {
               "sort_order": 8,
+              "exercise_id": "hollow_rock",
+              "name": {
+                "es": "Hollow Body Rock",
+                "en": "Hollow Body Rock"
+              },
+              "sets": 2,
+              "reps": "20-25",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core profundo, coordinación",
+              "note": "Mismo hollow de siempre, ahora en movimiento: balancéate manteniendo la lumbar pegada al suelo y sin doblar rodillas ni codos."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "dragon_flag",
               "name": {
                 "es": "Dragon Flag Negativo",
@@ -1545,7 +1577,7 @@
               "note": "Tumbada, agárrate a algo firme detrás de la cabeza (las patas del sofá, el borde de la cama o un banco). Sube el cuerpo apoyando solo los omóplatos y baja recta contando cinco segundos. Solo la bajada. Si no controlas los cinco segundos, hazlo con las rodillas al pecho hasta que salga."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "exercise_id": "triceps_stretch",
               "name": {
                 "es": "Estiramiento de Tríceps",
