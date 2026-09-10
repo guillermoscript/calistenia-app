@@ -109,8 +109,8 @@ export const CONTRAINDICATION_VOCABULARY = ['shoulder', 'wrist', 'elbow', 'knee'
 export const SKELETONS = [
   // level × goal (8 — Balance Total handles intermediate+maintain)
   { slug: 'principiante-quema-grasa', name: i18n('Principiante · Quema Grasa', 'Beginner · Fat Burn'),
-    description: i18n('Rutina suave 4 días/sem para bajar grasa sin perder músculo. Enfocado en movimientos base.', '4-day/week gentle routine to burn fat without losing muscle. Focused on fundamentals.'),
-    duration_weeks: 12, difficulty: 'beginner', goal_type: 'fat_loss', intensity: 'light', days_per_week: 4, equipment_required: [], contraindications: ['knee','ankle'],
+    description: i18n('Bajar grasa en casa 4 días/sem, con objetos de casa. Fuerza para no perder músculo, más cardio y nutrición.', 'Lose fat at home 4 days/week using things you already own. Strength to keep your muscle, plus cardio and nutrition.'),
+    duration_weeks: 12, difficulty: 'beginner', goal_type: 'fat_loss', intensity: 'moderate', days_per_week: 4, equipment_required: [], contraindications: ['knee','ankle'],
     for_women: false, sort_order: 10 },
   { slug: 'principiante-ganar-musculo', name: i18n('Principiante · Ganar Músculo', 'Beginner · Muscle Gain'),
     description: i18n('Hipertrofia base 4 días/sem para principiantes. Progresión simple hacia primer pull-up y dip.', 'Beginner hypertrophy 4 days/week. Simple progression toward first pull-up and dip.'),
