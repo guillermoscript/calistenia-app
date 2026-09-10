@@ -21,6 +21,8 @@
  *   lesión en el onboarding.
  * - Glúteo + Tonificación era `fat_loss` sin un minuto de cardio → `muscle_gain`.
  * - Full Body Toning era `light` con fases de construcción/definición → `moderate`.
+ * - Quema Grasa pasó a `moderate` al ganar dos bloques de cardio por semana
+ *   (#720): la tabla se actualizó aquí para seguir siendo espejo de SKELETONS.
  * - Fuerza Total exige dominada lastrada y no declaraba `weight`; Ganar Músculo
  *   va a meter fondos en paralelas (#721) y no puede tocar el catálogo.
  * Cada decisión (incluidas las que se QUEDAN) está razonada en el propio
@@ -43,7 +45,7 @@
 
 /** slug, name.es, goal_type, intensity, equipment_required, contraindications — espejo de SKELETONS. */
 const RELABELS = [
-  ["principiante-quema-grasa",    "Principiante · Quema Grasa",      "fat_loss",    "light",    [],                                          ["knee","ankle"]],
+  ["principiante-quema-grasa",    "Principiante · Quema Grasa",      "fat_loss",    "moderate", [],                                          ["knee","ankle"]],
   ["principiante-ganar-musculo",  "Principiante · Ganar Músculo",    "muscle_gain", "moderate", ["pull_bar","parallel_bars"],                ["shoulder","elbow","knee"]],
   ["principiante-fundamentos",    "Principiante · Fundamentos",      "maintain",    "light",    [],                                          []],
   ["intermedio-definicion",       "Intermedio · Definición",         "fat_loss",    "intense",  ["pull_bar","parallel_bars"],                ["wrist","shoulder","elbow"]],
