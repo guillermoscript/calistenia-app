@@ -225,7 +225,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Squat con Pausa (3s)",
+              "name": "Sentadilla Bodyweight",
               "muscles": "Cuádriceps, glúteos",
               "sets": 1,
               "reps": "",
@@ -233,8 +233,8 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Sentadillas lentas con pausa abajo, sin carga: abre la cadera",
-              "exercise_id": "squat_pause"
+              "note": "Sentadillas lentas y profundas, sin carga: abre la cadera antes del trabajo a una pierna",
+              "exercise_id": "bodyweight_squat"
             },
             {
               "sort_order": 5,
@@ -1077,7 +1077,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Squat con Pausa (3s)",
+              "name": "Sentadilla Bodyweight",
               "muscles": "Cuádriceps, glúteos",
               "sets": 1,
               "reps": "",
@@ -1085,8 +1085,8 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Sentadillas lentas con pausa abajo, sin carga: abre la cadera",
-              "exercise_id": "squat_pause"
+              "note": "Sentadillas lentas y profundas, sin carga: abre la cadera antes del trabajo a una pierna",
+              "exercise_id": "bodyweight_squat"
             },
             {
               "sort_order": 5,
@@ -1942,7 +1942,7 @@
             },
             {
               "sort_order": 4,
-              "name": "Squat con Pausa (3s)",
+              "name": "Sentadilla Bodyweight",
               "muscles": "Cuádriceps, glúteos",
               "sets": 1,
               "reps": "",
@@ -1950,8 +1950,8 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Sentadillas lentas con pausa abajo, sin carga: abre la cadera",
-              "exercise_id": "squat_pause"
+              "note": "Sentadillas lentas y profundas, sin carga: abre la cadera antes del trabajo a una pierna",
+              "exercise_id": "bodyweight_squat"
             },
             {
               "sort_order": 5,
