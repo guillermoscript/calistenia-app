@@ -108,7 +108,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Sube con impulso o desde un escalón y baja contando cinco segundos. Solo la bajada: no intentes subir."
+              "note": "Sube con impulso o desde un escalón y baja contando cuatro segundos. Solo la bajada: no intentes subir."
             },
             {
               "sort_order": 6,
@@ -324,7 +324,7 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Pecho",
-              "note": "Estira el pecho tras el trabajo de tirón."
+              "note": "Estira el pecho tras el trabajo de empuje."
             },
             {
               "sort_order": 9,
@@ -347,7 +347,7 @@
         {
           "day_id": "jue",
           "day_name": "Jueves",
-          "day_focus": "Piernas + Core Inferior",
+          "day_focus": "Piernas + Core Lateral",
           "workout_title": "Fuerza de Piernas",
           "exercises": [
             {
@@ -751,7 +751,7 @@
                 "en": "Face Pull"
               },
               "sets": 3,
-              "reps": "12-15",
+              "reps": "15-18",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
@@ -773,7 +773,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, romboides, bíceps",
-              "note": "Espalda recta, tira del codo hacia atrás sin balancear el torso."
+              "note": "El único tirón horizontal de la fase: sentada, espalda recta, tira del codo hacia atrás sin balancear el torso. Es lo que compensa de verdad las horas sentada, más que la dominada."
             },
             {
               "sort_order": 8,
@@ -957,7 +957,7 @@
               "is_timer": true,
               "timer_seconds": 45,
               "muscles": "Pecho",
-              "note": "Estira el pecho tras el trabajo de tirón."
+              "note": "Estira el pecho tras el trabajo de empuje."
             }
           ]
         },
@@ -1070,8 +1070,8 @@
                 "es": "Zancada Lateral",
                 "en": "Lateral Lunge"
               },
-              "sets": 2,
-              "reps": "10 por pierna",
+              "sets": 3,
+              "reps": "10-12 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
@@ -1310,7 +1310,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, movilidad",
-              "note": "Prepara el hombro para el empuje."
+              "note": "Abre el hombro antes de tirar: recorrido amplio y sin encoger el cuello."
             },
             {
               "sort_order": 2,
@@ -1358,7 +1358,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Agarre estrecho, más énfasis en el bíceps. Solo dos series: con las cuatro anteriores ya son seis series de tirón vertical al máximo, que es todo lo que se sostiene con técnica en una sesión."
+              "note": "Agarre estrecho, más énfasis en el bíceps. Solo dos series: con las cuatro anteriores ya son seis series de dominada al máximo, que es todo lo que se sostiene con técnica en una sesión. Las negativas que vienen después no cuentan como serie máxima: son excéntrico controlado."
             },
             {
               "sort_order": 5,
@@ -1374,7 +1374,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Trabajo excéntrico para cerrar el día: sube desde un escalón y baja contando cinco segundos. Es el complemento del tirón pesado, no una serie más al máximo."
+              "note": "Trabajo excéntrico para cerrar el día: sube desde un escalón y baja contando seis segundos, dos más que en la fase 1. Es el complemento del tirón pesado, no una serie más al máximo."
             },
             {
               "sort_order": 6,
@@ -1384,7 +1384,7 @@
                 "en": "Face Pull"
               },
               "sets": 3,
-              "reps": "15-18",
+              "reps": "18-20",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
@@ -1671,14 +1671,14 @@
                 "es": "Sentadilla con Pausa (3s)",
                 "en": "Pause Squat (3s)"
               },
-              "sets": 3,
+              "sets": 4,
               "reps": "10-12",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos",
-              "note": "Pausa 3 segundos abajo antes de subir."
+              "note": "Cuarta serie en la fase final: misma pausa de tres segundos abajo, una serie más de la que hacías en la fase 2."
             },
             {
               "sort_order": 5,
@@ -1719,8 +1719,8 @@
                 "es": "Zancada Lateral",
                 "en": "Lateral Lunge"
               },
-              "sets": 2,
-              "reps": "10 por pierna",
+              "sets": 3,
+              "reps": "12-15 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
