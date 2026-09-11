@@ -33,6 +33,7 @@ import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
 import { resolveExerciseDisplayName, resolveExerciseNameField } from '../lib/exercise-resolver'
 import { inferTimerFromReps } from '../lib/exercise-timer-inference'
+import { parseWeeklyProgression } from '../lib/weeklyProgression'
 import { loadCatalogIndex } from '../lib/catalogIndex'
 import { authorDisplayName } from '../lib/author-name'
 import { applyOverrides } from '../lib/programOverrides'
@@ -253,6 +254,12 @@ export function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       demoImages:   r.demo_images || [],
       demoVideo:    r.demo_video || '',
       section:      (r.section || 'main') as Exercise['section'],
+      // #755: la rampa semanal de la fila. La APLICA `useWeekAwareGetWorkout`,
+      // que es quien sabe en qué semana está el usuario; aquí solo se lee,
+      // porque `getWorkout` no puede saberlo (las fases salen de este mismo
+      // hook). `undefined` cuando la fila no trae nada: el ejercicio se
+      // comporta exactamente como antes de #755.
+      weeklyProgression: parseWeeklyProgression(r.weekly_progression),
     } as Exercise)
   })
   return map
@@ -853,6 +860,9 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
             rest_seconds: e.rest_seconds, muscles: e.muscles, note: e.note, youtube: e.youtube,
             priority: e.priority, is_timer: e.is_timer, timer_seconds: e.timer_seconds,
             workout_title: e.workout_title, sort_order: e.sort_order, section: e.section || 'main',
+            // #755: sin esto la copia pierde las rampas EN SILENCIO y el
+            // programa clonado se queda con la dosis de la primera semana.
+            weekly_progression: e.weekly_progression || [],
           } as Record<string, unknown>,
         })),
       ]

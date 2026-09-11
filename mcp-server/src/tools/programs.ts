@@ -1283,6 +1283,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             sort_order: ex.sort_order,
             priority: ex.priority,
             section: ex.section || "main",
+            // #755: sin esto la duplicación pierde las rampas semanales EN
+            // SILENCIO y la copia se queda con la dosis de la primera semana.
+            weekly_progression: ex.weekly_progression || [],
           });
         }
 

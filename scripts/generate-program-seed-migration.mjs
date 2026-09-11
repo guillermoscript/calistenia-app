@@ -105,7 +105,7 @@ import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 
 import { normalizeProgram, DAY_IDS } from './normalize-program-days.mjs'
-import { normalizePriority, resolveSection } from './lib/program-exercise-fields.mjs'
+import { normalizePriority, normalizeWeeklyProgression, resolveSection } from './lib/program-exercise-fields.mjs'
 import { SKELETONS, CATALOG_BY_SLUG, assertCatalogMatchesFiles } from './lib/program-catalog.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -351,6 +351,14 @@ export function buildPayload({ entry, file, data }) {
           timer_seconds: ex.timer_seconds || 0,
           sort_order: ex.sort_order,
           section: resolveSection(ex),
+          // #755: la rampa semanal solo viaja cuando existe, igual que
+          // `deload_last_week` en la fase — así los 15 programas que no la usan
+          // no cambian de payload, ni de `content_hash`, ni la siembra
+          // 1786100000 que vigila `--check`.
+          ...(() => {
+            const wp = normalizeWeeklyProgression(ex.weekly_progression, ex.name?.es || ex.name)
+            return wp ? { weekly_progression: wp } : {}
+          })(),
         }
       })
 
@@ -526,6 +534,9 @@ migrate((app) => {
             timer_seconds: ex.timer_seconds,
             sort_order: ex.sort_order,
             section: ex.section,
+            // #755: lista vacía y no null cuando no hay rampa — un campo
+            // json vacío es lo que el motor lee como «sin progresión».
+            weekly_progression: ex.weekly_progression || [],
           })
         }
       }
@@ -779,10 +790,11 @@ migrate((app) => {
               .newQuery(
                 "INSERT INTO program_exercises (program, phase_number, day_id, day_name, day_focus, day_type, " +
                 "workout_title, exercise_id, exercise_name, sets, reps, rest_seconds, muscles, note, youtube, " +
-                "priority, is_timer, timer_seconds, sort_order, section) VALUES " +
+                "priority, is_timer, timer_seconds, sort_order, section, weekly_progression) VALUES " +
                 "({:program}, {:phase_number}, {:day_id}, {:day_name}, {:day_focus}, {:day_type}, " +
                 "{:workout_title}, {:exercise_id}, {:exercise_name}, {:sets}, {:reps}, {:rest_seconds}, " +
-                "{:muscles}, {:note}, {:youtube}, {:priority}, {:is_timer}, {:timer_seconds}, {:sort_order}, {:section})"
+                "{:muscles}, {:note}, {:youtube}, {:priority}, {:is_timer}, {:timer_seconds}, {:sort_order}, " +
+                "{:section}, {:weekly_progression})"
               )
               .bind({
                 program: programId,
@@ -805,6 +817,9 @@ migrate((app) => {
                 timer_seconds: ex.timer_seconds,
                 sort_order: ex.sort_order,
                 section: ex.section,
+                // #755: por SQL crudo los campos json van serializados a
+                // mano, igual que note y muscles unas líneas más arriba.
+                weekly_progression: JSON.stringify(ex.weekly_progression || []),
               })
               .execute()
             nExercises++
