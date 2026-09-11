@@ -1337,19 +1337,19 @@
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Con banda o toalla. Sigue siendo el único tirón horizontal frente a las 12 series de fondos de esta semana — no lo saltes."
+              "note": "Con banda o toalla. Complementa el remo de abajo — entre los dos compensan las 8 series/semana de fondos de esta fase."
             },
             {
               "sort_order": 8,
-              "name": "Flexiones con palmada",
-              "exercise_id": "clapping_pushup",
-              "muscles": "Pecho, tríceps, potencia",
-              "sets": 3,
+              "name": "Remo invertido con pausa",
+              "exercise_id": "inverted_row_pause",
+              "muscles": "Dorsales, romboides, bíceps",
+              "sets": 4,
               "reps": "8-10",
-              "rest_seconds": 90,
+              "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Potencia explosiva de empuje. Complementa los dips."
+              "note": "Barra baja o mesa. Pausa 1s con el pecho arriba. El remo REAL de fase 3, no solo banda — mantiene el tirón horizontal en el tercio final del programa."
             },
             {
               "sort_order": 9,
