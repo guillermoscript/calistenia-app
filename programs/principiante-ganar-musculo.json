@@ -1716,12 +1716,12 @@
               "muscles": "Oblicuos, core lateral",
               "exercise_id": "side_plank",
               "sets": 3,
-              "reps": "30 s (15 s por lado)",
+              "reps": "30 s por lado",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "15s por lado, 10 más que en la fase 1. Cadera alta todo el rato.",
+              "note": "30 s por lado, 10 más que en la fase 1. Cadera alta todo el rato.",
               "sort_order": 7
             },
             {
