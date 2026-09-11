@@ -972,7 +972,7 @@
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 35,
-              "note": "Brazos arriba. Aumenta el tiempo cada semana. Si pierdes la posición de la espalda baja, descansa."
+              "note": "Brazos arriba. Si los 35s de hoy se sostienen con la espalda baja pegada al suelo y sin perder la forma, la próxima sesión intenta unos segundos más por tu cuenta; si pierdes la posición, descansa y repite los mismos 35s."
             },
             {
               "sort_order": 8,
@@ -1272,7 +1272,7 @@
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 8,
-              "note": "Enfócate en la CALIDAD de la entrada, no en la duración — por eso el temporizador de hoy es más corto que el del lunes. Patada suave y controlada. Una vez arriba: empuja el suelo, mete las costillas, aprieta todo. Usa dedos para over-balance, talones de mano para under-balance. Cada caída es data — ajusta el siguiente intento."
+              "note": "Enfócate en la CALIDAD de la entrada, no en la duración — por eso el temporizador de hoy es más corto que el del lunes. Patada suave y controlada. Una vez arriba: empuja el suelo, mete las costillas, aprieta todo. Usa dedos para over-balance, talones de mano para under-balance. Recuerda la salida de emergencia antes de tu primer intento de hoy: si se te escapa, gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas. Cada caída es data — ajusta el siguiente intento."
             },
             {
               "sort_order": 5,
