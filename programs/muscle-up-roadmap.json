@@ -12,16 +12,16 @@
       "Barra de dominadas",
       "Paralelas",
       "Liga de resistencia",
-      "Lastre (opcional)"
+      "Lastre"
     ],
     "contraindications": [
       "elbow",
       "shoulder"
     ],
-    "notes": "Programa de 12 semanas hacia tu primer muscle-up. 4 días/sem: jalón explosivo, transición y false grip, volumen combinado, y habilidad + core.",
+    "notes": "Programa de 12 semanas hacia tu primer muscle-up. 4 días/sem: jalón explosivo, transición con negativas y false grip, volumen combinado, y habilidad + core.",
     "instructions": {
-      "es": "Prerrequisito (no lo saltes, es lo que separa este roadmap de una lesión de hombro): 8-12 dominadas estrictas seguidas y 8-12 fondos en paralelas completos y controlados, ambos con buena técnica. Si no llegas a esas cifras, este NO es tu programa todavía — haz primero el Pull-up Roadmap (y trabaja fondos en paralelas por tu cuenta) hasta cumplir el prerrequisito, luego vuelve aquí. Progresión: fase 1 (semanas 1-4) construye jalón explosivo y fuerza de empuje; fase 2 (semanas 5-8) mete la transición con negativas de muscle-up y trabajo de false grip — aquí es donde falla el 90% de los intentos, así que no te la saltes aunque te aburra; fase 3 (semanas 9-12) junta todo en el muscle-up estricto y añade volumen. Si en fase 2 las negativas de muscle-up no bajan controladas (mínimo 3-4 segundos), repite 1-2 semanas más antes de pasar a fase 3. Descarga: baja el volumen a la mitad 5-7 días cada 4-6 semanas — el codo y el hombro son los que más acusan la transición. Este roadmap es un BLOQUE de especialización en el patrón de transición, no una rutina completa de tirón/empuje.",
-      "en": "Prerequisite (don't skip this, it's what separates this roadmap from a shoulder injury): 8-12 consecutive strict pull-ups and 8-12 full, controlled parallel-bar dips, both with good form. If you're not there yet, this is NOT your program yet — do the Pull-up Roadmap first (and work on dips on your own) until you meet the prerequisite, then come back. Progression: phase 1 (weeks 1-4) builds explosive pulling and pushing strength; phase 2 (weeks 5-8) adds the transition with muscle-up negatives and false-grip work — this is where 90% of attempts get stuck, so don't rush through it even if it feels slow; phase 3 (weeks 9-12) puts it together into the strict muscle-up and adds volume. If by phase 2 your muscle-up negatives aren't landing under control (at least 3-4 seconds), repeat 1-2 more weeks before moving to phase 3. Deload: cut volume in half for 5-7 days every 4-6 weeks — the elbow and shoulder take the brunt of the transition work. This roadmap is a transition-pattern SPECIALIZATION BLOCK, not a complete pull/push routine."
+      "es": "Prerrequisito (no lo saltes, es lo que separa este roadmap de una lesión de hombro): 8-12 dominadas estrictas seguidas y 8-12 fondos en paralelas completos y controlados, ambos con buena técnica. Si no llegas a esas cifras, este NO es tu programa todavía — haz primero el Pull-up Roadmap (y trabaja fondos en paralelas por tu cuenta) hasta cumplir el prerrequisito, luego vuelve aquí. Progresión: fase 1 (semanas 1-4) construye jalón explosivo, fuerza de empuje y tu primer contacto con el agarre falso (false grip); fase 2 (semanas 5-8) mete la transición con negativas de muscle-up muy lentas y trabajo real de false grip — aquí es donde falla el 90% de los intentos, así que no te la saltes aunque te aburra; fase 3 (semanas 9-12) junta todo en intentos reales de muscle-up estricto y añade volumen. El objetivo realista de este roadmap es tu primer muscle-up con impulso controlado (kipping); el false grip ayuda mucho pero no es obligatorio para esa versión, así que úsalo si lo controlas y si no, sigue con agarre normal. El lunes de cada semana en fase 2 y 3 es tu día de negativas/intentos: hazlo fresco, con descanso de fin de semana detrás. Si en fase 2 las negativas de muscle-up no bajan controladas (mínimo 3-4 segundos), repite 1-2 semanas más antes de pasar a fase 3. Descarga: la semana 8 (última de fase 2) sirve la mitad del volumen automáticamente — el codo y el hombro son los que más acusan la transición. Este roadmap es un BLOQUE de especialización en el patrón de transición, no una rutina completa de tirón/empuje.",
+      "en": "Prerequisite (don't skip this, it's what separates this roadmap from a shoulder injury): 8-12 consecutive strict pull-ups and 8-12 full, controlled parallel-bar dips, both with good form. If you're not there yet, this is NOT your program yet — do the Pull-up Roadmap first (and work on dips on your own) until you meet the prerequisite, then come back. Progression: phase 1 (weeks 1-4) builds explosive pulling, pushing strength, and your first contact with the false grip; phase 2 (weeks 5-8) adds the transition with very slow muscle-up negatives and real false-grip work — this is where 90% of attempts get stuck, so don't rush through it even if it feels slow; phase 3 (weeks 9-12) puts it together into real strict muscle-up attempts and adds volume. This roadmap's realistic target is your first kipping (momentum-assisted) muscle-up; the false grip helps a lot but isn't mandatory for that version, so use it if you've got it and stick with a normal grip if not. Monday of each week in phase 2 and 3 is your negatives/attempts day: do it fresh, with a full weekend of rest behind it. If by phase 2 your muscle-up negatives aren't landing under control (at least 3-4 seconds), repeat 1-2 more weeks before moving to phase 3. Deload: week 8 (the last week of phase 2) automatically serves half the volume — the elbow and shoulder take the brunt of the transition work. This roadmap is a transition-pattern SPECIALIZATION BLOCK, not a complete pull/push routine."
     }
   },
   "phases": [
@@ -81,24 +81,24 @@
               "name": "Dominadas estrictas",
               "exercise_id": "pullup_strict",
               "muscles": "Dorsales, bíceps, romboides",
-              "sets": 4,
+              "sets": 3,
               "reps": "6-8",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
-              "note": "Explosivas en la fase concéntrica. Intenta llegar al pecho. Baja controlado 3 seg."
+              "note": "Semana 1-2: quédate en 3 series aunque puedas más, es tu primera sesión de tirón del roadmap. Explosivas en la fase concéntrica, baja controlado 3 seg."
             },
             {
               "sort_order": 5,
-              "name": "Dominadas al pecho (high pull-ups)",
-              "exercise_id": "close_grip_pullup",
+              "name": "Dominada gironda al esternón",
+              "exercise_id": "gironda_sternum_chin",
               "muscles": "Dorsales, bíceps, trapecio",
-              "sets": 4,
+              "sets": 3,
               "reps": "4-6",
               "rest_seconds": 150,
               "priority": "primary",
               "is_timer": false,
-              "note": "Tira con toda la fuerza para llevar el pecho a la barra. Agarre cerrado. Esto es clave para el muscle up."
+              "note": "Tira con toda la fuerza para llevar el pecho a la barra, codos hacia las caderas. Es el jalón explosivo al esternón — la base del muscle up."
             },
             {
               "sort_order": 6,
@@ -182,7 +182,7 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Rotaciones, flexiones y extensiones de muñeca. Prepara para el false grip."
+              "note": "Rotaciones, flexiones y extensiones de muñeca. Prepara la muñeca para el agarre falso que empiezas hoy."
             },
             {
               "sort_order": 2,
@@ -215,12 +215,12 @@
               "name": "Skin the cat",
               "exercise_id": "skin_the_cat",
               "muscles": "Hombros, dorsales, core",
-              "sets": 4,
+              "sets": 2,
               "reps": "3-4",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
-              "note": "Rango parcial al inicio. Baja lento hasta la posición invertida. Fortalece la transición del muscle up."
+              "note": "Rango parcial. Baja lento hasta la posición invertida. Si en la semana 3-4 lo controlas bien, sube a 3-4 series por tu cuenta."
             },
             {
               "sort_order": 5,
@@ -262,16 +262,16 @@
             },
             {
               "sort_order": 8,
-              "name": "Hollow hold",
-              "exercise_id": "hollow_hold",
-              "muscles": "Core, abdominales, flexores de cadera",
-              "sets": 3,
-              "reps": "20-30s",
+              "name": "Colgado en Agarre Falso",
+              "exercise_id": "false_grip_hang",
+              "muscles": "Antebrazos, muñecas, dorsales",
+              "sets": 2,
+              "reps": "15-20s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
-              "timer_seconds": 30,
-              "note": "Espalda baja pegada al suelo. Brazos y piernas extendidos. Posición clave del muscle up."
+              "timer_seconds": 20,
+              "note": "Muñeca por encima de la barra, talón de la mano apoyado (agarre falso). Molesta al principio, es normal — para en cuanto duela de verdad, no cuando solo incomode. Primer contacto con la posición que vas a necesitar en fase 2."
             },
             {
               "sort_order": 9,
@@ -348,15 +348,15 @@
             },
             {
               "sort_order": 4,
-              "name": "Dominadas commando",
-              "exercise_id": "commando_pullup",
-              "muscles": "Dorsales, bíceps, oblicuos",
-              "sets": 3,
-              "reps": "5-6 c/lado",
+              "name": "Chin-ups",
+              "exercise_id": "chinup",
+              "muscles": "Bíceps, dorsales",
+              "sets": 4,
+              "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Agarre neutral, alterna el lado que pasa la barra. Trabaja jalón asimétrico."
+              "note": "Agarre supino, volumen alto. Sustituye a la variante commando: mismo patrón de tirón sin exigir un ejercicio avanzado en la semana 1."
             },
             {
               "sort_order": 5,
@@ -372,39 +372,39 @@
             },
             {
               "sort_order": 6,
-              "name": "Pike push-ups",
-              "exercise_id": "pike_pushup",
-              "muscles": "Hombros, tríceps",
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Caderas elevadas, empuja vertical. Fortalece deltoides para la fase de empuje del muscle up."
-            },
-            {
-              "sort_order": 7,
-              "name": "Flexiones estándar",
-              "exercise_id": "pushup_std",
-              "muscles": "Pecho, tríceps, hombros",
-              "sets": 3,
+              "name": "Face Pull (banda/toalla)",
+              "exercise_id": "face_pull",
+              "muscles": "Deltoides posterior, romboides, rotadores externos",
+              "sets": 4,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Volumen accesorio. Rango completo, core activado."
+              "note": "Con banda o toalla. Tirón horizontal para compensar tanto tirón vertical y tanto fondo — protege el hombro."
             },
             {
-              "sort_order": 8,
-              "name": "Elevación de piernas colgado",
-              "exercise_id": "hanging_leg_raise",
-              "muscles": "Abdominales inferiores, flexores de cadera",
-              "sets": 3,
+              "sort_order": 7,
+              "name": "Remo invertido con pausa",
+              "exercise_id": "inverted_row_pause",
+              "muscles": "Dorsales, romboides, bíceps",
+              "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Sin balanceo. Sube las piernas controlado. Fortalece el core para el kipping."
+              "note": "Barra baja o mesa. Pausa 1s con el pecho arriba. El único tirón horizontal real del programa: no te lo saltes."
+            },
+            {
+              "sort_order": 8,
+              "name": "Sentadilla Bodyweight",
+              "exercise_id": "bodyweight_squat",
+              "muscles": "Cuádriceps, glúteos, isquiotibiales",
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Este roadmap NO es una rutina de piernas — esto es solo mantenimiento. Combínalo con un día de piernas propio si quieres progresar ahí de verdad."
             },
             {
               "sort_order": 9,
@@ -575,13 +575,148 @@
     },
     {
       "phase_number": 2,
-      "name": "Fase 2 – Transición y false grip",
+      "name": "Fase 2 – Transición: negativas y false grip",
       "weeks": "5-8",
       "color": "#F59E0B",
+      "deload_last_week": true,
       "days": [
         {
           "day_id": "lun",
           "day_name": "Lunes",
+          "day_focus": "Transición y habilidad",
+          "workout_title": "Muscle-up negativas y false grip",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Movilidad de muñecas",
+              "exercise_id": "wrist_mobility",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "note": "Extra tiempo. Las muñecas deben estar listas para el false grip de hoy — flexión y extensión profunda."
+            },
+            {
+              "sort_order": 2,
+              "name": "Rotación torácica",
+              "exercise_id": "thoracic_rotation",
+              "muscles": "Columna torácica, oblicuos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "note": "Abre bien la columna torácica. Necesitas movilidad para la transición."
+            },
+            {
+              "sort_order": 3,
+              "name": "Círculos de brazos",
+              "exercise_id": "arm_circles",
+              "muscles": "Hombros, movilidad articular",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Círculos grandes y pequeños. Activa la cintura escapular."
+            },
+            {
+              "sort_order": 4,
+              "name": "Muscle-up negativas",
+              "exercise_id": "muscleup_neg",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 5,
+              "reps": "2-3",
+              "rest_seconds": 180,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sube con salto o ayuda a la posición alta. Baja MUY lento (5-7s). Estás fresco tras el descanso del fin de semana: es el mejor momento de la semana para esto."
+            },
+            {
+              "sort_order": 5,
+              "name": "Skin the cat",
+              "exercise_id": "skin_the_cat",
+              "muscles": "Hombros, dorsales, core",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Rango completo ahora. Pasa por debajo y vuelve controlado. Movilidad + fuerza."
+            },
+            {
+              "sort_order": 6,
+              "name": "Dips en paralelas",
+              "exercise_id": "dips_parallel",
+              "muscles": "Pecho, tríceps, hombros",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Profundos y con pausa abajo 1s. Simula la fase de empuje desde la transición."
+            },
+            {
+              "sort_order": 7,
+              "name": "Remo en Agarre Falso",
+              "exercise_id": "false_grip_row",
+              "muscles": "Dorsales, romboides, antebrazos",
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Remo invertido en barra baja con agarre falso (muñeca por encima del agarre, dobla la muñeca todo el recorrido). El escalón real entre el colgado en agarre falso de fase 1 y la negativa de muscle-up de hoy — aquí es donde se acostumbra la muñeca a soportar la transición."
+            },
+            {
+              "sort_order": 8,
+              "name": "Hollow-to-Arch Swing",
+              "exercise_id": "hollow_arch",
+              "muscles": "Dorsales, hombros, core",
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Colgado de la barra, alterna entre hollow y arch generando balanceo controlado. Es el drill de kipping real, no un muscle-up: aprende el ritmo del arco antes de intentarlo en la barra."
+            },
+            {
+              "sort_order": 9,
+              "name": "Estiramiento pectoral",
+              "exercise_id": "pectoral_stretch",
+              "muscles": "Pectoral mayor y menor",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "note": "Más tiempo en el estiramiento. Los hombros y pecho cargan mucho en la transición."
+            },
+            {
+              "sort_order": 10,
+              "name": "Estiramiento de tríceps",
+              "exercise_id": "triceps_stretch",
+              "muscles": "Tríceps, hombro",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Relaja los tríceps. 15s por lado."
+            }
+          ],
+          "day_type": "full"
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Jalón explosivo",
           "workout_title": "Pull explosivo avanzado",
           "exercises": [
@@ -613,10 +748,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Dominadas al pecho (high pull-ups)",
-              "exercise_id": "close_grip_pullup",
+              "name": "Dominada gironda al esternón",
+              "exercise_id": "gironda_sternum_chin",
               "muscles": "Dorsales, bíceps, trapecio",
-              "sets": 5,
+              "sets": 4,
               "reps": "4-6",
               "rest_seconds": 150,
               "priority": "primary",
@@ -629,11 +764,11 @@
               "exercise_id": "pullup_strict",
               "muscles": "Dorsales, bíceps, romboides",
               "sets": 4,
-              "reps": "6-8",
+              "reps": "8-10",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
-              "note": "Tempo 2-0-1-0. Fase excéntrica controlada. Busca más reps que en Fase 1."
+              "note": "Tempo 2-0-1-0. Fase excéntrica controlada. Más series y más reps que en Fase 1: el escalón real."
             },
             {
               "sort_order": 5,
@@ -713,141 +848,6 @@
           "day_type": "pull"
         },
         {
-          "day_id": "mar",
-          "day_name": "Martes",
-          "day_focus": "Transición y habilidad",
-          "workout_title": "Muscle-up negativas y false grip",
-          "exercises": [
-            {
-              "sort_order": 1,
-              "name": "Movilidad de muñecas",
-              "exercise_id": "wrist_mobility",
-              "muscles": "Muñecas, antebrazos",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 60,
-              "note": "Extra tiempo. Las muñecas deben estar listas para el false grip. Flexión y extensión profunda."
-            },
-            {
-              "sort_order": 2,
-              "name": "Rotación torácica",
-              "exercise_id": "thoracic_rotation",
-              "muscles": "Columna torácica, oblicuos",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "note": "Abre bien la columna torácica. Necesitas movilidad para la transición."
-            },
-            {
-              "sort_order": 3,
-              "name": "Círculos de brazos",
-              "exercise_id": "arm_circles",
-              "muscles": "Hombros, movilidad articular",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "note": "Círculos grandes y pequeños. Activa la cintura escapular."
-            },
-            {
-              "sort_order": 4,
-              "name": "Muscle-up negativas",
-              "exercise_id": "muscleup_neg",
-              "muscles": "Dorsales, pecho, tríceps, core",
-              "sets": 5,
-              "reps": "2-3",
-              "rest_seconds": 180,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Sube con salto o ayuda a la posición alta. Baja MUY lento (5-7s). Aprende la trayectoria de la transición."
-            },
-            {
-              "sort_order": 5,
-              "name": "Skin the cat",
-              "exercise_id": "skin_the_cat",
-              "muscles": "Hombros, dorsales, core",
-              "sets": 4,
-              "reps": "3-5",
-              "rest_seconds": 120,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Rango completo ahora. Pasa por debajo y vuelve controlado. Movilidad + fuerza."
-            },
-            {
-              "sort_order": 6,
-              "name": "Dips en paralelas",
-              "exercise_id": "dips_parallel",
-              "muscles": "Pecho, tríceps, hombros",
-              "sets": 4,
-              "reps": "8-10",
-              "rest_seconds": 90,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Profundos y con pausa abajo 1s. Simula la fase de empuje desde la transición."
-            },
-            {
-              "sort_order": 7,
-              "name": "Hollow hold",
-              "exercise_id": "hollow_hold",
-              "muscles": "Core, abdominales",
-              "sets": 3,
-              "reps": "30-40s",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": true,
-              "timer_seconds": 40,
-              "note": "Posición tight. Practica el swing del kipping mentalmente mientras mantienes."
-            },
-            {
-              "sort_order": 8,
-              "name": "Muscle-up flow",
-              "exercise_id": "muscleup_flow",
-              "muscles": "Dorsales, hombros, core",
-              "sets": 3,
-              "reps": "5-6",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Practica el movimiento de kipping colgado. Arco y hollow alternados. Aprende el ritmo."
-            },
-            {
-              "sort_order": 9,
-              "name": "Estiramiento pectoral",
-              "exercise_id": "pectoral_stretch",
-              "muscles": "Pectoral mayor y menor",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "note": "Más tiempo en el estiramiento. Los hombros y pecho cargan mucho en la transición."
-            },
-            {
-              "sort_order": 10,
-              "name": "Estiramiento de tríceps",
-              "exercise_id": "triceps_stretch",
-              "muscles": "Tríceps, hombro",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "note": "Relaja los tríceps. 15s por lado."
-            }
-          ],
-          "day_type": "full"
-        },
-        {
           "day_id": "jue",
           "day_name": "Jueves",
           "day_focus": "Volumen de jalón y empuje",
@@ -881,30 +881,18 @@
             },
             {
               "sort_order": 3,
-              "name": "Dominadas tipo máquina de escribir",
-              "exercise_id": "typewriter_pullup",
-              "muscles": "Dorsales, bíceps, estabilizadores",
+              "name": "Dominadas Agarre Cerrado",
+              "exercise_id": "close_grip_pullup",
+              "muscles": "Dorsales, bíceps, antebrazo",
               "sets": 4,
-              "reps": "3-4 c/lado",
-              "rest_seconds": 120,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Sube y desplázate lateralmente arriba. Fuerza unilateral avanzada."
-            },
-            {
-              "sort_order": 4,
-              "name": "Chin-ups",
-              "exercise_id": "chinup",
-              "muscles": "Bíceps, dorsales",
-              "sets": 4,
-              "reps": "8-10",
+              "reps": "6-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Volumen de bíceps. Importante para la fuerza de jalón supino."
+              "note": "Manos juntas, agarre más estrecho que los hombros. Volumen de tirón sin exigir un movimiento unilateral avanzado."
             },
             {
-              "sort_order": 5,
+              "sort_order": 4,
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho, tríceps, hombros",
@@ -913,7 +901,19 @@
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Volumen de empuje. Profundos y controlados."
+              "note": "Volumen de empuje con pausa de 1s abajo. Construye el control en la fase baja del muscle up."
+            },
+            {
+              "sort_order": 5,
+              "name": "Face Pull (banda/toalla)",
+              "exercise_id": "face_pull",
+              "muscles": "Deltoides posterior, romboides, rotadores externos",
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Con banda o toalla. El tirón horizontal que compensa todo el volumen vertical de la semana."
             },
             {
               "sort_order": 6,
@@ -929,15 +929,15 @@
             },
             {
               "sort_order": 7,
-              "name": "Dominadas L-sit",
-              "exercise_id": "lsit_pullup",
-              "muscles": "Dorsales, bíceps, core",
-              "sets": 3,
-              "reps": "5-6",
-              "rest_seconds": 120,
+              "name": "Sentadilla Bodyweight",
+              "exercise_id": "bodyweight_squat",
+              "muscles": "Cuádriceps, glúteos, isquiotibiales",
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Mantén las piernas a 90° durante toda la dominada. Core + jalón combinado."
+              "note": "Mantenimiento de piernas — este roadmap no las entrena de verdad, combínalo con tu propio día de piernas."
             },
             {
               "sort_order": 8,
@@ -1010,7 +1010,7 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Énfasis en extensión de muñeca para false grip."
+              "note": "Énfasis en extensión de muñeca — la necesitas para el apoyo en L-sit y en la barra."
             },
             {
               "sort_order": 3,
@@ -1040,18 +1040,30 @@
             },
             {
               "sort_order": 5,
-              "name": "Muscle-up flow",
-              "exercise_id": "muscleup_flow",
+              "name": "Hollow-to-Arch Swing",
+              "exercise_id": "hollow_arch",
               "muscles": "Dorsales, hombros, core",
               "sets": 4,
-              "reps": "5-6",
+              "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Kipping drill. Alterna arco y hollow. Busca el timing correcto."
+              "note": "Kipping drill. Alterna arco y hollow. Busca el timing correcto — es el swing que necesitas, no un muscle-up encadenado."
             },
             {
               "sort_order": 6,
+              "name": "Muscle-up estricto (intentos)",
+              "exercise_id": "muscleup_real",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 3,
+              "reps": "1",
+              "rest_seconds": 150,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Sondeo: 3 intentos sueltos, sin presión, para sentir dónde estás. No son los intentos «de verdad» de la fase 3 — es el escalón intermedio entre las negativas y los intentos completos."
+            },
+            {
+              "sort_order": 7,
               "name": "Hollow rock",
               "exercise_id": "hollow_rock",
               "muscles": "Core, abdominales",
@@ -1063,7 +1075,7 @@
               "note": "Mecerse controlado. Nunca pierdas la forma hollow."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Puente de Glúteo con Marcha",
               "exercise_id": "glute_bridge_march",
               "muscles": "Glúteos, core, estabilidad pélvica",
@@ -1073,19 +1085,6 @@
               "priority": "secondary",
               "is_timer": false,
               "note": "Puente alto, alterna levantar piernas. Estabilidad lumbar y pélvica."
-            },
-            {
-              "sort_order": 8,
-              "name": "Plancha frontal",
-              "exercise_id": "plank",
-              "muscles": "Core, abdominales, espalda baja",
-              "sets": 3,
-              "reps": "40-50s",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": true,
-              "timer_seconds": 50,
-              "note": "Aprieta todo. Protracción escapular. Línea recta de cabeza a talones."
             },
             {
               "sort_order": 9,
@@ -1127,140 +1126,6 @@
         {
           "day_id": "lun",
           "day_name": "Lunes",
-          "day_focus": "Jalón explosivo",
-          "workout_title": "Pull máximo – Preparación muscle-up",
-          "exercises": [
-            {
-              "sort_order": 1,
-              "name": "Dislocaciones de hombro",
-              "exercise_id": "shoulder_dislocates",
-              "muscles": "Hombros, pectoral, dorsal",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "note": "Agarre cerrado. Movilidad máxima."
-            },
-            {
-              "sort_order": 2,
-              "name": "Activación escapular",
-              "exercise_id": "scapular_activation",
-              "muscles": "Trapecio inferior, serrato",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 40,
-              "note": "Colgado activo con retracción. Prepara la musculatura de jalón."
-            },
-            {
-              "sort_order": 3,
-              "name": "Movilidad de muñecas",
-              "exercise_id": "wrist_mobility",
-              "muscles": "Muñecas, antebrazos",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "note": "Prepara false grip. Énfasis en flexión."
-            },
-            {
-              "sort_order": 4,
-              "name": "Dominadas con peso",
-              "exercise_id": "weighted_pullup",
-              "muscles": "Dorsales, bíceps, core",
-              "sets": 5,
-              "reps": "3-5",
-              "rest_seconds": 180,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "10-15 kg. Fuerza máxima. Si haces 5 reps fácil, sube peso."
-            },
-            {
-              "sort_order": 5,
-              "name": "Dominadas al pecho (high pull-ups)",
-              "exercise_id": "close_grip_pullup",
-              "muscles": "Dorsales, bíceps, trapecio",
-              "sets": 4,
-              "reps": "5-7",
-              "rest_seconds": 150,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Barra al esternón o más abajo. Máxima explosividad. Deberías sentir que casi pasas la barra."
-            },
-            {
-              "sort_order": 6,
-              "name": "Dominadas estrictas",
-              "exercise_id": "pullup_strict",
-              "muscles": "Dorsales, bíceps, romboides",
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 90,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Más reps que antes. Tu base debe ser sólida. Al pecho siempre."
-            },
-            {
-              "sort_order": 7,
-              "name": "Dips en paralelas",
-              "exercise_id": "dips_parallel",
-              "muscles": "Pecho, tríceps, hombros",
-              "sets": 4,
-              "reps": "10-12",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Profundos. Mantén la fuerza de empuje alta para la fase final del MU."
-            },
-            {
-              "sort_order": 8,
-              "name": "Retracción escapular en barra",
-              "exercise_id": "scap_retract",
-              "muscles": "Romboides, trapecio inferior",
-              "sets": 3,
-              "reps": "12-15",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Pausa 3s arriba. Escápulas fuertes y estables."
-            },
-            {
-              "sort_order": 9,
-              "name": "Estiramiento de dorsal",
-              "exercise_id": "lat_stretch",
-              "muscles": "Dorsales, oblicuos",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "note": "Estiramiento profundo. Los dorsales trabajan muy duro en esta fase."
-            },
-            {
-              "sort_order": 10,
-              "name": "Estiramiento de bíceps",
-              "exercise_id": "biceps_stretch",
-              "muscles": "Bíceps, antebrazo",
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "note": "Relaja los bíceps. Previene tendinitis. 15s por lado."
-            }
-          ],
-          "day_type": "pull"
-        },
-        {
-          "day_id": "mar",
-          "day_name": "Martes",
           "day_focus": "Transición y habilidad",
           "workout_title": "Muscle-up – Intentos y técnica",
           "exercises": [
@@ -1275,7 +1140,7 @@
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Muñecas completamente listas para false grip e intentos de muscle up."
+              "note": "Muñecas completamente listas para el tirón explosivo de los intentos de hoy."
             },
             {
               "sort_order": 2,
@@ -1313,34 +1178,22 @@
               "rest_seconds": 180,
               "priority": "primary",
               "is_timer": false,
-              "note": "MOMENTO DE LA VERDAD. False grip, tira explosivo, pasa la transición. Si no sale, haz el intento y baja controlado. Descansa suficiente entre intentos."
+              "note": "MOMENTO DE LA VERDAD. Usa el agarre falso que entrenaste en fases 1-2 si lo controlas — ayuda a la transición; si no, agarre normal también vale para un muscle-up con kipping. Tira explosivo y pasa la transición. Si no sale, haz el intento igualmente y baja controlado. Es lunes: estás fresco tras el fin de semana, el mejor día de la semana para esto."
             },
             {
               "sort_order": 5,
               "name": "Muscle-up negativas",
               "exercise_id": "muscleup_neg",
               "muscles": "Dorsales, pecho, tríceps, core",
-              "sets": 4,
+              "sets": 3,
               "reps": "2-3",
               "rest_seconds": 150,
               "priority": "primary",
               "is_timer": false,
-              "note": "Después de los intentos, negativas lentas (7-10s). Refuerza la trayectoria."
+              "note": "Después de los intentos, negativas con una pausa de 2s justo en el punto de la transición — la parte donde más te atascas. Baja el resto en 7-10s."
             },
             {
               "sort_order": 6,
-              "name": "Skin the cat",
-              "exercise_id": "skin_the_cat",
-              "muscles": "Hombros, dorsales, core",
-              "sets": 3,
-              "reps": "4-5",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Rango completo, ida y vuelta. Mantén los brazos rectos."
-            },
-            {
-              "sort_order": 7,
               "name": "Dips en paralelas",
               "exercise_id": "dips_parallel",
               "muscles": "Pecho, tríceps, hombros",
@@ -1352,7 +1205,7 @@
               "note": "Mantén la fuerza de empuje. Profundos y controlados."
             },
             {
-              "sort_order": 8,
+              "sort_order": 7,
               "name": "Hollow hold",
               "exercise_id": "hollow_hold",
               "muscles": "Core, abdominales",
@@ -1365,7 +1218,7 @@
               "note": "Core firme. Esta posición es la que necesitas dominar en la barra."
             },
             {
-              "sort_order": 9,
+              "sort_order": 8,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pectoral mayor y menor",
@@ -1378,7 +1231,7 @@
               "note": "Estira bien el pecho. Los hombros y pectorales cargan mucho en los muscle ups."
             },
             {
-              "sort_order": 10,
+              "sort_order": 9,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps, hombro",
@@ -1394,8 +1247,8 @@
           "day_type": "full"
         },
         {
-          "day_id": "jue",
-          "day_name": "Jueves",
+          "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Volumen de jalón y empuje",
           "workout_title": "Volumen – Construir capacidad de trabajo",
           "exercises": [
@@ -1440,15 +1293,15 @@
             },
             {
               "sort_order": 4,
-              "name": "Dominadas tipo máquina de escribir",
-              "exercise_id": "typewriter_pullup",
-              "muscles": "Dorsales, bíceps, estabilizadores",
-              "sets": 4,
-              "reps": "4-5 c/lado",
-              "rest_seconds": 120,
+              "name": "Dominadas Agarre Cerrado",
+              "exercise_id": "close_grip_pullup",
+              "muscles": "Dorsales, bíceps, antebrazo",
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Más reps que en Fase 2. Fuerza unilateral al máximo."
+              "note": "Manos juntas. Volumen de tirón sin exigir un movimiento unilateral avanzado en plena fase de intentos."
             },
             {
               "sort_order": 5,
@@ -1472,34 +1325,46 @@
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Volumen máximo. Mantén rango completo incluso con fatiga."
+              "note": "Volumen máximo. Si ya haces 15 reps limpias sin peso, añade lastre — la misma progresión que en las dominadas con peso."
             },
             {
               "sort_order": 7,
-              "name": "Flexiones con palmada",
-              "exercise_id": "clapping_pushup",
-              "muscles": "Pecho, tríceps, potencia",
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 90,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Potencia explosiva de empuje. Complementa los dips."
-            },
-            {
-              "sort_order": 8,
-              "name": "Elevación de piernas colgado",
-              "exercise_id": "hanging_leg_raise",
-              "muscles": "Abdominales, flexores de cadera",
-              "sets": 3,
+              "name": "Face Pull (banda/toalla)",
+              "exercise_id": "face_pull",
+              "muscles": "Deltoides posterior, romboides, rotadores externos",
+              "sets": 4,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Piernas rectas a la barra si puedes. Core fuerte = muscle up limpio."
+              "note": "Con banda o toalla — resistencia ligera, no sustituye al remo real de abajo, solo lo complementa. Entre los dos suman tirón horizontal frente a las 8 series/semana de fondos de esta fase."
+            },
+            {
+              "sort_order": 8,
+              "name": "Remo invertido con pausa",
+              "exercise_id": "inverted_row_pause",
+              "muscles": "Dorsales, romboides, bíceps",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Barra baja o mesa. Pausa 1s con el pecho arriba. El remo REAL de fase 3, no solo banda — mantiene el tirón horizontal en el tercio final del programa."
             },
             {
               "sort_order": 9,
+              "name": "Zancada Inversa",
+              "exercise_id": "reverse_lunge",
+              "muscles": "Cuádriceps, glúteos, isquiotibiales",
+              "sets": 4,
+              "reps": "10 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Mantenimiento de piernas — combínalo con tu propio día de piernas si quieres progresar ahí de verdad."
+            },
+            {
+              "sort_order": 10,
               "name": "Estiramiento de dorsal",
               "exercise_id": "lat_stretch",
               "muscles": "Dorsales, oblicuos",
@@ -1512,7 +1377,7 @@
               "note": "Estiramiento profundo lateral. 20s por lado."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pectoral mayor y menor",
@@ -1523,6 +1388,128 @@
               "is_timer": true,
               "timer_seconds": 30,
               "note": "Abre el pecho. Previene acortamiento por el volumen de empuje."
+            }
+          ],
+          "day_type": "pull"
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Jalón explosivo",
+          "workout_title": "Pull máximo – Fuerza de jalón",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dislocaciones de hombro",
+              "exercise_id": "shoulder_dislocates",
+              "muscles": "Hombros, pectoral, dorsal",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "note": "Agarre cerrado. Movilidad máxima."
+            },
+            {
+              "sort_order": 2,
+              "name": "Activación escapular",
+              "exercise_id": "scapular_activation",
+              "muscles": "Trapecio inferior, serrato",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 40,
+              "note": "Colgado activo con retracción. Prepara la musculatura de jalón."
+            },
+            {
+              "sort_order": 3,
+              "name": "Movilidad de muñecas",
+              "exercise_id": "wrist_mobility",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Énfasis en flexión — prepara la muñeca para el volumen de tirón de hoy."
+            },
+            {
+              "sort_order": 4,
+              "name": "Dominadas con peso",
+              "exercise_id": "weighted_pullup",
+              "muscles": "Dorsales, bíceps, core",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 180,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "10-15 kg. Fuerza máxima. Si no tienes lastre, sustituye por dominadas estrictas con pausa de 3s abajo en cada rep."
+            },
+            {
+              "sort_order": 5,
+              "name": "Dominada gironda al esternón",
+              "exercise_id": "gironda_sternum_chin",
+              "muscles": "Dorsales, bíceps, trapecio",
+              "sets": 3,
+              "reps": "5-7",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Barra al esternón o más abajo. Máxima explosividad. Deberías sentir que casi pasas la barra."
+            },
+            {
+              "sort_order": 6,
+              "name": "Dominadas estrictas",
+              "exercise_id": "pullup_strict",
+              "muscles": "Dorsales, bíceps, romboides",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Más reps que en Fase 2 con una serie menos: el volumen sube por densidad (reps y tiempo bajo tensión), no por acumular series. Al pecho siempre."
+            },
+            {
+              "sort_order": 7,
+              "name": "Retracción escapular en barra",
+              "exercise_id": "scap_retract",
+              "muscles": "Romboides, trapecio inferior",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Pausa 3s arriba. Escápulas fuertes y estables."
+            },
+            {
+              "sort_order": 8,
+              "name": "Estiramiento de dorsal",
+              "exercise_id": "lat_stretch",
+              "muscles": "Dorsales, oblicuos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "note": "Estiramiento profundo. Los dorsales trabajan muy duro en esta fase."
+            },
+            {
+              "sort_order": 9,
+              "name": "Estiramiento de bíceps",
+              "exercise_id": "biceps_stretch",
+              "muscles": "Bíceps, antebrazo",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Relaja los bíceps. Previene tendinitis. 15s por lado."
             }
           ],
           "day_type": "pull"
@@ -1561,16 +1548,16 @@
             },
             {
               "sort_order": 3,
-              "name": "L-sit 30s",
-              "exercise_id": "lsit_30s",
+              "name": "L-sit 45s Objetivo",
+              "exercise_id": "lsit_45",
               "muscles": "Core, flexores de cadera, tríceps",
               "sets": 4,
-              "reps": "25-30s",
+              "reps": "30-45s",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 30,
-              "note": "Piernas rectas. Deberías alcanzar 30s consistentes. Depresión escapular completa."
+              "timer_seconds": 45,
+              "note": "Piernas rectas. El escalón real sobre la L-sit 30s de fase 2: más tiempo bajo tensión. Depresión escapular completa."
             },
             {
               "sort_order": 4,
@@ -1587,15 +1574,15 @@
             },
             {
               "sort_order": 5,
-              "name": "Muscle-up flow",
-              "exercise_id": "muscleup_flow",
+              "name": "Hollow-to-Arch Swing",
+              "exercise_id": "hollow_arch",
               "muscles": "Dorsales, hombros, core",
               "sets": 4,
-              "reps": "6-8",
+              "reps": "10-12",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Kipping fluido. El timing debe ser natural a estas alturas. Practica con intención."
+              "note": "Kipping fluido. El timing debe ser natural a estas alturas. Es el swing que sostiene tu muscle-up con impulso, practícalo con intención."
             },
             {
               "sort_order": 6,
