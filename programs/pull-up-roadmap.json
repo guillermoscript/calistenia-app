@@ -234,6 +234,19 @@
             },
             {
               "sort_order": 4,
+              "exercise_id": "wrist_mobility",
+              "name": "Movilidad de muñecas",
+              "muscles": "Muñecas, antebrazo",
+              "sets": 1,
+              "reps": "30 s",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Círculos, flexión y extensión antes de colgarte en las retracciones."
+            },
+            {
+              "sort_order": 5,
               "exercise_id": "australian_pullup",
               "name": "Dominada australiana",
               "muscles": "Dorsal, romboides, bíceps",
@@ -245,7 +258,7 @@
               "note": "Pausa 1 s con el pecho en la barra apretando escápulas. Progresión dentro de la fase: cada semana baja un poco la barra o sube los pies — el mismo ejercicio más horizontal es más difícil. Apunta en el comentario de la serie a qué altura lo hiciste, o el historial parecerá estancado. Si tu barra no baja a la altura de la cadera: pasa una toalla por los pomos de una puerta cerrada y rema tumbado, o túmbate bajo una mesa robusta y agárrate del canto. Mismo tempo y misma pausa."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "scap_retract",
               "name": "Retracción escapular colgado",
               "muscles": "Trapecio bajo, romboides, dorsal",
@@ -257,7 +270,7 @@
               "note": "Colgado en barra, hombros abajo sin flexionar codos. Misma escalera que el lunes: 2 s arriba la semana 1, 3 s la 2, 4 s la 3."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "bodyweight_squat",
               "name": "Sentadilla con peso corporal",
               "muscles": "Cuádriceps, glúteos",
@@ -269,7 +282,7 @@
               "note": "Única dosis de pierna del programa: 4 series para que el tren inferior no se quede a cero durante 12 semanas. Talones en el suelo, baja hasta que los muslos queden paralelos."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "exercise_id": "dead_bug",
               "name": "Dead bug",
               "muscles": "Core profundo, estabilizadores",
@@ -281,7 +294,7 @@
               "note": "Espalda baja pegada al suelo todo el tiempo. Extiende brazo y pierna contrarios lento."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "exercise_id": "hollow_hold",
               "name": "Hollow hold",
               "muscles": "Core, flexores de cadera",
@@ -294,7 +307,7 @@
               "note": "Espalda baja pegada al suelo. Brazos y piernas extendidos ligeramente elevados. Posición de tensión total."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "exercise_id": "pike_pushup",
               "name": "Flexión pike",
               "muscles": "Hombros, tríceps",
@@ -306,7 +319,7 @@
               "note": "Cadera alta formando una V invertida. Baja la cabeza hacia el suelo. Trabajo de empuje vertical para equilibrio."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral",
               "muscles": "Pecho, hombro anterior",
@@ -319,7 +332,7 @@
               "note": "Brazo contra marco de puerta a 90°. Gira el torso alejándote. 20s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "exercise_id": "triceps_stretch",
               "name": "Estiramiento de tríceps",
               "muscles": "Tríceps, dorsal",
@@ -1173,6 +1186,19 @@
             },
             {
               "sort_order": 4,
+              "exercise_id": "wrist_mobility",
+              "name": "Movilidad de muñecas",
+              "muscles": "Muñecas, antebrazo",
+              "sets": 1,
+              "reps": "30 s",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Círculos, flexión y extensión. Hoy bajas 8 s en cada negativa: es el ejercicio que más carga el codo de las 12 semanas."
+            },
+            {
+              "sort_order": 5,
               "exercise_id": "neg_pullup",
               "name": "Dominada negativa",
               "muscles": "Dorsal, bíceps (excéntrico)",
@@ -1184,7 +1210,7 @@
               "note": "No desaparecen en la fase 3: si aún no completas una dominada estricta, esto es lo que más te acerca. Sube con la silla, barbilla sobre la barra y baja contando 8 s sin soltar la tensión."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "inverted_row_pause",
               "name": "Remo invertido con pausa",
               "muscles": "Romboides, trapecio medio, dorsal",
@@ -1196,7 +1222,7 @@
               "note": "El volumen submáximo que sostiene la fase: 2 s de pausa con el pecho tocando la barra. Si no tienes barra baja: remo bajo una mesa robusta agarrando el canto, o toalla en los pomos de una puerta cerrada. Cuanto más horizontal el cuerpo, más difícil."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
               "muscles": "Trapecio medio, deltoides posterior, romboides",
@@ -1208,7 +1234,7 @@
               "note": "Salud de hombros. Liga a la altura de la cara, retrae escápulas al final del movimiento."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "exercise_id": "band_wrist_curl",
               "name": "Curl de muñeca con liga",
               "muscles": "Antebrazo, flexores",
@@ -1220,7 +1246,7 @@
               "note": "Liga bajo el pie, palmas arriba, y 12 más con las palmas hacia abajo. En la fase que más carga el codo es cuando menos se puede saltar: va en el día sin dominada estricta a propósito."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "exercise_id": "diamond_pushup",
               "name": "Flexión diamante",
               "muscles": "Tríceps, pecho interior, hombros",
@@ -1232,7 +1258,7 @@
               "note": "Empuje avanzado para equilibrio. Codos pegados al cuerpo."
             },
             {
-              "sort_order": 9,
+              "sort_order": 10,
               "exercise_id": "split_squats",
               "name": "Sentadilla dividida",
               "muscles": "Cuádriceps, glúteos, isquios",
@@ -1244,7 +1270,7 @@
               "note": "Último escalón de la dosis de pierna: un pie adelante y otro atrás, baja la rodilla de atrás casi al suelo. Son 4 series POR PIERNA; si las agujetas te estorban el jueves, baja a 3."
             },
             {
-              "sort_order": 10,
+              "sort_order": 11,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral",
               "muscles": "Pecho, hombro anterior",
@@ -1257,7 +1283,7 @@
               "note": "Abre el pecho. Brazo a 90° contra pared, rota torso. 20s por lado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 12,
               "exercise_id": "biceps_stretch",
               "name": "Estiramiento de bíceps",
               "muscles": "Bíceps, antebrazo",
