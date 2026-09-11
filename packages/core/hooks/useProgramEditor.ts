@@ -49,7 +49,9 @@ import type {
   ProgramIntensity,
   ProgramSkill,
   ProgramVisibility,
+  WeeklyProgressionSpec,
 } from '../types'
+import { parseWeeklyProgression } from '../lib/weeklyProgression'
 
 /**
  * Campos de las colecciones del programa que se guardan como `{ locale: texto }`.
@@ -128,6 +130,14 @@ export interface EditorExercise {
   isTimer: boolean
   timerSeconds: number
   section?: 'warmup' | 'main' | 'cooldown'
+  /**
+   * Rampa semanal de la fila (#755). El editor NO la edita todavía: la lleva
+   * y la vuelve a escribir tal cual. Sin esto, guardar un programa desde el
+   * editor la borraría EN SILENCIO —el guardado reconstruye el `data` completo
+   * de cada fila— y el programa se quedaría con la dosis de la primera semana
+   * sin que nada chistara.
+   */
+  weeklyProgression?: WeeklyProgressionSpec
   /**
    * Media propia del ejercicio dentro de ESTE programa (#618), que en el
    * reproductor de #608 gana al vídeo/imágenes del catálogo compartido.
@@ -1192,6 +1202,8 @@ export function useProgramEditor() {
           isTimer: r.is_timer || false,
           timerSeconds: r.timer_seconds || 0,
           section: (r.section || 'main') as EditorExercise['section'],
+          // #755: se lee para poder volver a escribirla al guardar, no para editarla.
+          weeklyProgression: parseWeeklyProgression(r.weekly_progression),
           // Media ya subida (#618). Son NOMBRES DE FICHERO de PocketBase, no
           // URLs: quien las pinta las resuelve con `pb.files.getURL` sobre el
           // registro, igual que hace la cascada de media de #608.
@@ -1439,6 +1451,9 @@ export function useProgramEditor() {
                 workout_title: `${day.focus}`,
                 sort_order: sortOrder,
                 section: ex.section || 'main',
+                // #755: devolver la rampa tal cual vino. Este `data` es el
+                // estado COMPLETO de la fila, así que omitirla la borraría.
+                weekly_progression: ex.weeklyProgression ?? [],
               },
             })
           }
