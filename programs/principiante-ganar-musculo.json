@@ -449,8 +449,8 @@
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Full Body + Core",
-          "workout_title": "Cuerpo Completo y Core",
+          "day_focus": "Tren Superior + Core",
+          "workout_title": "Tren Superior y Core",
           "exercises": [
             {
               "sort_order": 1,
@@ -1035,8 +1035,8 @@
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Full Body + Core",
-          "workout_title": "Cuerpo Completo – Integración",
+          "day_focus": "Tren Superior + Core",
+          "workout_title": "Tren Superior – Integración",
           "exercises": [
             {
               "sort_order": 1,
@@ -1633,8 +1633,8 @@
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Full Body + Core",
-          "workout_title": "Cuerpo Completo – Máximo Rendimiento",
+          "day_focus": "Tren Superior + Core",
+          "workout_title": "Tren Superior – Máximo Rendimiento",
           "exercises": [
             {
               "sort_order": 1,
