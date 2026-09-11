@@ -95,7 +95,7 @@
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "TEST del día 1, y va el PRIMERO para medirte en fresco: en la primera serie cuélgate el máximo que aguantes y apunta los segundos. Regístralo con EDITAR (no con el botón rápido). Luego dos series de 20 s. A partir de la semana 2 ya no hay nada que medir: hazlo al FINAL de la sesión para no llegar a las negativas con el agarre gastado, y suma 5 s cada semana (20 → 25 → 30); la semana 4 vuelve a 20. El temporizador de la app marca siempre el tiempo de la semana 1: a partir de la semana 2 párale tú cuando toque y registra los segundos reales con EDITAR."
+              "note": "TEST del día 1, y va el PRIMERO para medirte en fresco: en la primera serie cuélgate el máximo que aguantes y apunta los segundos. Regístralo con EDITAR (no con el botón rápido). Luego dos series de 20 s. A partir de la semana 2 ya no hay nada que medir, pero sigue abriendo el día con él: son 20-30 s con un minuto de descanso, no te van a estropear las negativas. Suma 5 s cada semana (20 → 25 → 30) y la semana 4 vuelve a 20. El temporizador de la app marca siempre el tiempo de la semana 1: a partir de la semana 2 párale tú cuando toque y registra los segundos reales con EDITAR."
             },
             {
               "sort_order": 6,
