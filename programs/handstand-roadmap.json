@@ -10,7 +10,8 @@
     "intensity": "moderate",
     "equipment": [
       "Pared",
-      "Liga de resistencia"
+      "Liga de resistencia",
+      "Silla firme o banco"
     ],
     "contraindications": [
       "wrist",
@@ -1101,12 +1102,12 @@
               "name": "Handstand libre — holds",
               "muscles": "Hombros, core, muñecas, equilibrio",
               "sets": 6,
-              "reps": "12 s libres",
+              "reps": "10 s libres",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 12,
-              "note": "Practica la patada controlada. Busca encontrar el punto de equilibrio: no mucho, no poco. Usa los dedos para frenar (over-balance) y los talones de las manos para corregir (under-balance). Si el intento se te escapa, gira por el hombro hacia el lateral — nunca frenes con la muñeca ni caigas de espaldas. No te frustres, cada intento enseña. Filma tus intentos para ver tu línea."
+              "timer_seconds": 10,
+              "note": "Practica la patada controlada. Busca encontrar el punto de equilibrio: no mucho, no poco. Usa los dedos para frenar (over-balance) y los talones de las manos para corregir (under-balance). Si el intento se te escapa, gira por el hombro hacia el lateral — nunca frenes con la muñeca ni caigas de espaldas. El temporizador marca el techo realista del programa (10s) — no un objetivo mínimo: 5-10s consistentes ya es la meta cumplida. No te frustres, cada intento enseña. Filma tus intentos para ver tu línea."
             },
             {
               "sort_order": 5,
@@ -1266,12 +1267,12 @@
               "name": "Handstand libre — práctica de equilibrio",
               "muscles": "Hombros, core, muñecas, equilibrio",
               "sets": 5,
-              "reps": "15 s libres",
+              "reps": "8 s libres",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 15,
-              "note": "Enfócate en la CALIDAD de la entrada. Patada suave y controlada. Una vez arriba: empuja el suelo, mete las costillas, aprieta todo. Usa dedos para over-balance, talones de mano para under-balance. Cada caída es data — ajusta el siguiente intento."
+              "timer_seconds": 8,
+              "note": "Enfócate en la CALIDAD de la entrada, no en la duración — por eso el temporizador de hoy es más corto que el del lunes. Patada suave y controlada. Una vez arriba: empuja el suelo, mete las costillas, aprieta todo. Usa dedos para over-balance, talones de mano para under-balance. Cada caída es data — ajusta el siguiente intento."
             },
             {
               "sort_order": 5,
@@ -1418,12 +1419,12 @@
               "name": "Handstand libre — holds",
               "muscles": "Hombros, core, muñecas, equilibrio",
               "sets": 6,
-              "reps": "15 s libres",
+              "reps": "10 s libres",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 15,
-              "note": "Busca tu mejor hold. Cuando encuentres el balance, respira suavemente y mantén la tensión. No bloquees la respiración. Meta: 5-10 segundos libres consistentes — cada segundo es una victoria. Si el intento se te escapa, gira por el hombro hacia el lateral."
+              "timer_seconds": 10,
+              "note": "Busca tu mejor hold. Cuando encuentres el balance, respira suavemente y mantén la tensión. No bloquees la respiración. Meta: 5-10 segundos libres consistentes — el temporizador marca 10s, el techo de esa meta, no un mínimo: cada segundo que aguantes ya es una victoria. Si el intento se te escapa, gira por el hombro hacia el lateral."
             },
             {
               "sort_order": 5,
