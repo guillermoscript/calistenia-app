@@ -1337,7 +1337,7 @@
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Con banda o toalla. Complementa el remo de abajo — entre los dos compensan las 8 series/semana de fondos de esta fase."
+              "note": "Con banda o toalla — resistencia ligera, no sustituye al remo real de abajo, solo lo complementa. Entre los dos suman tirón horizontal frente a las 8 series/semana de fondos de esta fase."
             },
             {
               "sort_order": 8,
@@ -1471,7 +1471,7 @@
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Más reps que en Fase 2, mismas series: el volumen sube por densidad, no solo por series. Al pecho siempre."
+              "note": "Más reps que en Fase 2 con una serie menos: el volumen sube por densidad (reps y tiempo bajo tensión), no por acumular series. Al pecho siempre."
             },
             {
               "sort_order": 7,
