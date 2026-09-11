@@ -13,8 +13,8 @@
     ],
     "color": "#F472B6",
     "instructions": {
-      "es": "Progresión: sube 1 repetición por serie en cada sesión dentro del rango indicado. Al llegar al tope del rango durante dos sesiones seguidas, pasa a la variante más exigente que te sugiere la nota del ejercicio (por ejemplo, de dominada negativa a dominada estricta, o de pistol asistido a pistol libre). Descarga: cada 4-6 semanas, incluida la transición entre fases, baja el volumen a la mitad durante 5-7 días antes de retomar la progresión. Para quién es: mujeres con base de calistenia que ya hacen algún pull-up y flexión y quieren fuerza real — dominadas estrictas, dips completos y un core que aguanta cargas, no una versión suave de un programa de hombre. El sesgo hacia el tirón es intencional: compensa las horas sentada y el patrón de empuje que ya domina la vida diaria. Necesitas una barra de dominadas, una banda elástica y, idealmente, unas paralelas o dos sillas estables para los dips.",
-      "en": "Progression: add 1 rep per set each session within the given range. Once you hit the top of the range for two sessions in a row, move to the harder variant suggested in the exercise note (e.g. negative pull-up to strict pull-up, or assisted pistol squat to free pistol squat). Deload: every 4-6 weeks, including the transition between phases, cut volume in half for 5-7 days before resuming progression. Who it is for: women with a calisthenics base who can already do a pull-up and a push-up and want real strength — strict pull-ups, full dips, and a core that can take load, not a softened version of a men's program. The pull bias is intentional: it offsets the sitting and pushing pattern daily life already trains. You need a pull-up bar, a resistance band, and ideally parallel bars or two stable chairs for dips."
+      "es": "Progresión: sube 1 repetición por serie y por semana, dentro del rango de la fase y sin salirte de él por arriba. Cuando llegues al tope del rango en todas las series dos semanas seguidas, pasa a la variante más exigente que te sugiere la nota del ejercicio (de dominada asistida con banda a dominada estricta, de dip con banda a dip libre, de pistol con apoyo a pistol libre). Si la nota no ofrece variante y el rango es corto —la dominada estricta vive en 2-3 y luego en 3-4—, quédate en el tope y quita ayuda o alarga la bajada hasta que cambie la fase; en la sentadilla con salto, que va a repeticiones fijas, lo que sube es la altura del salto, no el número. Descarga: la última semana de la fase 1 y de la fase 2 —las semanas 4 y 8— es de descarga y la app te reduce las series a la mitad automáticamente. La fase 3 cierra el ciclo sin descarga: cuando termines, tómate 5-7 días suaves antes de empezar otro bloque. Las dos habilidades que da nombre al programa se entrenan dos veces por semana de principio a fin. La dominada empieza en negativas y asistida con banda y acaba en 4×4-6 estrictas; el dip empieza asistido con banda en la semana 1, pasa a dip libre en la semana 5 y acaba en 4×8-10 con tres segundos de bajada. La potencia de pierna entra en la semana 5 con sentadilla con salto al principio del día de piernas, con las piernas frescas. Para quién es: mujeres con base de calistenia que ya hacen alguna dominada y flexión y quieren fuerza real —dominadas estrictas, dips completos y un core que aguanta cargas—, no una versión suave de un programa de hombre. El sesgo hacia el tirón es intencional: compensa las horas sentada y el patrón de empuje que ya domina la vida diaria. Material: una barra de dominadas, una banda elástica y unas paralelas o dos sillas estables. La banda no es decorativa: es la asistencia de las dominadas y de los dips de la fase 1, y baja de grosor a medida que ganas fuerza. Necesitas además una superficie elevada y estable —una silla, el sofá o el borde de la cama— para el pistol asistido, la flexión en pike y el dragon flag negativo.",
+      "en": "Progression: add 1 rep per set per week, staying inside the phase rep range. Once you hit the top of the range on every set for two weeks running, move to the harder variation the exercise note suggests (band-assisted pull-up to strict pull-up, band-assisted dip to free dip, assisted pistol to free pistol). Deload: the last week of phase 1 and of phase 2 — weeks 4 and 8 — is a deload week and the app halves your sets automatically. Phase 3 closes the block with no deload: when you finish, take 5-7 easy days before starting another one. The two skills the program is named after are trained twice a week from start to finish. The pull-up starts as negatives and band-assisted reps and ends at 4×4-6 strict; the dip starts band-assisted in week 1, goes free in week 5 and ends at 4×8-10 with a three-second lowering. Leg power enters in week 5 with jump squats at the start of leg day, on fresh legs. Who it is for: women with a calisthenics base who already do a pull-up or two and some push-ups and want real strength — strict pull-ups, full dips and a core that holds load — not a softened version of a men's program. The pull bias is intentional: it offsets the hours spent sitting and the pushing pattern daily life already trains. Equipment: a pull-up bar, a resistance band and parallel bars or two stable chairs. The band is not decoration: it is the assistance for the phase 1 pull-ups and dips, and it gets thinner as you get stronger. You also need a stable raised surface — a chair, the sofa or the edge of the bed — for the assisted pistol, the pike push-up and the negative dragon flag."
     }
   },
   "phases": [
@@ -76,7 +76,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps, romboides",
-              "note": "Repeticiones estrictas, sin balanceo. Para menos de 2, sustituye por negativas."
+              "note": "Repeticiones estrictas, sin balanceo. Si todavía no llegas a 2, haz las tres series con la banda del ejercicio de más abajo y vuelve a probar sin banda cada semana."
             },
             {
               "sort_order": 4,
@@ -85,23 +85,39 @@
                 "es": "Dominada Negativa",
                 "en": "Negative Pull-up"
               },
-              "sets": 3,
-              "reps": "3-5 (descenso 3-4s)",
+              "sets": 2,
+              "reps": "3 (descenso 4 s)",
               "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, bíceps",
+              "note": "Sube con impulso o desde un escalón y baja contando cuatro segundos. Solo la bajada: no intentes subir."
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "assisted_pull_up_band",
+              "name": {
+                "es": "Pull-up Asistida (banda)",
+                "en": "Assisted Pull-up (band)"
+              },
+              "sets": 3,
+              "reps": "5-7",
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Sube con impulso o un escalón, baja muy despacio."
+              "note": "Pisa la banda con un pie o apoya en ella la rodilla. Es el escalón que falta entre la negativa y la dominada estricta: aquí sí haces el movimiento completo de subida. Baja de grosor de banda antes que subir repeticiones."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "scap_retract",
               "name": {
                 "es": "Retracción Escapular",
                 "en": "Scapular Retraction"
               },
-              "sets": 3,
+              "sets": 2,
               "reps": "8-10",
               "rest_seconds": 45,
               "priority": "secondary",
@@ -111,7 +127,7 @@
               "note": "Cuelga de la barra y junta los omóplatos sin flexionar el codo."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "face_pull",
               "name": {
                 "es": "Face Pull (banda/toalla)",
@@ -127,14 +143,30 @@
               "note": "Codos altos, tira hacia la frente para la salud del hombro."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
+              "exercise_id": "resistance_band_seated_straight_back_row",
+              "name": {
+                "es": "Remo Sentado con Banda",
+                "en": "Seated Band Row"
+              },
+              "sets": 2,
+              "reps": "12",
+              "rest_seconds": 30,
+              "priority": "accessory",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, romboides, bíceps",
+              "note": "El único tirón horizontal de la fase: sentada, espalda recta, tira del codo hacia atrás sin balancear el torso. Es lo que compensa de verdad las horas sentada, más que la dominada."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "pectoral_stretch",
               "name": {
                 "es": "Estiramiento de Pectorales",
                 "en": "Pectoral Stretch"
               },
               "sets": 2,
-              "reps": "30s cada lado",
+              "reps": "30 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -143,14 +175,14 @@
               "note": "Estira el pecho tras el trabajo de tirón."
             },
             {
-              "sort_order": 8,
+              "sort_order": 10,
               "exercise_id": "lat_stretch",
               "name": {
                 "es": "Estiramiento de Dorsales",
                 "en": "Lat Stretch"
               },
               "sets": 2,
-              "reps": "30s cada lado",
+              "reps": "30 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -200,13 +232,29 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "assisted_dips_band",
+              "name": {
+                "es": "Dips Asistidos (banda)",
+                "en": "Assisted Dips (band)"
+              },
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho",
+              "note": "Primero del día y con el tríceps fresco: es una de las dos habilidades del programa. Pasa la banda por las paralelas (o entre dos sillas) y apoya en ella las rodillas o los pies. Baja hasta 90° de codo con los hombros lejos de las orejas. Esta es tu ruta de entrada al dip: cuando completes 3×8 con la banda fina, estás lista para el dip libre de la fase 2."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "diamond_pushup",
               "name": {
                 "es": "Push-up Diamante",
                 "en": "Diamond Push-up"
               },
               "sets": 3,
-              "reps": "5-7",
+              "reps": "6-8",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
@@ -215,14 +263,14 @@
               "note": "Manos en rombo bajo el pecho: exige más al tríceps."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "pushup_std",
               "name": {
                 "es": "Push-up Estándar",
                 "en": "Standard Push-up"
               },
               "sets": 4,
-              "reps": "6-8",
+              "reps": "8-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
@@ -231,62 +279,62 @@
               "note": "Cuerpo en línea recta de cabeza a talones."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "hollow_hold",
               "name": {
                 "es": "Hollow Body Hold",
                 "en": "Hollow Body Hold"
               },
               "sets": 3,
-              "reps": "20-25s",
+              "reps": "20 s",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 22,
+              "timer_seconds": 20,
               "muscles": "Core, transverso abdominal",
               "note": "Lumbar pegada al suelo, brazos y piernas extendidos."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "plank",
               "name": {
                 "es": "Plancha",
                 "en": "Plank"
               },
               "sets": 3,
-              "reps": "30-40s",
+              "reps": "45 s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": true,
-              "timer_seconds": 35,
+              "timer_seconds": 45,
               "muscles": "Core, transverso abdominal",
               "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "exercise_id": "pectoral_stretch",
               "name": {
                 "es": "Estiramiento de Pectorales",
                 "en": "Pectoral Stretch"
               },
               "sets": 2,
-              "reps": "30s cada lado",
+              "reps": "30 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Pecho",
-              "note": "Estira el pecho."
+              "note": "Estira el pecho tras el trabajo de empuje."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "exercise_id": "triceps_stretch",
               "name": {
                 "es": "Estiramiento de Tríceps",
                 "en": "Triceps Stretch"
               },
               "sets": 2,
-              "reps": "30s cada lado",
+              "reps": "30 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -299,8 +347,8 @@
         {
           "day_id": "jue",
           "day_name": "Jueves",
-          "day_focus": "Piernas + Core Inferior",
-          "workout_title": "Potencia de Piernas",
+          "day_focus": "Piernas + Core Lateral",
+          "workout_title": "Fuerza de Piernas",
           "exercises": [
             {
               "sort_order": 1,
@@ -342,7 +390,7 @@
                 "en": "Pause Squat (3s)"
               },
               "sets": 3,
-              "reps": "6-8",
+              "reps": "8-10",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
@@ -364,7 +412,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Bisagra de cadera a una pierna, espalda neutra."
+              "note": "Bisagra de cadera a una pierna, espalda neutra. Baja hasta donde puedas mantener la espalda recta, no más."
             },
             {
               "sort_order": 5,
@@ -374,13 +422,13 @@
                 "en": "Pistol Squat Progression"
               },
               "sets": 3,
-              "reps": "3-5 por pierna",
+              "reps": "6-8 por pierna",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, equilibrio",
-              "note": "Usa un banco o silla como apoyo hasta dominar el rango completo."
+              "note": "Baja sentándote sobre una superficie estable —una silla, el sofá o el borde de la cama— y sube desde ahí sin impulso. Cuanto más baja la superficie, más difícil: baja la altura antes que subir repeticiones."
             },
             {
               "sort_order": 6,
@@ -422,11 +470,11 @@
                 "en": "Side Plank"
               },
               "sets": 2,
-              "reps": "25-30s cada lado",
+              "reps": "20 s cada lado",
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": true,
-              "timer_seconds": 27,
+              "timer_seconds": 20,
               "muscles": "Oblicuos, core",
               "note": "Cadera alta, cuerpo en línea recta."
             },
@@ -438,7 +486,7 @@
                 "en": "Hamstring Stretch"
               },
               "sets": 2,
-              "reps": "30-40s cada pierna",
+              "reps": "30-40 s cada pierna",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -454,7 +502,7 @@
                 "en": "Quad Stretch"
               },
               "sets": 2,
-              "reps": "30-40s cada pierna",
+              "reps": "30-40 s cada pierna",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -516,23 +564,23 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps, romboides",
-              "note": "Segunda sesión de tirón estricto en la semana."
+              "note": "Segunda sesión de tirón estricto de la semana. Mismas reglas que el lunes: si no llegas a 2, hazlas con la banda."
             },
             {
               "sort_order": 4,
-              "exercise_id": "dips_parallel",
+              "exercise_id": "assisted_dips_band",
               "name": {
-                "es": "Dips en Barras Paralelas",
-                "en": "Parallel Bar Dips"
+                "es": "Dips Asistidos (banda)",
+                "en": "Assisted Dips (band)"
               },
               "sets": 3,
-              "reps": "4-6",
+              "reps": "6-8",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Tríceps, pecho, hombro",
-              "note": "Baja hasta 90° de codo, controla la subida."
+              "muscles": "Tríceps, pecho",
+              "note": "Segunda sesión de dip de la semana, con las mismas repeticiones que el martes pero con una banda más fina si puedes: en este programa la asistencia baja antes que las repeticiones."
             },
             {
               "sort_order": 5,
@@ -542,13 +590,13 @@
                 "en": "L-sit Progression"
               },
               "sets": 3,
-              "reps": "15-20s",
+              "reps": "15 s",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 17,
+              "timer_seconds": 15,
               "muscles": "Core, flexores de cadera, tríceps",
-              "note": "Rodillas flexionadas al pecho si el L-sit completo no aguanta el tiempo."
+              "note": "Rodillas flexionadas al pecho, brazos rectos y hombros hacia abajo. Es el primer escalón de la línea de L-sit que cierra en la semana 12."
             },
             {
               "sort_order": 6,
@@ -564,7 +612,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, isquiotibiales",
-              "note": "Cierra la semana con piernas frescas."
+              "note": "Recuperación activa: ayer fue el día de piernas. Movimiento controlado, sin buscar el fallo ni añadir carga."
             },
             {
               "sort_order": 7,
@@ -600,7 +648,8 @@
             }
           ]
         }
-      ]
+      ],
+      "deload_last_week": true
     },
     {
       "phase_number": 2,
@@ -628,7 +677,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros",
-              "note": "Calienta el hombro."
+              "note": "Calienta el hombro antes de tirar."
             },
             {
               "sort_order": 2,
@@ -655,28 +704,28 @@
               },
               "sets": 4,
               "reps": "3-4",
-              "rest_seconds": 90,
+              "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps, romboides",
-              "note": "Añade una serie: sube 1 repetición por serie cada sesión."
+              "note": "Sube una repetición por serie cada semana hasta el tope del rango. Descanso de 120 s: son series cerca del máximo y con 90 s la tercera y la cuarta caen por fatiga, no por falta de fuerza."
             },
             {
               "sort_order": 4,
-              "exercise_id": "commando_pullup",
+              "exercise_id": "chinup",
               "name": {
-                "es": "Dominadas Comando",
-                "en": "Commando Pull-up"
+                "es": "Chin-up (agarre supino)",
+                "en": "Chin-up (supine grip)"
               },
               "sets": 3,
-              "reps": "3-5",
-              "rest_seconds": 75,
+              "reps": "5-7",
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Dorsal, bíceps, core",
-              "note": "Agarre lateral, alterna el lado que queda arriba en cada repetición."
+              "muscles": "Bíceps, dorsal",
+              "note": "Agarre supino, palmas hacia ti: el bíceps ayuda y salen más repeticiones que en la dominada prona. Mismo control en la bajada."
             },
             {
               "sort_order": 5,
@@ -692,7 +741,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Romboides, trapecio medio",
-              "note": "Sube el rango de repeticiones."
+              "note": "Cuelga de la barra y junta los omóplatos sin flexionar el codo."
             },
             {
               "sort_order": 6,
@@ -702,13 +751,13 @@
                 "en": "Face Pull"
               },
               "sets": 3,
-              "reps": "12-15",
+              "reps": "15-18",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Deltoide posterior, romboides",
-              "note": "Mantén los codos altos en todo el recorrido."
+              "note": "Codos altos, tira hacia la frente para la salud del hombro."
             },
             {
               "sort_order": 7,
@@ -724,7 +773,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, romboides, bíceps",
-              "note": "Espalda recta, tira del codo hacia atrás sin balancear el torso."
+              "note": "El único tirón horizontal de la fase: sentada, espalda recta, tira del codo hacia atrás sin balancear el torso. Es lo que compensa de verdad las horas sentada, más que la dominada."
             },
             {
               "sort_order": 8,
@@ -734,7 +783,7 @@
                 "en": "Lat Stretch"
               },
               "sets": 2,
-              "reps": "40-50s cada lado",
+              "reps": "40-50 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -748,7 +797,7 @@
           "day_id": "mar",
           "day_name": "Martes",
           "day_focus": "Push Pesado + Core",
-          "workout_title": "Potencia de Empuje",
+          "workout_title": "Empuje Pesado",
           "exercises": [
             {
               "sort_order": 1,
@@ -780,74 +829,90 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, movilidad",
-              "note": "Prepara el hombro."
+              "note": "Prepara el hombro para el empuje."
             },
             {
               "sort_order": 3,
+              "exercise_id": "dips_parallel",
+              "name": {
+                "es": "Dips en Barras Paralelas",
+                "en": "Parallel Bar Dips"
+              },
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho, hombro",
+              "note": "Primero del día y con el tríceps fresco. Primer dip sin banda: baja hasta 90° de codo y controla la subida. Si no completas 6 limpios, haz esa serie con la banda de la fase 1 y quítala en cuanto puedas."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "diamond_pushup",
               "name": {
                 "es": "Push-up Diamante",
                 "en": "Diamond Push-up"
               },
               "sets": 4,
-              "reps": "6-8",
+              "reps": "8-10",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho",
-              "note": "Añade una serie manteniendo la técnica."
+              "note": "Manos en rombo bajo el pecho: exige más al tríceps."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "archer_pushup",
               "name": {
                 "es": "Archer Push-up (Regresión)",
                 "en": "Archer Push-up (Regression)"
               },
-              "sets": 4,
-              "reps": "4-6 por lado",
+              "sets": 3,
+              "reps": "6-8 por lado",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Pecho, tríceps, hombro",
-              "note": "Desplaza el peso hacia un lado mientras el otro brazo se mantiene extendido."
+              "note": "Desplaza el peso hacia un lado mientras el otro brazo se mantiene extendido. Si no controlas la bajada, reduce el desplazamiento o apoya las rodillas: es una flexión a un brazo a medias, no una flexión ancha."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "hollow_hold",
               "name": {
                 "es": "Hollow Body Hold",
                 "en": "Hollow Body Hold"
               },
               "sets": 3,
-              "reps": "25-30s",
+              "reps": "30 s",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 27,
+              "timer_seconds": 30,
               "muscles": "Core, transverso abdominal",
-              "note": "Sube el tiempo de mantenimiento."
+              "note": "Lumbar pegada al suelo, brazos y piernas extendidos."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "plank",
               "name": {
                 "es": "Plancha",
                 "en": "Plank"
               },
-              "sets": 3,
-              "reps": "35-45s",
+              "sets": 2,
+              "reps": "60 s",
               "rest_seconds": 30,
               "priority": "secondary",
               "is_timer": true,
-              "timer_seconds": 40,
+              "timer_seconds": 60,
               "muscles": "Core, transverso abdominal",
-              "note": "Sube el tiempo de mantenimiento."
+              "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "exercise_id": "hollow_rock",
               "name": {
                 "es": "Hollow Body Rock",
@@ -859,32 +924,48 @@
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Core, coordinación",
-              "note": "Balanceo controlado manteniendo la forma de hollow."
+              "muscles": "Core profundo, coordinación",
+              "note": "El hollow que ya mantienes, ahora en movimiento: balancéate sin doblar rodillas ni codos y sin que la lumbar se despegue del suelo."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
+              "exercise_id": "lying_windshield_wipers",
+              "name": {
+                "es": "Windshield Wipers Tumbado",
+                "en": "Lying Windshield Wipers"
+              },
+              "sets": 2,
+              "reps": "8 por lado",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Oblicuos, core rotacional",
+              "note": "Tumbada, brazos en cruz y hombros pegados al suelo: baja las piernas juntas a un lado sin despegar la espalda. Va al final del día a propósito: es control, no fuerza, y se hace mejor con el core ya caliente. Baja solo hasta donde el hombro contrario no se levante."
+            },
+            {
+              "sort_order": 10,
               "exercise_id": "pectoral_stretch",
               "name": {
                 "es": "Estiramiento de Pectorales",
                 "en": "Pectoral Stretch"
               },
               "sets": 2,
-              "reps": "40-50s cada lado",
+              "reps": "40-50 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
               "muscles": "Pecho",
-              "note": "Estira el pecho."
+              "note": "Estira el pecho tras el trabajo de empuje."
             }
           ]
         },
         {
           "day_id": "jue",
           "day_name": "Jueves",
-          "day_focus": "Piernas Pesadas + Core Explosivo",
-          "workout_title": "Fuerza de Pierna",
+          "day_focus": "Piernas Pesadas + Core Lateral",
+          "workout_title": "Potencia y Fuerza de Pierna",
           "exercises": [
             {
               "sort_order": 1,
@@ -894,7 +975,7 @@
                 "en": "Deep Hip Mobility"
               },
               "sets": 2,
-              "reps": "30s cada posición",
+              "reps": "30 s cada posición",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
@@ -920,22 +1001,38 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "jump_squat",
+              "name": {
+                "es": "Sentadilla con Salto",
+                "en": "Jump Squat"
+              },
+              "sets": 3,
+              "reps": "6",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Piernas, explosividad",
+              "note": "Primer ejercicio del día y con las piernas frescas: salta lo más alto que puedas y aterriza suave, rodilla en línea con la punta del pie. Si pierdes altura, corta la serie ahí. Si la rodilla molesta, cambia el salto por una extensión rápida de cadera sin despegar del suelo."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "squat_pause",
               "name": {
                 "es": "Sentadilla con Pausa (3s)",
                 "en": "Pause Squat (3s)"
               },
-              "sets": 4,
-              "reps": "8-10",
+              "sets": 3,
+              "reps": "10-12",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos",
-              "note": "Añade una serie manteniendo la pausa de 3s."
+              "note": "Pausa 3 segundos abajo antes de subir."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "single_rdl",
               "name": {
                 "es": "Peso Muerto a Una Pierna (RDL)",
@@ -948,48 +1045,64 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Sube el rango de repeticiones."
+              "note": "Sube el rango y busca más recorrido: la mano baja un palmo más que en la fase 1 sin que la espalda se redondee."
             },
             {
-              "sort_order": 5,
-              "exercise_id": "pistol_free",
+              "sort_order": 6,
+              "exercise_id": "pistol_prog",
               "name": {
-                "es": "Pistol Squat Libre",
-                "en": "Free Pistol Squat"
+                "es": "Pistol Squat — Progresión",
+                "en": "Pistol Squat Progression"
               },
               "sets": 3,
-              "reps": "3-5 por pierna",
-              "rest_seconds": 75,
+              "reps": "8-10 por pierna",
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, equilibrio",
-              "note": "Sin apoyo: es la progresión natural del pistol asistido."
+              "note": "Misma progresión que la fase 1 con más repeticiones y una superficie más baja. Baja la altura del apoyo antes que subir repeticiones: en la fase 3 va sin apoyo."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "lateral_lunge",
               "name": {
                 "es": "Zancada Lateral",
                 "en": "Lateral Lunge"
               },
               "sets": 3,
-              "reps": "10 por pierna",
+              "reps": "10-12 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Aductores, cuádriceps, glúteos",
-              "note": "Sube el rango de repeticiones."
+              "note": "Cadera hacia atrás, rodilla de apoyo sigue la punta del pie."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
+              "exercise_id": "nordic_curl_negatives",
+              "name": {
+                "es": "Nordic Curl (Regresión — negativas)",
+                "en": "Nordic Curl (Regression — negatives)"
+              },
+              "sets": 2,
+              "reps": "4-6",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Isquiotibiales (excéntrico)",
+              "note": "De rodillas y con los pies sujetos: frena la bajada con el isquiotibial solo en los primeros 30° y déjate caer a las manos. Es la preparación para el nordic de la fase 3; no busques bajar más de lo que puedas frenar."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "glute_bridge_march",
               "name": {
                 "es": "Puente de Glúteos con Marcha",
                 "en": "Glute Bridge March"
               },
-              "sets": 3,
+              "sets": 2,
               "reps": "8-10 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
@@ -999,46 +1112,30 @@
               "note": "Puente sostenido, marcha alternando rodillas al pecho."
             },
             {
-              "sort_order": 8,
+              "sort_order": 10,
               "exercise_id": "side_plank",
               "name": {
                 "es": "Plancha Lateral",
                 "en": "Side Plank"
               },
               "sets": 3,
-              "reps": "30-35s cada lado",
+              "reps": "30 s cada lado",
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": true,
-              "timer_seconds": 32,
+              "timer_seconds": 30,
               "muscles": "Oblicuos, core",
-              "note": "Añade una serie y sube el tiempo."
+              "note": "Cadera alta, cuerpo en línea recta."
             },
             {
-              "sort_order": 9,
-              "exercise_id": "windshield_wipers",
-              "name": {
-                "es": "Limpiaparabrisas",
-                "en": "Windshield Wipers"
-              },
-              "sets": 2,
-              "reps": "8-12",
-              "rest_seconds": 30,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Oblicuos, core",
-              "note": "Cuelga de la barra, gira las piernas de lado a lado con control."
-            },
-            {
-              "sort_order": 10,
+              "sort_order": 11,
               "exercise_id": "quad_stretch",
               "name": {
                 "es": "Estiramiento de Cuádriceps",
                 "en": "Quad Stretch"
               },
               "sets": 2,
-              "reps": "40-50s cada pierna",
+              "reps": "40-50 s cada pierna",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -1051,7 +1148,7 @@
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Integración + Habilidades Avanzadas",
+          "day_focus": "Integración + Habilidades",
           "workout_title": "Complejidad Total",
           "exercises": [
             {
@@ -1088,6 +1185,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "front_lever_tuck",
+              "name": {
+                "es": "Front Lever Agrupado",
+                "en": "Front Lever Tuck"
+              },
+              "sets": 3,
+              "reps": "15 s",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 15,
+              "muscles": "Dorsal, core, hombros",
+              "note": "Colgada de la barra, rodillas al pecho y cuerpo horizontal. Sale directamente del hollow hold que llevas haciendo desde la semana 1: mantén la lumbar plana y los brazos rectos."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "pullup_strict",
               "name": {
                 "es": "Pull-up Estricto",
@@ -1095,7 +1208,7 @@
               },
               "sets": 4,
               "reps": "3-4",
-              "rest_seconds": 90,
+              "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
@@ -1103,68 +1216,52 @@
               "note": "Segunda sesión de tirón estricto de la semana."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "dips_parallel",
               "name": {
                 "es": "Dips en Barras Paralelas",
                 "en": "Parallel Bar Dips"
               },
               "sets": 4,
-              "reps": "5-7",
-              "rest_seconds": 75,
+              "reps": "6-8",
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho, hombro",
-              "note": "Añade una serie manteniendo el control en la bajada."
+              "note": "Segunda sesión de dip de la semana, ya sin banda."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "lsit_45",
               "name": {
                 "es": "L-sit 45° — Objetivo",
                 "en": "L-sit 45° Goal"
               },
               "sets": 3,
-              "reps": "20-25s",
+              "reps": "20 s",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 22,
+              "timer_seconds": 20,
               "muscles": "Core, flexores de cadera, tríceps",
               "note": "Apoyo en paralelas, piernas a 45°: paso intermedio hacia el L-sit completo."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "reverse_lunge",
               "name": {
                 "es": "Zancada Inversa",
                 "en": "Reverse Lunge"
               },
-              "sets": 3,
+              "sets": 2,
               "reps": "10 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, isquiotibiales",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "muscleup_neg",
-              "name": {
-                "es": "Muscle-up Negativo",
-                "en": "Negative Muscle-up"
-              },
-              "sets": 2,
-              "reps": "2-3 (descenso lento)",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, tríceps, core",
-              "note": "Desde arriba de un muscle-up asistido, baja muy despacio por la fase de transición."
+              "note": "Recuperación activa: ayer fue el día de piernas. Movimiento controlado, sin buscar el fallo ni añadir carga."
             },
             {
               "sort_order": 8,
@@ -1184,7 +1281,8 @@
             }
           ]
         }
-      ]
+      ],
+      "deload_last_week": true
     },
     {
       "phase_number": 3,
@@ -1212,7 +1310,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, movilidad",
-              "note": "Prepara el hombro."
+              "note": "Abre el hombro antes de tirar: recorrido amplio y sin encoger el cuello."
             },
             {
               "sort_order": 2,
@@ -1228,7 +1326,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Romboides, trapecio medio",
-              "note": "Activa los omóplatos antes de la carga pesada."
+              "note": "Cuelga de la barra y junta los omóplatos sin flexionar el codo."
             },
             {
               "sort_order": 3,
@@ -1239,12 +1337,12 @@
               },
               "sets": 4,
               "reps": "4-6",
-              "rest_seconds": 90,
+              "rest_seconds": 150,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps, romboides",
-              "note": "Fase final: busca el tope del rango con técnica estricta."
+              "note": "Fase final: busca el tope del rango con técnica estricta. Descanso de 150 s — son series cerca del máximo, y si las repeticiones caen con menos descanso estás midiendo fatiga, no progreso."
             },
             {
               "sort_order": 4,
@@ -1253,30 +1351,30 @@
                 "es": "Dominadas Agarre Cerrado",
                 "en": "Close-Grip Pull-up"
               },
-              "sets": 3,
+              "sets": 2,
               "reps": "4-6",
-              "rest_seconds": 75,
+              "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, bíceps",
-              "note": "Agarre estrecho: más énfasis en el bíceps."
+              "note": "Agarre estrecho, más énfasis en el bíceps. Solo dos series: con las cuatro de dominada estricta ya son seis series al máximo, que es todo lo que se sostiene con técnica en una sesión. Las negativas de antes no cuentan: son excéntrico controlado."
             },
             {
               "sort_order": 5,
-              "exercise_id": "typewriter_pullup",
+              "exercise_id": "neg_pullup",
               "name": {
-                "es": "Dominadas Typewriter",
-                "en": "Typewriter Pull-up"
+                "es": "Dominada Negativa",
+                "en": "Negative Pull-up"
               },
-              "sets": 3,
-              "reps": "3-5 por lado",
+              "sets": 2,
+              "reps": "4 (descenso 6 s)",
               "rest_seconds": 75,
-              "priority": "primary",
+              "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Dorsal, bíceps, core",
-              "note": "Arriba de la dominada, desplázate de lado a lado sin bajar."
+              "muscles": "Dorsal, bíceps",
+              "note": "Trabajo excéntrico para cerrar el tirón pesado: sube desde un escalón y baja contando seis segundos, dos más que en la fase 1. No cuenta como serie al máximo."
             },
             {
               "sort_order": 6,
@@ -1286,13 +1384,13 @@
                 "en": "Face Pull"
               },
               "sets": 3,
-              "reps": "15-18",
+              "reps": "18-20",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Deltoide posterior, romboides",
-              "note": "Rango alto de repeticiones, codos altos."
+              "note": "Codos altos, tira hacia la frente para la salud del hombro."
             },
             {
               "sort_order": 7,
@@ -1301,38 +1399,54 @@
                 "es": "Remo Renegado",
                 "en": "Renegade Row"
               },
-              "sets": 2,
+              "sets": 3,
               "reps": "8-10 por brazo",
               "rest_seconds": 45,
-              "priority": "accessory",
+              "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Dorsal, core, estabilidad de hombro",
-              "note": "En posición de plancha, rema alternando brazos sin rotar la cadera."
+              "note": "En posición de plancha, rema alternando brazos sin rotar la cadera. Si la muñeca molesta, apóyate sobre los puños o sobre dos mancuernas."
             },
             {
               "sort_order": 8,
+              "exercise_id": "resistance_band_seated_straight_back_row",
+              "name": {
+                "es": "Remo Sentado con Banda",
+                "en": "Seated Band Row"
+              },
+              "sets": 2,
+              "reps": "18",
+              "rest_seconds": 30,
+              "priority": "accessory",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, romboides, bíceps",
+              "note": "Rango alto para cerrar el día: espalda recta, tira del codo hacia atrás sin balancear el torso y aprieta un segundo al final."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "lat_stretch",
               "name": {
                 "es": "Estiramiento de Dorsales",
                 "en": "Lat Stretch"
               },
               "sets": 2,
-              "reps": "50-60s cada lado",
+              "reps": "50-60 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 55,
               "muscles": "Dorsal ancho",
-              "note": "Estira el dorsal al máximo tiempo de la fase."
+              "note": "Estira el dorsal."
             }
           ]
         },
         {
           "day_id": "mar",
           "day_name": "Martes",
-          "day_focus": "Push + Core Pesado Especializado",
-          "workout_title": "Potencia de Empuje Avanzada",
+          "day_focus": "Push + Core Pesado",
+          "workout_title": "Empuje Avanzado",
           "exercises": [
             {
               "sort_order": 1,
@@ -1368,93 +1482,125 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "dips_parallel",
+              "name": {
+                "es": "Dips en Barras Paralelas",
+                "en": "Parallel Bar Dips"
+              },
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho, hombro",
+              "note": "Primero del día y con el tríceps fresco. Baja contando tres segundos hasta los 90° de codo, con los hombros lejos de las orejas: la fase final progresa en tiempo bajo tensión además de en repeticiones."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "diamond_pushup",
               "name": {
                 "es": "Push-up Diamante",
                 "en": "Diamond Push-up"
               },
               "sets": 4,
-              "reps": "8-10",
+              "reps": "10-12",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho",
-              "note": "Rango alto de repeticiones en la fase final."
+              "note": "Manos en rombo bajo el pecho: exige más al tríceps."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "pike_hspu",
               "name": {
                 "es": "Flexión Vertical en Pike (HSPU)",
                 "en": "Pike HSPU"
               },
               "sets": 4,
-              "reps": "3-6",
+              "reps": "6-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, tríceps",
-              "note": "Pies elevados en un banco: acerca el hombro al patrón vertical del pino."
+              "note": "Empieza con los pies en el SUELO en la primera semana —cadera alta, cabeza baja entre las manos— y solo cuando completes 8 limpias sube los pies a una silla estable, el sofá o el borde de la cama. Si la muñeca molesta, apoya en los puños o baja la altura."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "exercise_id": "hollow_hold",
               "name": {
                 "es": "Hollow Body Hold",
                 "en": "Hollow Body Hold"
               },
               "sets": 3,
-              "reps": "30-35s",
+              "reps": "40 s",
               "rest_seconds": 45,
               "priority": "primary",
               "is_timer": true,
-              "timer_seconds": 32,
+              "timer_seconds": 40,
               "muscles": "Core, transverso abdominal",
-              "note": "Máximo tiempo de mantenimiento de la fase."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "plank",
-              "name": {
-                "es": "Plancha",
-                "en": "Plank"
-              },
-              "sets": 3,
-              "reps": "45-50s",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": true,
-              "timer_seconds": 47,
-              "muscles": "Core, transverso abdominal",
-              "note": "Máximo tiempo de mantenimiento de la fase."
+              "note": "Lumbar pegada al suelo, brazos y piernas extendidos."
             },
             {
               "sort_order": 7,
               "exercise_id": "dragon_flag",
               "name": {
-                "es": "Dragon Flag",
-                "en": "Dragon Flag"
+                "es": "Dragon Flag Negativo",
+                "en": "Negative Dragon Flag"
               },
-              "sets": 2,
-              "reps": "5-8",
+              "sets": 3,
+              "reps": "3 (descenso 5 s)",
               "rest_seconds": 60,
-              "priority": "secondary",
+              "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Core completo",
-              "note": "Apoya solo los omóplatos en el banco, baja el cuerpo recto y controlado."
+              "note": "Tumbada, agárrate a algo firme detrás de la cabeza (las patas del sofá, el borde de la cama o un banco). Sube el cuerpo apoyando solo los omóplatos y baja recta contando cinco segundos. Solo la bajada. Si no controlas los cinco segundos, hazlo con las rodillas al pecho hasta que salga."
             },
             {
               "sort_order": 8,
+              "exercise_id": "plank",
+              "name": {
+                "es": "Plancha",
+                "en": "Plank"
+              },
+              "sets": 2,
+              "reps": "75 s",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 75,
+              "muscles": "Core, transverso abdominal",
+              "note": "Aprieta glúteo y abdomen, sin dejar caer la cadera."
+            },
+            {
+              "sort_order": 9,
+              "exercise_id": "hollow_rock",
+              "name": {
+                "es": "Hollow Body Rock",
+                "en": "Hollow Body Rock"
+              },
+              "sets": 2,
+              "reps": "20-25",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core profundo, coordinación",
+              "note": "Mismo movimiento de la fase 2 con más repeticiones: si la lumbar se despega o las rodillas se doblan, para la serie ahí."
+            },
+            {
+              "sort_order": 10,
               "exercise_id": "triceps_stretch",
               "name": {
                 "es": "Estiramiento de Tríceps",
                 "en": "Triceps Stretch"
               },
               "sets": 2,
-              "reps": "40-50s cada lado",
+              "reps": "40-50 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -1467,8 +1613,8 @@
         {
           "day_id": "jue",
           "day_name": "Jueves",
-          "day_focus": "Piernas Élite + Core Explosivo",
-          "workout_title": "Potencia Extrema de Pierna",
+          "day_focus": "Piernas Élite + Core Lateral",
+          "workout_title": "Pierna Élite: Salto y Unilateral",
           "exercises": [
             {
               "sort_order": 1,
@@ -1504,6 +1650,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "jump_squat",
+              "name": {
+                "es": "Sentadilla con Salto",
+                "en": "Jump Squat"
+              },
+              "sets": 4,
+              "reps": "6",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Piernas, explosividad",
+              "note": "Cuatro series con dos minutos de descanso: la potencia se entrena fresca y con pocas repeticiones, no cansada. Si pierdes altura en el salto, corta la serie ahí."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "squat_pause",
               "name": {
                 "es": "Sentadilla con Pausa (3s)",
@@ -1516,58 +1678,58 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos",
-              "note": "Rango alto de repeticiones manteniendo la pausa."
+              "note": "Cuarta serie en la fase final: misma pausa de tres segundos abajo, una serie más de la que hacías en la fase 2."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "single_rdl",
               "name": {
                 "es": "Peso Muerto a Una Pierna (RDL)",
                 "en": "Single-Leg RDL"
               },
               "sets": 3,
-              "reps": "8-10 por pierna",
+              "reps": "10-12 por pierna",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Rango alto de repeticiones."
+              "note": "Rango alto y pausa de un segundo abajo. Si las doce salen fáciles, sujeta algo con peso contra el pecho."
             },
             {
-              "sort_order": 5,
-              "exercise_id": "shrimp_full",
+              "sort_order": 6,
+              "exercise_id": "pistol_free",
               "name": {
-                "es": "Shrimp Squat Completo",
-                "en": "Full Shrimp Squat"
+                "es": "Pistol Squat Libre",
+                "en": "Free Pistol Squat"
               },
               "sets": 3,
-              "reps": "5-8 por pierna",
-              "rest_seconds": 90,
+              "reps": "6-8 por pierna",
+              "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, equilibrio",
-              "note": "Sustituye al pistol como reto máximo de fuerza unilateral de la fase."
+              "note": "Sin apoyo. Es el escalón que llevas preparando desde la semana 1 con el pistol asistido: si aún no salen 6 limpias, sigue con la superficie más baja que controles y quita el apoyo cuando llegues a 8. La rodilla sigue la punta del pie y no se va hacia dentro; si pincha, vuelve al apoyo."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "lateral_lunge",
               "name": {
                 "es": "Zancada Lateral",
                 "en": "Lateral Lunge"
               },
               "sets": 3,
-              "reps": "10 por pierna",
+              "reps": "12-15 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Aductores, cuádriceps, glúteos",
-              "note": "Mantén el control en cada repetición."
+              "note": "Cadera hacia atrás, rodilla de apoyo sigue la punta del pie."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "exercise_id": "nordic_curl",
               "name": {
                 "es": "Nordic Curl (Regresión)",
@@ -1575,38 +1737,54 @@
               },
               "sets": 2,
               "reps": "4-6",
-              "rest_seconds": 60,
+              "rest_seconds": 75,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Isquiotibiales",
-              "note": "Baja muy despacio resistiendo con el isquiotibial, ayúdate con las manos si hace falta."
+              "note": "Ya llevas cuatro semanas de negativas: ahora frena todo el recorrido que puedas y ayúdate con las manos al final. Si notas tirón en el isquiotibial, vuelve a frenar solo los primeros 30°."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
+              "exercise_id": "glute_bridge_march",
+              "name": {
+                "es": "Puente de Glúteos con Marcha",
+                "en": "Glute Bridge March"
+              },
+              "sets": 2,
+              "reps": "10-12 por pierna",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, core",
+              "note": "Puente sostenido, marcha alternando rodillas al pecho."
+            },
+            {
+              "sort_order": 10,
               "exercise_id": "side_plank",
               "name": {
                 "es": "Plancha Lateral",
                 "en": "Side Plank"
               },
               "sets": 3,
-              "reps": "35-40s cada lado",
+              "reps": "40 s cada lado",
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": true,
-              "timer_seconds": 37,
+              "timer_seconds": 40,
               "muscles": "Oblicuos, core",
-              "note": "Máximo tiempo de mantenimiento de la fase."
+              "note": "Cadera alta, cuerpo en línea recta."
             },
             {
-              "sort_order": 9,
+              "sort_order": 11,
               "exercise_id": "hip_flexor_stretch",
               "name": {
                 "es": "Estiramiento de Flexor de Cadera",
                 "en": "Hip Flexor Stretch"
               },
               "sets": 2,
-              "reps": "45-55s cada lado",
+              "reps": "45-55 s cada lado",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
@@ -1656,6 +1834,22 @@
             },
             {
               "sort_order": 3,
+              "exercise_id": "front_lever_tuck",
+              "name": {
+                "es": "Front Lever Agrupado",
+                "en": "Front Lever Tuck"
+              },
+              "sets": 3,
+              "reps": "25 s",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 25,
+              "muscles": "Dorsal, core, hombros",
+              "note": "Primero del día, con el agarre y el dorsal frescos: es el hold que más los exige. El mismo agrupado de la fase 2 con diez segundos más de aguante; si los 25 s salen limpios, empieza a estirar una pierna."
+            },
+            {
+              "sort_order": 4,
               "exercise_id": "pullup_strict",
               "name": {
                 "es": "Pull-up Estricto",
@@ -1663,7 +1857,7 @@
               },
               "sets": 4,
               "reps": "4-6",
-              "rest_seconds": 90,
+              "rest_seconds": 150,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
@@ -1671,68 +1865,52 @@
               "note": "Segunda sesión de tirón estricto de la semana, en la fase final del programa."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "exercise_id": "dips_parallel",
               "name": {
                 "es": "Dips en Barras Paralelas",
                 "en": "Parallel Bar Dips"
               },
               "sets": 4,
-              "reps": "6-8",
-              "rest_seconds": 75,
+              "reps": "8-10",
+              "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Tríceps, pecho, hombro",
-              "note": "Rango alto de repeticiones para cerrar el programa."
+              "note": "Segunda sesión de dip de la semana y cierre del programa: cuatro series de 8-10 sin ayuda y con tres segundos de bajada, cuando en la semana 1 no salía ninguna sin banda. Mantén los 90° de codo y los hombros lejos de las orejas."
             },
             {
-              "sort_order": 5,
-              "exercise_id": "front_lever_tuck",
+              "sort_order": 6,
+              "exercise_id": "lsit_full",
               "name": {
-                "es": "Front Lever Agrupado",
-                "en": "Front Lever Tuck"
+                "es": "L-sit Paralelas/Sillas",
+                "en": "L-sit on Parallettes/Chairs"
               },
               "sets": 3,
-              "reps": "15-25s",
+              "reps": "20 s",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 20,
-              "muscles": "Dorsal, core, hombros",
-              "note": "Rodillas al pecho, cuerpo horizontal colgado de la barra."
+              "muscles": "Core, flexores cadera, hombros",
+              "note": "L-sit completo en las paralelas o entre dos sillas: piernas rectas y paralelas al suelo. Va después de la barra porque aquí el peso lo llevan las manos apoyadas, no el agarre. Mismo tiempo que el L-sit a 45° de la fase 2, pero con las piernas extendidas: ahí está el salto, no en el cronómetro."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "exercise_id": "reverse_lunge",
               "name": {
                 "es": "Zancada Inversa",
                 "en": "Reverse Lunge"
               },
-              "sets": 3,
-              "reps": "10 por pierna",
+              "sets": 2,
+              "reps": "12 por pierna",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cuádriceps, glúteos, isquiotibiales",
-              "note": "Cierra el programa con piernas frescas."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "v_ups",
-              "name": {
-                "es": "Abdominales en V",
-                "en": "V-ups"
-              },
-              "sets": 2,
-              "reps": "10-15",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Recto abdominal, flexores de cadera",
-              "note": "Sube brazos y piernas rectas a la vez hasta tocar los pies."
+              "note": "Recuperación activa: ayer fue el día de piernas. Movimiento controlado, sin buscar el fallo ni añadir carga."
             },
             {
               "sort_order": 8,
@@ -1742,7 +1920,7 @@
                 "en": "Seated Forward Fold"
               },
               "sets": 1,
-              "reps": "60s",
+              "reps": "60 s",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
