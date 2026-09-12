@@ -36,7 +36,8 @@ function exercise(overrides = {}) {
     sort_order: 1,
     name: 'Ejercicio de prueba',
     exercise_id: 'pushup_std',
-    muscles: '',
+    muscles: 'pecho, tríceps',
+    note: 'Cuerpo recto, baja controlado.',
     sets: 10,
     reps: '10',
     rest_seconds: 60,
@@ -64,6 +65,7 @@ function baseProgram() {
           {
             day_id: 'lun',
             day_name: 'Lunes',
+            day_focus: 'Cuerpo completo',
             workout_title: 'Empuje, tirón y piernas',
             exercises: [
               exercise({ sort_order: 1, name: 'Push-up Estándar', exercise_id: 'pushup_std' }), // push
@@ -81,6 +83,91 @@ describe('checkProgram — programa correcto', () => {
   it('un programa bien formado no reporta errores', () => {
     const { errors } = checkProgram(SLUG, baseProgram())
     expect(errors).toEqual([])
+  })
+})
+
+/**
+ * Prueba de MUTACIÓN: borra, uno a uno, cada campo que la pantalla lee, y exige
+ * que el validador lo cace.
+ *
+ * Nace del #762, que borró `workout_title` de los quince días de un programa y
+ * llegó a producción con todo en verde: el contenido seguía siendo válido, el
+ * `content_hash` de la resiembra cuadraba con el de prod y `--strict` no decía
+ * nada. Lo encontró un humano mirando el teléfono.
+ *
+ * La lección no fue «faltaba la regla de los títulos» — fue que no había NADA
+ * vigilando la desaparición de un campo, así que cualquier otro podía irse
+ * igual de callado. Esto es ese algo: si mañana alguien añade un campo del que
+ * dependa la pantalla, se añade aquí y queda cubierto.
+ *
+ * Fuera de la tabla a propósito (no se pueden exigir hoy):
+ * - `day_type`: 12 de los 193 días no lo declaran; es AVISO, no error.
+ * - `reps`: 668 de los 2.208 ejercicios son de temporizador y no lo llevan.
+ */
+describe('checkProgram — ningún campo de pantalla puede desaparecer en silencio (#762)', () => {
+  const eachDay = fn => doc => doc.phases.forEach(ph => ph.days.forEach(fn))
+  const eachExercise = fn => doc => doc.phases.forEach(ph => ph.days.forEach(d => d.exercises.forEach(fn)))
+
+  const CAMPOS = [
+    ['program.name', doc => delete doc.program.name],
+    ['program.description', doc => delete doc.program.description],
+    ['program.difficulty', doc => delete doc.program.difficulty],
+    ['program.duration_weeks', doc => delete doc.program.duration_weeks],
+    ['program.instructions', doc => delete doc.program.instructions],
+    ['phase.name', doc => doc.phases.forEach(ph => delete ph.name)],
+    ['phase.weeks', doc => doc.phases.forEach(ph => delete ph.weeks)],
+    ['day.day_name', eachDay(d => delete d.day_name)],
+    ['day.workout_title', eachDay(d => delete d.workout_title)],
+    ['day.day_focus', eachDay(d => delete d.day_focus)],
+    ['exercise.name', eachExercise(e => delete e.name)],
+    ['exercise.note', eachExercise(e => delete e.note)],
+    ['exercise.muscles', eachExercise(e => delete e.muscles)],
+    ['exercise.sets', eachExercise(e => delete e.sets)],
+    ['exercise.rest_seconds', eachExercise(e => delete e.rest_seconds)],
+    ['exercise.priority', eachExercise(e => delete e.priority)],
+  ]
+
+  it.each(CAMPOS)('borrar %s es un ERROR', (_campo, borrar) => {
+    const doc = baseProgram()
+    borrar(doc)
+    expect(checkProgram(SLUG, doc).errors.length).toBeGreaterThan(0)
+  })
+
+  // Blanquear en vez de borrar: una cadena vacía o unos espacios pintan una
+  // pantalla igual de rota que un campo ausente, y editando el JSON a mano es
+  // el fallo más fácil de cometer. Va con asignaciones propias porque la tabla
+  // de arriba borra, y borrar no prueba esto.
+  const EN_BLANCO = [
+    ['program.name', doc => { doc.program.name = '' }],
+    ['program.description', doc => { doc.program.description = '   ' }],
+    ['phase.name', doc => { doc.phases[0].name = '' }],
+    ['day.workout_title', doc => { doc.phases[0].days[0].workout_title = '   ' }],
+    ['day.day_focus', doc => { doc.phases[0].days[0].day_focus = '' }],
+    ['exercise.note', doc => { doc.phases[0].days[0].exercises[0].note = '  ' }],
+    ['exercise.muscles', doc => { doc.phases[0].days[0].exercises[0].muscles = '' }],
+  ]
+
+  it.each(EN_BLANCO)('dejar %s en blanco tampoco cuela', (_campo, blanquear) => {
+    const doc = baseProgram()
+    blanquear(doc)
+    expect(checkProgram(SLUG, doc).errors.length).toBeGreaterThan(0)
+  })
+
+  it('un i18n con es vacío cuenta como en blanco', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].workout_title = { es: '', en: 'Push day' }
+    expect(checkProgram(SLUG, doc).errors.length).toBeGreaterThan(0)
+  })
+
+  it('el programa de referencia, intacto, no reporta ningún error', () => {
+    expect(checkProgram(SLUG, baseProgram()).errors).toEqual([])
+  })
+
+  it('rest_seconds a 0 es legítimo y NO se reporta', () => {
+    // Los estiramientos y el calentamiento van encadenados sin descanso.
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises.forEach(e => { e.rest_seconds = 0 })
+    expect(findingsFor(checkProgram(SLUG, doc), 'required_field')).toEqual([])
   })
 })
 
@@ -428,7 +515,7 @@ describe('el diccionario de músculos cubre el censo de producción', () => {
 
 /** Un día mínimo con los ejercicios dados. */
 function day(day_id, exercises, overrides = {}) {
-  return { day_id, day_name: day_id, workout_title: `Día ${day_id}`, exercises, ...overrides }
+  return { day_id, day_name: day_id, day_focus: 'Cuerpo completo', workout_title: `Día ${day_id}`, exercises, ...overrides }
 }
 
 /** Una fase mínima con los días dados. */

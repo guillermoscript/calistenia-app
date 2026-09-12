@@ -466,6 +466,39 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
   const program = doc.program ?? {}
   if (!program.duration_weeks) err(`program.duration_weeks ausente`, 'duration')
 
+  /**
+   * Campos que la pantalla lee y que los 15 programas oficiales rellenan SIN
+   * excepción: son un contrato de hecho, así que aquí se vuelven contrato de
+   * verdad. Ausente o en blanco = ERROR.
+   *
+   * Existe por el #762: borró `workout_title` de los quince días de un programa
+   * y llegó a producción con TODO en verde — el contenido seguía siendo válido,
+   * el hash de la resiembra cuadraba con el de prod y `--strict` no chistaba.
+   * Lo encontró un humano mirando el teléfono. La lección no es «faltaba la
+   * regla de los títulos», es que **no había ninguna regla que vigilase la
+   * desaparición de un campo**, así que cualquier otro podía irse igual de
+   * callado. `scripts/check-program-content.test.mjs` tiene la prueba de
+   * mutación que borra cada uno de estos campos y exige que salte.
+   *
+   * Lo que NO entra aquí, a propósito:
+   * - `day_type`: 12 de los 193 días no lo declaran y se infiere de `day_focus`
+   *   (aviso más abajo; la inferencia ya sembró un día como `full` en el #731).
+   * - `reps`: 668 de los 2.208 ejercicios son de temporizador y no lo llevan.
+   */
+  const blank = v => {
+    if (v === undefined || v === null) return true
+    if (typeof v === 'object') return !String(v.es ?? '').trim()
+    return !String(v).trim()
+  }
+  const required = (value, path, { allowZero = false } = {}) => {
+    if (allowZero && typeof value === 'number') return
+    if (blank(value)) err(`${path} ausente o en blanco`, 'required_field')
+  }
+
+  required(program.name, 'program.name')
+  required(program.description, 'program.description')
+  required(program.difficulty, 'program.difficulty')
+
   // #618: el bloque «cómo seguir este programa». Vacío en los 15 originales, que
   // es como el usuario acababa repitiendo la misma dosis cuatro semanas seguidas.
   const instr = program.instructions
@@ -494,6 +527,11 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
     const lp = { pn, days: [], famMax: new Map(), cardioBlocks: 0, deload: !!phase.deload_last_week }
     if (lp.deload) anyDeloadEncoded = true
 
+    required(phase.name, `fase ${pn} · name`)
+    // Sin `weeks` no hay rango de semanas: ni la cabecera sabe decir «semana 3
+    // de 4» ni la descarga (#716) sabe cuál es la última semana de la fase.
+    required(phase.weeks, `fase ${pn} · weeks`)
+
     for (const day of phase.days ?? []) {
       // El id del ejercicio anterior EN ORDEN, para la comprobación 2b.
       let previousId = null
@@ -517,12 +555,30 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
       if (!textOf(day.day_name).trim()) {
         err(`fase ${pn} · ${day.day_id}: sin 'day_name'`, 'day_title')
       }
+      required(day.day_focus, `fase ${pn} · ${day.day_id} · day_focus`)
+
+      // `day_type` no se puede exigir todavía: 12 de los 193 días no lo
+      // declaran. Pero tampoco es inocuo omitirlo — se infiere de `day_focus` y
+      // la inferencia comprueba `full` ANTES que `pull`, así que un día
+      // «Tirón y core» se sembró como cuerpo completo en el #731. Aviso hasta
+      // que los 193 lo declaren; entonces pasa a `required`.
+      if (!dayType) {
+        logic('day_type', `fase ${pn} · ${day.day_id}: sin 'day_type' — se inferirá de day_focus, y la inferencia ya sembró un día de tirón como 'full' (#731)`)
+      }
 
       for (const ex of [...(day.exercises ?? [])].sort(
         (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
       )) {
         totalExercises++
         const where = `fase ${pn} · ${day.day_id} · #${ex.sort_order}`
+
+        // La ficha del ejercicio en la sesión: qué músculos toca, la nota que
+        // explica la técnica y el descanso que el cronómetro pone entre series.
+        // `rest_seconds: 0` es legítimo (estiramientos, calentamiento), así que
+        // el cero cuenta como declarado; lo que no vale es que falte.
+        required(ex.muscles, `${where} · muscles`)
+        required(ex.note, `${where} · note`)
+        required(ex.rest_seconds, `${where} · rest_seconds`, { allowZero: true })
 
         // 1 — Esquema único. `catalog_id` y el campo ausente eran los otros dos
         //     dialectos que convivían en `programs/`.
