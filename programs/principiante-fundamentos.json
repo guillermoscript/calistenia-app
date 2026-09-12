@@ -91,7 +91,7 @@
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
               "muscles": "Espalda alta, bíceps, hombros",
-              "sets": 3,
+              "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "primary",
@@ -263,12 +263,12 @@
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
               "muscles": "Espalda alta, bíceps, hombros",
-              "sets": 3,
+              "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Sí, remo en el día de piernas: es el patrón que más tarda en construirse y así no pasas la semana con una sola sesión de espalda. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos."
+              "note": "Sí, remo en el día de piernas: es el patrón que más tarda en construirse y así entrenas la espalda los tres días. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos."
             },
             {
               "sort_order": 8,
@@ -585,7 +585,7 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Mesa firme o marco de puerta. Una serie y más repeticiones que la fase 1, y más inclinado hacia atrás que en la fase 1 si ya te sobra el rango."
+              "note": "Mesa firme o marco de puerta. Mismas cuatro series que en la fase 1 pero con más repeticiones, y más inclinado hacia atrás si ya te sobra el rango."
             },
             {
               "sort_order": 8,
@@ -753,7 +753,7 @@
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
               "muscles": "Espalda alta, bíceps, hombros",
-              "sets": 3,
+              "sets": 4,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
