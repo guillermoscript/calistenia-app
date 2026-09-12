@@ -1,12 +1,12 @@
 {
   "program": {
     "name": "Mujer · Glúteo + Tonificación",
-    "description": "Programa de 12 semanas centrado en glúteo y piernas, con tirón y empuje suficientes para tonificar el tren superior y sostener la postura. 4 días/semana, peso corporal + banda elástica.",
+    "description": "Programa de 12 semanas centrado en glúteo y piernas, con tirón y empuje suficientes para tonificar el tren superior y sostener la postura. 4 días/semana. Necesitas una banda elástica, una silla o banco estable, un escalón bajo y una toalla.",
     "difficulty": "beginner",
     "duration_weeks": 12,
     "instructions": {
-      "es": "Progresión: sube 1 repetición por serie en cada sesión dentro del rango indicado (por ejemplo, de \"12-15\" empieza en 12 y ve subiendo). Al llegar al tope del rango durante dos sesiones seguidas, pasa a la variante más exigente que te sugiere la nota del ejercicio (por ejemplo, de sentadilla con banda a sentadilla con salto). Descarga: cada 4-6 semanas, incluida la semana de transición entre fases, baja el volumen a la mitad durante 5-7 días — menos series, mismo movimiento — antes de retomar la progresión. Para quién es: mujeres principiantes que quieren glúteo y piernas fuertes de verdad, no solo \"tonificadas\": el volumen de piernas es alto a propósito, y el tirón está para que la postura no se quede atrás. Necesitas una banda elástica de resistencia media y, si puedes, un banco o silla estable.",
-      "en": "Progression: add 1 rep per set each session within the given range (e.g. from \"12-15\" start at 12 and work up). Once you hit the top of the range for two sessions in a row, move to the harder variant suggested in the exercise note (e.g. band squat to jump squat). Deload: every 4-6 weeks, including the transition week between phases, cut volume in half for 5-7 days — fewer sets, same movements — before resuming progression. Who it is for: beginner women who want real strength in glutes and legs, not just \"toning\" — leg volume is intentionally high, and the pulling work is there so posture keeps up. You need a medium-resistance elastic band and, if possible, a stable bench or chair."
+      "es": "Material obligatorio: una banda elástica de resistencia media, una silla firme (o un banco o un sofá bajo), y una toalla de mano; un escalón o peldaño bajo es muy recomendable, aunque cada ejercicio que lo usa trae su alternativa en la nota, así que puedes empezar sin él. La silla sí es imprescindible: sostiene el hip thrust del lunes y el pie de atrás de la búlgara del jueves. El escalón se usa ADEMÁS de la silla, para el gemelo y para elevar los pies en la fase 3; donde hace falta, la nota del ejercicio te da la alternativa si no lo tienes. La toalla es para el remo en puerta y para las aperturas de hombro. No necesitas ninguna barra fija ni ningún punto donde anclar la banda: ninguno de los ejercicios con banda la ata a nada — o se pisa con los pies, o se lleva sobre las rodillas, o se sujeta con las dos manos. Progresión: sube 1 repetición por serie en cada sesión dentro del rango indicado (por ejemplo, de \"12-15\" empieza en 12 y ve subiendo). Cuando llegues al tope del rango, las semanas que queden hasta el cambio de fase gánalas bajando más despacio: tres segundos en la bajada de cada repetición, mismas series y mismas repeticiones. No te inventes ejercicios más difíciles: cada fase ya trae el suyo. Descarga: la última semana de la fase 1 y de la fase 2 es de descarga; la app te baja las series a la mitad manteniendo los mismos movimientos, y la fase siguiente arranca con la carga completa. Para quién es: mujeres principiantes que quieren glúteo y piernas fuertes de verdad. La semana 1 es deliberadamente corta —24 series de pierna— y el volumen casi se dobla hasta la semana 12: empezar suave es lo que permite llegar al final. El tirón está para que la postura no se quede atrás. Precaución de suelo pélvico: el calentamiento del viernes lleva saltos de tijera, la fase 3 incluye sentadilla con salto, y el bloque de core sube la presión sobre el abdomen (giro ruso con los pies en el aire en la fase 2, hollow body rock en la fase 3). Si estás embarazada, en posparto reciente o tienes pérdidas de orina al toser o al saltar, usa las alternativas que indica la nota de cada uno de esos cuatro ejercicios y consulta con una fisioterapeuta de suelo pélvico.",
+      "en": "Required equipment: a medium-resistance elastic band, a sturdy chair (or a bench or low sofa), a low step, and a hand towel; a low step is strongly recommended, though every exercise that uses one carries its alternative in the note, so you can start without it. The chair, however, is not optional: it holds the Monday hip thrust and the rear foot of Thursday's Bulgarian split squat. The step is used IN ADDITION to the chair, for calf raises and to elevate your feet in phase 3; wherever it matters, the exercise note gives you the alternative if you do not have one. The towel is for the door row and the shoulder pull-aparts. You do NOT need any fixed bar or anchor point for the band: none of the band exercises tie it to anything — you either stand on it, wear it above your knees, or hold it in both hands. Progression: add 1 rep per set each session within the given range (e.g. from \"12-15\" start at 12 and work up). Once you hit the top of the range, spend the remaining weeks before the phase change lowering more slowly: three seconds on the way down of every rep, same sets and same reps. Do not invent harder exercises: each phase already brings its own. Deload: the last week of phase 1 and phase 2 is a deload week; the app halves your sets while keeping the same movements, and the next phase starts at full load. Who it is for: beginner women who want real strength in glutes and legs. Week 1 is deliberately short — 24 leg sets — and volume nearly doubles by week 12: starting light is what lets you finish. The pulling work is there so posture keeps up. Pelvic-floor caution: the Friday warm-up uses jumping jacks, phase 3 includes jump squats, and the core block raises intra-abdominal pressure (feet-up Russian twists in phase 2, hollow body rocks in phase 3). If you are pregnant, recently postpartum, or leak urine when you cough or jump, use the alternatives given in the note of each of those four exercises and check in with a pelvic-floor physiotherapist."
     }
   },
   "phases": [
@@ -19,27 +19,12 @@
         {
           "day_id": "lun",
           "day_name": "Lunes",
-          "day_focus": "Glúteo · Fuerza",
-          "workout_title": "Activación Glútea Pesada",
+          "day_type": "legs",
+          "day_focus": "Glúteo · Cadera",
+          "workout_title": "Extensión de Cadera y Primera Bisagra",
           "exercises": [
             {
               "sort_order": 1,
-              "exercise_id": "deep_breathing",
-              "name": {
-                "es": "Respiración Profunda",
-                "en": "Deep Breathing"
-              },
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 60,
-              "muscles": "Sistema nervioso",
-              "note": "Respira profundo para activar el sistema nervioso parasimpático antes de cargar."
-            },
-            {
-              "sort_order": 2,
               "exercise_id": "cat_cow",
               "name": {
                 "es": "Gato-Vaca",
@@ -55,7 +40,7 @@
               "note": "Moviliza la columna antes de la carga de cadera."
             },
             {
-              "sort_order": 3,
+              "sort_order": 2,
               "exercise_id": "glute_bridge_warmup",
               "name": {
                 "es": "Puente de Glúteos (Calentamiento)",
@@ -71,7 +56,7 @@
               "note": "Activa el glúteo con contracciones ligeras, sin carga."
             },
             {
-              "sort_order": 4,
+              "sort_order": 3,
               "exercise_id": "hip_circles",
               "name": {
                 "es": "Círculos de Cadera",
@@ -87,6 +72,22 @@
               "note": "Moviliza la cadera en ambas direcciones."
             },
             {
+              "sort_order": 4,
+              "exercise_id": "leg_swings",
+              "name": {
+                "es": "Balanceo de Piernas",
+                "en": "Leg Swings"
+              },
+              "sets": 1,
+              "reps": "10 por pierna",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cadera, isquiotibiales",
+              "note": "Balanceo controlado, apóyate en la pared: abre el isquiotibial antes de la bisagra."
+            },
+            {
               "sort_order": 5,
               "exercise_id": "hip_thrust_bodyweight",
               "name": {
@@ -100,90 +101,58 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Glúteos, isquiotibiales",
-              "note": "Hombros apoyados en el banco, pausa 2s arriba apretando el glúteo con fuerza."
+              "note": "Hombros apoyados en el borde de la silla o el sofá, pies planos en el suelo. Pausa de 2s arriba apretando el glúteo. Si la silla se mueve, ponla contra la pared."
             },
             {
               "sort_order": 6,
-              "exercise_id": "glute_bridge",
+              "exercise_id": "glute_bridge_pause",
               "name": {
-                "es": "Puente de Glúteos",
-                "en": "Glute Bridge"
+                "es": "Puente de Glúteo con Pausa",
+                "en": "Glute Bridge with Pause"
               },
               "sets": 3,
-              "reps": "15",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales, core",
-              "note": "Sube hasta la extensión completa de cadera, sin arquear la lumbar."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "reverse_lunge",
-              "name": {
-                "es": "Zancada Inversa",
-                "en": "Reverse Lunge"
-              },
-              "sets": 3,
-              "reps": "10 por pierna",
+              "reps": "12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, isquiotibiales",
-              "note": "Rodilla de atrás roza el suelo, empuja con el talón delantero."
+              "muscles": "Glúteos, isquiotibiales",
+              "note": "Tumbada en el suelo, sube la cadera y aguanta 3s arriba antes de bajar. El tiempo arriba es el estímulo: no corras."
             },
             {
-              "sort_order": 8,
-              "exercise_id": "band_hip_lift",
+              "sort_order": 7,
+              "exercise_id": "good_morning",
               "name": {
-                "es": "Elevación de Cadera con Banda",
-                "en": "Band Hip Lift"
+                "es": "Good Morning (sin peso)",
+                "en": "Good Morning (no weight)"
               },
               "sets": 3,
-              "reps": "15",
+              "reps": "12",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Banda por encima de las rodillas: empuja contra ella al subir la cadera."
+              "muscles": "Isquiotibiales, glúteos, espalda baja",
+              "note": "Brazos cruzados sobre el pecho, NO en la nuca: desde la nuca acabarías tirando del cuello. Rodillas algo flexionadas, lleva la cadera atrás hasta notar el isquiotibial. Es tu primera bisagra: prioriza la espalda recta sobre el rango."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "clamshell",
+              "name": {
+                "es": "Almeja (Clamshell)",
+                "en": "Clamshell"
+              },
+              "sets": 2,
+              "reps": "15 por pierna",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio",
+              "note": "Tumbada de lado, rodillas dobladas y pies juntos. Abre la rodilla de arriba sin girar la cadera hacia atrás. Trabaja el glúteo medio, que es lo que estabiliza la pelvis en cada zancada."
             },
             {
               "sort_order": 9,
-              "exercise_id": "single_leg_bridge_with_outstretched_leg",
-              "name": {
-                "es": "Puente a Una Pierna",
-                "en": "Single-Leg Bridge"
-              },
-              "sets": 3,
-              "reps": "10 por pierna",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales, core",
-              "note": "Pierna libre extendida y alta: exige más al glúteo de apoyo."
-            },
-            {
-              "sort_order": 10,
-              "exercise_id": "resistance_band_seated_straight_back_row",
-              "name": {
-                "es": "Remo Sentado con Banda",
-                "en": "Seated Band Row"
-              },
-              "sets": 2,
-              "reps": "15",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, romboides, bíceps",
-              "note": "Espalda recta, tira del codo hacia atrás sin balancear el torso."
-            },
-            {
-              "sort_order": 11,
               "exercise_id": "seated_glute_stretch",
               "name": {
                 "es": "Estiramiento de Glúteo Sentado",
@@ -199,7 +168,7 @@
               "note": "Estira el glúteo trabajado, respira lento."
             },
             {
-              "sort_order": 12,
+              "sort_order": 10,
               "exercise_id": "hip_flexor_stretch",
               "name": {
                 "es": "Estiramiento de Flexor de Cadera",
@@ -213,14 +182,31 @@
               "timer_seconds": 30,
               "muscles": "Flexor de cadera",
               "note": "Rodilla de atrás en el suelo, empuja la cadera hacia adelante."
+            },
+            {
+              "sort_order": 11,
+              "exercise_id": "deep_breathing",
+              "name": {
+                "es": "Respiración Profunda",
+                "en": "Deep Breathing"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Sistema nervioso",
+              "note": "Respiración diafragmática lenta para bajar pulsaciones y cerrar la sesión."
             }
           ]
         },
         {
           "day_id": "mar",
           "day_name": "Martes",
-          "day_focus": "Tren Superior · Tirón",
-          "workout_title": "Tonificación de Espalda y Hombros",
+          "day_type": "push",
+          "day_focus": "Tren Superior · Empuje y Postura",
+          "workout_title": "Empuje Asistido y Salud del Hombro",
           "exercises": [
             {
               "sort_order": 1,
@@ -236,7 +222,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, movilidad",
-              "note": "Banda tensa, brazos rectos, pasa la banda de adelante a atrás."
+              "note": "Sujeta la banda con las dos manos bien separadas, brazos rectos, y pásala de adelante a atrás sin doblar el codo."
             },
             {
               "sort_order": 2,
@@ -268,7 +254,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna torácica."
+              "note": "Despega las escápulas antes del trabajo de empuje."
             },
             {
               "sort_order": 4,
@@ -284,10 +270,26 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Muñecas, antebrazos",
-              "note": "Prepara la muñeca para el apoyo en flexiones."
+              "note": "Prepara la muñeca para el apoyo de manos en el suelo."
             },
             {
               "sort_order": 5,
+              "exercise_id": "incline_push_up",
+              "name": {
+                "es": "Flexión Inclinada",
+                "en": "Incline Push-up"
+              },
+              "sets": 4,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho, tríceps, hombros",
+              "note": "Manos en el respaldo de la silla o en la encimera. Cuanto más alto el apoyo, más fácil: baja la altura solo cuando hagas 12 limpias."
+            },
+            {
+              "sort_order": 6,
               "exercise_id": "face_pull",
               "name": {
                 "es": "Face Pull (banda/toalla)",
@@ -295,63 +297,15 @@
               },
               "sets": 3,
               "reps": "15",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Deltoide posterior, romboides",
-              "note": "Codos altos, tira hacia la frente: es el ejercicio que más corrige la postura."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "band_close_grip_pulldown",
-              "name": {
-                "es": "Jalón Agarre Cerrado con Banda",
-                "en": "Band Close-Grip Pulldown"
-              },
-              "sets": 3,
-              "reps": "12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Dorsal, bíceps",
-              "note": "Banda anclada arriba, lleva los codos hacia las costillas."
+              "muscles": "Deltoide posterior, romboides",
+              "note": "Montaje sin anclaje: sujeta la banda con las dos manos separadas al ancho de los hombros y los brazos estirados al frente, a la altura de los ojos. Tira DOBLANDO el codo y llevando los puños hacia las orejas, con el codo siempre por encima de la muñeca: no es una apertura de brazos rectos, es un tirón con rotación del hombro hacia fuera. Eso es lo que corrige la postura."
             },
             {
               "sort_order": 7,
-              "exercise_id": "pushup_std",
-              "name": {
-                "es": "Flexión de Pecho Estándar",
-                "en": "Standard Push-up"
-              },
-              "sets": 3,
-              "reps": "10-12",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Pecho, hombros, tríceps",
-              "note": "De rodillas si hace falta para llegar a la última repetición con buena forma."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "pull_apart",
-              "name": {
-                "es": "Apertura con Toalla (Pull-Apart)",
-                "en": "Towel Pull-Apart"
-              },
-              "sets": 3,
-              "reps": "15-20",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Deltoide posterior, romboides",
-              "note": "Brazos extendidos, abre la toalla llevando los omóplatos hacia atrás."
-            },
-            {
-              "sort_order": 9,
               "exercise_id": "band_shoulder_press",
               "name": {
                 "es": "Press de Hombro con Banda",
@@ -363,11 +317,27 @@
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Hombros, tríceps",
-              "note": "Banda bajo los pies, empuja hacia arriba sin arquear la espalda."
+              "muscles": "Deltoides, tríceps",
+              "note": "Banda pisada con los dos pies, empuja por encima de la cabeza sin arquear la lumbar."
             },
             {
-              "sort_order": 10,
+              "sort_order": 8,
+              "exercise_id": "pull_apart",
+              "name": {
+                "es": "Apertura Isométrica con Toalla",
+                "en": "Isometric Towel Pull Apart"
+              },
+              "sets": 3,
+              "reps": "20s",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "muscles": "Deltoide posterior",
+              "note": "Es el complemento del face pull, no una repetición de él: aquí los brazos van RECTOS a la altura del pecho y no hay recorrido, porque la toalla no se estira. Sujétala tensa, tira hacia afuera como si quisieras romperla y mantén la tensión con las escápulas juntas todo el tiempo."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "plank",
               "name": {
                 "es": "Plancha",
@@ -383,7 +353,7 @@
               "note": "Cuerpo en línea recta, aprieta glúteo y abdomen."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "exercise_id": "chest_and_front_of_shoulder_stretch",
               "name": {
                 "es": "Estiramiento de Pecho y Hombro",
@@ -399,7 +369,7 @@
               "note": "Brazo contra la pared, gira el torso hacia el lado contrario."
             },
             {
-              "sort_order": 12,
+              "sort_order": 11,
               "exercise_id": "lat_stretch",
               "name": {
                 "es": "Estiramiento de Dorsal",
@@ -412,15 +382,16 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Dorsal ancho",
-              "note": "Estira el dorsal ancho tras el trabajo de tirón."
+              "note": "Cuelga el brazo de un mueble estable y deja caer el peso del torso."
             }
           ]
         },
         {
           "day_id": "jue",
           "day_name": "Jueves",
-          "day_focus": "Glúteo · Unilateral",
-          "workout_title": "Piernas y Glúteo en Un Apoyo",
+          "day_type": "legs",
+          "day_focus": "Piernas · Sentadilla y Zancada",
+          "workout_title": "Sentadilla y Zancada de Entrada",
           "exercises": [
             {
               "sort_order": 1,
@@ -436,7 +407,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cadera, glúteos",
-              "note": "Moviliza la cadera."
+              "note": "Suelta la cadera antes de la sentadilla."
             },
             {
               "sort_order": 2,
@@ -452,7 +423,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cadera, isquiotibiales",
-              "note": "Balanceo controlado, apóyate en una pared."
+              "note": "Adelante-atrás y lateral: prepara la zancada."
             },
             {
               "sort_order": 3,
@@ -468,7 +439,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Glúteos, core",
-              "note": "Activa el glúteo antes del trabajo unilateral."
+              "note": "Enciende el glúteo para que no tire solo el cuádriceps."
             },
             {
               "sort_order": 4,
@@ -484,122 +455,58 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
+              "note": "Moviliza la columna antes del trabajo de pierna."
             },
             {
               "sort_order": 5,
-              "exercise_id": "bulgarian",
-              "name": {
-                "es": "Sentadilla Búlgara",
-                "en": "Bulgarian Split Squat"
-              },
-              "sets": 3,
-              "reps": "10 por pierna",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos",
-              "note": "Pie de atrás en el banco, baja hasta rozar la rodilla trasera con el suelo."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "glute_bridge_uni",
-              "name": {
-                "es": "Puente de Glúteos Unilateral",
-                "en": "Unilateral Glute Bridge"
-              },
-              "sets": 3,
-              "reps": "10 por pierna",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Una pierna elevada, mantén la cadera nivelada al subir."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "curtsy_lunge",
-              "name": {
-                "es": "Zancada Curtsy",
-                "en": "Curtsy Lunge"
-              },
-              "sets": 3,
-              "reps": "10 por pierna",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, aductores, cuádriceps",
-              "note": "Cruza la pierna por detrás en diagonal, sin girar el torso."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "donkey_kick",
-              "name": {
-                "es": "Patada de Glúteo (Donkey Kick)",
-                "en": "Donkey Kick"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteo mayor",
-              "note": "Aprieta el glúteo en la cima, sin arquear la lumbar."
-            },
-            {
-              "sort_order": 9,
               "exercise_id": "band_squat",
               "name": {
                 "es": "Sentadilla con Banda",
                 "en": "Band Squat"
               },
               "sets": 3,
-              "reps": "15",
+              "reps": "12-15",
               "rest_seconds": 60,
-              "priority": "accessory",
+              "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos",
-              "note": "Banda por encima de las rodillas: empújala hacia afuera en cada bajada."
+              "muscles": "Glúteos, cuádriceps, isquiotibiales",
+              "note": "Banda por encima de las rodillas, empuja las rodillas hacia afuera y baja hasta donde controles la espalda."
             },
             {
-              "sort_order": 10,
-              "exercise_id": "side_hip_abduction",
+              "sort_order": 6,
+              "exercise_id": "reverse_lunge",
               "name": {
-                "es": "Abducción de Cadera Lateral",
-                "en": "Side Hip Abduction"
+                "es": "Zancada Inversa",
+                "en": "Reverse Lunge"
               },
               "sets": 3,
-              "reps": "12 por pierna",
+              "reps": "10 por pierna",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteos, isquiotibiales",
+              "note": "Da el paso hacia atrás, no hacia adelante: protege la rodilla de delante. Apóyate en la pared si pierdes el equilibrio."
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "calf_raises_bilateral",
+              "name": {
+                "es": "Elevación de Talones",
+                "en": "Calf Raises"
+              },
+              "sets": 2,
+              "reps": "15",
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Glúteo medio",
-              "note": "Tumbada de lado, eleva la pierna sin rotar la cadera."
+              "muscles": "Gemelos, sóleo",
+              "note": "De pie en el suelo, sube a puntillas y aguanta 1s arriba. Baja el talón despacio."
             },
             {
-              "sort_order": 11,
-              "exercise_id": "incline_push_up",
-              "name": {
-                "es": "Flexión Inclinada",
-                "en": "Incline Push-up"
-              },
-              "sets": 3,
-              "reps": "10",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Pecho, hombros, tríceps",
-              "note": "Manos en el banco: mantiene el tren superior activo en día de piernas."
-            },
-            {
-              "sort_order": 12,
+              "sort_order": 8,
               "exercise_id": "quad_stretch",
               "name": {
                 "es": "Estiramiento de Cuádriceps",
@@ -615,7 +522,7 @@
               "note": "Sujeta el tobillo detrás del glúteo, rodillas juntas."
             },
             {
-              "sort_order": 13,
+              "sort_order": 9,
               "exercise_id": "hamstring_stretch",
               "name": {
                 "es": "Estiramiento de Isquiotibiales",
@@ -635,8 +542,9 @@
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Full Body · Tonificación",
-          "workout_title": "Cierre de Semana + Core",
+          "day_type": "pull",
+          "day_focus": "Tren Superior · Tirón y Core",
+          "workout_title": "Remo en Puerta y Core",
           "exercises": [
             {
               "sort_order": 1,
@@ -652,7 +560,7 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Cuerpo completo, cardio",
-              "note": "Sube la frecuencia cardíaca."
+              "note": "Sube la frecuencia cardíaca. Si estás en posparto reciente, embarazada o tienes pérdidas de orina al toser o al esforzarte, no hagas esta versión. Cámbialo por marcha rápida en el sitio con los brazos arriba, que calienta igual sin impacto."
             },
             {
               "sort_order": 2,
@@ -668,7 +576,7 @@
               "is_timer": true,
               "timer_seconds": 20,
               "muscles": "Hombros",
-              "note": "Calienta los hombros."
+              "note": "Calienta el hombro antes de tirar."
             },
             {
               "sort_order": 3,
@@ -684,58 +592,74 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
+              "note": "Moviliza la columna antes del core."
             },
             {
               "sort_order": 4,
-              "exercise_id": "band_squat_row",
+              "exercise_id": "wrist_mobility",
               "name": {
-                "es": "Sentadilla con Remo (banda)",
-                "en": "Band Squat Row"
+                "es": "Movilidad de Muñecas",
+                "en": "Wrist Mobility"
               },
-              "sets": 3,
-              "reps": "12",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, espalda",
-              "note": "Combina sentadilla y remo: baja, y al subir tira de la banda hacia las costillas."
+              "sets": 1,
+              "reps": "30s",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Muñecas, antebrazos",
+              "note": "Este día también apoyas las manos en el suelo: prepara la muñeca."
             },
             {
               "sort_order": 5,
-              "exercise_id": "band_one_arm_standing_low_row",
+              "exercise_id": "bodyweight_squatting_row_with_towel",
               "name": {
-                "es": "Remo Bajo a Un Brazo con Banda",
-                "en": "Band One-Arm Low Row"
+                "es": "Remo en Puerta con Toalla (en sentadilla)",
+                "en": "Door Towel Row (squatting)"
               },
               "sets": 3,
-              "reps": "12 por brazo",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, romboides",
-              "note": "Tira del codo hacia atrás manteniendo el torso quieto."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "diamond_pushup",
-              "name": {
-                "es": "Flexión Diamante",
-                "en": "Diamond Push-up"
-              },
-              "sets": 3,
-              "reps": "8-10",
+              "reps": "10-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Tríceps, pecho",
-              "note": "Manos en rombo bajo el pecho: exige más al tríceps."
+              "muscles": "Espalda alta, bíceps",
+              "note": "Pasa una toalla por los dos pomos de una puerta CERRADA que abra hacia el lado contrario. Agarra un extremo con cada mano, pies a la base de la puerta, baja a media sentadilla con los brazos estirados y tira del pecho hacia la puerta. Prueba la tensión de pie antes de confiarle el peso."
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "resistance_band_seated_straight_back_row",
+              "name": {
+                "es": "Remo Sentado con Banda",
+                "en": "Seated Band Row"
+              },
+              "sets": 3,
+              "reps": "15",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Espalda alta, bíceps, hombros",
+              "note": "Sentada en el suelo con la banda rodeando los pies. Espalda recta, tira de los codos hacia atrás pegados al cuerpo."
             },
             {
               "sort_order": 7,
+              "exercise_id": "knee_push_up",
+              "name": {
+                "es": "Flexión de Rodillas",
+                "en": "Knee Push-up"
+              },
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho, tríceps, hombros",
+              "note": "Flexión con las rodillas apoyadas en el suelo. Respecto a la inclinada del martes cambia el ángulo, no la dificultad: aquí el pecho baja más. Si te cuesta, apoya las manos en un escalón o en un libro grueso."
+            },
+            {
+              "sort_order": 8,
               "exercise_id": "russian_twist",
               "name": {
                 "es": "Giro Ruso",
@@ -747,24 +671,8 @@
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Oblicuos, core",
-              "note": "Pies elevados si quieres más dificultad, gira desde el torso."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "bicycle_crunch",
-              "name": {
-                "es": "Crunch Bicicleta",
-                "en": "Bicycle Crunch"
-              },
-              "sets": 3,
-              "reps": "20",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Recto abdominal, oblicuos",
-              "note": "Codo hacia la rodilla contraria, controla el movimiento."
+              "muscles": "Oblicuos",
+              "note": "Pies apoyados en el suelo; gira desde el tronco, no desde los brazos."
             },
             {
               "sort_order": 9,
@@ -780,7 +688,7 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Oblicuos, core",
-              "note": "Cadera alta, no dejes que caiga."
+              "note": "Cadera alta, no dejes que caiga. De rodillas si no aguantas los 30s."
             },
             {
               "sort_order": 10,
@@ -816,38 +724,24 @@
             }
           ]
         }
-      ]
+      ],
+      "deload_last_week": true
     },
     {
       "phase_number": 2,
       "name": "Desarrollo (Semanas 5-8)",
       "weeks": "5-8",
-      "color": "#EC4899",
+      "color": "#DB2777",
       "days": [
         {
           "day_id": "lun",
           "day_name": "Lunes",
-          "day_focus": "Glúteo · Fuerza",
-          "workout_title": "Sobrecarga de Cadera",
+          "day_type": "legs",
+          "day_focus": "Glúteo · Cadera",
+          "workout_title": "Sobrecarga de Cadera y Bisagra Unilateral",
           "exercises": [
             {
               "sort_order": 1,
-              "exercise_id": "deep_breathing",
-              "name": {
-                "es": "Respiración Profunda",
-                "en": "Deep Breathing"
-              },
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "muscles": "Sistema nervioso",
-              "note": "Respira profundo antes de cargar."
-            },
-            {
-              "sort_order": 2,
               "exercise_id": "cat_cow",
               "name": {
                 "es": "Gato-Vaca",
@@ -860,10 +754,10 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
+              "note": "Moviliza la columna antes de la carga de cadera."
             },
             {
-              "sort_order": 3,
+              "sort_order": 2,
               "exercise_id": "glute_bridge_warmup",
               "name": {
                 "es": "Puente de Glúteos (Calentamiento)",
@@ -876,10 +770,10 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Glúteos, core",
-              "note": "Activa el glúteo."
+              "note": "Activa el glúteo con contracciones ligeras, sin carga."
             },
             {
-              "sort_order": 4,
+              "sort_order": 3,
               "exercise_id": "hip_circles",
               "name": {
                 "es": "Círculos de Cadera",
@@ -892,7 +786,23 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cadera, glúteos",
-              "note": "Moviliza la cadera."
+              "note": "Moviliza la cadera en ambas direcciones."
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "leg_swings",
+              "name": {
+                "es": "Balanceo de Piernas",
+                "en": "Leg Swings"
+              },
+              "sets": 1,
+              "reps": "10 por pierna",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cadera, isquiotibiales",
+              "note": "Balanceo controlado, apóyate en la pared: abre el isquiotibial antes de la bisagra."
             },
             {
               "sort_order": 5,
@@ -902,96 +812,64 @@
                 "en": "Bodyweight Hip Thrust"
               },
               "sets": 4,
-              "reps": "15 + pausa 2s",
+              "reps": "15",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Glúteos, isquiotibiales",
-              "note": "Añade una serie y una pausa isométrica de 2s en la contracción máxima."
+              "note": "Cuarta serie y tope de repeticiones, con la misma pausa de 2s arriba de la fase 1. Si las 15 salen fáciles, sube los hombros a un apoyo más alto."
             },
             {
               "sort_order": 6,
-              "exercise_id": "glute_bridge",
+              "exercise_id": "elevated_glute_bridge",
               "name": {
-                "es": "Puente de Glúteos",
-                "en": "Glute Bridge"
+                "es": "Puente de Glúteo con Pies Elevados",
+                "en": "Elevated Glute Bridge"
               },
               "sets": 3,
-              "reps": "18",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales, core",
-              "note": "Sube el rango de repeticiones manteniendo la técnica."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "reverse_lunge",
-              "name": {
-                "es": "Zancada Inversa",
-                "en": "Reverse Lunge"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
+              "reps": "15",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, isquiotibiales",
-              "note": "Aumenta la profundidad manteniendo el torso erguido."
+              "muscles": "Glúteos, isquiotibiales",
+              "note": "Pies sobre la silla o el sofá: el recorrido es mayor que el puente del suelo y el glúteo trabaja estirado. Sustituye al puente con pausa de la fase 1."
             },
             {
-              "sort_order": 8,
-              "exercise_id": "band_hip_lift",
+              "sort_order": 7,
+              "exercise_id": "single_rdl",
               "name": {
-                "es": "Elevación de Cadera con Banda",
-                "en": "Band Hip Lift"
+                "es": "Peso Muerto Rumano a Una Pierna",
+                "en": "Single Leg RDL"
               },
               "sets": 3,
-              "reps": "18",
-              "rest_seconds": 45,
+              "reps": "8 por pierna",
+              "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Empuja contra la banda con más control en la bajada."
+              "muscles": "Isquiotibiales, glúteos, espalda baja",
+              "note": "Escalón real sobre el good morning: la misma bisagra a una pierna. Roza el suelo con la mano del lado contrario y apóyate en la pared con la otra hasta que domines el equilibrio."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "banded_clamshell",
+              "name": {
+                "es": "Almeja con Banda (Clamshell)",
+                "en": "Banded Clamshell"
+              },
+              "sets": 2,
+              "reps": "15 por pierna",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio",
+              "note": "Misma almeja de la fase 1, ahora con la banda sobre las rodillas. Abre contra la banda y vuelve despacio, sin dejar que te cierre de golpe."
             },
             {
               "sort_order": 9,
-              "exercise_id": "single_leg_bridge_with_outstretched_leg",
-              "name": {
-                "es": "Puente a Una Pierna",
-                "en": "Single-Leg Bridge"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales, core",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 10,
-              "exercise_id": "resistance_band_seated_straight_back_row",
-              "name": {
-                "es": "Remo Sentado con Banda",
-                "en": "Seated Band Row"
-              },
-              "sets": 3,
-              "reps": "15",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, romboides, bíceps",
-              "note": "Añade una serie de tirón para la postura."
-            },
-            {
-              "sort_order": 11,
               "exercise_id": "seated_glute_stretch",
               "name": {
                 "es": "Estiramiento de Glúteo Sentado",
@@ -1004,10 +882,10 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Glúteos",
-              "note": "Estira el glúteo trabajado."
+              "note": "Estira el glúteo trabajado, respira lento."
             },
             {
-              "sort_order": 12,
+              "sort_order": 10,
               "exercise_id": "hip_flexor_stretch",
               "name": {
                 "es": "Estiramiento de Flexor de Cadera",
@@ -1020,15 +898,32 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Flexor de cadera",
-              "note": "Libera el flexor de cadera."
+              "note": "Rodilla de atrás en el suelo, empuja la cadera hacia adelante."
+            },
+            {
+              "sort_order": 11,
+              "exercise_id": "deep_breathing",
+              "name": {
+                "es": "Respiración Profunda",
+                "en": "Deep Breathing"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Sistema nervioso",
+              "note": "Respiración diafragmática lenta para bajar pulsaciones y cerrar la sesión."
             }
           ]
         },
         {
           "day_id": "mar",
           "day_name": "Martes",
-          "day_focus": "Tren Superior · Tirón",
-          "workout_title": "Espalda y Hombros — Más Volumen",
+          "day_type": "push",
+          "day_focus": "Tren Superior · Empuje y Postura",
+          "workout_title": "Flexión Completa y Más Tiempo bajo Tensión",
           "exercises": [
             {
               "sort_order": 1,
@@ -1044,7 +939,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Hombros, movilidad",
-              "note": "Prepara el hombro con la banda."
+              "note": "Sujeta la banda con las dos manos bien separadas, brazos rectos, y pásala de adelante a atrás sin doblar el codo."
             },
             {
               "sort_order": 2,
@@ -1060,7 +955,7 @@
               "is_timer": true,
               "timer_seconds": 20,
               "muscles": "Hombros",
-              "note": "Calienta el hombro."
+              "note": "Círculos amplios para calentar el hombro."
             },
             {
               "sort_order": 3,
@@ -1076,7 +971,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna torácica."
+              "note": "Despega las escápulas antes del trabajo de empuje."
             },
             {
               "sort_order": 4,
@@ -1092,42 +987,10 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Muñecas, antebrazos",
-              "note": "Prepara la muñeca."
+              "note": "Prepara la muñeca para el apoyo de manos en el suelo."
             },
             {
               "sort_order": 5,
-              "exercise_id": "face_pull",
-              "name": {
-                "es": "Face Pull (banda/toalla)",
-                "en": "Face Pull"
-              },
-              "sets": 3,
-              "reps": "15-18",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Deltoide posterior, romboides",
-              "note": "Mantén los codos altos durante todo el recorrido."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "band_close_grip_pulldown",
-              "name": {
-                "es": "Jalón Agarre Cerrado con Banda",
-                "en": "Band Close-Grip Pulldown"
-              },
-              "sets": 3,
-              "reps": "12-15",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, bíceps",
-              "note": "Controla la vuelta, no dejes que la banda tire de ti."
-            },
-            {
-              "sort_order": 7,
               "exercise_id": "pushup_std",
               "name": {
                 "es": "Flexión de Pecho Estándar",
@@ -1140,26 +1003,26 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Pecho, hombros, tríceps",
-              "note": "Añade una serie: si ya no llegas de pie, pasa a rodillas solo en la última."
+              "note": "Ya no hay apoyo elevado: flexión completa en el suelo. Termina la serie con las rodillas apoyadas si te quedas sin repeticiones limpias."
             },
             {
-              "sort_order": 8,
-              "exercise_id": "pull_apart",
+              "sort_order": 6,
+              "exercise_id": "face_pull",
               "name": {
-                "es": "Apertura con Toalla (Pull-Apart)",
-                "en": "Towel Pull-Apart"
+                "es": "Face Pull (banda/toalla)",
+                "en": "Face Pull"
               },
               "sets": 3,
-              "reps": "18-20",
-              "rest_seconds": 30,
-              "priority": "secondary",
+              "reps": "18",
+              "rest_seconds": 60,
+              "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Deltoide posterior, romboides",
-              "note": "Sube el rango de repeticiones."
+              "note": "Mismo montaje con las dos manos, tres repeticiones más y ahora con pausa de 2s manteniendo los codos altos y las escápulas juntas antes de volver."
             },
             {
-              "sort_order": 9,
+              "sort_order": 7,
               "exercise_id": "band_shoulder_press",
               "name": {
                 "es": "Press de Hombro con Banda",
@@ -1171,11 +1034,27 @@
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Hombros, tríceps",
-              "note": "Sube el rango de repeticiones manteniendo el core firme."
+              "muscles": "Deltoides, tríceps",
+              "note": "Pisa la banda con los pies más separados para subir la tensión."
             },
             {
-              "sort_order": 10,
+              "sort_order": 8,
+              "exercise_id": "pull_apart",
+              "name": {
+                "es": "Apertura Isométrica con Toalla",
+                "en": "Isometric Towel Pull Apart"
+              },
+              "sets": 3,
+              "reps": "30s",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Deltoide posterior",
+              "note": "Diez segundos más de tensión continua, con los brazos rectos. Al no haber recorrido, el tiempo es la única progresión honesta: aguanta apretando sin aflojar a la mitad."
+            },
+            {
+              "sort_order": 9,
               "exercise_id": "plank",
               "name": {
                 "es": "Plancha",
@@ -1186,12 +1065,12 @@
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": true,
-              "timer_seconds": 40,
+              "timer_seconds": 42,
               "muscles": "Core, transverso abdominal",
-              "note": "Aumenta el tiempo de mantenimiento."
+              "note": "Aprieta el glúteo para que la lumbar no se hunda al alargar el tiempo."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "exercise_id": "chest_and_front_of_shoulder_stretch",
               "name": {
                 "es": "Estiramiento de Pecho y Hombro",
@@ -1204,10 +1083,10 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Pecho, hombro",
-              "note": "Estira el pecho."
+              "note": "Brazo contra la pared, gira el torso hacia el lado contrario."
             },
             {
-              "sort_order": 12,
+              "sort_order": 11,
               "exercise_id": "lat_stretch",
               "name": {
                 "es": "Estiramiento de Dorsal",
@@ -1220,15 +1099,16 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Dorsal ancho",
-              "note": "Estira el dorsal."
+              "note": "Cuelga el brazo de un mueble estable y deja caer el peso del torso."
             }
           ]
         },
         {
           "day_id": "jue",
           "day_name": "Jueves",
-          "day_focus": "Glúteo · Unilateral",
-          "workout_title": "Piernas y Glúteo — Más Carga",
+          "day_type": "legs",
+          "day_focus": "Piernas · Sentadilla y Zancada",
+          "workout_title": "Búlgara, Pausas y Plano Frontal",
           "exercises": [
             {
               "sort_order": 1,
@@ -1244,7 +1124,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cadera, glúteos",
-              "note": "Moviliza la cadera."
+              "note": "Suelta la cadera antes de la sentadilla."
             },
             {
               "sort_order": 2,
@@ -1260,7 +1140,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Cadera, isquiotibiales",
-              "note": "Balanceo controlado."
+              "note": "Adelante-atrás y lateral: prepara la zancada."
             },
             {
               "sort_order": 3,
@@ -1276,7 +1156,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Glúteos, core",
-              "note": "Activa el glúteo."
+              "note": "Enciende el glúteo para que no tire solo el cuádriceps."
             },
             {
               "sort_order": 4,
@@ -1292,122 +1172,74 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
+              "note": "Moviliza la columna antes del trabajo de pierna."
             },
             {
               "sort_order": 5,
-              "exercise_id": "bulgarian",
-              "name": {
-                "es": "Sentadilla Búlgara",
-                "en": "Bulgarian Split Squat"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos",
-              "note": "Sube el rango de repeticiones manteniendo el equilibrio."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "glute_bridge_uni",
-              "name": {
-                "es": "Puente de Glúteos Unilateral",
-                "en": "Unilateral Glute Bridge"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "curtsy_lunge",
-              "name": {
-                "es": "Zancada Curtsy",
-                "en": "Curtsy Lunge"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, aductores, cuádriceps",
-              "note": "Aumenta el rango de repeticiones."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "donkey_kick",
-              "name": {
-                "es": "Patada de Glúteo (Donkey Kick)",
-                "en": "Donkey Kick"
-              },
-              "sets": 3,
-              "reps": "15 por pierna",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteo mayor",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 9,
               "exercise_id": "band_squat",
               "name": {
                 "es": "Sentadilla con Banda",
                 "en": "Band Squat"
               },
               "sets": 3,
-              "reps": "18",
+              "reps": "15-18",
               "rest_seconds": 60,
-              "priority": "accessory",
+              "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos",
-              "note": "Aumenta el rango de repeticiones contra la banda."
+              "muscles": "Glúteos, cuádriceps, isquiotibiales",
+              "note": "Aguanta 2s abajo antes de subir. La pausa elimina el rebote y es el escalón sobre la fase 1."
             },
             {
-              "sort_order": 10,
-              "exercise_id": "side_hip_abduction",
+              "sort_order": 6,
+              "exercise_id": "bulgarian",
               "name": {
-                "es": "Abducción de Cadera Lateral",
-                "en": "Side Hip Abduction"
+                "es": "Sentadilla Búlgara",
+                "en": "Bulgarian Split Squat"
               },
               "sets": 3,
-              "reps": "15 por pierna",
+              "reps": "10 por pierna",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteos, isquiotibiales",
+              "note": "Pie de atrás sobre la silla o el escalón. Si pierdes el equilibrio, haz primero cuatro semanas con el pie de atrás EN EL SUELO (sentadilla dividida) antes de elevarlo."
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "curtsy_lunge",
+              "name": {
+                "es": "Zancada Cruzada (Curtsy)",
+                "en": "Curtsy Lunge"
+              },
+              "sets": 2,
+              "reps": "10 por pierna",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio, cuádriceps",
+              "note": "Cruza la pierna por detrás en diagonal: trabaja el glúteo medio, que la zancada inversa no toca."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "calf_raises_bilateral",
+              "name": {
+                "es": "Elevación de Talones",
+                "en": "Calf Raises"
+              },
+              "sets": 3,
+              "reps": "15-20",
               "rest_seconds": 30,
               "priority": "accessory",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Glúteo medio",
-              "note": "Sube el rango de repeticiones."
+              "muscles": "Gemelos, sóleo",
+              "note": "Sube a puntillas desde el borde de un escalón para ganar recorrido. Si no tienes escalón, hazlo en plano y aguanta 2s arriba en cada repetición."
             },
             {
-              "sort_order": 11,
-              "exercise_id": "incline_push_up",
-              "name": {
-                "es": "Flexión Inclinada",
-                "en": "Incline Push-up"
-              },
-              "sets": 3,
-              "reps": "12",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Pecho, hombros, tríceps",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 12,
+              "sort_order": 9,
               "exercise_id": "quad_stretch",
               "name": {
                 "es": "Estiramiento de Cuádriceps",
@@ -1420,10 +1252,10 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Cuádriceps",
-              "note": "Estira el cuádriceps."
+              "note": "Sujeta el tobillo detrás del glúteo, rodillas juntas."
             },
             {
-              "sort_order": 13,
+              "sort_order": 10,
               "exercise_id": "hamstring_stretch",
               "name": {
                 "es": "Estiramiento de Isquiotibiales",
@@ -1436,15 +1268,16 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Isquiotibiales",
-              "note": "Estira el isquiotibial."
+              "note": "Pierna extendida, inclina el torso desde la cadera."
             }
           ]
         },
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Full Body · Tonificación",
-          "workout_title": "Cierre de Semana + Core — Más Volumen",
+          "day_type": "pull",
+          "day_focus": "Tren Superior · Tirón y Core",
+          "workout_title": "Remo de Pie y Más Tiempo de Core",
           "exercises": [
             {
               "sort_order": 1,
@@ -1460,7 +1293,7 @@
               "is_timer": true,
               "timer_seconds": 40,
               "muscles": "Cuerpo completo, cardio",
-              "note": "Sube la frecuencia cardíaca."
+              "note": "Sube la frecuencia cardíaca. Si estás en posparto reciente, embarazada o tienes pérdidas de orina al toser o al esforzarte, no hagas esta versión. Cámbialo por marcha rápida en el sitio con los brazos arriba, que calienta igual sin impacto."
             },
             {
               "sort_order": 2,
@@ -1476,7 +1309,7 @@
               "is_timer": true,
               "timer_seconds": 20,
               "muscles": "Hombros",
-              "note": "Calienta los hombros."
+              "note": "Calienta el hombro antes de tirar."
             },
             {
               "sort_order": 3,
@@ -1492,399 +1325,7 @@
               "is_timer": false,
               "timer_seconds": 0,
               "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
-            },
-            {
-              "sort_order": 4,
-              "exercise_id": "band_squat_row",
-              "name": {
-                "es": "Sentadilla con Remo (banda)",
-                "en": "Band Squat Row"
-              },
-              "sets": 3,
-              "reps": "15",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, espalda",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "band_one_arm_standing_low_row",
-              "name": {
-                "es": "Remo Bajo a Un Brazo con Banda",
-                "en": "Band One-Arm Low Row"
-              },
-              "sets": 4,
-              "reps": "12 por brazo",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, romboides",
-              "note": "Añade una serie de tirón."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "diamond_pushup",
-              "name": {
-                "es": "Flexión Diamante",
-                "en": "Diamond Push-up"
-              },
-              "sets": 3,
-              "reps": "10-12",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Tríceps, pecho",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "russian_twist",
-              "name": {
-                "es": "Giro Ruso",
-                "en": "Russian Twist"
-              },
-              "sets": 3,
-              "reps": "24",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Oblicuos, core",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "bicycle_crunch",
-              "name": {
-                "es": "Crunch Bicicleta",
-                "en": "Bicycle Crunch"
-              },
-              "sets": 3,
-              "reps": "24",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Recto abdominal, oblicuos",
-              "note": "Sube el rango de repeticiones."
-            },
-            {
-              "sort_order": 9,
-              "exercise_id": "side_plank",
-              "name": {
-                "es": "Plancha Lateral",
-                "en": "Side Plank"
-              },
-              "sets": 3,
-              "reps": "35s por lado",
-              "rest_seconds": 30,
-              "priority": "accessory",
-              "is_timer": true,
-              "timer_seconds": 35,
-              "muscles": "Oblicuos, core",
-              "note": "Añade una serie y sube el tiempo."
-            },
-            {
-              "sort_order": 10,
-              "exercise_id": "childs_pose",
-              "name": {
-                "es": "Postura del Niño",
-                "en": "Child's Pose"
-              },
-              "sets": 1,
-              "reps": "45s",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "muscles": "Espalda baja, cadera",
-              "note": "Relaja la espalda baja."
-            },
-            {
-              "sort_order": 11,
-              "exercise_id": "spine_stretch",
-              "name": {
-                "es": "Estiramiento de Columna",
-                "en": "Spine Stretch"
-              },
-              "sets": 1,
-              "reps": "30s",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Columna vertebral",
-              "note": "Estira la columna."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "phase_number": 3,
-      "name": "Definición (Semanas 9-12)",
-      "weeks": "9-12",
-      "color": "#EC4899",
-      "days": [
-        {
-          "day_id": "lun",
-          "day_name": "Lunes",
-          "day_focus": "Glúteo · Fuerza",
-          "workout_title": "Fuerza e Intensidad de Cadera",
-          "exercises": [
-            {
-              "sort_order": 1,
-              "exercise_id": "deep_breathing",
-              "name": {
-                "es": "Respiración Profunda",
-                "en": "Deep Breathing"
-              },
-              "sets": 1,
-              "reps": "",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "muscles": "Sistema nervioso",
-              "note": "Respira profundo antes de cargar."
-            },
-            {
-              "sort_order": 2,
-              "exercise_id": "cat_cow",
-              "name": {
-                "es": "Gato-Vaca",
-                "en": "Cat-Cow"
-              },
-              "sets": 1,
-              "reps": "10 repeticiones",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
-            },
-            {
-              "sort_order": 3,
-              "exercise_id": "glute_bridge_warmup",
-              "name": {
-                "es": "Puente de Glúteos (Calentamiento)",
-                "en": "Glute Bridge Warm-up"
-              },
-              "sets": 1,
-              "reps": "15 repeticiones",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, core",
-              "note": "Activa el glúteo."
-            },
-            {
-              "sort_order": 4,
-              "exercise_id": "hip_circles",
-              "name": {
-                "es": "Círculos de Cadera",
-                "en": "Hip Circles"
-              },
-              "sets": 1,
-              "reps": "10 por dirección",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cadera, glúteos",
-              "note": "Moviliza la cadera."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "hip_thrust_bodyweight",
-              "name": {
-                "es": "Hip Thrust (peso corporal)",
-                "en": "Bodyweight Hip Thrust"
-              },
-              "sets": 4,
-              "reps": "15-18 + pausa 2s",
-              "rest_seconds": 75,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Al llegar al tope del rango, eleva los pies sobre un escalón para aumentar el recorrido."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "glute_bridge",
-              "name": {
-                "es": "Puente de Glúteos",
-                "en": "Glute Bridge"
-              },
-              "sets": 3,
-              "reps": "20",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales, core",
-              "note": "Rango alto de repeticiones, contracción total en cada una."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "reverse_lunge",
-              "name": {
-                "es": "Zancada Inversa",
-                "en": "Reverse Lunge"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, isquiotibiales",
-              "note": "Mantén el control en la bajada, sin rebotar."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "single_rdl",
-              "name": {
-                "es": "Peso Muerto a Una Pierna (RDL)",
-                "en": "Single-Leg RDL"
-              },
-              "sets": 3,
-              "reps": "10 por pierna",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Isquiotibiales, glúteos, equilibrio",
-              "note": "Bisagra de cadera a una pierna: la mejor pieza que faltaba para el isquiotibial y el equilibrio."
-            },
-            {
-              "sort_order": 9,
-              "exercise_id": "band_hip_lift",
-              "name": {
-                "es": "Elevación de Cadera con Banda",
-                "en": "Band Hip Lift"
-              },
-              "sets": 3,
-              "reps": "18",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Mantén la tensión de la banda en todo el recorrido."
-            },
-            {
-              "sort_order": 10,
-              "exercise_id": "resistance_band_seated_straight_back_row",
-              "name": {
-                "es": "Remo Sentado con Banda",
-                "en": "Seated Band Row"
-              },
-              "sets": 3,
-              "reps": "15-18",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, romboides, bíceps",
-              "note": "Cierra el día con tirón para sostener la postura."
-            },
-            {
-              "sort_order": 11,
-              "exercise_id": "seated_glute_stretch",
-              "name": {
-                "es": "Estiramiento de Glúteo Sentado",
-                "en": "Seated Glute Stretch"
-              },
-              "sets": 1,
-              "reps": "30s por lado",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Glúteos",
-              "note": "Estira el glúteo."
-            },
-            {
-              "sort_order": 12,
-              "exercise_id": "hip_flexor_stretch",
-              "name": {
-                "es": "Estiramiento de Flexor de Cadera",
-                "en": "Hip Flexor Stretch"
-              },
-              "sets": 1,
-              "reps": "30s por lado",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Flexor de cadera",
-              "note": "Libera el flexor de cadera."
-            }
-          ]
-        },
-        {
-          "day_id": "mar",
-          "day_name": "Martes",
-          "day_focus": "Tren Superior · Tirón",
-          "workout_title": "Espalda y Hombros — Intensificación",
-          "exercises": [
-            {
-              "sort_order": 1,
-              "exercise_id": "shoulder_dislocates",
-              "name": {
-                "es": "Dislocaciones de Hombro con Banda",
-                "en": "Band Shoulder Dislocates"
-              },
-              "sets": 2,
-              "reps": "10",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Hombros, movilidad",
-              "note": "Prepara el hombro."
-            },
-            {
-              "sort_order": 2,
-              "exercise_id": "arm_circles",
-              "name": {
-                "es": "Círculos de Brazos",
-                "en": "Arm Circles"
-              },
-              "sets": 1,
-              "reps": "20s por dirección",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 20,
-              "muscles": "Hombros",
-              "note": "Calienta el hombro."
-            },
-            {
-              "sort_order": 3,
-              "exercise_id": "cat_cow",
-              "name": {
-                "es": "Gato-Vaca",
-                "en": "Cat-Cow"
-              },
-              "sets": 1,
-              "reps": "10 repeticiones",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna torácica."
+              "note": "Moviliza la columna antes del core."
             },
             {
               "sort_order": 4,
@@ -1900,414 +1341,30 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Muñecas, antebrazos",
-              "note": "Prepara la muñeca."
+              "note": "Este día también apoyas las manos en el suelo: prepara la muñeca."
             },
             {
               "sort_order": 5,
-              "exercise_id": "face_pull",
+              "exercise_id": "bodyweight_standing_row_with_towel",
               "name": {
-                "es": "Face Pull (banda/toalla)",
-                "en": "Face Pull"
+                "es": "Remo en Puerta con Toalla (de pie)",
+                "en": "Door Towel Row (standing)"
               },
               "sets": 3,
-              "reps": "18-20",
-              "rest_seconds": 45,
+              "reps": "10-12",
+              "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Deltoide posterior, romboides",
-              "note": "Al llegar al tope, usa una banda de mayor resistencia."
+              "muscles": "Espalda alta, bíceps",
+              "note": "Mismo montaje de toalla en la puerta, pero DE PIE y con el cuerpo más inclinado hacia atrás: cuanto más horizontal te pongas, más carga."
             },
             {
               "sort_order": 6,
-              "exercise_id": "band_close_grip_pulldown",
+              "exercise_id": "resistance_band_seated_straight_back_row",
               "name": {
-                "es": "Jalón Agarre Cerrado con Banda",
-                "en": "Band Close-Grip Pulldown"
-              },
-              "sets": 3,
-              "reps": "15",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, bíceps",
-              "note": "Aumenta la resistencia de la banda si el rango se hace fácil."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "pushup_std",
-              "name": {
-                "es": "Flexión de Pecho Estándar",
-                "en": "Standard Push-up"
-              },
-              "sets": 4,
-              "reps": "12-15",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Pecho, hombros, tríceps",
-              "note": "Al llegar a 15 limpias, pasa a la flexión diamante como progresión."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "pull_apart",
-              "name": {
-                "es": "Apertura con Toalla (Pull-Apart)",
-                "en": "Towel Pull-Apart"
-              },
-              "sets": 3,
-              "reps": "20",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Deltoide posterior, romboides",
-              "note": "Rango alto de repeticiones, control total."
-            },
-            {
-              "sort_order": 9,
-              "exercise_id": "band_shoulder_press",
-              "name": {
-                "es": "Press de Hombro con Banda",
-                "en": "Band Shoulder Press"
-              },
-              "sets": 3,
-              "reps": "15",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Hombros, tríceps",
-              "note": "Sube la resistencia de la banda si ya llegas cómoda a 15."
-            },
-            {
-              "sort_order": 10,
-              "exercise_id": "plank",
-              "name": {
-                "es": "Plancha",
-                "en": "Plank"
-              },
-              "sets": 3,
-              "reps": "45s",
-              "rest_seconds": 30,
-              "priority": "accessory",
-              "is_timer": true,
-              "timer_seconds": 45,
-              "muscles": "Core, transverso abdominal",
-              "note": "Mantén el tiempo máximo de la fase."
-            },
-            {
-              "sort_order": 11,
-              "exercise_id": "chest_and_front_of_shoulder_stretch",
-              "name": {
-                "es": "Estiramiento de Pecho y Hombro",
-                "en": "Chest & Shoulder Stretch"
-              },
-              "sets": 1,
-              "reps": "30s por lado",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Pecho, hombro",
-              "note": "Estira el pecho."
-            },
-            {
-              "sort_order": 12,
-              "exercise_id": "lat_stretch",
-              "name": {
-                "es": "Estiramiento de Dorsal",
-                "en": "Lat Stretch"
-              },
-              "sets": 1,
-              "reps": "30s por lado",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Dorsal ancho",
-              "note": "Estira el dorsal."
-            }
-          ]
-        },
-        {
-          "day_id": "jue",
-          "day_name": "Jueves",
-          "day_focus": "Glúteo · Unilateral",
-          "workout_title": "Piernas y Glúteo — Potencia",
-          "exercises": [
-            {
-              "sort_order": 1,
-              "exercise_id": "hip_circles",
-              "name": {
-                "es": "Círculos de Cadera",
-                "en": "Hip Circles"
-              },
-              "sets": 1,
-              "reps": "10 por dirección",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cadera, glúteos",
-              "note": "Moviliza la cadera."
-            },
-            {
-              "sort_order": 2,
-              "exercise_id": "leg_swings",
-              "name": {
-                "es": "Balanceo de Piernas",
-                "en": "Leg Swings"
-              },
-              "sets": 1,
-              "reps": "10 por pierna",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cadera, isquiotibiales",
-              "note": "Balanceo controlado."
-            },
-            {
-              "sort_order": 3,
-              "exercise_id": "glute_bridge_warmup",
-              "name": {
-                "es": "Puente de Glúteos (Calentamiento)",
-                "en": "Glute Bridge Warm-up"
-              },
-              "sets": 1,
-              "reps": "15 repeticiones",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, core",
-              "note": "Activa el glúteo."
-            },
-            {
-              "sort_order": 4,
-              "exercise_id": "cat_cow",
-              "name": {
-                "es": "Gato-Vaca",
-                "en": "Cat-Cow"
-              },
-              "sets": 1,
-              "reps": "10 repeticiones",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "bulgarian",
-              "name": {
-                "es": "Sentadilla Búlgara",
-                "en": "Bulgarian Split Squat"
-              },
-              "sets": 3,
-              "reps": "12-15 por pierna",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos",
-              "note": "Última fase: busca el rango alto sin perder equilibrio."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "glute_bridge_uni",
-              "name": {
-                "es": "Puente de Glúteos Unilateral",
-                "en": "Unilateral Glute Bridge"
-              },
-              "sets": 3,
-              "reps": "15 por pierna",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, isquiotibiales",
-              "note": "Rango alto de repeticiones."
-            },
-            {
-              "sort_order": 7,
-              "exercise_id": "curtsy_lunge",
-              "name": {
-                "es": "Zancada Curtsy",
-                "en": "Curtsy Lunge"
-              },
-              "sets": 3,
-              "reps": "12 por pierna",
-              "rest_seconds": 45,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteos, aductores, cuádriceps",
-              "note": "Mantén el control en cada cruce."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "donkey_kick",
-              "name": {
-                "es": "Patada de Glúteo (Donkey Kick)",
-                "en": "Donkey Kick"
-              },
-              "sets": 3,
-              "reps": "15 por pierna",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteo mayor",
-              "note": "Contracción máxima en cada repetición."
-            },
-            {
-              "sort_order": 9,
-              "exercise_id": "jump_squat",
-              "name": {
-                "es": "Sentadilla con Salto",
-                "en": "Jump Squat"
-              },
-              "sets": 3,
-              "reps": "12",
-              "rest_seconds": 60,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, potencia",
-              "note": "Sustituye la sentadilla con banda por potencia: aterriza suave y vuelve a bajar de inmediato."
-            },
-            {
-              "sort_order": 10,
-              "exercise_id": "side_hip_abduction",
-              "name": {
-                "es": "Abducción de Cadera Lateral",
-                "en": "Side Hip Abduction"
-              },
-              "sets": 3,
-              "reps": "15 por pierna",
-              "rest_seconds": 30,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Glúteo medio",
-              "note": "Rango alto de repeticiones."
-            },
-            {
-              "sort_order": 11,
-              "exercise_id": "incline_push_up",
-              "name": {
-                "es": "Flexión Inclinada",
-                "en": "Incline Push-up"
-              },
-              "sets": 3,
-              "reps": "12-15",
-              "rest_seconds": 45,
-              "priority": "accessory",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Pecho, hombros, tríceps",
-              "note": "Al llegar a 15, prueba la flexión estándar en la última serie."
-            },
-            {
-              "sort_order": 12,
-              "exercise_id": "quad_stretch",
-              "name": {
-                "es": "Estiramiento de Cuádriceps",
-                "en": "Quad Stretch"
-              },
-              "sets": 1,
-              "reps": "30s por lado",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Cuádriceps",
-              "note": "Estira el cuádriceps."
-            },
-            {
-              "sort_order": 13,
-              "exercise_id": "hamstring_stretch",
-              "name": {
-                "es": "Estiramiento de Isquiotibiales",
-                "en": "Hamstring Stretch"
-              },
-              "sets": 1,
-              "reps": "30s por lado",
-              "rest_seconds": 0,
-              "priority": "cooldown",
-              "is_timer": true,
-              "timer_seconds": 30,
-              "muscles": "Isquiotibiales",
-              "note": "Estira el isquiotibial."
-            }
-          ]
-        },
-        {
-          "day_id": "vie",
-          "day_name": "Viernes",
-          "day_focus": "Full Body · Tonificación",
-          "workout_title": "Cierre de Programa + Core",
-          "exercises": [
-            {
-              "sort_order": 1,
-              "exercise_id": "jumping_jacks",
-              "name": {
-                "es": "Saltos de Tijera",
-                "en": "Jumping Jacks"
-              },
-              "sets": 1,
-              "reps": "40s",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 40,
-              "muscles": "Cuerpo completo, cardio",
-              "note": "Sube la frecuencia cardíaca."
-            },
-            {
-              "sort_order": 2,
-              "exercise_id": "arm_circles",
-              "name": {
-                "es": "Círculos de Brazos",
-                "en": "Arm Circles"
-              },
-              "sets": 1,
-              "reps": "20s por dirección",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": true,
-              "timer_seconds": 20,
-              "muscles": "Hombros",
-              "note": "Calienta los hombros."
-            },
-            {
-              "sort_order": 3,
-              "exercise_id": "cat_cow",
-              "name": {
-                "es": "Gato-Vaca",
-                "en": "Cat-Cow"
-              },
-              "sets": 1,
-              "reps": "10 repeticiones",
-              "rest_seconds": 0,
-              "priority": "warmup",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Columna vertebral, core",
-              "note": "Moviliza la columna."
-            },
-            {
-              "sort_order": 4,
-              "exercise_id": "band_squat_row",
-              "name": {
-                "es": "Sentadilla con Remo (banda)",
-                "en": "Band Squat Row"
+                "es": "Remo Sentado con Banda",
+                "en": "Seated Band Row"
               },
               "sets": 3,
               "reps": "15-18",
@@ -2315,43 +1372,27 @@
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Cuádriceps, glúteos, espalda",
-              "note": "Rango alto de repeticiones."
-            },
-            {
-              "sort_order": 5,
-              "exercise_id": "band_one_arm_standing_low_row",
-              "name": {
-                "es": "Remo Bajo a Un Brazo con Banda",
-                "en": "Band One-Arm Low Row"
-              },
-              "sets": 4,
-              "reps": "15 por brazo",
-              "rest_seconds": 45,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Dorsal, romboides",
-              "note": "Rango alto para cerrar el bloque de tirón."
-            },
-            {
-              "sort_order": 6,
-              "exercise_id": "diamond_pushup",
-              "name": {
-                "es": "Flexión Diamante",
-                "en": "Diamond Push-up"
-              },
-              "sets": 4,
-              "reps": "10-12",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Tríceps, pecho",
-              "note": "Añade una serie en la fase final."
+              "muscles": "Espalda alta, bíceps, hombros",
+              "note": "Acorta la banda enrollándola una vuelta más en las manos."
             },
             {
               "sort_order": 7,
+              "exercise_id": "incline_push_up",
+              "name": {
+                "es": "Flexión Inclinada",
+                "en": "Incline Push-up"
+              },
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho, tríceps, hombros",
+              "note": "El empuje del viernes progresa en volumen, no en dificultad: cuatro series y más repeticiones que las de rodillas de la fase 1. El salto de dificultad de este día llega en la fase 3, cuando bajas al suelo."
+            },
+            {
+              "sort_order": 8,
               "exercise_id": "russian_twist",
               "name": {
                 "es": "Giro Ruso",
@@ -2363,24 +1404,8 @@
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "muscles": "Oblicuos, core",
-              "note": "Mantén el control, sin usar el impulso de los brazos."
-            },
-            {
-              "sort_order": 8,
-              "exercise_id": "bicycle_crunch",
-              "name": {
-                "es": "Crunch Bicicleta",
-                "en": "Bicycle Crunch"
-              },
-              "sets": 3,
-              "reps": "24",
-              "rest_seconds": 30,
-              "priority": "secondary",
-              "is_timer": false,
-              "timer_seconds": 0,
-              "muscles": "Recto abdominal, oblicuos",
-              "note": "Codo hacia la rodilla contraria, ritmo controlado."
+              "muscles": "Oblicuos",
+              "note": "Despega los pies del suelo si controlas la lumbar. Si estás en posparto reciente, embarazada o tienes pérdidas de orina al toser o al esforzarte, no hagas esta versión. Con los pies apoyados el ejercicio sigue valiendo y baja mucho la presión sobre el abdomen."
             },
             {
               "sort_order": 9,
@@ -2396,7 +1421,7 @@
               "is_timer": true,
               "timer_seconds": 35,
               "muscles": "Oblicuos, core",
-              "note": "Mantén el tiempo máximo de la fase."
+              "note": "Una serie más por lado y cinco segundos más."
             },
             {
               "sort_order": 10,
@@ -2412,7 +1437,7 @@
               "is_timer": true,
               "timer_seconds": 45,
               "muscles": "Espalda baja, cadera",
-              "note": "Cierra el programa relajando la espalda baja."
+              "note": "Relaja la espalda baja tras la semana de trabajo."
             },
             {
               "sort_order": 11,
@@ -2428,7 +1453,756 @@
               "is_timer": true,
               "timer_seconds": 30,
               "muscles": "Columna vertebral",
-              "note": "Estira la columna."
+              "note": "Estira la columna en flexión suave."
+            }
+          ]
+        }
+      ],
+      "deload_last_week": true
+    },
+    {
+      "phase_number": 3,
+      "name": "Intensificación (Semanas 9-12)",
+      "weeks": "9-12",
+      "color": "#BE185D",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_type": "legs",
+          "day_focus": "Glúteo · Cadera",
+          "workout_title": "Cadera a Una Pierna",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "cat_cow",
+              "name": {
+                "es": "Gato-Vaca",
+                "en": "Cat-Cow"
+              },
+              "sets": 1,
+              "reps": "10 repeticiones",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna vertebral, core",
+              "note": "Moviliza la columna antes de la carga de cadera."
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "glute_bridge_warmup",
+              "name": {
+                "es": "Puente de Glúteos (Calentamiento)",
+                "en": "Glute Bridge Warm-up"
+              },
+              "sets": 1,
+              "reps": "15 repeticiones",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, core",
+              "note": "Activa el glúteo con contracciones ligeras, sin carga."
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "hip_circles",
+              "name": {
+                "es": "Círculos de Cadera",
+                "en": "Hip Circles"
+              },
+              "sets": 1,
+              "reps": "10 por dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cadera, glúteos",
+              "note": "Moviliza la cadera en ambas direcciones."
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "leg_swings",
+              "name": {
+                "es": "Balanceo de Piernas",
+                "en": "Leg Swings"
+              },
+              "sets": 1,
+              "reps": "10 por pierna",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cadera, isquiotibiales",
+              "note": "Balanceo controlado, apóyate en la pared: abre el isquiotibial antes de la bisagra."
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "hip_thrust_bodyweight",
+              "name": {
+                "es": "Hip Thrust (peso corporal)",
+                "en": "Bodyweight Hip Thrust"
+              },
+              "sets": 4,
+              "reps": "15-18",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, isquiotibiales",
+              "note": "Hombros en la silla y pies sobre un escalón bajo, para alargar el recorrido. Si no tienes escalón, deja los pies en el suelo y pasa la banda por encima de la cadera sujetándola contra el suelo con las manos: es la forma de seguir subiendo carga cuando el peso corporal se queda corto. Y si tienes las dos cosas, úsalas a la vez: escalón bajo los pies y banda sobre la cadera es la versión más dura del programa."
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "glute_bridge_uni",
+              "name": {
+                "es": "Puente de Glúteo Unilateral",
+                "en": "Unilateral Glute Bridge"
+              },
+              "sets": 3,
+              "reps": "12 por pierna",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, isquiotibiales",
+              "note": "El puente pasa a una pierna: la otra, recogida contra el pecho. Mantén la cadera nivelada al subir, sin que caiga el lado libre."
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "single_rdl",
+              "name": {
+                "es": "Peso Muerto Rumano a Una Pierna",
+                "en": "Single Leg RDL"
+              },
+              "sets": 3,
+              "reps": "10 por pierna",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Isquiotibiales, glúteos, espalda baja",
+              "note": "Dos repeticiones más y pausa de 2s abajo, en el punto de máximo estiramiento, antes de subir."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "side_bridge_hip_abduction",
+              "name": {
+                "es": "Abducción de Cadera en Puente Lateral",
+                "en": "Side Bridge Hip Abduction"
+              },
+              "sets": 2,
+              "reps": "12 por pierna",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio, oblicuos",
+              "note": "De la almeja pasas al puente lateral: sostén la cadera en el aire sobre el antebrazo y sube la pierna de arriba. Mucho más exigente para el glúteo medio."
+            },
+            {
+              "sort_order": 9,
+              "exercise_id": "seated_glute_stretch",
+              "name": {
+                "es": "Estiramiento de Glúteo Sentado",
+                "en": "Seated Glute Stretch"
+              },
+              "sets": 1,
+              "reps": "30s por lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Glúteos",
+              "note": "Estira el glúteo trabajado, respira lento."
+            },
+            {
+              "sort_order": 10,
+              "exercise_id": "hip_flexor_stretch",
+              "name": {
+                "es": "Estiramiento de Flexor de Cadera",
+                "en": "Hip Flexor Stretch"
+              },
+              "sets": 1,
+              "reps": "30s por lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Flexor de cadera",
+              "note": "Rodilla de atrás en el suelo, empuja la cadera hacia adelante."
+            },
+            {
+              "sort_order": 11,
+              "exercise_id": "deep_breathing",
+              "name": {
+                "es": "Respiración Profunda",
+                "en": "Deep Breathing"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Sistema nervioso",
+              "note": "Respiración diafragmática lenta para bajar pulsaciones y cerrar la sesión."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_type": "push",
+          "day_focus": "Tren Superior · Empuje y Postura",
+          "workout_title": "Flexión Diamante y Cierre de Hombro",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "shoulder_dislocates",
+              "name": {
+                "es": "Dislocaciones de Hombro con Banda",
+                "en": "Band Shoulder Dislocates"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, movilidad",
+              "note": "Sujeta la banda con las dos manos bien separadas, brazos rectos, y pásala de adelante a atrás sin doblar el codo."
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "arm_circles",
+              "name": {
+                "es": "Círculos de Brazos",
+                "en": "Arm Circles"
+              },
+              "sets": 1,
+              "reps": "20s por dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "muscles": "Hombros",
+              "note": "Círculos amplios para calentar el hombro."
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "cat_cow",
+              "name": {
+                "es": "Gato-Vaca",
+                "en": "Cat-Cow"
+              },
+              "sets": 1,
+              "reps": "10 repeticiones",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna vertebral, core",
+              "note": "Despega las escápulas antes del trabajo de empuje."
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "wrist_mobility",
+              "name": {
+                "es": "Movilidad de Muñecas",
+                "en": "Wrist Mobility"
+              },
+              "sets": 1,
+              "reps": "30s",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Muñecas, antebrazos",
+              "note": "Prepara la muñeca para el apoyo de manos en el suelo."
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "diamond_pushup",
+              "name": {
+                "es": "Flexión Diamante",
+                "en": "Diamond Push-up"
+              },
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho interno",
+              "note": "Manos juntas formando un rombo bajo el pecho. Este es el escalón final del hilo de flexiones, no el punto de partida: si no salen 8 limpias, vuelve a la flexión estándar cuatro semanas más."
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "face_pull",
+              "name": {
+                "es": "Face Pull (banda/toalla)",
+                "en": "Face Pull"
+              },
+              "sets": 4,
+              "reps": "18",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Deltoide posterior, romboides",
+              "note": "Cuarta serie manteniendo la pausa de 2s y el mismo montaje con las dos manos."
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "band_shoulder_press",
+              "name": {
+                "es": "Press de Hombro con Banda",
+                "en": "Band Shoulder Press"
+              },
+              "sets": 4,
+              "reps": "15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Deltoides, tríceps",
+              "note": "Cuarta serie. Si la banda se queda corta de tensión, hinca una rodilla en el suelo o pisa con los pies más separados: acortas el tramo libre de banda sin necesitar otra más dura."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "pull_apart",
+              "name": {
+                "es": "Apertura Isométrica con Toalla",
+                "en": "Isometric Towel Pull Apart"
+              },
+              "sets": 3,
+              "reps": "40s",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 40,
+              "muscles": "Deltoide posterior",
+              "note": "Tope de tiempo del programa: cuarenta segundos de tensión continua sin soltar. Si a los treinta se te va la postura, para ahí y anota el tiempo real."
+            },
+            {
+              "sort_order": 9,
+              "exercise_id": "plank",
+              "name": {
+                "es": "Plancha",
+                "en": "Plank"
+              },
+              "sets": 3,
+              "reps": "45s",
+              "rest_seconds": 30,
+              "priority": "accessory",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "Core, transverso abdominal",
+              "note": "Tiempo máximo del programa. Si aguantas 60s, levanta un pie del suelo."
+            },
+            {
+              "sort_order": 10,
+              "exercise_id": "chest_and_front_of_shoulder_stretch",
+              "name": {
+                "es": "Estiramiento de Pecho y Hombro",
+                "en": "Chest & Shoulder Stretch"
+              },
+              "sets": 1,
+              "reps": "30s por lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Pecho, hombro",
+              "note": "Brazo contra la pared, gira el torso hacia el lado contrario."
+            },
+            {
+              "sort_order": 11,
+              "exercise_id": "lat_stretch",
+              "name": {
+                "es": "Estiramiento de Dorsal",
+                "en": "Lat Stretch"
+              },
+              "sets": 1,
+              "reps": "30s por lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Dorsal ancho",
+              "note": "Cuelga el brazo de un mueble estable y deja caer el peso del torso."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_type": "legs",
+          "day_focus": "Piernas · Sentadilla y Zancada",
+          "workout_title": "Potencia en Fresco, Pausas y Gemelo a Una Pierna",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "hip_circles",
+              "name": {
+                "es": "Círculos de Cadera",
+                "en": "Hip Circles"
+              },
+              "sets": 1,
+              "reps": "10 por dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cadera, glúteos",
+              "note": "Suelta la cadera antes de la sentadilla."
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "leg_swings",
+              "name": {
+                "es": "Balanceo de Piernas",
+                "en": "Leg Swings"
+              },
+              "sets": 1,
+              "reps": "10 por pierna",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cadera, isquiotibiales",
+              "note": "Adelante-atrás y lateral: prepara la zancada."
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "glute_bridge_warmup",
+              "name": {
+                "es": "Puente de Glúteos (Calentamiento)",
+                "en": "Glute Bridge Warm-up"
+              },
+              "sets": 1,
+              "reps": "15 repeticiones",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, core",
+              "note": "Enciende el glúteo para que no tire solo el cuádriceps."
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "cat_cow",
+              "name": {
+                "es": "Gato-Vaca",
+                "en": "Cat-Cow"
+              },
+              "sets": 1,
+              "reps": "10 repeticiones",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna vertebral, core",
+              "note": "Moviliza la columna antes del trabajo de pierna."
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "jump_squat",
+              "name": {
+                "es": "Sentadilla con Salto",
+                "en": "Jump Squat"
+              },
+              "sets": 3,
+              "reps": "8",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Piernas, potencia",
+              "note": "El salto va PRIMERO, con la pierna fresca: la potencia se entrena sin fatiga, y el aterrizaje cansado con la rodilla hacia dentro es justo lo que hay que evitar. Aterriza suave, absorbiendo con la cadera. Si estás en posparto reciente, embarazada o tienes pérdidas de orina al toser o al esforzarte, no hagas esta versión. Cámbialo por sentadilla con banda a tempo (3s bajando, 1s arriba), que carga igual sin impacto."
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "band_squat",
+              "name": {
+                "es": "Sentadilla con Banda",
+                "en": "Band Squat"
+              },
+              "sets": 3,
+              "reps": "18",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, cuádriceps, isquiotibiales",
+              "note": "Se queda como sentadilla de fuerza, con la pausa de 2s abajo, para que el salto no sea la única sentadilla de la fase."
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "bulgarian",
+              "name": {
+                "es": "Sentadilla Búlgara",
+                "en": "Bulgarian Split Squat"
+              },
+              "sets": 3,
+              "reps": "12 por pierna",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteos, isquiotibiales",
+              "note": "Pausa de 2s abajo en cada repetición y descanso más largo: la pausa es el escalón sobre la fase 2, no las repeticiones."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "curtsy_lunge",
+              "name": {
+                "es": "Zancada Cruzada (Curtsy)",
+                "en": "Curtsy Lunge"
+              },
+              "sets": 2,
+              "reps": "12 por pierna",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio, cuádriceps",
+              "note": "Añade la banda por encima de las rodillas: resistencia externa al cruzar, no solo más repeticiones."
+            },
+            {
+              "sort_order": 9,
+              "exercise_id": "calf_uni",
+              "name": {
+                "es": "Elevación de Talón a Una Pierna",
+                "en": "Unilateral Calf Raise"
+              },
+              "sets": 3,
+              "reps": "10-12 por pierna",
+              "rest_seconds": 30,
+              "priority": "accessory",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Gemelos, sóleo",
+              "note": "A una pierna desde el borde del escalón, con la mano en la pared. Si no tienes escalón, hazlo en plano y aguanta 2s arriba: sigue siendo el doble de carga que la versión a dos piernas."
+            },
+            {
+              "sort_order": 10,
+              "exercise_id": "quad_stretch",
+              "name": {
+                "es": "Estiramiento de Cuádriceps",
+                "en": "Quad Stretch"
+              },
+              "sets": 1,
+              "reps": "30s por lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Cuádriceps",
+              "note": "Sujeta el tobillo detrás del glúteo, rodillas juntas."
+            },
+            {
+              "sort_order": 11,
+              "exercise_id": "hamstring_stretch",
+              "name": {
+                "es": "Estiramiento de Isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
+              "sets": 1,
+              "reps": "30s por lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Isquiotibiales",
+              "note": "Pierna extendida, inclina el torso desde la cadera."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_type": "pull",
+          "day_focus": "Tren Superior · Tirón y Core",
+          "workout_title": "Remo con Pausa y Hollow Body",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "jumping_jacks",
+              "name": {
+                "es": "Saltos de Tijera",
+                "en": "Jumping Jacks"
+              },
+              "sets": 1,
+              "reps": "40s",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 40,
+              "muscles": "Cuerpo completo, cardio",
+              "note": "Sube la frecuencia cardíaca. Si estás en posparto reciente, embarazada o tienes pérdidas de orina al toser o al esforzarte, no hagas esta versión. Cámbialo por marcha rápida en el sitio con los brazos arriba, que calienta igual sin impacto."
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "arm_circles",
+              "name": {
+                "es": "Círculos de Brazos",
+                "en": "Arm Circles"
+              },
+              "sets": 1,
+              "reps": "20s por dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "muscles": "Hombros",
+              "note": "Calienta el hombro antes de tirar."
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "cat_cow",
+              "name": {
+                "es": "Gato-Vaca",
+                "en": "Cat-Cow"
+              },
+              "sets": 1,
+              "reps": "10 repeticiones",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna vertebral, core",
+              "note": "Moviliza la columna antes del core."
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "wrist_mobility",
+              "name": {
+                "es": "Movilidad de Muñecas",
+                "en": "Wrist Mobility"
+              },
+              "sets": 1,
+              "reps": "30s",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Muñecas, antebrazos",
+              "note": "Este día también apoyas las manos en el suelo: prepara la muñeca."
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "bodyweight_standing_row_with_towel",
+              "name": {
+                "es": "Remo en Puerta con Toalla (de pie)",
+                "en": "Door Towel Row (standing)"
+              },
+              "sets": 4,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Espalda alta, bíceps",
+              "note": "Cuarta serie y pausa de 2s con el pecho cerca de la puerta antes de bajar."
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "resistance_band_seated_straight_back_row",
+              "name": {
+                "es": "Remo Sentado con Banda",
+                "en": "Seated Band Row"
+              },
+              "sets": 4,
+              "reps": "18-20",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Espalda alta, bíceps, hombros",
+              "note": "Cuarta serie y tope de repeticiones del programa, con la banda lo más corta que aguantes. El remo es el patrón que más espalda construye: es el que cierra más alto."
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "pushup_std",
+              "name": {
+                "es": "Flexión de Pecho Estándar",
+                "en": "Standard Push-up"
+              },
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho, hombros, tríceps",
+              "note": "Flexión completa en el suelo, ya sin apoyo elevado: el viernes cierra donde el martes estaba en la fase 2."
+            },
+            {
+              "sort_order": 8,
+              "exercise_id": "hollow_rock",
+              "name": {
+                "es": "Hollow Body Rock",
+                "en": "Hollow Body Rock"
+              },
+              "sets": 3,
+              "reps": "12",
+              "rest_seconds": 30,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core profundo, coordinación",
+              "note": "Cierra el hilo de core: la rotación ya la has trabajado ocho semanas con el giro ruso, y esta fase pasa a sostener el core en tensión. Lumbar pegada al suelo, cuerpo en forma de plátano, y balancéate sin perder la posición. Si la lumbar se despega, hazlo con las rodillas dobladas y SIN balanceo, solo aguantando. Si estás en posparto reciente, embarazada o tienes pérdidas de orina al toser o al esforzarte, no hagas esta versión. En ese caso quédate en el giro ruso con los pies apoyados."
+            },
+            {
+              "sort_order": 9,
+              "exercise_id": "side_plank",
+              "name": {
+                "es": "Plancha Lateral",
+                "en": "Side Plank"
+              },
+              "sets": 3,
+              "reps": "45s por lado",
+              "rest_seconds": 30,
+              "priority": "accessory",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "Oblicuos, core",
+              "note": "En línea con la plancha frontal: 45s por lado para cerrar el programa."
+            },
+            {
+              "sort_order": 10,
+              "exercise_id": "childs_pose",
+              "name": {
+                "es": "Postura del Niño",
+                "en": "Child's Pose"
+              },
+              "sets": 1,
+              "reps": "45s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "Espalda baja, cadera",
+              "note": "Relaja la espalda baja tras la semana de trabajo."
+            },
+            {
+              "sort_order": 11,
+              "exercise_id": "spine_stretch",
+              "name": {
+                "es": "Estiramiento de Columna",
+                "en": "Spine Stretch"
+              },
+              "sets": 1,
+              "reps": "30s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Columna vertebral",
+              "note": "Estira la columna en flexión suave."
             }
           ]
         }
