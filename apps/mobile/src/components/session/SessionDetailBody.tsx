@@ -127,18 +127,34 @@ export default function SessionDetailBody({
       ) : (
         <View className="gap-3">
           {exercises.map((ex, i) => (
-            <ExerciseCard
-              key={ex.exerciseId}
-              index={i + 1}
-              exercise={ex}
-              locale={locale}
-              t={t}
-              onOpen={
-                onOpenExercise && getCatalogExercise(ex.exerciseId)
-                  ? () => onOpenExercise(ex.exerciseId)
-                  : undefined
-              }
-            />
+            // Índice en la key: la pauta de un programa puede repetir el mismo
+            // ejercicio en el calentamiento y en el bloque principal.
+            <View key={`${ex.exerciseId}_${i}`} className="gap-3">
+              {/* Cabecera de sección solo cuando cambia; las sesiones
+                  registradas no traen `section` y no pintan ninguna. */}
+              {ex.section && ex.section !== exercises[i - 1]?.section && (
+                <Text
+                  className={cn(
+                    'font-mono text-[10px] uppercase tracking-[2px]',
+                    i > 0 && 'mt-2',
+                    ex.section === 'main' ? 'text-lime' : 'text-muted-foreground',
+                  )}
+                >
+                  {t(`warmupCooldown.sections.${ex.section}`)}
+                </Text>
+              )}
+              <ExerciseCard
+                index={i + 1}
+                exercise={ex}
+                locale={locale}
+                t={t}
+                onOpen={
+                  onOpenExercise && getCatalogExercise(ex.exerciseId)
+                    ? () => onOpenExercise(ex.exerciseId)
+                    : undefined
+                }
+              />
+            </View>
           ))}
         </View>
       )}
@@ -221,6 +237,11 @@ function ExerciseCard({
               {localize(exercise.muscles, locale)}
             </Text>
           ) : null}
+          {exercise.restSeconds ? (
+            <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground/70">
+              {`${t('programDetail.rest')}: ${exercise.restSeconds}s`}
+            </Text>
+          ) : null}
         </View>
         {onOpen && <ChevronRight size={15} color="hsl(0 0% 40%)" />}
       </Pressable>
@@ -265,6 +286,11 @@ function ExerciseCard({
           </View>
         )
       })}
+
+      {/* Nota del ejercicio: solo la trae la pauta de un programa. */}
+      {exercise.note ? (
+        <Text className="mt-2 font-sans-italic text-xs leading-4 text-muted-foreground">{exercise.note}</Text>
+      ) : null}
     </View>
   )
 }
