@@ -64,6 +64,7 @@ function baseProgram() {
           {
             day_id: 'lun',
             day_name: 'Lunes',
+            workout_title: 'Empuje, tirón y piernas',
             exercises: [
               exercise({ sort_order: 1, name: 'Push-up Estándar', exercise_id: 'pushup_std' }), // push
               exercise({ sort_order: 2, name: 'Arquero de pie', exercise_id: 'standing_archer' }), // pull
@@ -80,6 +81,44 @@ describe('checkProgram — programa correcto', () => {
   it('un programa bien formado no reporta errores', () => {
     const { errors } = checkProgram(SLUG, baseProgram())
     expect(errors).toEqual([])
+  })
+})
+
+describe('checkProgram — día sin título (#762)', () => {
+  // El #762 borró `workout_title` y `day_name` de los quince días de
+  // intermedio-hipertrofia y llegó a producción: el contenido seguía siendo
+  // válido, el hash de la resiembra cuadraba y `--strict` pasaba en verde. En
+  // el teléfono la tarjeta de «Elige tu entrenamiento» quedó en «LUNES · 11
+  // EJERCICIOS», sin decir qué tocaba. Esta regla es lo único que lo ve.
+  it('sin workout_title es ERROR, no aviso', () => {
+    const doc = baseProgram()
+    delete doc.phases[0].days[0].workout_title
+    const result = checkProgram(SLUG, doc)
+    const found = findingsFor(result, 'day_title')
+    expect(found).toHaveLength(1)
+    expect(found[0].level).toBe('error')
+    expect(found[0].message).toContain('workout_title')
+  })
+
+  it('un workout_title en blanco no cuela', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].workout_title = '   '
+    expect(findingsFor(checkProgram(SLUG, doc), 'day_title')).toHaveLength(1)
+  })
+
+  it('sin day_name también es ERROR', () => {
+    const doc = baseProgram()
+    delete doc.phases[0].days[0].day_name
+    const found = findingsFor(checkProgram(SLUG, doc), 'day_title')
+    expect(found).toHaveLength(1)
+    expect(found[0].message).toContain('day_name')
+  })
+
+  it('corta sin --strict: no es una decisión de programación discutible', () => {
+    const doc = baseProgram()
+    delete doc.phases[0].days[0].workout_title
+    expect(checkProgram(SLUG, doc, { strict: false }).errors.length).toBeGreaterThan(0)
+    expect(STRICT_RULES.has('day_title')).toBe(false)
   })
 })
 
@@ -389,7 +428,7 @@ describe('el diccionario de músculos cubre el censo de producción', () => {
 
 /** Un día mínimo con los ejercicios dados. */
 function day(day_id, exercises, overrides = {}) {
-  return { day_id, day_name: day_id, exercises, ...overrides }
+  return { day_id, day_name: day_id, workout_title: `Día ${day_id}`, exercises, ...overrides }
 }
 
 /** Una fase mínima con los días dados. */

@@ -19,8 +19,9 @@
       "days": [
         {
           "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje",
-          "day_type": "push",
+          "workout_title": "Push – Pecho, hombros y tríceps",
           "exercises": [
             {
               "sort_order": 1,
@@ -161,12 +162,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tirón",
-          "day_type": "pull",
+          "workout_title": "Pull – Espalda y bíceps",
           "exercises": [
             {
               "sort_order": 1,
@@ -320,12 +323,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas y core",
-          "day_type": "legs",
+          "workout_title": "Legs – Piernas, glúteos y core",
           "exercises": [
             {
               "sort_order": 1,
@@ -466,12 +471,14 @@
               "note": "Cada lado, empujar cadera adelante",
               "exercise_id": "hip_flexor_stretch"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Empuje",
-          "day_type": "push",
+          "workout_title": "Push B – Pecho, hombros y tríceps (variación)",
           "exercises": [
             {
               "sort_order": 1,
@@ -624,12 +631,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Tirón y piernas",
-          "day_type": "full",
+          "workout_title": "Pull B y piernas – Espalda, bíceps y cadena posterior",
           "exercises": [
             {
               "sort_order": 1,
@@ -782,7 +791,8 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -795,8 +805,9 @@
       "days": [
         {
           "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje",
-          "day_type": "push",
+          "workout_title": "Push – Pecho, hombros y tríceps (intensificado)",
           "exercises": [
             {
               "sort_order": 1,
@@ -962,12 +973,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tirón",
-          "day_type": "pull",
+          "workout_title": "Pull – Espalda y bíceps (intensificado)",
           "exercises": [
             {
               "sort_order": 1,
@@ -1120,12 +1133,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas y core",
-          "day_type": "legs",
+          "workout_title": "Legs – Piernas y core (intensificado)",
           "exercises": [
             {
               "sort_order": 1,
@@ -1265,12 +1280,14 @@
               "note": "Cada lado, empujar cadera adelante",
               "exercise_id": "hip_flexor_stretch"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Empuje",
-          "day_type": "push",
+          "workout_title": "Push B – Pecho y hombros (variación intensificada)",
           "exercises": [
             {
               "sort_order": 1,
@@ -1436,12 +1453,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Tirón y piernas",
-          "day_type": "full",
+          "workout_title": "Pull B y piernas – Espalda, bíceps y cadena posterior (intensificado)",
           "exercises": [
             {
               "sort_order": 1,
@@ -1606,7 +1625,8 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     },
@@ -1618,8 +1638,9 @@
       "days": [
         {
           "day_id": "lun",
+          "day_name": "Lunes",
           "day_focus": "Empuje (pico)",
-          "day_type": "push",
+          "workout_title": "Push – Pecho, hombros y tríceps (pico)",
           "exercises": [
             {
               "sort_order": 1,
@@ -1785,12 +1806,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "mar",
+          "day_name": "Martes",
           "day_focus": "Tirón (pico)",
-          "day_type": "pull",
+          "workout_title": "Pull – Espalda y bíceps (pico)",
           "exercises": [
             {
               "sort_order": 1,
@@ -1942,12 +1965,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "pull"
         },
         {
           "day_id": "mie",
+          "day_name": "Miércoles",
           "day_focus": "Piernas y core (pico)",
-          "day_type": "legs",
+          "workout_title": "Legs – Piernas y core (pico)",
           "exercises": [
             {
               "sort_order": 1,
@@ -2088,12 +2113,14 @@
               "note": "Cada pierna, mantener",
               "exercise_id": "calf_stretch"
             }
-          ]
+          ],
+          "day_type": "legs"
         },
         {
           "day_id": "jue",
+          "day_name": "Jueves",
           "day_focus": "Empuje (pico)",
-          "day_type": "push",
+          "workout_title": "Push B – Pecho y hombros (pico)",
           "exercises": [
             {
               "sort_order": 1,
@@ -2259,12 +2286,14 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "push"
         },
         {
           "day_id": "vie",
+          "day_name": "Viernes",
           "day_focus": "Tirón y piernas (pico)",
-          "day_type": "full",
+          "workout_title": "Pull B y piernas – Espalda, bíceps y cadena posterior (pico)",
           "exercises": [
             {
               "sort_order": 1,
@@ -2429,7 +2458,8 @@
               "note": "Inhalar 4 seg, exhalar 6 seg",
               "exercise_id": "deep_breathing"
             }
-          ]
+          ],
+          "day_type": "full"
         }
       ]
     }

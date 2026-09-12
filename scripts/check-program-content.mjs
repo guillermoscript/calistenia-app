@@ -503,6 +503,21 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
       lp.days.push(ld)
       promisedText.push(textOf(day.day_focus), textOf(day.workout_title))
 
+      // `workout_title` y `day_name` son lo que la tarjeta de «Elige tu
+      // entrenamiento» pone en la pantalla de inicio. Sin ellos la tarjeta se
+      // queda en «LUNES · 11 EJERCICIOS» y el usuario no sabe qué le toca hoy.
+      // No es hipotético: el #762 los borró de los quince días de
+      // intermedio-hipertrofia y llegó a producción sin que nada chistara —
+      // el contenido seguía siendo válido y el hash cuadraba. Es ERROR sin
+      // `--strict` porque no es una decisión de programación discutible: o el
+      // día tiene título o la pantalla sale rota.
+      if (!textOf(day.workout_title).trim()) {
+        err(`fase ${pn} · ${day.day_id}: sin 'workout_title' — la tarjeta de inicio saldría sin título`, 'day_title')
+      }
+      if (!textOf(day.day_name).trim()) {
+        err(`fase ${pn} · ${day.day_id}: sin 'day_name'`, 'day_title')
+      }
+
       for (const ex of [...(day.exercises ?? [])].sort(
         (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
       )) {
