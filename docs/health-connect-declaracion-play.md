@@ -22,6 +22,25 @@ la publicación, y para la respuesta a los rechazos de la **v1.11.1 (vc35)**:
 > manifiesto: al reenviar, vaciar en el paso 2 las justificaciones de Steps y
 > HeartRate (desplegar TODAS las secciones, ver 4b).
 
+> **CUARTO rechazo (2026-09-12, contra vc41 = v1.13.1)**: los cuatro puntos del
+> correo hablan de **«Data Sync - Other»**, un tipo de FGS que **el binario no
+> pide**: el manifiesto mergeado de vc41 declara solo `FOREGROUND_SERVICE`,
+> `_HEALTH` y `_LOCATION`, y los `<service>` salen con
+> `foregroundServiceType="health|location"`, `"location"` y `"mediaPlayback"`.
+> `dataSync` desapareció en vc37 y **ningún track activo lo tiene** (production
+> 41, internal 40, alpha/beta 39). Lo que sigue mal es **la declaración de App
+> content**, no el código: el formulario sigue con las entradas guardadas el
+> 2026-08-28, entre ellas **`DATA_SYNC` → «Otras tareas → Otro»** (puesta
+> entonces para justificar bundles viejos) y **`MEDIA_PLAYBACK` → «Otro»**, dos
+> permisos que el binario ya no pide. El formulario de FGS **conserva las
+> declaraciones antiguas aunque ningún bundle pida el permiso**, exactamente
+> igual que el paso 2 de Health Connect (ver 4b); por eso el revisor las lee
+> contra vc41 y concluye a la vez que el uso «no es necesario», que «está
+> declarado bajo el tipo de FGS equivocado» y que «no es perceptible». **Corrección: rehacer la declaración eligiendo la
+> categoría real (Salud / Ubicación) y borrar la de Data sync** — ver el
+> runbook de la sección 6. Tercera vez que el rechazo viene de la declaración y
+> no del binario.
+
 ---
 
 ## 1. Qué cambió respecto a la versión rechazada (vc35)
@@ -122,6 +141,12 @@ vean juntas. Nunca sobrescribe una entrada manual.
 Formulario: App content → **Permisos de servicios en primer plano**. Se declara
 UN uso por tipo. Hay que **quitar `dataSync`** del formulario (ya no está en el
 manifiesto) y dejar solo estos dos.
+
+> **Cada uso va en SU categoría, nunca en «Otras tareas → Otro».** Play archiva
+> esa opción genérica como **Data sync → Other** y la revisa como si la app
+> sincronizara datos en segundo plano: eso costó el cuarto rechazo (vc41,
+> 2026-09-12) con el binario ya limpio. HEALTH → categoría de salud/fitness,
+> LOCATION → categoría de ubicación.
 
 ### `FOREGROUND_SERVICE_HEALTH` — entreno en curso
 
@@ -249,6 +274,50 @@ Health Connect y un reloj con datos reales.
 
 ## 6. Runbook de resubmisión
 
+### Runbook v1.13.2 / vc42 (cuarto rechazo — declaración de FGS)
+
+El binario de vc41 ya es conforme: **no hay nada que arreglar en el manifiesto**
+(verificado con el merged manifest de la build de vc41 y con las comprobaciones
+1d de `build:aab`). Todo el trabajo está en Play Console.
+
+1. **App content → Permisos de servicios en primer plano → Gestionar**.
+   Lo que quedó guardado el 2026-08-28 (y que el revisor sigue leyendo) era:
+
+   | Entrada guardada | Estado real en vc41 | Qué hacer |
+   |---|---|---|
+   | `DATA_SYNC` → «Otras tareas → **Otro**» (texto legado) | el permiso NO está en el manifiesto desde vc37 | **BORRAR la entrada.** Es la que Play llama «Data Sync - Other» en el rechazo. |
+   | `MEDIA_PLAYBACK` → «Otro» (legado) | bloqueado con `tools:node="remove"`; no está en el AAB | **BORRAR la entrada.** |
+   | `LOCATION` → «Compartir ubicación» **+ «Otras tareas → Otro»** | correcto, tipo `location` | dejar **solo** la de ubicación (seguimiento iniciado por el usuario) y **quitar la de «Otras tareas → Otro»**. |
+   | `HEALTH` → «Sincronización de datos de salud, recuento de pasos y monitorización del ejercicio» | correcto, tipo `health` | dejar la categoría de **salud/fitness**, pero elegir el caso de uso de **monitorización del ejercicio**, no uno que empiece por «sincronización de datos». |
+
+   Igual que en el paso 2 de Health Connect, **el formulario CONSERVA las
+   declaraciones de envíos anteriores aunque ningún bundle pida ya el permiso**
+   (ver 4b). Que ya no haya ningún track con dataSync (production 41 /
+   internal 40 / alpha·beta 39) no borra la entrada: hay que vaciarla a mano.
+   Si el formulario no deja quitarla, promover vc41 a los cuatro tracks
+   (`pnpm play:promote --track alpha|beta|internal --code 41`) y volver.
+   Descripciones: las de la sección 4, tal cual.
+2. **Vídeo nuevo** (el de agosto ya no sirve: se grabó para justificar
+   dataSync). Guion de la sección 5, partes A y B, **sin cortes**, y que se vea
+   que el servicio lo **inicia** el usuario («Empezar»), es **perceptible**
+   (notificación con ejercicio, serie y cronómetro, también en la pantalla de
+   bloqueo) y lo **termina** el usuario («Terminar» → la notificación
+   desaparece). Esos tres momentos son literalmente los tres puntos del
+   rechazo; que se vean en cámara.
+3. **Store listing → descripción larga**: comprobar que está el bloque de la
+   sección 4 («Entrena con el móvil en el bolsillo» / «Cardio con GPS»). El
+   punto 4 del rechazo dice que la ficha no demuestra la función; si el bloque
+   no llegó a añadirse en la resubmisión de vc37, añadirlo ahora en **todos**
+   los idiomas de la ficha, no solo es-419.
+4. **App access**: reconfirmar credenciales de prueba válidas (el rechazo las
+   vuelve a pedir).
+5. **Resubmitir**. La corrección es de declaración, así que vale reenviar vc41
+   desde «Resumen de publicación» → **Enviar a revisión**; solo hace falta
+   `pnpm release:mobile patch` + `build:aab` + `play:publish` si se aprovecha
+   para meter cambios de app (p. ej. el botón «Terminar» en la notificación,
+   que hace el punto «can be terminated by the user» demostrable sin abrir la
+   app).
+
 ### Runbook v1.12.3 / vc39 (tercer rechazo)
 
 1. Mergear el PR de `fix/play-rejection-3-hc-steps-hr`.
@@ -317,6 +386,26 @@ Health Connect y un reloj con datos reales.
 ---
 
 ## 7. Respuesta al rechazo (texto para el formulario)
+
+Texto para el CUARTO rechazo (v1.13.1 / vc41 — FGS):
+
+> La aplicación no realiza ninguna tarea de sincronización de datos en segundo
+> plano y el código 41 no declara FOREGROUND_SERVICE_DATA_SYNC: su manifiesto
+> contiene únicamente FOREGROUND_SERVICE, FOREGROUND_SERVICE_HEALTH y
+> FOREGROUND_SERVICE_LOCATION, y ningún canal activo (producción 41, interno
+> 40, alfa y beta 39) incluye el permiso de dataSync, que se eliminó en el
+> código 37. La referencia a «Data Sync - Other» proviene de nuestra propia
+> declaración de App content, donde ambos usos estaban clasificados como «Otras
+> tareas → Otro» por error. Hemos corregido la declaración: el servicio en
+> primer plano de tipo health corresponde al seguimiento del entrenamiento en
+> curso (notificación persistente con el ejercicio actual, la serie y el
+> cronómetro de descanso, iniciada por el usuario al pulsar «Empezar» y
+> finalizada al pulsar «Terminar»), y el de tipo location al registro de la
+> ruta GPS durante una sesión de cardio iniciada por el usuario. Adjuntamos un
+> vídeo nuevo que muestra el inicio por parte del usuario, la notificación
+> visible en segundo plano y en la pantalla de bloqueo, y la finalización
+> manual de ambos servicios, y hemos actualizado la descripción de la ficha
+> para reflejar estas dos funciones.
 
 Texto para el TERCER rechazo (v1.12.3 / vc39):
 
