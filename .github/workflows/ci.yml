@@ -10,6 +10,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # commitlint necesita el historial del PR entero, no el último commit.
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -22,6 +25,18 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # El hook commit-msg de husky es LOCAL y se salta con --no-verify, y un
+      # merge desde la UI de GitHub no pasa por él. Sin esto, un subject que no
+      # sea Conventional Commits entra en main y desaparece del changelog: los
+      # scripts de generate-changelog-* parsean `type(scope): description` y lo
+      # que no case, no sale. Sólo en PRs; en push a main ya no hay nada que hacer.
+      - name: Commitlint (subjects del PR)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
       # "all workspaces" es literal desde #483: `pnpm -r` sólo ejecuta el script
       # en los paquetes que lo declaran, y `packages/core` no tenía ni script
@@ -46,6 +61,38 @@ jobs:
       # — rompe a quien no ha actualizado, en producción y a veces en silencio.
       - name: Schema contract (migraciones vs clientes instalados)
         run: node scripts/check-schema-contract.mjs
+
+      # La migración de siembra del catálogo (#615) es un artefacto GENERADO a
+      # partir de programs/*.json. Editar un programa sin regenerarla la deja
+      # atrás sin que nada falle: la migración se aplicaría igual, sembrando el
+      # contenido viejo. Este paso es lo único que lo convierte en un error.
+      - name: Seed de programas al día (programs/*.json vs migración)
+        run: pnpm programs:seed:check
+
+      # Test del guardarraíl de contenido antes de dejarlo bloquear el merge de
+      # cualquiera: prueba checkProgram() contra fixtures en memoria (id que no
+      # resuelve, nombre-slug, patrón a 0 series, instructions vacío, programa
+      # correcto). `scripts/` no es un workspace de pnpm, así que `pnpm -r test`
+      # no lo alcanza — se pide explícitamente prestado el vitest de core.
+      - name: Test del validador de contenido de programas
+        run: pnpm test:program-content
+
+      # Guardarraíl de CONTENIDO de los 15 programas oficiales: ids que no
+      # resuelven contra el catálogo, slugs colados en `name`, material de
+      # gimnasio, un patrón de movimiento entero a 0 series... nada de esto lo
+      # ve un test de esquema. Falla el build ante un ERROR (avisos no cortan).
+      #
+      # `--strict` (cierre de #711): las reglas de LÓGICA de entrenamiento que
+      # #715 estrenó como AVISO —nivel del ejercicio contra el del programa,
+      # regresión por familia entre fases, contraindicaciones, descarga
+      # prometida y no codificada, cardio y nutrición en `fat_loss`, material
+      # de gimnasio— pasan a ERROR. Nacieron como aviso solo para no dejar la
+      # CI en rojo mientras las quince issues de contenido (#719-#733) corrían
+      # en paralelo; ya están las quince en `main` y los 15 programas pasan en
+      # verde, así que a partir de aquí una regresión de lógica corta el build
+      # en vez de quedarse en un aviso que nadie lee.
+      - name: Contenido de los programas oficiales (programs/*.json)
+        run: pnpm programs:content:check --strict
 
   # Smoke E2E del golden path (#145): signup → primera sesión de entrenamiento.
   # Corre contra un PocketBase efímero recién migrado (sin seeds — el flujo usa
@@ -93,6 +140,23 @@ jobs:
       # efímero en un puerto libre — no interfieren con el PB del e2e de abajo.
       - name: PB hooks integration tests
         run: PB_BINARY=/tmp/pb/pocketbase node tests/pb_hooks/run.mjs
+
+      # Resiembra de contenido oficial (#712): aplica las migraciones sobre una
+      # base vacía y comprueba que reescribir un programa conserva su id, las
+      # copias de usuario y las inscripciones. Vive en este job porque necesita
+      # el binario de PocketBase ya cacheado arriba; usa su propio tmpdir, así
+      # que no toca el /tmp/pb_data del e2e de más abajo.
+      - name: Resiembra de programas (migración contra PB real)
+        run: PB_BINARY=/tmp/pb/pocketbase pnpm test:program-reseed
+
+      # Etiquetas del catálogo (#713): vocabulario, cobertura nivel × objetivo,
+      # penalizaciones del «PARA TI» con el catálogo REAL y la migración de
+      # datos 1788881000 aplicada sobre filas con los valores viejos.
+      - name: Etiquetas de programas (catálogo + migración contra PB real)
+        run: PB_BINARY=/tmp/pb/pocketbase pnpm test:program-catalog
+
+      - name: Migración de datos de exercises_catalog (#714) contra PB real
+        run: PB_BINARY=/tmp/pb/pocketbase pnpm test:catalog-migration
 
       - name: Start PocketBase (fresh data, migrations + hooks del repo)
         run: |

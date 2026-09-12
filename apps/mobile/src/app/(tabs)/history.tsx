@@ -1,10 +1,10 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useEffect, useMemo } from 'react'
 import { useCountUp } from '@/lib/use-count-up'
 import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays, Swords } from 'lucide-react-native'
+import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays, Swords, BarChart3 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
@@ -20,6 +20,7 @@ import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr } from '@calistenia/core/lib/dateUtils'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // Fila unificada del historial: entreno (fuerza/yoga) o sesión de cardio GPS.
 // `title` se resuelve al construir la fila (una sola vez), no al pintarla: antes
@@ -98,6 +99,16 @@ export default function HistoryScreen() {
   const weeklyDone = useMemo(() => getWeeklyDoneCount(), [getWeeklyDoneCount])
   const longestStreak = useMemo(() => getLongestStreak(), [getLongestStreak])
 
+  // #636 §4: el historial no emitía nada, así que no se sabía si la gente
+  // vuelve a mirar lo que ha hecho.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.historyViewed, {
+      surface: 'history', source: 'history_tab',
+      total_sessions: totalSessions,
+      streak: longestStreak,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
+
   const openCardio = useCallback((id: string) => router.push(`/cardio/${id}`), [router])
   const openStrength = useCallback(
     (date: string, workoutKey: string, title: string) =>
@@ -164,6 +175,24 @@ export default function HistoryScreen() {
             </View>
           </CardContent>
         </Card>
+
+        {/* Estadísticas (#596): músculos, ejercicios, récords y tendencia. */}
+        <Pressable onPress={() => router.push('/stats')}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <BarChart3 size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('stats.title')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('stats.rowDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
 
         {/* Batallas (#398): el historial es lo que convierte una batalla en
             entrenamiento y no en una anécdota que se ve una vez y desaparece. */}

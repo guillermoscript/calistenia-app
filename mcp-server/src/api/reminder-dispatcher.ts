@@ -170,17 +170,21 @@ export interface MealContext {
   dailyGoal: number;
 }
 
+/** Campaña del push — la usa el cliente (analítica) y el service worker (data). */
+export type ReminderCampaign = "workout_reminder" | "pause_reminder" | "meal_reminder";
+
 /** Contenido del push por tipo de recordatorio. */
 export function contentFor(
   reminder: Pick<ReminderRow, "kind" | "mealType">,
   mealCtx?: Pick<MealContext, "todayCalories" | "dailyGoal">,
-): { title: string; body: string; url: string } {
+): { title: string; body: string; url: string; campaign: ReminderCampaign } {
   if (reminder.kind === "meal") {
     const label = reminder.mealType || "comida";
     return {
       title: `Hora de registrar tu ${label}`,
       body: mealBody(label, mealCtx?.todayCalories ?? 0, mealCtx?.dailyGoal ?? 0),
       url: "/nutrition",
+      campaign: "meal_reminder",
     };
   }
   if (reminder.kind === "pause") {
@@ -188,12 +192,14 @@ export function contentFor(
       title: "Pausa activa",
       body: "Levántate, estira y muévete — tu cuerpo lo agradece",
       url: "/workout",
+      campaign: "pause_reminder",
     };
   }
   return {
     title: "¡Hora de entrenar!",
     body: "Tu entrenamiento te espera. ¡No pierdas la racha!",
     url: "/workout",
+    campaign: "workout_reminder",
   };
 }
 
@@ -310,8 +316,11 @@ async function loadMealContext(pb: any, userId: string, dateKey: string): Promis
  *
  * Nota: los recordatorios se rigen por el interruptor maestro `push_enabled`.
  * No existe (todavía) una categoría propia en `notification_prefs`.
+ *
+ * Exportada: `inactivity-dispatcher.ts` la reutiliza — mismo modelo opt-out,
+ * no tiene sentido duplicarla.
  */
-async function pushAllowed(pb: any, userId: string): Promise<boolean> {
+export async function pushAllowed(pb: any, userId: string): Promise<boolean> {
   try {
     const recs = await pb.collection("notification_prefs").getList(1, 1, {
       filter: pb.filter("user = {:uid}", { uid: userId }),
@@ -409,9 +418,9 @@ export async function dispatchDueReminders(
       }
     }
 
-    const { title, body, url } = contentFor(reminder, mealCtx);
+    const { title, body, url, campaign } = contentFor(reminder, mealCtx);
     try {
-      await sendPushToUser(reminder.user, { title, body, url });
+      await sendPushToUser(reminder.user, { title, body, url, campaign });
       // Marcar ANTES de contar como enviado: si el update falla, el próximo
       // tick lo reintentaría, así que lo registramos como error explícito.
       await pb.collection(reminder.collection).update(reminder.id, {

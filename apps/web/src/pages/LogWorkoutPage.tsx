@@ -89,7 +89,7 @@ export default function LogWorkoutPage() {
   const { t, i18n } = useTranslation()
   const l = useLocalize()
   const navigate = useNavigate()
-  const { settings, phases: phasesProp, weekDays: weekDaysProp } = useWorkoutState()
+  const { phases: phasesProp, weekDays: weekDaysProp, programProgress } = useWorkoutState()
   const { logSet, markWorkoutDone, isWorkoutDone } = useWorkoutActions()
 
   const PHASES = phasesProp || FALLBACK_PHASES
@@ -98,7 +98,10 @@ export default function LogWorkoutPage() {
   // ── Form state ───────────────────────────────────────────────────────────
   const [date, setDate] = useState(todayStr())
   const [sessionType, setSessionType] = useState<'program' | 'free'>('free')
-  const [selectedPhase, setSelectedPhase] = useState(settings?.phase || 1)
+  // #616: arranca en la fase del programa activo (derivada de `started_at`).
+  // Sigue siendo estado local: aquí se registra una sesión pasada, que puede
+  // ser de otra fase.
+  const [selectedPhase, setSelectedPhase] = useState(programProgress.currentPhase || 1)
   const [selectedDay, setSelectedDay] = useState<DayId | null>(null)
   const [note, setNote] = useState('')
   const [exercises, setExercises] = useState<LogExercise[]>([])

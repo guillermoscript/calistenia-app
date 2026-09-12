@@ -17,7 +17,8 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { PortalHost } from '@rn-primitives/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
@@ -27,6 +28,7 @@ import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHando
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
 import { resolveNotifUrl } from '@/lib/notification-route'
+import { screenPattern } from '@/lib/screen-pattern'
 import { cancelLegacyLocalReminders } from '@/lib/reminder-scheduler'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
@@ -129,10 +131,16 @@ function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONTS)
 
   // OpenPanel screen views (la web los auto-trackea; en RN es manual).
+  //
+  // El NOMBRE de la pantalla es el patrón de ruta (`/challenges/[id]`), no la
+  // ruta resuelta: mandando `pathname` cada reto, cada batalla y cada carrera
+  // creaba su propia pantalla en OpenPanel, así que el informe de vistas era
+  // una lista infinita de ids sin ninguna fila agregada por pantalla (#636).
+  // La ruta concreta sigue viajando como propiedad, que es donde no molesta.
   const pathname = usePathname()
   const segments = useSegments()
   useEffect(() => {
-    trackScreen(pathname, { segments: segments.join('/'), platform: 'mobile' })
+    trackScreen(screenPattern(segments), { path: pathname, platform: 'mobile' })
   }, [pathname, segments])
 
   // Reintenta acciones encoladas offline al recuperar conexión (igual que web).
@@ -148,9 +156,27 @@ function RootLayout() {
   routerRef.current = router
 
   useEffect(() => {
+    // El tap de una push nativa no se medía (#636 §5). Es el evento más caro de
+    // los que faltaban: los recordatorios push son la palanca de retención
+    // principal y su efecto era literalmente invisible. `source` separa los dos
+    // caminos porque miden cosas distintas: abrir la app desde la notificación
+    // no es lo mismo que tocarla con la app ya abierta.
+    const trackTap = (response: Notifications.NotificationResponse, source: string) => {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.notificationClicked, {
+        surface: 'notification',
+        source,
+        url: response.notification.request.content.data?.url as string | undefined,
+        title: response.notification.request.content.title ?? undefined,
+        // Qué campaña de push disparó el tap (recordatorio, inactividad 24h/72h…),
+        // el dato que faltaba para saber CUÁL push trae de vuelta al usuario (#695).
+        campaign: response.notification.request.content.data?.campaign as string | undefined,
+      })
+    }
+
     // COLD START: if the app was opened by tapping a notification, handle it once.
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return
+      trackTap(response, 'cold_start')
       const url = response.notification.request.content.data?.url as string | undefined
       const route = resolveNotifUrl(url)
       if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
@@ -158,6 +184,7 @@ function RootLayout() {
 
     // FOREGROUND / BACKGROUND TAP: listener for subsequent taps.
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      trackTap(response, 'tap')
       const url = response.notification.request.content.data?.url as string | undefined
       const route = resolveNotifUrl(url)
       if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
@@ -222,7 +249,19 @@ function RootLayout() {
       readyRef.current = true
       if (!cancelled) setReady(true)
     }
-    boot()
+    // El boot NUNCA puede dejar el splash colgado (#661): si algo de aquí
+    // rechaza, `setReady(true)` no se llamaba nunca, `SplashScreen.hideAsync()`
+    // tampoco y la app se quedaba en negro para siempre. Pasó con una clave de
+    // AsyncStorage de más de 2 MB (CursorWindow de Android). Arrancar en
+    // degradado —sin caché, sin tema guardado— siempre es mejor que no arrancar.
+    boot().catch((e) => {
+      console.error('[boot] falló, se arranca en degradado:', e)
+      Sentry.captureException(e, { tags: { boot_stage: 'bootstrap' } })
+      // readyRef también: es lo que habilita el kick a /login cuando el
+      // authStore se limpia en caliente. Sin él la app quedaría sin esa salida.
+      readyRef.current = true
+      if (!cancelled) setReady(true)
+    })
     return () => {
       cancelled = true
     }
@@ -239,7 +278,7 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER }}
       >
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <KeyboardProvider>

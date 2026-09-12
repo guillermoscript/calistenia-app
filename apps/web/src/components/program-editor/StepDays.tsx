@@ -2,13 +2,17 @@
  * Paso 3 del editor de programas web (#223/#478): configuración de días por fase.
  * Extraído de ProgramEditorPage.tsx:399-588, sin cambios de markup.
  */
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { cn } from '../../lib/utils'
 import type { EditorDay, EditorPhase } from '@calistenia/core/hooks/useProgramEditor'
+import { copyDayTargets, copyPhaseTargets } from '@calistenia/core/hooks/useProgramEditor'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
+import { CopyToDialog, type CopyTargetOption } from './CopyToDialog'
 import { CARDIO_TYPE_OPTIONS, DAY_IDS, DAY_TYPE_OPTIONS } from './constants'
 
 interface StepDaysProps {
@@ -17,10 +21,36 @@ interface StepDaysProps {
   selectedPhaseTab: number
   onSelectPhaseTab: (index: number) => void
   updateDay: (key: string, data: Partial<EditorDay>) => void
+  copyDay: (fromKey: string, toKey: string) => void
+  copyPhase: (fromIndex: number, toIndex: number) => void
 }
 
-export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, updateDay }: StepDaysProps) {
+export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, updateDay, copyDay, copyPhase }: StepDaysProps) {
   const { t } = useTranslation()
+
+  // El día que se está copiando (`null` = diálogo cerrado). Guardar la clave y
+  // no un booleano deja que el diálogo titule con el nombre del día de origen.
+  const [copySourceKey, setCopySourceKey] = useState<string | null>(null)
+  const [copyPhaseOpen, setCopyPhaseOpen] = useState(false)
+
+  const phaseLabel = (index: number) => `F${index + 1}: ${phases[index]?.name ?? ''}`
+
+  const dayTargets: CopyTargetOption[] = copySourceKey
+    ? copyDayTargets(days, phases.length, copySourceKey).map(target => ({
+        id: target.key,
+        label: target.dayName,
+        group: phaseLabel(target.phaseIndex),
+        exerciseCount: target.exerciseCount,
+      }))
+    : []
+
+  const phaseTargets: CopyTargetOption[] = copyPhaseOpen
+    ? copyPhaseTargets(days, phases.length, selectedPhaseTab).map(target => ({
+        id: String(target.phaseIndex),
+        label: phaseLabel(target.phaseIndex),
+        exerciseCount: target.exerciseCount,
+      }))
+    : []
 
   return (
     <div className="space-y-4">
@@ -43,6 +73,16 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
             F{pi + 1}: {phase.name}
           </Button>
         ))}
+        {phases.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCopyPhaseOpen(true)}
+            className="ml-auto h-8 text-[10px] tracking-wide"
+          >
+            {t('programEditor.copy.phaseCta')}
+          </Button>
+        )}
       </div>
 
       {/* Day cards */}
@@ -61,6 +101,13 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                   <Badge variant="outline" className="text-[9px] ml-auto">
                     {day.type.toUpperCase()}
                   </Badge>
+                  <button
+                    type="button"
+                    onClick={() => setCopySourceKey(dayKey)}
+                    className="shrink-0 font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground transition-colors hover:text-lime"
+                  >
+                    {t('programEditor.copy.dayCta')}
+                  </button>
                 </div>
 
                 <div>
@@ -210,6 +257,31 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
           )
         })}
       </div>
+
+      <CopyToDialog
+        open={copySourceKey !== null}
+        onOpenChange={open => { if (!open) setCopySourceKey(null) }}
+        title={t('programEditor.copy.dayTitle', { day: (copySourceKey && days[copySourceKey]?.dayName) || '' })}
+        description={t('programEditor.copy.dayDesc')}
+        targets={dayTargets}
+        onSelect={toKey => {
+          if (!copySourceKey) return
+          copyDay(copySourceKey, toKey)
+          toast.success(t('programEditor.copy.doneDay', { target: days[toKey]?.dayName ?? '' }))
+        }}
+      />
+
+      <CopyToDialog
+        open={copyPhaseOpen}
+        onOpenChange={setCopyPhaseOpen}
+        title={t('programEditor.copy.phaseTitle', { phase: phaseLabel(selectedPhaseTab) })}
+        description={t('programEditor.copy.phaseDesc')}
+        targets={phaseTargets}
+        onSelect={toIndex => {
+          copyPhase(selectedPhaseTab, Number(toIndex))
+          toast.success(t('programEditor.copy.donePhase', { target: phaseLabel(Number(toIndex)) }))
+        }}
+      />
     </div>
   )
 }

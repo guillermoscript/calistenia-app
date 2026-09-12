@@ -68,6 +68,17 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
     case 'friend_joined':
       return n.actorId ? `/u/${n.actorId}` : '/social'
 
+    case 'program_deleted':
+      // `referenceId` lleva el id del programa borrado como rastro, pero NO se
+      // navega a él: el registro ya no existe y `/program/[id]` daría un 404.
+      // El catálogo es la acción útil que le queda al usuario: buscarse otro.
+      return '/programs'
+
+    case 'inactivity_24h':
+    case 'inactivity_72h':
+      // La acción útil es entrenar: Home arranca el entreno de hoy (#695).
+      return '/(tabs)?autostart=1'
+
     default:
       // Tipo desconocido: al menos abrir la lista en vez de no hacer nada.
       return '/notifications'
@@ -89,6 +100,11 @@ export function resolveNotifUrl(url: string | undefined | null): NotifRoute | nu
   if (path === '' || path === '/') return '/'
   if (path === '/feed' || path === '/social') return `/social${query}`
   if (path.startsWith('/u/')) return path // /u/<id> pasa tal cual
+  // Recordatorio de entreno / push de inactividad (#695): el servidor manda
+  // `/workout` sin saber que en nativo no existe esa ruta. Abrimos Home con
+  // `autostart=1`: (tabs)/index.tsx arranca el entreno de hoy en cuanto carga
+  // en vez de dejar al usuario en la lista de notificaciones.
+  if (path === '/workout') return '/(tabs)?autostart=1'
   if (path === '/progress' || path === '/history') return '/history'
   if (path === '/profile') return '/profile'
   if (path === '/notifications') return '/notifications'

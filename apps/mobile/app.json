@@ -3,7 +3,7 @@
     "name": "Calistenia",
     "slug": "calistenia",
     "owner": "guillermouser",
-    "version": "1.10.2",
+    "version": "1.13.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calistenia",
@@ -27,7 +27,7 @@
     "android": {
       "package": "tech.guille.calistenia",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 33,
+      "versionCode": 41,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -77,22 +77,14 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.FOREGROUND_SERVICE_HEALTH",
+        "android.permission.HIGH_SAMPLING_RATE_SENSORS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.health.READ_STEPS",
         "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_RESTING_HEART_RATE",
-        "android.permission.health.READ_HEART_RATE_VARIABILITY",
-        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
-        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_WEIGHT",
-        "android.permission.health.READ_BODY_FAT",
-        "android.permission.health.READ_VO2_MAX",
-        "android.permission.health.READ_DISTANCE",
-        "android.permission.health.READ_EXERCISE"
+        "android.permission.health.READ_BODY_FAT"
       ],
       "blockedPermissions": [
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
@@ -258,12 +250,13 @@
           "android": {
             "minSdkVersion": 26,
             "compileSdkVersion": 36,
-            "targetSdkVersion": 35,
+            "targetSdkVersion": 36,
             "enablePngCrunchInReleaseBuilds": false
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "./plugins/with-upload-signing.js"
     ],
     "extra": {
       "eas": {

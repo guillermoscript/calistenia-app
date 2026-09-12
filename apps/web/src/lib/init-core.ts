@@ -7,6 +7,7 @@
 import * as Sentry from '@sentry/react'
 import { OpenPanel } from '@openpanel/web'
 import { initCore } from '@calistenia/core/platform'
+import { shouldSendAnalytics } from '@calistenia/core/lib/analytics'
 
 // Session replay (rrweb) solo en builds de producción y navegadores reales:
 // el e2e de CI corre contra el bundle de prod con `vite preview`, y no queremos
@@ -20,6 +21,10 @@ const op = new OpenPanel({
   trackScreenViews: true,
   trackOutgoingLinks: true,
   trackAttributes: true,
+  // #696: la cuenta demo del revisor de Play no cuenta. El filtro corre antes
+  // de encolar cualquier payload (track, screen_view automático, identify,
+  // replay), así que no hace falta gatear cada llamada.
+  filter: shouldSendAnalytics,
   sessionReplay: {
     enabled: replayEnabled,
     // maskAllText y maskAllInputs quedan en su default (true): la app maneja datos
@@ -56,8 +61,18 @@ initCore({
   analytics: {
     track: (name, properties) => op.track(name, properties),
     // El payload del facade es laxo; OpenPanel exige profileId — los callers de core siempre lo mandan.
-    identify: (payload) => op.identify(payload as Parameters<typeof op.identify>[0]),
-    clear: () => op.clear(),
+    identify: (payload) => {
+      op.identify(payload as Parameters<typeof op.identify>[0])
+      // Cruce OpenPanel↔Sentry: el mismo id de PocketBase en los dos lados.
+      // Sin esto Sentry solo tiene la IP y cruzar una sesión del panel con un
+      // issue era «mismo dispositivo + misma hora». Solo el id, nada de PII.
+      const profileId = (payload as { profileId?: string }).profileId
+      if (profileId) Sentry.setUser({ id: profileId })
+    },
+    clear: () => {
+      op.clear()
+      Sentry.setUser(null)
+    },
   },
   reportError: (e) => Sentry.captureException(e),
   lifecycle: {

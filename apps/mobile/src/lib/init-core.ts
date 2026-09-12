@@ -20,6 +20,8 @@ import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { isForeground, onForeground, onBackground } from './lifecycle'
 import { registerPushTokenAsync } from './push-registration'
+import { attachInstallAttribution, currentInstallAttribution, pathWithAttribution } from './install-referrer'
+import { CANONICAL_ANALYTICS_EVENTS, setActiveAnalyticsProfileId, shouldSendAnalytics, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // El catálogo de ejercicios va en el bundle de RN de todas formas, así que se
 // indexa aquí, en el arranque (#486). Las APIs síncronas de core que dependen de
@@ -140,18 +142,48 @@ const op = new OpenPanel({
   // los primeros screen_view del arranque llevan profileId en vez de salir
   // anónimos. Ver identifyFromAuthStore() más abajo.
   waitForProfile: true,
+  // #696: la cuenta demo del revisor de Play no cuenta. El SDK evalúa el filtro
+  // antes de encolar y otra vez al vaciar la cola (ya con profileId), así que
+  // ni los screen_view del arranque ni el identify llegan al panel.
+  filter: shouldSendAnalytics,
 })
+
+// ─── Atribución de instalación (#746) ────────────────────────────────────────
+// El SDK de RN mete el install referrer de Play CRUDO en `__referrer` y el panel
+// espera una URL, así que la pestaña Refs enseñaba `utm_source=google-play&…` en
+// vez de una URL con favicon. `attachInstallAttribution` envuelve
+// `setGlobalProperties` para que solo salgan URLs absolutas, y resuelve la
+// atribución (solo la PRIMERA sesión tras instalar; ver install-referrer.ts).
+// En dev no se engancha: no se manda nada al panel y no tiene sentido gastar la
+// atribución —ni molestar al servicio de Play— en cada arranque de Metro.
+const installAttributionReady = __DEV__ ? Promise.resolve(null) : attachInstallAttribution(op)
+
+// El referrer de una sesión lo fija su primer evento, así que la cola no se
+// suelta hasta que la atribución esté resuelta. El tope evita que un servicio de
+// Play que no responde deje los eventos encolados para siempre; una vez gastada
+// la atribución esto resuelve en una lectura de AsyncStorage.
+const ATTRIBUTION_WAIT_MS = 2_000
+function afterInstallAttribution(fn: () => void) {
+  let ran = false
+  const run = () => { if (!ran) { ran = true; fn() } }
+  installAttributionReady.then(run, run)
+  setTimeout(run, ATTRIBUTION_WAIT_MS)
+}
 
 /**
  * Screen view de OpenPanel respetando el gating de __DEV__ (igual que track).
  * La web auto-trackea screen views; en RN hay que llamarlo a mano desde el layout.
+ *
+ * Durante la primera sesión la ruta lleva colgados los `utm_*` de la instalación:
+ * el worker separa query de path, así que el informe de Pages no se entera y las
+ * pestañas Source/Medium/Campaign —vacías hasta ahora en móvil— se llenan.
  */
 export function trackScreen(route: string, properties?: Record<string, unknown>) {
   if (__DEV__) {
     console.log('[analytics] screen_view', route, properties ?? '')
     return
   }
-  op.screenView(route, properties)
+  op.screenView(pathWithAttribution(route, currentInstallAttribution()), properties)
 }
 
 initCore({
@@ -178,8 +210,23 @@ initCore({
     },
   },
   reportError: (e) => {
+    // Sentry primero: captureException devuelve el event id y ese id viaja en
+    // el `page_error` de OpenPanel — es el puente entre una sesión del panel
+    // y el evento exacto en Sentry (antes cruzar era dispositivo + hora).
+    const sentryEventId = __DEV__ ? undefined : Sentry.captureException(e)
     if (__DEV__) console.error('[core]', e)
-    else Sentry.captureException(e)
+    // Paridad con el `page_error` de web (#636 §5): hasta ahora el móvil solo
+    // lo mandaba a Sentry, así que la tasa de errores por plataforma no se
+    // podía comparar. Sentry sigue siendo el sitio para depurarlo; esto solo
+    // pone el número en el mismo embudo que el resto.
+    try {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.pageError, {
+        surface: 'app', source: 'core_report',
+        error_type: 'reported',
+        message: e instanceof Error ? e.message : String(e),
+        ...(sentryEventId ? { sentry_event_id: sentryEventId } : {}),
+      })
+    } catch { /* informar de un error no puede provocar otro */ }
   },
   connectivity: { isOnline, onOnline, onChange: onConnectivityChange },
   lifecycle: { isForeground, onForeground, onBackground },
@@ -206,6 +253,13 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
     if (user?.id) {
       if (identifiedAs === user.id) return
       identifiedAs = user.id
+      // Mismo id (PB) en Sentry que el profileId de OpenPanel: permite cruzar
+      // un issue con la sesión/perfil del panel. Solo el id, sin email
+      // (sendDefaultPii sigue en false).
+      Sentry.setUser({ id: user.id })
+      // Aquí se llama al SDK directamente (no al facade de core), así que el
+      // respaldo del filtro #696 hay que fijarlo a mano.
+      setActiveAnalyticsProfileId(user.id)
       if (__DEV__) { console.log('[analytics] identify', user.id); return }
       op.identify({
         profileId: user.id,
@@ -215,8 +269,13 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
       })
     } else {
       identifiedAs = null
+      Sentry.setUser(null)
+      setActiveAnalyticsProfileId(null)
       // Invitado: soltar la cola para no perder los eventos de onboarding/login.
-      if (!__DEV__) op.ready()
+      // Tras esperar a la atribución de instalación (#746): en una instalación
+      // nueva el usuario es justo esto, un invitado, y si el primer evento sale
+      // sin referrer la sesión entera se queda sin él.
+      if (!__DEV__) afterInstallAttribution(() => op.ready())
     }
   }
 
@@ -225,7 +284,10 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
     if (pb.authStore.isValid) {
       const user = (pb.authStore as any).record ?? (pb.authStore as any).model
       if (user?.id) {
-        registerPushTokenAsync(pb, user.id).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
+        // requestPermission:false — el diálogo del SO ya no se pide al arrancar,
+        // solo si el permiso ya estaba concedido se registra el token. La
+        // petición ahora vive en la celebración post-entreno (#694).
+        registerPushTokenAsync(pb, user.id, { requestPermission: false }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
         // Zona horaria: el servidor la necesita para enviar los recordatorios a
         // la hora local correcta. Va AQUÍ y no en useAuth porque en móvil
         // useAuth solo se monta en la pantalla de login (mismo motivo que la

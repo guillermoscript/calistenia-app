@@ -13,6 +13,7 @@ import Confetti from '@/components/Confetti'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import { PostWorkoutActions } from '@/components/session/PostWorkoutActions'
+import PushPermissionCard from '@/components/session/PushPermissionCard'
 import TimingBar from '@/components/session/TimingBar'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
@@ -200,6 +201,8 @@ export default function CelebrateScreen({
       onRepeat={onRepeat}
       onNavigateAway={onNavigateAway}
     />
+
+    <PushPermissionCard userId={user?.id} workoutKey={workoutKey} totalSessions={totalSessions} />
 
     <Pressable onPress={onDone} className="items-center gap-2.5 pt-7">
       <Animated.View entering={reduced ? undefined : FadeInDown.delay(720).duration(450)} className="w-full max-w-[280px]">

@@ -17,7 +17,12 @@ interface NutritionGoalSetupProps {
     dailyCarbs: number
     dailyFat: number
   }
-  /** Pre-fill from user profile */
+  /**
+   * Pre-relleno desde el perfil. OJO: los `initial*` se leen SOLO al montar
+   * (alimentan `useState`), así que quien monte este componente debe tener ya
+   * los datos; pasarlos más tarde no reescribe los campos y el usuario acaba
+   * tecleando lo que ya había dado en el onboarding.
+   */
   initialWeight?: number
   initialHeight?: number
   initialAge?: number

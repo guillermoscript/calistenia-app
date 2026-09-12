@@ -23,20 +23,27 @@ import {
 } from 'react-native-health-connect'
 import type { HealthHubStatus } from '@calistenia/core/types'
 
-/** Record types we read (Fase 1). Mirrors the READ_* perms in app.json. */
+/**
+ * Tipos de registro que leemos. Espejo EXACTO de los `android.permission.health.READ_*`
+ * de app.json — mínimo imprescindible para las funciones que la app expone hoy
+ * (política de acceso mínimo a datos de Health Connect de Google Play).
+ *
+ * Cada entrada tiene una función visible detrás:
+ *   SleepSession → registro de sueño y calendario
+ *   Weight       → seguimiento de peso
+ *   BodyFat      → composición corporal (junto al peso)
+ *
+ * NO añadas un tipo aquí sin una función que lo muestre al usuario: aparece en
+ * el diálogo de permisos y Google rechaza la release por acceso excesivo.
+ * Historial de recortes: v1.11.1 quitó Distance/Exercise/TotalCalories/HRV/VO2;
+ * v1.12.1 quitó RestingHeartRate y ActiveCaloriesBurned (segundo rechazo);
+ * v1.12.3 quitó Steps y HeartRate (tercer rechazo — Google no aceptó
+ * «mostrar el dato» como función esencial de una app de entreno).
+ */
 const READ_RECORD_TYPES = [
-  'Steps',
   'SleepSession',
-  'HeartRate',
-  'RestingHeartRate',
-  'HeartRateVariabilityRmssd',
-  'ActiveCaloriesBurned',
-  'TotalCaloriesBurned',
   'Weight',
   'BodyFat',
-  'Vo2Max',
-  'Distance',
-  'ExerciseSession',
 ] as const
 
 const READ_PERMISSIONS: Permission[] = READ_RECORD_TYPES.map((recordType) => ({
@@ -151,26 +158,12 @@ async function read<T>(recordType: (typeof READ_RECORD_TYPES)[number], range: Ti
 interface RawMetadata { id?: string }
 interface RawInstant { time: string; metadata?: RawMetadata }
 interface RawInterval { startTime: string; endTime: string; metadata?: RawMetadata }
-interface RawEnergy { inKilocalories?: number }
 interface RawMass { inKilograms?: number }
 
-interface RawSteps extends RawInterval { count?: number }
 interface RawSleepStage { stage: number; startTime: string; endTime: string }
 interface RawSleepSession extends RawInterval { stages?: RawSleepStage[] }
-interface RawHeartRateSample { time: string; beatsPerMinute: number }
-interface RawHeartRate extends RawInterval { samples?: RawHeartRateSample[] }
-interface RawRestingHeartRate extends RawInstant { beatsPerMinute: number }
-interface RawHrv extends RawInstant { heartRateVariabilityMillis: number }
-interface RawVo2Max extends RawInstant { vo2MillilitersPerMinuteKilogram: number }
-interface RawCalories extends RawInterval { energy?: RawEnergy }
 interface RawWeight extends RawInstant { weight?: RawMass }
 interface RawBodyFat extends RawInstant { percentage?: number }
-
-export interface StepsSample { startTime: string; endTime: string; count: number }
-export async function readSteps(range: TimeRange): Promise<StepsSample[]> {
-  const recs = await read<RawSteps>('Steps', range)
-  return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, count: r.count ?? 0 }))
-}
 
 export interface SleepSample { startTime: string; endTime: string; awakeMinutes: number; id?: string }
 export async function readSleep(range: TimeRange): Promise<SleepSample[]> {
@@ -182,41 +175,6 @@ export async function readSleep(range: TimeRange): Promise<SleepSample[]> {
       .reduce((sum: number, s) => sum + minutesBetween(s.startTime, s.endTime), 0)
     return { startTime: r.startTime, endTime: r.endTime, awakeMinutes, id: r.metadata?.id }
   })
-}
-
-export interface HrSample { time: string; bpm: number }
-export async function readHeartRate(range: TimeRange): Promise<HrSample[]> {
-  const recs = await read<RawHeartRate>('HeartRate', range)
-  return recs.flatMap((r) =>
-    (r.samples ?? []).map((s) => ({ time: s.time, bpm: s.beatsPerMinute })),
-  )
-}
-
-export async function readRestingHeartRate(range: TimeRange): Promise<HrSample[]> {
-  const recs = await read<RawRestingHeartRate>('RestingHeartRate', range)
-  return recs.map((r) => ({ time: r.time, bpm: r.beatsPerMinute }))
-}
-
-export interface ValueSample { time: string; value: number }
-export async function readHrv(range: TimeRange): Promise<ValueSample[]> {
-  const recs = await read<RawHrv>('HeartRateVariabilityRmssd', range)
-  return recs.map((r) => ({ time: r.time, value: r.heartRateVariabilityMillis }))
-}
-
-export async function readVo2Max(range: TimeRange): Promise<ValueSample[]> {
-  const recs = await read<RawVo2Max>('Vo2Max', range)
-  return recs.map((r) => ({ time: r.time, value: r.vo2MillilitersPerMinuteKilogram }))
-}
-
-export interface EnergySample { startTime: string; endTime: string; kcal: number }
-export async function readActiveCalories(range: TimeRange): Promise<EnergySample[]> {
-  const recs = await read<RawCalories>('ActiveCaloriesBurned', range)
-  return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
-}
-
-export async function readTotalCalories(range: TimeRange): Promise<EnergySample[]> {
-  const recs = await read<RawCalories>('TotalCaloriesBurned', range)
-  return recs.map((r) => ({ startTime: r.startTime, endTime: r.endTime, kcal: r.energy?.inKilocalories ?? 0 }))
 }
 
 export interface WeightSample { time: string; kg: number; id?: string }

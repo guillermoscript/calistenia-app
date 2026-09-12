@@ -5,9 +5,11 @@
  * y el auto-relleno de la hora desde el EXIF de la PRIMERA foto.
  */
 import { useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
 import { readPhotoTakenAt } from '../../lib/exif'
-import { MAX_PHOTOS, compressImage } from './meal-logger-shared'
+import { MAX_PHOTOS, UnreadableImageError, compressImage } from './meal-logger-shared'
 
 interface UseMealCaptureParams {
   imageFiles: File[]
@@ -20,13 +22,29 @@ interface UseMealCaptureParams {
 export function useMealCapture({
   imageFiles, setImageFiles, setImagePreviews, setEatenHour, setEatenMinute,
 }: UseMealCaptureParams) {
+  const { t } = useTranslation()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || imageFiles.length >= MAX_PHOTOS) return
-    const compressed = await compressImage(file)
+
+    // Un fichero que el navegador no sabe decodificar (HEIC de iPhone en Chrome)
+    // hacía que esto se quedase colgado para siempre: ni preview, ni error, ni
+    // petición. Decirlo en voz alta es media solución — la otra media es que el
+    // input reste `accept="image/*"`, que promete más de lo que la API acepta.
+    let compressed: File
+    try {
+      compressed = await compressImage(file)
+    } catch (err) {
+      toast.error(err instanceof UnreadableImageError
+        ? t('nutrition.logger.imageUnreadable')
+        : t('nutrition.logger.imageFailed'))
+      e.target.value = ''
+      return
+    }
+
     setImageFiles(prev => [...prev, compressed])
     const reader = new FileReader()
     reader.onload = () => setImagePreviews(prev => [...prev, reader.result as string])
@@ -51,7 +69,7 @@ export function useMealCapture({
 
     // Reset input so the same file can be re-selected
     e.target.value = ''
-  }, [imageFiles.length, setImageFiles, setImagePreviews, setEatenHour, setEatenMinute])
+  }, [t, imageFiles.length, setImageFiles, setImagePreviews, setEatenHour, setEatenMinute])
 
   const removePhoto = useCallback((index: number) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index))

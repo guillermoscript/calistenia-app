@@ -48,9 +48,18 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   // Registrar el abandono al cerrar la pestaña o navegar fuera a media sesión.
   // No tiene equivalente nativo —pasar a segundo plano NO es abandonar—, así
   // que se queda aquí en vez de bajar a core.
+  //
+  // `pagehide` además de `beforeunload` (#636): en móvil, Safari y Chrome NO
+  // disparan `beforeunload` al cerrar la pestaña o cambiar de app, así que
+  // todos esos abandonos se perdían. Los dos pueden dispararse en la misma
+  // salida; el pestillo de core hace que solo cuente el primero.
   useEffect(() => {
     window.addEventListener('beforeunload', trackAbandon)
-    return () => window.removeEventListener('beforeunload', trackAbandon)
+    window.addEventListener('pagehide', trackAbandon)
+    return () => {
+      window.removeEventListener('beforeunload', trackAbandon)
+      window.removeEventListener('pagehide', trackAbandon)
+    }
   }, [trackAbandon])
 
   return (

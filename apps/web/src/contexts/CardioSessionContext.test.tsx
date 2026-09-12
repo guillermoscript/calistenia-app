@@ -642,4 +642,31 @@ describe('getHistory — errores (#559)', () => {
     // vacío; ahora el error llega al caller, que decide (Sentry + no mentir).
     await expect(result.current.getHistory(20)).rejects.toThrow('network down')
   })
+
+  // CALISTENIA-APP-S: un unico 504 del gateway pintaba el historial vacio.
+  it('reintenta un 504 del gateway y devuelve las sesiones del segundo intento', async () => {
+    const gatewayTimeout = Object.assign(new Error('ClientResponseError 504'), { status: 504 })
+    const getList = vi.fn()
+      .mockRejectedValueOnce(gatewayTimeout)
+      .mockResolvedValue({ items: [{ id: 's1', user: 'user1', activity_type: 'running', distance_km: 5, duration_seconds: 1800, avg_pace: 6, started_at: '2026-08-24T00:00:00Z' }] })
+    mockPb({ getList })
+    const { wrapper } = makeWrapper('user1')
+    const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+    const history = await result.current.getHistory(20)
+    expect(getList).toHaveBeenCalledTimes(2)
+    expect(history).toHaveLength(1)
+    expect(history[0].id).toBe('s1')
+  }, 10_000)
+
+  it('NO reintenta un 403: es determinista y solo sumaria latencia', async () => {
+    const forbidden = Object.assign(new Error('ClientResponseError 403'), { status: 403 })
+    const getList = vi.fn().mockRejectedValue(forbidden)
+    mockPb({ getList })
+    const { wrapper } = makeWrapper('user1')
+    const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+    await expect(result.current.getHistory(20)).rejects.toThrow('403')
+    expect(getList).toHaveBeenCalledTimes(1)
+  })
 })

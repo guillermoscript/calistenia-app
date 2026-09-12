@@ -6,6 +6,8 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import Confetti from '../ui/Confetti'
 import { Button } from '../ui/button'
 import PostWorkoutActions from '../PostWorkoutActions'
+import PushPermissionCard from './PushPermissionCard'
+import { useSessionIdentity } from '../../hooks/useSessionIdentity'
 import { cn } from '../../lib/utils'
 
 interface CelebrateScreenProps {
@@ -15,6 +17,7 @@ interface CelebrateScreenProps {
   durationMin: number
   exercises: Exercise[]
   timings: ExerciseTiming[]
+  totalSessions: number
   onDone: () => void
   onRepeat?: () => void
   onNavigateAway: (path: string) => void
@@ -28,10 +31,12 @@ export default function CelebrateScreen({
   durationMin,
   exercises,
   timings,
+  totalSessions,
   onDone,
   onRepeat,
   onNavigateAway,
 }: CelebrateScreenProps) {
+  const { userId } = useSessionIdentity()
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
   const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings), [timings])
 
@@ -139,6 +144,8 @@ export default function CelebrateScreen({
         onRepeat={onRepeat}
         onNavigateAway={onNavigateAway}
       />
+
+      <PushPermissionCard userId={userId} workoutKey={workoutKey} totalSessions={totalSessions} />
 
       <div style={{ animation: 'fadeUp 0.5s 0.7s ease-out both' }} className="flex flex-col items-center gap-3">
         <Button

@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Category definitions ──────────────────────────────────────────────────────
 
@@ -54,6 +55,14 @@ export default function LeaderboardScreen() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Desacoplado de `load` igual que en web (#578): una vista por visita, no por
+  // render. Existía solo en web hasta el #636 §5.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.leaderboardViewed, {
+      surface: 'leaderboard', source: 'leaderboard_screen',
+    })
+  }, [])
 
   const catDef = CATEGORIES.find((c) => c.id === category)
 

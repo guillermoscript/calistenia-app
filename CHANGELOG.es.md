@@ -9,6 +9,104 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.13.1] - 2026-09-08
+
+_Llega también todo lo de la versión anterior: tu primer entreno nada más entrar, recordatorios a tu hora y las notificaciones arregladas. Y como novedad, tus gráficas dejan de duplicar ejercicios._
+
+### Añadido
+
+- **Cuéntanos cómo llegaste** — En la pantalla de bienvenida puedes decir por dónde conociste la app. Es un toque y se puede saltar.
+
+### Corregido
+
+- **Un ejercicio, una sola línea** — En las gráficas y en tus estadísticas un mismo ejercicio podía salir dos veces según cómo se hubiera guardado la serie. Ahora se agrupan por el ejercicio real.
+- **Catálogo sin huecos** — Algunos ejercicios de los programas no tenían ficha en el catálogo y aparecían con su nombre interno. Rellenados.
+
+## [1.13.0] - 2026-09-03
+
+_El onboarding termina con tu primer entreno corto y un recordatorio a tu hora. Además: las notificaciones de seguidores, reacciones y comentarios vuelven a llegar, y los programas se ven en español y con sus cronómetros._
+
+### Añadido
+
+- **Tu primer entreno, nada más entrar** — Al terminar el onboarding arrancas una sesión corta de 4 ejercicios en vez de caer en la pantalla de inicio. Al completarla, la app te pregunta si quieres recibir notificaciones.
+- **Recordatorio desde el primer día** — Eliges tus días y tu hora durante el onboarding y la app te avisa a esa hora. Si pasas 24 o 72 horas sin entrenar, recibes un aviso; al tocarlo se abre el entreno de hoy.
+
+### Corregido
+
+- **Las notificaciones vuelven a llegar** — Los avisos de nuevos seguidores, reacciones, comentarios, logros y racha no llegaban al móvil. Arreglado en el servidor.
+- **Programas en español y con cronómetros** — Algunos ejercicios salían en inglés o con guiones bajos, los ejercicios por tiempo no mostraban su cronómetro y al copiar un programa el nombre quedaba roto. Todo corregido.
+
+## [1.12.3] - 2026-08-31
+
+_Health Connect ahora solo lee sueño, peso y grasa corporal. Además: el historial de cardio vuelve a verse, los programas oficiales traen sus instrucciones y nutrición ya no pregunta dos veces._
+
+### Corregido
+
+- **Menos datos de salud** — La app deja de leer pasos y frecuencia cardíaca de Health Connect: solo pide sueño, peso y grasa corporal, todo de solo lectura. La FC de tus entrenos antiguos se conserva.
+- **Historial de cardio** — El historial salía en blanco y la lista ocupaba toda la pantalla de Cardio. Arreglado.
+- **Programas con instrucciones** — Los 15 programas oficiales se revisaron a fondo: ejercicios, dosis e instrucciones que iban vacías ahora están completas.
+- **Nutrición sin repetir preguntas** — Al configurar tus objetivos de nutrición, lo que ya contaste en el onboarding aparece pre-rellenado.
+
+## [1.12.2] - 2026-08-27
+
+_Arreglo urgente: la 1.12.1 no arrancaba en Android. Incluye todo lo de la 1.12.1 (Health Connect con menos datos, notificación del entreno y Android 16)._
+
+### Corregido
+
+- **La app vuelve a arrancar** — Una actualización de la librería de fechas dejaba la fecha de hoy inválida en Android y el cálculo de la racha tumbaba la app al abrirla. Se fija la versión buena y la racha ya no puede romper el arranque.
+
+## [1.12.1] - 2026-08-27
+
+_Actualización de cumplimiento con Google Play: menos datos de salud, la notificación del entreno con el tipo de servicio correcto y soporte de Android 16._
+
+### Corregido
+
+- **Health Connect pide solo lo que muestra** — La app ya no lee calorías activas ni frecuencia cardíaca en reposo. Quedan pasos, frecuencia cardíaca de tus entrenos, sueño, peso y grasa corporal. Si ya estabas conectado, vuelve a conectar desde Reloj y salud para que el diálogo refleje los 5 tipos.
+- **Notificación del entreno y Android 16** — El cronómetro del entreno en curso corre ahora como servicio de salud, el tipo que Android reserva para apps de ejercicio, y la app apunta a Android 16.
+
+## [1.12.0] - 2026-08-26
+
+_La versión de los programas de entrenamiento: los creas y los editas de principio a fin, los compartes o los remezclas con crédito al autor, y la app te dice en qué semana vas y cuántas repeticiones tocan hoy._
+
+### Añadido
+
+- **Crea y edita programas completos desde el móvil** — El editor cubre el programa entero: fases, días, ejercicios y sus campos de catálogo, con validación en los pasos 3 y 4 para que no publiques un programa a medias. Puedes copiar un día o una fase entera, subir la portada y una imagen o vídeo por ejercicio, y desde la ficha editar, duplicar, abandonar o borrar el programa.
+- **Progresión automática: la app te dice cuánto toca hoy** — Cada ejercicio del programa mira lo que hiciste la última vez y te sugiere las repeticiones o los segundos de hoy. Cuando te quedas corto con una variante, te propone la siguiente para seguir subiendo sin tener que llevar la cuenta tú.
+- **Sabes en qué semana vas y en qué fase estás** — El programa muestra «semana X de Y» y cambia de fase solo según avanzas, sin que tengas que tocar ningún ajuste. El progreso se calcula de lo que realmente has entrenado.
+- **Comparte tus programas y remezcla los de otros** — Cada programa elige si es privado, accesible con enlace o público, y el enlace abre una página que se ve sin cuenta. Si partes del programa de alguien, la copia lleva el crédito «basado en X de @autor» y cada programa enseña cuánta gente lo sigue.
+- **Estadísticas de entrenamiento** — Una vista nueva con los músculos que más trabajas, tus ejercicios más frecuentes, tus récords personales y la tendencia de las últimas semanas.
+
+### Corregido
+
+- **Los días de circuito por fin funcionan** — Un día de tipo circuito arranca un circuito de verdad y, al terminarlo, marca el día como hecho y cuenta para el hito del programa — antes se quedaba bloqueado para siempre. Además, si el autor borra un programa al que estabas inscrito, ahora te avisamos en vez de dejarte con una inscripción muerta.
+
+## [1.11.1] - 2026-08-23
+
+_El historial de cardio estrena filtros por tipo, abre el detalle desde la propia fila y trae buscador de competencias. Además, la app ahora solo pide a Health Connect los datos que de verdad usa._
+
+### Añadido
+
+- **Historial de cardio con filtros y detalle directo** — Puedes filtrar el historial por tipo de sesión y abrir el detalle tocando la fila, sin pasos intermedios. Se añade además un buscador para encontrar competencias.
+
+### Corregido
+
+- **Health Connect pide menos datos tuyos** — La app pedía doce tipos de datos de salud y varios no se usaban para nada. Ahora solo pide siete, todos con una pantalla que te los enseña: pasos, calorías activas, frecuencia cardíaca, FC en reposo, sueño, peso y grasa corporal. Como contrapartida, desaparecen las métricas de VFC y VO₂ máx de «Reloj y salud». Si ya tenías el reloj conectado, revoca y vuelve a conceder los permisos en Health Connect para que se aplique el recorte.
+
+## [1.11.0] - 2026-08-23
+
+_El muro cuenta ahora todo lo que haces —sesiones libres, cardio, circuitos, retos, carreras y batallas—, el perfil estrena carné de atleta con tus cifras y tus marcas, y puedes poner tu cuenta en privado y aprobar quién te sigue._
+
+### Añadido
+
+- **El muro cuenta toda tu actividad** — Hasta ahora el muro solo enseñaba entrenos de programa, y las sesiones libres salían sin título. Ahora aparecen seis tipos de actividad: sesión de programa, sesión libre, cardio, circuito, reto, carrera y batalla. De paso, al bajar por el muro ya no se repiten publicaciones.
+- **Perfil con carné de atleta** — El perfil empieza por lo tuyo: nivel, semana del programa, tus cifras y tus skills. Los ajustes bajan al final, en una lista con una fila por tema que se despliega ahí mismo para editar sin cambiar de pantalla.
+- **Cuentas privadas con aprobación** — Activa «Cuenta privada» y quien quiera seguirte tendrá que solicitarlo: apruebas o rechazas desde notificaciones. El botón pasa a SOLICITAR / SOLICITADO, los perfiles privados muestran un candado en vez de ceros, y en los rankings de retos las cuentas privadas se ocultan a los demás sin descuadrar el número de participantes.
+
+### Corregido
+
+- **Compartir una sesión y verla entera** — El enlace para compartir una sesión le enseñaba a quien lo recibía su propio progreso, no el tuyo: arreglado. Y el detalle de una sesión sin series ya lista los ejercicios cronometrados en vez de decir solo «sin series registradas».
+- **El ranking deja de recargarse solo** — La pantalla de ranking se recargaba una y otra vez en segundo plano, gastando datos y batería. Ahora carga una vez, y las estadísticas de uso reflejan lo que de verdad haces.
+
 ## [1.10.2] - 2026-08-22
 
 _Los programas oficiales vuelven a tener sus días de entrenamiento: la semana ya no aparece como solo descanso. Además, mejoras internas de estabilidad._
@@ -319,7 +417,15 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...HEAD
+[1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
+[1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
+[1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3
+[1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2
+[1.12.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...mobile-v1.12.1
+[1.12.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...mobile-v1.12.0
+[1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1
+[1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
 [1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2
 [1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0

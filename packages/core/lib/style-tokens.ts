@@ -13,6 +13,27 @@ export const PHASE_COLORS: Record<number, { border: string; text: string; bg: st
   4: { border: 'border-l-amber-400', text: 'text-amber-400', bg: 'bg-amber-400/10', badge: 'border-amber-400/30 text-amber-400 bg-amber-400/10' },
 }
 
+// ── Feed activity accents ───────────────────────────────────────────────────
+/**
+ * Color por tipo de actividad del muro. Las sesiones de programa siguen usando
+ * `PHASE_COLORS[phase]`; esto cubre el resto, incluida la sesión libre (que no
+ * tiene fase y antes caía al lima del programa, indistinguible de él).
+ *
+ * Los tonos coinciden con los que ya usan el calendario y el historial —
+ * violeta para libre, naranja para circuito, azul para cardio— para que un
+ * mismo entreno no cambie de color según la pantalla.
+ */
+export type FeedAccent = 'free' | 'cardio' | 'circuit' | 'challenge' | 'race' | 'battle'
+
+export const FEED_ACCENTS: Record<FeedAccent, { border: string; text: string; bg: string }> = {
+  free:      { border: 'border-l-violet-400',  text: 'text-violet-400',  bg: 'bg-violet-400/10' },
+  cardio:    { border: 'border-l-sky-500',     text: 'text-sky-500',     bg: 'bg-sky-500/10' },
+  circuit:   { border: 'border-l-orange-500',  text: 'text-orange-500',  bg: 'bg-orange-500/10' },
+  challenge: { border: 'border-l-amber-400',   text: 'text-amber-400',   bg: 'bg-amber-400/10' },
+  race:      { border: 'border-l-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+  battle:    { border: 'border-l-pink-500',    text: 'text-pink-500',    bg: 'bg-pink-500/10' },
+}
+
 // ── Day type colors (workout categories) ────────────────────────────────────
 export const DAY_TYPE_COLORS: Record<DayType, { badge: string; border: string }> = {
   push:   { badge: 'border-lime/60 text-lime bg-lime/5',            border: 'border-l-lime' },

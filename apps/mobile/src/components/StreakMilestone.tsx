@@ -20,6 +20,7 @@ import {
   markMilestoneShown,
 } from '@/lib/streak-milestones'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export interface StreakMilestoneProps {
   streak: number
@@ -79,9 +80,17 @@ export default function StreakMilestone({
   }, [userId, streak, onDismiss, scale, opacity])
 
   const handleDismiss = useCallback(() => {
+    // En el cierre y no al mostrarlo, igual que web (#636 §5): así el evento
+    // mide que el usuario VIO el hito, no que el componente se montó. `days` es
+    // el hito alcanzado, no la racha actual, que puede ser mayor.
+    if (milestone) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
+        surface: 'streak', source: 'streak_card', days: milestone,
+      })
+    }
     setPhase('hidden')
     onDismiss()
-  }, [onDismiss])
+  }, [milestone, onDismiss])
 
   const handleShare = useCallback(async () => {
     if (!milestone) return

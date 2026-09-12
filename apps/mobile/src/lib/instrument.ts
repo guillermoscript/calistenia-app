@@ -14,6 +14,29 @@ Sentry.init({
   environment: __DEV__ ? 'development' : 'production',
   sendDefaultPii: false,
   tracesSampleRate: 0.2,
+  // Session Replay: 10 % de las sesiones y el 100 % de las que acaban en error.
+  // Se dejan los valores por defecto de enmascarado (texto, imágenes y vectores),
+  // porque la app muestra fotos de progreso, comidas y datos de salud.
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  integrations: [
+    Sentry.mobileReplayIntegration({
+      maskAllText: true,
+      maskAllImages: true,
+      maskAllVectors: true,
+    }),
+  ],
+  // Ruido conocido que no es accionable desde la app:
+  ignoreErrors: [
+    // Red del usuario, no bugs nuestros — fetch abortado al ir la app a
+    // background y DNS sin resolver por estar offline (CALISTENIA-APP-2/8).
+    'Fetch request has been canceled',
+    'Unable to resolve host',
+    // El install referrer de Play lo consulta una dependencia (atribución) y
+    // falla en dispositivos sin Play Store o con versiones viejas
+    // (CALISTENIA-APP-X/M/A/R). No hay nada que arreglar en nuestro código.
+    /install(ation)? referrer/i,
+  ],
 })
 
 export { Sentry }

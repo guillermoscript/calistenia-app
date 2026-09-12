@@ -51,7 +51,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Frog Pump", "en": "Frog Pump" },
+          "name": { "es": "Bombeo de Rana", "en": "Frog Pump" },
           "slug": "frog-pump",
           "description": { "es": "Puente con plantas de los pies juntas y rodillas abiertas. Aísla los glúteos minimizando la participación de isquiotibiales.", "en": "Bridge with soles of feet together and knees open. Isolates glutes by minimizing hamstring involvement." },
           "muscles": { "es": "Glúteos, aductores", "en": "Glutes, adductors" },
@@ -99,7 +99,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Glute Bridge Elevado (pies en banco)", "en": "Elevated Glute Bridge (feet on bench)" },
+          "name": { "es": "Puente de Glúteo Elevado (pies en banco)", "en": "Elevated Glute Bridge (feet on bench)" },
           "slug": "elevated-glute-bridge",
           "description": { "es": "Puente con pies apoyados en un banco para mayor rango de movimiento. Aumenta la activación de glúteos e isquiotibiales.", "en": "Bridge with feet on a bench for greater range of motion. Increases glute and hamstring activation." },
           "muscles": { "es": "Glúteos, isquiotibiales", "en": "Glutes, hamstrings" },
@@ -144,7 +144,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Clamshell", "en": "Clamshell" },
+          "name": { "es": "Almeja", "en": "Clamshell" },
           "slug": "clamshell",
           "description": { "es": "Tumbado de lado con rodillas flexionadas, abre la rodilla superior como una almeja. Activa el glúteo medio y los rotadores externos.", "en": "Lying on your side with knees bent, open the top knee like a clamshell. Activates glute medius and external rotators." },
           "muscles": { "es": "Glúteo medio, rotadores de cadera", "en": "Glute medius, hip rotators" },
@@ -160,7 +160,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Fire Hydrant", "en": "Fire Hydrant" },
+          "name": { "es": "Patada Lateral en Cuadrupedia", "en": "Fire Hydrant" },
           "slug": "fire-hydrant",
           "description": { "es": "En cuadrupedia, eleva la rodilla hacia el lado manteniendo 90 grados. Trabaja la abducción de cadera y el glúteo medio.", "en": "On all fours, lift the knee out to the side keeping 90 degrees. Works hip abduction and glute medius." },
           "muscles": { "es": "Glúteo medio, cadera", "en": "Glute medius, hip" },
@@ -176,7 +176,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Donkey Kick", "en": "Donkey Kick" },
+          "name": { "es": "Patada de Burro", "en": "Donkey Kick" },
           "slug": "donkey-kick",
           "description": { "es": "En cuadrupedia, extiende una pierna hacia atrás y arriba con la rodilla flexionada. Aísla el glúteo mayor en extensión de cadera.", "en": "On all fours, extend one leg back and up with knee bent. Isolates the glute max in hip extension." },
           "muscles": { "es": "Glúteos", "en": "Glutes" },
@@ -336,7 +336,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Back Extension (en banco)", "en": "Back Extension (on bench)" },
+          "name": { "es": "Extensión Lumbar (en banco)", "en": "Back Extension (on bench)" },
           "slug": "back-extension",
           "description": { "es": "Extensión de espalda boca abajo sobre un banco con el torso colgando. Fortalece los erectores con mayor rango de movimiento.", "en": "Back extension face down on a bench with torso hanging off. Strengthens erectors with a greater range of motion." },
           "muscles": { "es": "Erectores, glúteos", "en": "Erectors, glutes" },

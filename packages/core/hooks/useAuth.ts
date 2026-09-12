@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
-import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, analyticsPlatform, op, trackCanonicalEvent } from '../lib/analytics'
 import { syncUserTimezone } from '../lib/timezone-sync'
 import { clearUserStorage } from '../lib/storage-keys'
 import { qk } from '../lib/query-keys'
@@ -47,7 +47,15 @@ export async function completeNewUserRegistration(
   user: AuthUser,
   method: 'email' | 'google',
 ): Promise<void> {
-  op.identify({ profileId: user.id, firstName: user.display_name || user.name || '', email: user.email, properties: { tier: 'free', role: 'user' } })
+  op.identify({
+    profileId: user.id,
+    firstName: user.display_name || user.name || '',
+    email: user.email,
+    // `platform` lo mandaba solo el móvil, así que todo perfil identificado
+    // desde web quedaba con la propiedad vacía y los dos proyectos de OpenPanel
+    // no se podían cruzar por ella (#636 §5).
+    properties: { tier: 'free', role: 'user', platform: analyticsPlatform() },
+  })
   op.track('signup_completed', { method })
 
   const displayName = user.display_name || user.name || user.email?.split('@')[0] || 'USER'
@@ -132,7 +140,11 @@ export function identifyUser(u: { id: string; display_name?: unknown; name?: unk
     profileId: u.id,
     firstName: String(u.display_name || u.name || ''),
     email: u.email as string | undefined,
-    properties: { tier: (u.tier as string) || 'free', role: (u.role as string) || 'user' },
+    properties: {
+      tier: (u.tier as string) || 'free',
+      role: (u.role as string) || 'user',
+      platform: analyticsPlatform(),
+    },
   })
 }
 /** Olvida el último id identificado (logout y tests). */
@@ -241,6 +253,13 @@ export function useAuth(): UseAuthReturn {
   const signInWithGoogle = useCallback(async () => {
     setAuthError(null)
     setIsLoading(true)
+    // #636 §4: solo existían los `*_completed`, así que la parte de ARRIBA del
+    // embudo de registro estaba a ciegas: no se sabía cuánta gente lo intenta
+    // ni cuánta se queda por el camino. El mensaje del error NO viaja: puede
+    // llevar el correo dentro (§6).
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginStarted, {
+      surface: 'auth', source: 'auth_screen', method: 'google',
+    })
     try {
       const result = await loginWithOAuth2('google')
       // If this is a newly created user (no referral_code yet), trigger post-registration
@@ -252,6 +271,10 @@ export function useAuth(): UseAuthReturn {
       }
     } catch (err: any) {
       if (err?.isAbort) return // user closed popup
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginFailed, {
+        surface: 'auth', source: 'auth_screen', method: 'google',
+        status: err?.status ?? 0,
+      })
       setAuthError(err?.message || i18n.t('auth.googleError'))
     } finally {
       setIsLoading(false)
@@ -262,11 +285,18 @@ export function useAuth(): UseAuthReturn {
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     setAuthError(null)
     setIsLoading(true)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginStarted, {
+      surface: 'auth', source: 'auth_screen', method: 'email',
+    })
     try {
       await pb.collection('users').authWithPassword(email, password)
       discardCapturedReferralCode()
       op.track('login_completed', { method: 'email' })
     } catch (err: any) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginFailed, {
+        surface: 'auth', source: 'auth_screen', method: 'email',
+        status: err?.status ?? 0,
+      })
       setAuthError(err?.message || i18n.t('auth.loginError'))
     } finally {
       setIsLoading(false)
@@ -277,6 +307,9 @@ export function useAuth(): UseAuthReturn {
   const signUpWithEmail = useCallback(async (email: string, password: string, displayName: string) => {
     setAuthError(null)
     setIsLoading(true)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.signupStarted, {
+      surface: 'auth', source: 'auth_screen', method: 'email',
+    })
     try {
       await pb.collection('users').create({
         email,
@@ -290,6 +323,10 @@ export function useAuth(): UseAuthReturn {
         registrationMethod.current = 'email'
       }
     } catch (err: any) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.signupFailed, {
+        surface: 'auth', source: 'auth_screen', method: 'email',
+        status: err?.status ?? 0,
+      })
       setAuthError(err?.message || i18n.t('auth.signupError'))
     } finally {
       setIsLoading(false)

@@ -8,6 +8,8 @@ import { ShareButton } from '../components/ShareButton'
 import { shareRoutine } from '../lib/share'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { useRoutineView } from '@calistenia/core/hooks/useRoutineView'
+import { resolveExerciseNameField } from '@calistenia/core/lib/exercise-resolver'
+import { inferTimerFromReps } from '@calistenia/core/lib/exercise-timer-inference'
 
 export default function RoutineViewPage() {
   const { t } = useTranslation()
@@ -136,13 +138,24 @@ export default function RoutineViewPage() {
                         // `muscles` es un campo traducible: localizar ANTES de
                         // partir por comas, o `.split` explota en runtime.
                         const muscles = l(ex.muscles).split(',').map(m => m.trim()).filter(Boolean)
+                        // Un `exercise_name` que es un slug del catálogo
+                        // («sphinx_pushup») se pintaba crudo aquí, mientras la
+                        // ficha del programa ya lo resolvía (#690).
+                        const name = l(resolveExerciseNameField(ex.exercise_name, ex.exercise_id))
+                        // Misma deducción que en la sesión: una fila con
+                        // `is_timer: false` cuyo `reps` es una duración pura
+                        // enseñaba «3x45s» en vez de los 45 s que dura.
+                        const inferredTimer = ex.is_timer ? null : inferTimerFromReps(ex.reps)
+                        const timerSeconds = ex.is_timer
+                          ? ex.timer_seconds
+                          : (ex.timer_seconds || inferredTimer?.timerSeconds)
                         return (
                         <div
                           key={ex.id}
                           className="flex items-start justify-between gap-2 py-1.5 border-b border-border/50 last:border-0"
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">{l(ex.exercise_name)}</div>
+                            <div className="text-sm font-medium truncate">{name}</div>
                             {muscles.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {muscles.map((muscle) => (
@@ -158,8 +171,8 @@ export default function RoutineViewPage() {
                           </div>
                           <div className="text-right shrink-0">
                             <div className={cn('text-sm font-medium', 'text-[hsl(var(--lime))]')}>
-                              {ex.is_timer
-                                ? `${ex.timer_seconds}s`
+                              {(ex.is_timer || inferredTimer) && timerSeconds
+                                ? `${timerSeconds}s`
                                 : `${ex.sets}x${ex.reps}`
                               }
                             </div>

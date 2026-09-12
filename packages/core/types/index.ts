@@ -17,6 +17,33 @@ export type ExerciseStatus = 'official' | 'private' | 'promoted'
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
 
+/** Campos de `Exercise` sobre los que una rampa semanal puede actuar (#755). */
+export const PROGRESSION_FIELDS = ['sets', 'reps', 'timerSeconds', 'rest'] as const
+
+export type ProgressionField = (typeof PROGRESSION_FIELDS)[number]
+
+/**
+ * Cómo cambia UN campo de un ejercicio a lo largo de las semanas de su fase
+ * (#755). Dos formas, excluyentes: `step` (lineal, acotada por `min`/`max`) o
+ * `values` (un valor por semana, índice 0 = primera semana de la fase). Lo
+ * aplica `lib/weeklyProgression.ts`, que es donde está documentada la
+ * semántica completa.
+ */
+export interface WeeklyProgression {
+  field: ProgressionField
+  /** Delta por semana. Excluyente con `values`. */
+  step?: number
+  /** Valor por semana; índice 0 = primera semana de la fase. Excluyente con `step`. */
+  values?: readonly (number | string)[]
+  /** Suelo de la forma lineal (para `step` negativo). */
+  min?: number
+  /** Techo de la forma lineal. */
+  max?: number
+}
+
+/** Una rampa o varias sobre el mismo ejercicio, nunca dos sobre el mismo campo. */
+export type WeeklyProgressionSpec = WeeklyProgression | readonly WeeklyProgression[]
+
 export interface ExerciseTempo {
   /** Lowering phase duration in seconds (e.g. eccentric: 5 = "baja 5s") */
   eccentric?: number
@@ -54,6 +81,13 @@ export interface Exercise {
   section?: 'warmup' | 'main' | 'cooldown'
   stretchType?: 'dynamic' | 'static'
   tempo?: ExerciseTempo
+  /**
+   * Cómo cambia este ejercicio a lo largo de las semanas de su fase (#755).
+   * `program_exercises.weekly_progression`. Lo aplica `applyWeeklyProgression`
+   * (`lib/weeklyProgression.ts`); sin el campo, el ejercicio se comporta
+   * exactamente como antes de #755.
+   */
+  weeklyProgression?: WeeklyProgressionSpec
 }
 
 export interface Workout {
@@ -61,6 +95,12 @@ export interface Workout {
   day: DayId
   title: string
   exercises: Exercise[]
+  /**
+   * `true` cuando `applyDeload` (#716) ya ha reducido las series: la semana en
+   * curso es la última de una fase con `deload_last_week`. Las pantallas lo
+   * usan para el badge «Semana de descarga»; no lo pone ningún dato de PB.
+   */
+  deload?: boolean
 }
 
 /** Keyed as `p${phase}_${day}`, e.g. "p1_lun" */
@@ -73,6 +113,11 @@ export interface Phase {
   weeks: string
   color: string
   bg: string
+  /**
+   * `program_phases.deload_last_week` (#716): la última semana del rango
+   * `weeks` es de descarga. Ausente = `false`.
+   */
+  deloadLastWeek?: boolean
 }
 
 export interface CardioDayConfig {
@@ -299,6 +344,16 @@ export type ProgramGoalType = 'fat_loss' | 'muscle_gain' | 'maintain' | 'skill'
 export type ProgramSkill = 'pull_up' | 'handstand' | 'muscle_up' | 'planche'
 export type ProgramIntensity = 'light' | 'moderate' | 'intense'
 
+/**
+ * Nivel de exposición elegido por el autor (#603).
+ *
+ * `link` está en el enum y en el selector, pero en la API de colección se
+ * comporta como `private`: las reglas de lectura solo abren `public`. Lo hace
+ * alcanzable la landing anónima de #604, que sirve el programa desde
+ * `pb_hooks` con `$app`.
+ */
+export type ProgramVisibility = 'private' | 'link' | 'public'
+
 export interface ProgramMeta {
   id: string
   name: string
@@ -308,6 +363,12 @@ export interface ProgramMeta {
   created_by_name?: string
   is_official?: boolean
   is_featured?: boolean
+  /** Variante «Mujer ·» de su celda nivel × objetivo (#717): «PARA TI» la prefiere si `sex === 'female'`. */
+  for_women?: boolean
+  /** Desempate explícito del catálogo curado (#717); 0 o ausente = sin orden. */
+  sort_order?: number
+  /** Vacío en filas creadas por clientes anteriores a #603: se trata como `private`. */
+  visibility?: ProgramVisibility
   difficulty?: ProgramDifficulty
   cover_image?: string
   /** Resolved cover image URL (built from PB file service) */
@@ -320,6 +381,24 @@ export interface ProgramMeta {
   days_per_week?: number
   equipment_required?: string[]
   contraindications?: string[]
+  /**
+   * «Cómo seguir este programa» (#618) — ya localizado. `undefined` significa
+   * «no se ha cargado», que no es lo mismo que `''` («el autor no escribió
+   * nada»): el catálogo de `usePrograms` no trae este campo, así que la ficha
+   * lo pide aparte.
+   */
+  instructions?: string
+  /**
+   * Id del programa del que se duplicó este (#620). Vacío en los originales, en
+   * los duplicados anteriores a #620 —el vínculo no se guardaba— y en aquellos
+   * cuyo original se borró: `forked_from` va SIN cascade a propósito, así que la
+   * copia sobrevive y PocketBase le vacía la relación.
+   */
+  forked_from?: string
+  /** Nombre YA LOCALIZADO del programa original. El campo en PB es `json {es,en}`. */
+  forked_from_name?: string
+  /** Autor del original, por `authorDisplayName` (`display_name || name || email`). */
+  forked_from_author?: string
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────
@@ -621,7 +700,7 @@ export interface CommentRecord {
 
 // ─── Notifications ──────────────────────────────────────────────────────────
 
-export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined'
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined' | 'inactivity_24h' | 'inactivity_72h'
 
 export interface NotificationRecord {
   id: string
@@ -800,3 +879,10 @@ export type {
   SavedRecipe,
   ConsumptionMatch, MatchConsumptionResult,
 } from './pantry'
+
+// ─── Feed de actividad ──────────────────────────────────────────────────────
+export { FEED_ITEM_TYPES } from './feed'
+export type {
+  FeedItem, FeedItemType,
+  FeedCardioMeta, FeedCircuitMeta, FeedChallengeMeta, FeedRaceMeta, FeedBattleMeta,
+} from './feed'

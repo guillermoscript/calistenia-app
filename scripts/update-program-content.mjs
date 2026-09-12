@@ -23,6 +23,7 @@ import { readFileSync, readdirSync } from "fs"
 import { resolve, dirname, basename } from "path"
 import { fileURLToPath } from "url"
 import { normalizeProgram, DAY_IDS } from "./normalize-program-days.mjs"
+import { normalizePriority, resolveSection } from "./lib/program-exercise-fields.mjs"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROGRAMS_DIR = resolve(__dirname, "../programs")
@@ -217,11 +218,11 @@ async function main() {
               muscles: i18n(ex.muscles || ""),
               note: i18n(ex.note || ""),
               youtube: ex.youtube || "",
-              priority: ex.priority || "primary",
+              priority: normalizePriority(ex.priority, ex.name?.es || ex.name),
               is_timer: ex.is_timer || false,
               timer_seconds: ex.timer_seconds || 0,
               sort_order: ex.sort_order,
-              section: ex.priority === "warmup" ? "warmup" : ex.priority === "cooldown" ? "cooldown" : "main",
+              section: resolveSection(ex),
             }),
           })
           totalExercises++

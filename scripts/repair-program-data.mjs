@@ -19,6 +19,7 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { normalizePriority, resolveSection } from "./lib/program-exercise-fields.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -88,12 +89,19 @@ async function repairIntermedio() {
   // Find the program (might have empty name or partial name)
   const programs = await api("/api/collections/programs/records?perPage=200", { headers: authH() });
 
-  // Match by: known ID, or name containing 'Intermedio'/'Balance', or first official program with empty name
+  // Se busca por id conocido y, si no, por el nombre EXACTO.
+  //
+  // El fallback era `n.includes("Intermedio")`, y este script BORRA fases,
+  // ejercicios y días del programa que encuentre antes de reescribirlos. Desde
+  // que la migración de siembra (#615) metió «Intermedio · Definición» e
+  // «Intermedio · Hipertrofia», ese `includes` cazaba al primero de ellos: el
+  // script habría vaciado un programa del catálogo y lo habría rellenado con el
+  // contenido de Balance Total, sin decir nada raro por consola.
   let prog = programs.items.find(p => p.id === seedData.program.id);
   if (!prog) {
     prog = programs.items.find(p => {
       const n = typeof p.name === "object" ? (p.name.es || "") : (p.name || "");
-      return n.includes("Intermedio") || n.includes("Balance Total");
+      return n === seedData.program.name;
     });
   }
 
@@ -124,6 +132,8 @@ async function repairIntermedio() {
         is_active: true,
         is_official: true,
         is_featured: true,
+        // Catálogo curado: público explícito (#603).
+        visibility: "public",
       }),
     });
     console.log(`  ✅ Updated program metadata`);
@@ -140,6 +150,8 @@ async function repairIntermedio() {
         is_active: true,
         is_official: true,
         is_featured: true,
+        // Catálogo curado: público explícito (#603).
+        visibility: "public",
       }),
     });
     console.log(`  ✅ Created new program: ${prog.id}`);
@@ -182,11 +194,11 @@ async function repairIntermedio() {
             muscles: i18n(ex.muscles || ""),
             note: i18n(ex.note || ""),
             youtube: ex.youtube || "",
-            priority: ex.priority || "primary",
+            priority: normalizePriority(ex.priority, ex.name?.es || ex.name),
             is_timer: ex.is_timer || false,
             timer_seconds: ex.timer_seconds || 0,
             sort_order: ex.sort_order,
-            section: "main",
+            section: resolveSection(ex),
           }),
         });
       }

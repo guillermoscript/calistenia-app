@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from 'react'
 import { View, FlatList, Pressable, ScrollView, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, BadgeCheck, Dumbbell, Plus, Search, X } from 'lucide-react-native'
@@ -252,6 +253,22 @@ const ProgramRow = memo(function ProgramRow({ program, isActive, onOpen }: {
         isActive ? 'border-lime/40' : 'border-border',
       )}
     >
+      {!!program.cover_image_url && (
+        // shrink-0: en RN el flexShrink por defecto es 0 salvo que el padre
+        // apriete; se deja explícito para que la miniatura no se estruje
+        // cuando el nombre del programa es largo.
+        <View className="size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+          <Image
+            source={{ uri: program.cover_image_url }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            transition={150}
+            cachePolicy="memory-disk"
+            recyclingKey={program.id}
+            accessibilityLabel={program.name}
+          />
+        </View>
+      )}
       <View className="flex-1 gap-0.5">
         <View className="flex-row flex-wrap items-center gap-1.5">
           <Text className="font-sans-medium text-foreground" numberOfLines={1}>{program.name}</Text>

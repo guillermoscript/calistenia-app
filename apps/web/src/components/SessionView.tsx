@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { ExerciseLog, ExerciseTiming, Workout } from '@calistenia/core/types'
 import { ExerciseTimingTracker } from '@calistenia/core/lib/exerciseTiming'
+import { TRAINING_FUNNEL_EVENTS } from '@calistenia/core/lib/session-funnel'
 import {
   buildSteps,
   computeExerciseBoundaries,
@@ -46,6 +47,8 @@ interface SessionViewProps {
   onNavigateAway: (path: string) => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
+  /** Sesiones totales del usuario, para decidir si ofrecer el aviso de push (#694). */
+  totalSessions: number
 }
 
 export default function SessionView({
@@ -58,6 +61,7 @@ export default function SessionView({
   onNavigateAway,
   onExitSession,
   getExerciseLogs,
+  totalSessions,
 }: SessionViewProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -68,6 +72,7 @@ export default function SessionView({
     getRestForExercise,
     setRestForExercise,
     setSectionStartTime,
+    trackFunnelStep,
     skipWarmup,
     skipCooldown,
     skipRemainingCooldown,
@@ -91,7 +96,10 @@ export default function SessionView({
   const { stepIdx, phase, setsCount, transitionType } = state
 
   const [showExit, setShowExit] = useState<boolean>(false)
-  const [prEvent, setPREvent] = useState<PREvent | null>(null)
+  // El nombre viaja junto al evento (como en el SessionView móvil): el PREvent
+  // solo trae el `exerciseId`, que en programas viejos es una clave de slot
+  // («lun_1_9») y no sirve para pintar.
+  const [prEvent, setPREvent] = useState<{ event: PREvent; exerciseName: string; isTimer: boolean } | null>(null)
   const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
   // Espejo en ref de finalTimings para que el guard one-shot y el guardado de
   // la nota nunca lean un valor obsoleto (evita doble finalize / timings vacíos).
@@ -176,20 +184,54 @@ export default function SessionView({
   const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
     if (!currentStep) return
     const pr = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
-    if (pr) setPREvent(pr)
+    if (pr) setPREvent({ event: pr, exerciseName: currentStep.exercise.name, isTimer: !!currentStep.exercise.isTimer })
 
     sounds.playSetComplete()
     sounds.vibrate([80])
     const remaining = steps.length - (stepIdx + 1)
     notif.notifySetComplete(currentStep.exercise.name, currentStep.setNumber, currentStep.totalSets, remaining)
 
+    // El paso del embudo que faltaba (#636 §3): sin él no se puede saber cuánta
+    // gente arranca un entreno y no llega a registrar ni una serie.
+    // `note` NUNCA sale de aquí: es texto libre del usuario (§6).
+    trackFunnelStep(TRAINING_FUNNEL_EVENTS.setLogged, {
+      sets_logged: getProgressSnapshot().setsCount + 1,
+      exercise_id: currentStep.exercise.id,
+      section: currentStep.section,
+      set_number: currentStep.setNumber,
+      set_total: currentStep.totalSets,
+      is_pr: !!pr,
+    })
+    // La última serie de un ejercicio lo da por terminado. Se mira aquí y no en
+    // el reducer porque las cuatro ramas posteriores (nota, transición de
+    // sección, superserie y descanso) llegan a lo mismo por caminos distintos.
+    if (currentStep.setNumber === currentStep.totalSets) {
+      trackFunnelStep(TRAINING_FUNNEL_EVENTS.exerciseCompleted, {
+        sets_logged: getProgressSnapshot().setsCount + 1,
+        exercise_id: currentStep.exercise.id,
+        section: currentStep.section,
+        set_total: currentStep.totalSets,
+        exercise_index: currentExerciseIndex + 1,
+        exercise_total: exerciseBoundaries.length,
+      })
+    }
+
     dispatch({ type: 'log-set' })
-  }, [currentStep, onLogSet, workoutKey, stepIdx, steps.length])
+  }, [currentStep, onLogSet, workoutKey, stepIdx, steps.length, trackFunnelStep, getProgressSnapshot, currentExerciseIndex, exerciseBoundaries.length])
 
   const handleRestDone = useCallback(() => {
     dispatch({ type: 'rest-done' })
     setPREvent(null)
   }, [])
+
+  /** Solo el corte a mano: el descanso que se agota entra por `handleRestDone`. */
+  const handleRestManualSkip = useCallback((secondsRemaining: number) => {
+    trackFunnelStep(TRAINING_FUNNEL_EVENTS.restSkipped, {
+      exercise_id: currentStep?.exercise.id,
+      section: currentStep?.section,
+      seconds_remaining: secondsRemaining,
+    })
+  }, [trackFunnelStep, currentStep])
 
   const handleSectionContinue = useCallback(() => {
     setSectionStartTime(Date.now())
@@ -276,7 +318,14 @@ export default function SessionView({
 
       {phase === 'rest' && (
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {prEvent && <PRCelebration prEvent={prEvent} onDismiss={() => setPREvent(null)} />}
+          {prEvent && (
+            <PRCelebration
+              prEvent={prEvent.event}
+              exerciseName={prEvent.exerciseName}
+              isTimer={prEvent.isTimer}
+              onDismiss={() => setPREvent(null)}
+            />
+          )}
           <ExerciseNavArrows
             hasPrev={hasPrevExercise}
             hasNext={hasNextExercise}
@@ -289,6 +338,7 @@ export default function SessionView({
             exerciseId={currentStep?.exercise.id}
             nextStep={nextStep}
             onSkip={handleRestDone}
+            onManualSkip={handleRestManualSkip}
             savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
             onAdjust={setRestForExercise ? (id, secs) => setRestForExercise(id, secs) : undefined}
           />
@@ -320,6 +370,7 @@ export default function SessionView({
           durationMin={durationMin}
           exercises={workout.exercises}
           timings={finalTimings ?? []}
+          totalSessions={totalSessions}
           onDone={onGoToDashboard}
           onRepeat={onRepeat}
           onNavigateAway={onNavigateAway}

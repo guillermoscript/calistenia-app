@@ -52,7 +52,7 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
           onClick={() => canShowChart && setOpen(o => !o)}
           className={cn('w-full px-4 py-3 flex items-center justify-between text-left transition-colors', canShowChart && 'hover:bg-muted/30')}
         >
-          <div className="font-medium text-sm capitalize">{exerciseName.replace(/_/g, ' ')}</div>
+          <div className="font-medium text-sm">{exerciseName.replace(/_/g, ' ')}</div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground font-mono">
               {t('progress.exerciseChart.sessionCount', { count: chartData.length })}

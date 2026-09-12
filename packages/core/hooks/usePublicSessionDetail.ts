@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { utcToLocalDateStr } from '../lib/dateUtils'
+import { profileDisplayName } from '../lib/public-profile'
 import { qk } from '../lib/query-keys'
 import { buildSessionDetail } from './useSessionDetail'
 import type { SessionDetailResult } from './useSessionDetail'
@@ -160,7 +161,11 @@ export function usePublicSessionDetail(
       const owner: PublicSessionOwner | null = u
         ? {
             id: u.id,
-            displayName: u.display_name || u.email?.split('@')[0] || '?',
+            // `profileDisplayName` y no `display_name || email`: quien se dio de
+            // alta con Google rellena `name`, no `display_name`, y además
+            // users_field_privacy.pb.js (#411) ESCONDE el email pero publica
+            // `name` — sin ese escalón el autor salía como «?».
+            displayName: profileDisplayName(u) || '?',
             avatarUrl: getUserAvatarUrl(u, '200x200'),
           }
         : { id: ownerId, displayName: '?', avatarUrl: null }

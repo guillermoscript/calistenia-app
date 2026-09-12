@@ -26,6 +26,7 @@ CI; se corren a mano al tocar la migración correspondiente.
 ```bash
 node tests/pb_hooks/manual/verify-backfill.mjs         # backfill de user_stats (#412)
 node tests/pb_hooks/manual/verify-expired-backlog.mjs  # cierre en silencio de retos caducados (#515)
+node tests/pb_hooks/manual/verify-exercise-name-repair.mjs  # slugs en exercise_name → nombre del catálogo
 ```
 
 ## Cómo funciona (`run.mjs`)

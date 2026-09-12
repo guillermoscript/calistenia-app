@@ -69,12 +69,19 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       ? pb.filter('user = {:uid} && (program = {:pid} || program = "")', { uid, pid: activeProgramId })
       : pb.filter('user = {:uid}', { uid })
 
-    const [sessionsRes, setsRes, cardioRes] = await Promise.all([
+    const [sessionsRes, setsRes, cardioRes, circuitRes] = await Promise.all([
       // getFullList elimina el límite implícito (500/1000): obtiene todos los registros del usuario
       pb.collection('sessions').getFullList({ filter: sessionFilter, sort: '-completed_at', $autoCancel: false }),
       pb.collection('sets_log').getFullList({ filter: pb.filter('user = {:uid}', { uid }), sort: '-logged_at', $autoCancel: false }),
       // Días de programa cardio: solo necesitamos id/fecha/clave para marcar el día hecho.
       pb.collection('cardio_sessions').getFullList({
+        filter: pb.filter('user = {:uid} && program_day_key != ""', { uid }),
+        sort: '-started_at', fields: 'id,started_at,created,program_day_key,note', $autoCancel: false,
+      }).catch(() => [] as any[]),
+      // Días de programa de circuito (#640): mismos campos que cardio. Sin esta
+      // lectura, `buildProgressMap` no puede marcar el día hecho por mucho que
+      // sepa consumir la fila.
+      pb.collection('circuit_sessions').getFullList({
         filter: pb.filter('user = {:uid} && program_day_key != ""', { uid }),
         sort: '-started_at', fields: 'id,started_at,created,program_day_key,note', $autoCancel: false,
       }).catch(() => [] as any[]),
@@ -91,6 +98,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       [...pending.sessions, ...sessionRows],
       [...pending.sets, ...setRows],
       cardioRes,
+      circuitRes,
     )
 
     lsSetProgress(prog) // sincronizar cache local
@@ -188,9 +196,10 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
     for (const [k, v] of Object.entries(progress)) {
       if (k.startsWith('done_')) {
-        // Los días de cardio de programa (cardioSessionId) marcan el checkmark
-        // pero NO cuentan en stats/racha/calendario (se mantienen solo-fuerza/yoga).
-        if ((v as any)?.cardioSessionId) continue
+        // Los días de cardio (cardioSessionId) y de circuito (circuitSessionId)
+        // de programa marcan el checkmark pero NO cuentan en
+        // stats/racha/calendario (se mantienen solo-fuerza/yoga).
+        if ((v as any)?.cardioSessionId || (v as any)?.circuitSessionId) continue
         // Una clave done_ puede representar varias sesiones (repeticiones del
         // mismo día+workout); contamos por su `count` (ausente = 1).
         const n = (v as any)?.count ?? 1

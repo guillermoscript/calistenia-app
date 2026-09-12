@@ -13,12 +13,24 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { PRIORITY_COLORS, CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from '@calistenia/core/types'
+import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
+import ExerciseThumbnail from '../components/ExerciseThumbnail'
+import ProgramProgressBar from '../components/programs/ProgramProgressBar'
+import AutoProgressToggle from '../components/programs/AutoProgressToggle'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import { resolveExerciseDisplayName } from '@calistenia/core/lib/exercise-resolver'
+import { loadCatalogIndex, getCatalogIndexSync } from '@calistenia/core/lib/catalogIndex'
+import { resolveExerciseId } from '@calistenia/core/lib/resolveExerciseId'
+import { inferTimerFromReps } from '@calistenia/core/lib/exercise-timer-inference'
+import { authorDisplayName } from '@calistenia/core/lib/author-name'
+import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
+import { ProgramRemixCredit, ProgramFollowers } from '../components/programs/ProgramRemixCredit'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +68,23 @@ interface ProgramExercise {
   demoImages?: string[]
   demoVideo?: string
   pbRecordId?: string
+}
+
+/**
+ * Id con el que `/exercises/:id` sabe abrir la ficha, o `null` si no hay ninguno.
+ *
+ * `program_exercises.exercise_id` es o un id del catálogo o una CLAVE DE SLOT
+ * del programa («lun_1_9»), que sólo significa algo dentro de ese programa. La
+ * ficha de ejercicio busca por id exacto en el catálogo, así que enlazar una
+ * clave de slot llevaba a un «ejercicio no encontrado» (#690). Se enlaza el id
+ * ya resuelto —un seed slug («flexiones-clasicas») tampoco abre la ficha tal
+ * cual— y sólo cuando de verdad existe en el catálogo.
+ */
+function catalogLinkId(exerciseId: string): string | null {
+  const index = getCatalogIndexSync()
+  if (!index || !exerciseId) return null
+  const resolved = resolveExerciseId(exerciseId, index)
+  return index.ids.has(resolved) ? resolved : null
 }
 
 const PRIORITY_LABEL_KEY: Record<string, string> = {
@@ -102,6 +131,12 @@ interface ProgramDetailPageProps {
   userId?: string
   userRole?: import('@calistenia/core/types').UserRole
   activeProgram?: ProgramMeta | null
+  /**
+   * Progreso dentro del programa ACTIVO (#616). Llega por prop y no por
+   * contexto porque esta página también se pinta en `/shared/:id`, fuera del
+   * `WorkoutProvider`.
+   */
+  programProgress?: ProgramProgress
   onBack: () => void
   onNavigateToProgram?: (programId: string) => void
   onSelectProgram?: (programId: string) => Promise<boolean>
@@ -119,6 +154,7 @@ export default function ProgramDetailPage({
   userId,
   userRole = 'user',
   activeProgram,
+  programProgress,
   onBack,
   onNavigateToProgram,
   onSelectProgram,
@@ -147,6 +183,12 @@ export default function ProgramDetailPage({
   const isActive = activeProgram?.id === programId
   const isOwn = program?.created_by === userId
   const currentUser = getCurrentUser()
+
+  // Cuánta gente sigue ESTE programa (#620). El array se memoiza porque es la
+  // clave de caché del hook: recrearlo en cada render lo dejaría refetcheando.
+  const statsIds = useMemo(() => (programId ? [programId] : []), [programId])
+  const { statsById } = useProgramStats(statsIds)
+  const followersCount = statsById[programId ?? '']?.followersCount
   const isAdminOrEditor = currentUser?.role === 'admin' || currentUser?.role === 'editor'
 
   // ── Fetch program data ─────────────────────────────────────────────────
@@ -164,13 +206,32 @@ export default function ProgramDetailPage({
 
     try {
       // Fetch program
-      const progRecord = await pb.collection('programs').getOne(programId, { $autoCancel: false })
+      // El `expand` trae el crédito del remix (#620): de qué programa salió esta
+      // copia y quién lo escribió. Son dos saltos de relación que PocketBase
+      // resuelve en esta misma petición.
+      const progRecord = await pb.collection('programs').getOne(programId, {
+        expand: 'forked_from,forked_from.created_by',
+        $autoCancel: false,
+      })
+      const forkedFrom = (progRecord.expand as any)?.forked_from
       const meta: ProgramMeta = {
         id: progRecord.id,
         name: localize(progRecord.name, locale),
         description: localize(progRecord.description, locale),
         duration_weeks: progRecord.duration_weeks,
         created_by: progRecord.created_by || undefined,
+        forked_from: progRecord.forked_from || undefined,
+        // `localize` obligatorio: el nombre es un `json {es,en}` y pintarlo
+        // crudo en la frase daría «Basado en [object Object]».
+        forked_from_name: forkedFrom ? localize(forkedFrom.name, locale) || undefined : undefined,
+        forked_from_author: forkedFrom
+          ? authorDisplayName(forkedFrom.expand?.created_by) || undefined
+          : undefined,
+        // «Cómo seguir este programa» (#618). Se lee del registro crudo, que es
+        // de donde ya salían nombre y descripción; `localize` es obligatorio
+        // porque el campo es un `json` `{ es, en }` y pintarlo tal cual daría
+        // «[object Object]».
+        instructions: localize(progRecord.instructions, locale),
       }
       setProgram(meta)
 
@@ -179,6 +240,10 @@ export default function ProgramDetailPage({
       // De paso las fases dejan de ir en un viaje aparte antes de las otras dos.
       const { phases: phaseItems, exercises: exerciseItems, dayConfigs: dayConfigItems } =
         await fetchProgramDetailRows(programId)
+
+      // El resolutor de nombres es síncrono: sin el índice cargado dejaría
+      // pasar los slugs crudos («sphinx_pushup»). Si falla, se pinta tal cual.
+      await loadCatalogIndex().catch(() => null)
 
       const builtPhases: ProgramPhase[] = phaseItems.map(p => ({
         id: p.phase_number,
@@ -221,6 +286,11 @@ export default function ProgramDetailPage({
 
       exerciseItems.forEach((r: RecordModel) => {
         const key = `p${r.phase_number}_${r.day_id}`
+        // #690: filas sembradas con `is_timer: false` y la duración metida en
+        // el texto de `reps` («30-45 seg»). Aquí sólo cambia el «Timer: Ns» de
+        // la ficha, pero se deduce igual que en la sesión para que las dos
+        // pantallas cuenten lo mismo del mismo ejercicio.
+        const inferredTimer = r.is_timer ? null : inferTimerFromReps(r.reps)
         if (!workoutMap[key]) {
           workoutMap[key] = {
             phase: r.phase_number,
@@ -234,7 +304,9 @@ export default function ProgramDetailPage({
         }
         workoutMap[key].exercises.push({
           id: r.exercise_id,
-          name: localize(r.exercise_name, locale),
+          // Cambia un slug de catálogo en `exercise_name` por el nombre
+          // localizado; el `id` sigue crudo (clave del historial de series).
+          name: resolveExerciseDisplayName(r.exercise_name, r.exercise_id, locale),
           sets: r.sets,
           reps: r.reps,
           rest: r.rest_seconds,
@@ -242,8 +314,10 @@ export default function ProgramDetailPage({
           note: localize(r.note, locale),
           youtube: r.youtube,
           priority: r.priority,
-          isTimer: r.is_timer,
-          timerSeconds: r.timer_seconds,
+          isTimer: r.is_timer || !!inferredTimer,
+          timerSeconds: inferredTimer ? (r.timer_seconds || inferredTimer.timerSeconds) : r.timer_seconds,
+          // Nombres de fichero crudos de PB, no URLs: se pintan vía `ExerciseThumbnail`
+          // / `MediaViewer`, que resuelven por `getExerciseMedia()` (#608).
           demoImages: r.demo_images || [],
           demoVideo: r.demo_video || '',
           pbRecordId: r.id,
@@ -254,13 +328,22 @@ export default function ProgramDetailPage({
       // Fetch last session per workout day (for history context)
       if (userId) {
         try {
-          const sessionsRes = await pb.collection('sessions').getList(1, 200, {
+          // `getFullList` con `fields` recortado, no `getList(1, 200)` (#614).
+          // De cada sesión aquí solo se usan tres columnas, así que antes se
+          // descargaban 200 registros enteros para quedarse con la fecha — y aun
+          // así quien pasara de 200 sesiones en el programa perdía la última fecha
+          // de los días que entrena poco, que son justo los que interesa recordar.
+          // Con `fields` acotado traerlas todas sale más barato que traer 200
+          // completas, y deja de haber un tope que miente.
+          const sessions = await pb.collection('sessions').getFullList({
+            batch: 500,
             filter: pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
             sort: '-completed_at',
+            fields: 'workout_key,completed_at,created',
             $autoCancel: false,
           })
           const sessionMap: Record<string, string> = {}
-          sessionsRes.items.forEach((s: RecordModel) => {
+          sessions.forEach((s: RecordModel) => {
             const key = s.workout_key as string
             if (key && !sessionMap[key]) {
               sessionMap[key] = s.completed_at || s.created
@@ -273,9 +356,11 @@ export default function ProgramDetailPage({
       }
 
       // Fetch related programs (others in catalog)
+      // Solo públicos (#603): esto es una recomendación hacia fuera, no la lista
+      // del autor, así que aquí no entran los borradores propios.
       try {
         const relatedRes = await pb.collection('programs').getList(1, 6, {
-          filter: pb.filter('is_active = true && id != {:pid}', { pid: programId }),
+          filter: pb.filter('is_active = true && visibility = "public" && id != {:pid}', { pid: programId }),
           sort: 'name',
         })
         setRelatedPrograms(relatedRes.items.map(p => ({
@@ -303,6 +388,21 @@ export default function ProgramDetailPage({
   useEffect(() => {
     fetchProgram()
   }, [fetchProgram])
+
+  // #636 §4: `program_selected` no tenía denominador — se sabía cuánta gente
+  // elige un programa, pero no cuánta lo mira y pasa de él.
+  useEffect(() => {
+    if (!program) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programViewed, {
+      surface: 'program', source: isSharedView ? 'shared_link' : 'program_detail',
+      program_id: programId,
+      is_active: isActive,
+      is_own: isOwn,
+      phase_count: phases.length,
+      workout_count: workouts.length,
+    })
+    // Solo por programa: recargar la ficha tras inscribirse no es una vista nueva.
+  }, [programId, !!program]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por programa
 
   // ── Actions ────────────────────────────────────────────────────────────
 
@@ -454,6 +554,49 @@ export default function ProgramDetailPage({
         {program.description && (
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>{program.description}</p>
         )}
+
+        {/* Crédito del remix y prueba social (#620). Las dos piezas se callan
+            solas cuando no hay dato, así que el bloque desaparece entero en un
+            programa original que nadie sigue todavía. */}
+        {(program.forked_from_name || followersCount) && (
+          <div
+            className="flex flex-wrap items-center gap-x-4 gap-y-1.5 max-w-2xl mb-6 motion-safe:animate-fade-in"
+            style={{ animationDelay: '110ms', animationFillMode: 'both' }}
+          >
+            <ProgramRemixCredit program={program} />
+            <ProgramFollowers count={followersCount} />
+          </div>
+        )}
+
+        {/* «Cómo seguir este programa» (#618): las notas del autor sobre cómo
+            llevarlo. Van aparte de la descripción porque esa es la frase corta
+            que se pinta en la tarjeta del catálogo. */}
+        {program.instructions?.trim() && (
+          <section
+            className="max-w-2xl mb-6 rounded-lg border border-border bg-card/40 px-4 py-3.5 motion-safe:animate-fade-in"
+            style={{ animationDelay: '115ms', animationFillMode: 'both' }}
+          >
+            <h2 className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground mb-2">
+              {t('programDetail.howToFollow')}
+            </h2>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+              {program.instructions}
+            </p>
+          </section>
+        )}
+
+        {/* Progreso: solo del programa en el que el usuario está inscrito (#616). */}
+        {programProgress && activeProgram?.id === programId && (
+          <div className="max-w-md mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '125ms', animationFillMode: 'both' }}>
+            <ProgramProgressBar progress={programProgress} />
+          </div>
+        )}
+
+        {/* Opt-in de la progresión automática (#617). Va bajo la misma condición
+            que el progreso —solo el programa en el que uno está inscrito—, y
+            además el componente se calla si no hay inscripción: eso lo protege
+            en la vista pública `/shared/:id`, que se pinta sin WorkoutProvider. */}
+        {activeProgram?.id === programId && <AutoProgressToggle />}
 
         {/* Meta stats */}
         <div className="flex items-center gap-4 flex-wrap mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
@@ -716,17 +859,14 @@ export default function ProgramDetailPage({
                                     idx < workout.exercises.length - 1 && 'border-b border-border/40',
                                   )}
                                 >
-                                  {/* Demo thumbnail */}
-                                  {exercise.demoImages && exercise.demoImages.length > 0 && exercise.demoImages[0] && (
-                                    <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0">
-                                      <img
-                                        src={exercise.demoImages[0]}
-                                        alt={exercise.name}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                      />
-                                    </div>
-                                  )}
+                                  {/* Demo thumbnail — resuelto por `exerciseMedia`; `demoImages`
+                                      son nombres de fichero de PB, no URLs (#608). */}
+                                  <ExerciseThumbnail
+                                    exercise={exercise}
+                                    alt={exercise.name}
+                                    className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0"
+                                    imgClassName="w-full h-full object-cover"
+                                  />
 
                                   {/* Sets x Reps in accent */}
                                   <div className="shrink-0 w-16 text-center">
@@ -738,13 +878,22 @@ export default function ProgramDetailPage({
                                   {/* Exercise info */}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-0.5">
-                                      <Link
-                                        to={`/exercises/${exercise.id}`}
-                                        className="text-[13px] font-semibold text-foreground truncate hover:text-lime transition-colors"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        {exercise.name}
-                                      </Link>
+                                      {(() => {
+                                        const linkId = catalogLinkId(exercise.id)
+                                        return linkId ? (
+                                          <Link
+                                            to={`/exercises/${linkId}`}
+                                            className="text-[13px] font-semibold text-foreground truncate hover:text-lime transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {exercise.name}
+                                          </Link>
+                                        ) : (
+                                          <span className="text-[13px] font-semibold text-foreground truncate">
+                                            {exercise.name}
+                                          </span>
+                                        )
+                                      })()}
                                       {isAdminOrEditor && exercise.pbRecordId && (
                                         <a
                                           href={pbExerciseEditUrl(exercise.pbRecordId)}

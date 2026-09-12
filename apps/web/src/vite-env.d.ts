@@ -11,6 +11,7 @@ interface ImportMeta {
 }
 
 declare const __APP_VERSION__: string
+declare const __SENTRY_RELEASE__: string
 
 interface Window {
   webkitAudioContext?: typeof AudioContext

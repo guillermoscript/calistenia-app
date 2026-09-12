@@ -24,9 +24,13 @@ interface Props {
   onFinish: () => void
   /** Cierra el onboarding y lleva a registrar la primera medición corporal (#227). */
   onFirstMeasurement?: () => void
+  /** Cierra el onboarding directo al primer entreno del día 0 (#694). */
+  onStartFirstWorkout?: () => void
+  /** Minutos estimados del primer entreno, para la promesa del CTA (#694). */
+  firstWorkoutMinutes?: number
 }
 
-export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish, onFirstMeasurement }: Props) {
+export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish, onFirstMeasurement, onStartFirstWorkout, firstWorkoutMinutes }: Props) {
   const { t, i18n } = useTranslation()
   const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
   const [msgIndex, setMsgIndex] = useState(0)
@@ -158,20 +162,38 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
 
       <Button
         variant="limeSolid"
-        onClick={onFinish}
+        onClick={onStartFirstWorkout ?? onFinish}
         className="w-full h-12 font-bebas text-xl tracking-wide"
       >
-        {t('onboarding.startTraining')}
+        {onStartFirstWorkout
+          ? t('onboarding.firstWorkoutCta', { minutes: firstWorkoutMinutes })
+          : t('onboarding.startTraining')}
       </Button>
 
-      {onFirstMeasurement && (
-        <div className="mt-3 text-center">
-          <button
-            onClick={onFirstMeasurement}
-            className="text-[11px] text-muted-foreground tracking-wide underline underline-offset-4 hover:text-lime"
-          >
-            {t('onboarding.firstMeasurementCta')}
-          </button>
+      {onStartFirstWorkout && (
+        <div className="mt-2 text-center text-[11px] text-muted-foreground/70">
+          {t('onboarding.firstWorkoutHint')}
+        </div>
+      )}
+
+      {(onFirstMeasurement || onStartFirstWorkout) && (
+        <div className="mt-3 flex flex-col items-center gap-2">
+          {onStartFirstWorkout && (
+            <button
+              onClick={onFinish}
+              className="text-[11px] text-muted-foreground tracking-wide underline underline-offset-4 hover:text-lime"
+            >
+              {t('onboarding.goHomeInstead')}
+            </button>
+          )}
+          {onFirstMeasurement && (
+            <button
+              onClick={onFirstMeasurement}
+              className="text-[11px] text-muted-foreground tracking-wide underline underline-offset-4 hover:text-lime"
+            >
+              {t('onboarding.firstMeasurementCta')}
+            </button>
+          )}
         </div>
       )}
     </div>

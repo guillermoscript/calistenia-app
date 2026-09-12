@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import type { ProgressMap, ExerciseLog, SessionDone } from '../types'
+import type { ProgressMap, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 import type { TranslatableField } from '../lib/i18n-db'
+import { resolveExerciseNameField } from '../lib/exercise-resolver'
 
 export interface SessionSet {
   setNumber: number
@@ -22,6 +23,13 @@ export interface SessionExercise {
   hasNotes: boolean
   /** Wall-clock seconds spent on this exercise (only on sessions that tracked it) */
   seconds?: number
+  /**
+   * Solo en la PAUTA de un día de programa (`program-day-breakdown`): una
+   * sesión registrada no guarda sección, descanso ni nota del ejercicio.
+   */
+  section?: 'warmup' | 'main' | 'cooldown'
+  restSeconds?: number
+  note?: string
 }
 
 export interface SessionDetailResult {
@@ -36,6 +44,13 @@ export interface SessionDetailResult {
     cooldownSkipped?: boolean
     cooldownDurationSeconds?: number
     durationSeconds?: number
+    /**
+     * Cronometraje por ejercicio. Se propaga porque es lo ÚNICO que cuenta qué
+     * se entrenó en una sesión que no registró ni una serie —el caso normal de
+     * una sesión libre isométrica—, y sin ello el detalle solo podía decir
+     * "sin series registradas".
+     */
+    exerciseTimings?: ExerciseTiming[]
   } | null
   exercises: SessionExercise[]
 }
@@ -71,6 +86,7 @@ export function buildSessionDetail(
     cooldownSkipped: sessionEntry.cooldownSkipped,
     cooldownDurationSeconds: sessionEntry.cooldownDurationSeconds,
     durationSeconds: sessionEntry.durationSeconds,
+    exerciseTimings: sessionEntry.exerciseTimings,
   }
 
   const timingByExercise = new Map(
@@ -119,7 +135,12 @@ export function buildSessionDetail(
 
       return {
         exerciseId,
-        name: catalog?.name || exerciseId,
+        // El catálogo de una sesión AJENA se arma con el `exercise_name` crudo
+        // de `program_exercises`, que a veces es un slug del catálogo
+        // («sphinx_pushup»): sin el resolutor la tabla pintaba esa clave
+        // mientras el dueño veía el nombre bueno (#690). Un nombre escrito por
+        // una persona pasa intacto, y el `exerciseId` no se toca nunca.
+        name: resolveExerciseNameField(catalog?.name, exerciseId) || exerciseId,
         muscles: catalog?.muscles || '',
         sets,
         bestSet,

@@ -4148,7 +4148,7 @@
   {
    "id": "0137",
    "name": {
-    "es": "Body-up",
+    "es": "Fondo en superficie elevada",
     "en": "body-up"
    },
    "body_part": "upper arms",
@@ -4180,7 +4180,7 @@
   {
    "id": "0138",
    "name": {
-    "es": "Bottoms-up",
+    "es": "Crunch inverso",
     "en": "bottoms-up"
    },
    "body_part": "waist",
@@ -15889,7 +15889,7 @@
   {
    "id": "0562",
    "name": {
-    "es": "Landmine 180",
+    "es": "Giro 180 con landmine",
     "en": "landmine 180"
    },
    "body_part": "waist",
@@ -17699,7 +17699,7 @@
   {
    "id": "0641",
    "name": {
-    "es": "Otis up",
+    "es": "Abdominal otis",
     "en": "otis up"
    },
    "body_part": "waist",
@@ -20679,7 +20679,7 @@
   {
    "id": "0777",
    "name": {
-    "es": "Spell caster",
+    "es": "Giro lateral con mancuerna",
     "en": "spell caster"
    },
    "body_part": "waist",
@@ -42474,7 +42474,7 @@
   {
    "id": "3318",
    "name": {
-    "es": "Swing 360",
+    "es": "Círculos de brazos 360",
     "en": "swing 360"
    },
    "body_part": "cardio",

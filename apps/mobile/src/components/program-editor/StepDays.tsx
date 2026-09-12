@@ -15,6 +15,8 @@ import { OptionSheet } from '@/components/ui/option-sheet'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import type { EditorDay, EditorPhase } from '@calistenia/core/hooks/useProgramEditor'
+import { copyDayTargets, copyPhaseTargets } from '@calistenia/core/hooks/useProgramEditor'
+import { CopyToSheet, type CopyTargetOption } from './CopyToSheet'
 import { CARDIO_TYPE_OPTIONS, DAY_IDS, DAY_TYPE_OPTIONS } from './constants'
 
 interface StepDaysProps {
@@ -23,6 +25,8 @@ interface StepDaysProps {
   selectedPhaseTab: number
   onSelectPhaseTab: (index: number) => void
   updateDay: (key: string, data: Partial<EditorDay>) => void
+  copyDay: (fromKey: string, toKey: string) => void
+  copyPhase: (fromIndex: number, toIndex: number) => void
 }
 
 function numOrUndef(v: string): number | undefined {
@@ -30,10 +34,34 @@ function numOrUndef(v: string): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined
 }
 
-export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, updateDay }: StepDaysProps) {
+export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, updateDay, copyDay, copyPhase }: StepDaysProps) {
   const { t } = useTranslation()
   // Día cuyo selector de tipo está abierto (key `${phase}_${dayId}`), o null.
   const [typePickerKey, setTypePickerKey] = useState<string | null>(null)
+  // Día que se está copiando (`null` = sheet cerrado). Guardar la clave y no un
+  // booleano deja que el sheet titule con el nombre del día de origen.
+  const [copySourceKey, setCopySourceKey] = useState<string | null>(null)
+  const [copyPhaseOpen, setCopyPhaseOpen] = useState(false)
+
+  const phaseLabel = (index: number) =>
+    `${index + 1} · ${phases[index]?.name || t('programEditor.phaseNumbered', { n: index + 1 })}`
+
+  const dayTargets: CopyTargetOption[] = copySourceKey
+    ? copyDayTargets(days, phases.length, copySourceKey).map(target => ({
+        id: target.key,
+        label: t(`day.${target.dayId}`),
+        group: phaseLabel(target.phaseIndex),
+        exerciseCount: target.exerciseCount,
+      }))
+    : []
+
+  const phaseTargets: CopyTargetOption[] = copyPhaseOpen
+    ? copyPhaseTargets(days, phases.length, selectedPhaseTab).map(target => ({
+        id: String(target.phaseIndex),
+        label: phaseLabel(target.phaseIndex),
+        exerciseCount: target.exerciseCount,
+      }))
+    : []
 
   return (
     <View className="gap-3">
@@ -59,9 +87,22 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
         })}
       </ScrollView>
 
-      <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-        {t('programEditor.daysPerPhase')}
-      </Text>
+      <View className="flex-row items-center justify-between">
+        <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+          {t('programEditor.daysPerPhase')}
+        </Text>
+        {phases.length > 1 && (
+          <Pressable
+            onPress={() => { haptics.light(); setCopyPhaseOpen(true) }}
+            className="rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 active:opacity-70"
+            accessibilityRole="button"
+          >
+            <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+              {t('programEditor.copy.phaseCta')}
+            </Text>
+          </Pressable>
+        )}
+      </View>
 
       {DAY_IDS.map(dayId => {
         const key = `${selectedPhaseTab}_${dayId}`
@@ -77,17 +118,28 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
                 <Text className="font-bebas text-lg leading-none text-foreground">
                   {t(`day.${dayId}`)}
                 </Text>
-                {/* Selector de tipo → OptionSheet */}
-                <Pressable
-                  onPress={() => { haptics.light(); setTypePickerKey(key) }}
-                  className="flex-row items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-1.5 active:opacity-70"
-                >
-                  <View className="h-2 w-2 rounded-full" style={{ backgroundColor: day.color }} />
-                  <Text className="font-mono text-[10px] uppercase tracking-wide text-foreground">
-                    {typeLabel ? t(typeLabel.labelKey) : day.type}
-                  </Text>
-                  <ChevronDown size={12} color="#888899" />
-                </Pressable>
+                <View className="flex-row items-center gap-2">
+                  <Pressable
+                    onPress={() => { haptics.light(); setCopySourceKey(key) }}
+                    className="rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 active:opacity-70"
+                    accessibilityRole="button"
+                  >
+                    <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t('programEditor.copy.dayCta')}
+                    </Text>
+                  </Pressable>
+                  {/* Selector de tipo → OptionSheet */}
+                  <Pressable
+                    onPress={() => { haptics.light(); setTypePickerKey(key) }}
+                    className="flex-row items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-1.5 active:opacity-70"
+                  >
+                    <View className="h-2 w-2 rounded-full" style={{ backgroundColor: day.color }} />
+                    <Text className="font-mono text-[10px] uppercase tracking-wide text-foreground">
+                      {typeLabel ? t(typeLabel.labelKey) : day.type}
+                    </Text>
+                    <ChevronDown size={12} color="#888899" />
+                  </Pressable>
+                </View>
               </View>
 
               {!isRest && (
@@ -212,6 +264,26 @@ export function StepDays({ phases, days, selectedPhaseTab, onSelectPhaseTab, upd
             if (typePickerKey) updateDay(typePickerKey, { type: opt.value })
           },
         }))}
+      />
+
+      <CopyToSheet
+        visible={copySourceKey !== null}
+        kicker={t('programEditor.copy.dayCta')}
+        title={t('programEditor.copy.dayTitle', { day: copySourceKey ? t(`day.${copySourceKey.split('_')[1]}`) : '' })}
+        description={t('programEditor.copy.dayDesc')}
+        targets={dayTargets}
+        onClose={() => setCopySourceKey(null)}
+        onSelect={toKey => { if (copySourceKey) copyDay(copySourceKey, toKey) }}
+      />
+
+      <CopyToSheet
+        visible={copyPhaseOpen}
+        kicker={t('programEditor.copy.phaseCta')}
+        title={t('programEditor.copy.phaseTitle', { phase: phaseLabel(selectedPhaseTab) })}
+        description={t('programEditor.copy.phaseDesc')}
+        targets={phaseTargets}
+        onClose={() => setCopyPhaseOpen(false)}
+        onSelect={toIndex => copyPhase(selectedPhaseTab, Number(toIndex))}
       />
     </View>
   )

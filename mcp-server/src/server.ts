@@ -24,6 +24,7 @@ import { z } from "zod";
 import { pocketbaseOAuthBridge, getAuthManager } from "./mcpuse/auth-bridge.js";
 import { registerOAuthRoutes } from "./mcpuse/oauth-routes.js";
 import { registerApiRoutes } from "./mcpuse/api-routes.js";
+import { installBinarySafeListen } from "./mcpuse/binary-safe-listen.js";
 import { registerExerciseTools } from "./tools/exercises.js";
 import { registerWorkoutTools } from "./tools/workouts.js";
 import { registerProgramTools } from "./tools/programs.js";
@@ -36,6 +37,7 @@ import { registerMediaTools } from "./tools/media.js";
 import { registerCircuitTools } from "./tools/circuits.js";
 import { registerPantryTools } from "./tools/pantry.js";
 import { registerRecipeTools } from "./tools/recipes.js";
+import { registerSocialTools } from "./tools/social.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 import { PORT, HOST, PB_URL, SERVER_URL } from "./config.js";
@@ -126,6 +128,7 @@ registerMediaTools(server, PB_URL);
 registerCircuitTools(server, PB_URL);
 registerPantryTools(server, PB_URL);
 registerRecipeTools(server, PB_URL);
+registerSocialTools(server, PB_URL);
 
 // ── Resources (3) + Prompts (3) ───────────────────────────────────────────────
 registerResources(server, PB_URL);
@@ -158,5 +161,9 @@ import "./bootstrap.js";
 // build|dev|typecheck` register their input/output types (generated mcp-env.d.ts),
 // so `useCallTool("cal_log_full_workout")` is type-checked against the tool.
 export { logFullWorkout, setCurrentProgram };
+
+// El listen() de mcp-use v2 decodifica el body de cada petición como texto y
+// corrompe cualquier imagen subida por multipart (ver binary-safe-listen.ts).
+installBinarySafeListen(server, { defaultHost: HOST, defaultPort: PORT });
 
 export default server;

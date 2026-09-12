@@ -34,6 +34,13 @@ export interface MatchUserInput {
   equipment?: string[]
   /** Objetivo principal estructurado (issue #226). Manda sobre el delta de peso. */
   primary_goal?: string
+  /**
+   * Sexo del paso de datos básicos (#717). `'female'` prefiere la variante
+   * «Mujer ·» de su celda nivel × objetivo; cualquier otro valor, o ninguno,
+   * prefiere el genérico. No vive en `users` (PII, #676): el onboarding lo
+   * pasa desde el estado del formulario.
+   */
+  sex?: string
 }
 
 export interface MatchResult {
@@ -85,6 +92,37 @@ function computePenalties(
   return penalties
 }
 
+/** 1 si el programa es para el público que el usuario declaró; 0 si no. */
+function sexAffinity(program: ProgramMeta, sex: string | undefined): number {
+  const wantsWomen = sex === 'female'
+  return (program.for_women ?? false) === wantsWomen ? 1 : 0
+}
+
+/** `sort_order` explícito (>0) del catálogo; sin él, al final. */
+function catalogOrder(program: ProgramMeta): number {
+  return typeof program.sort_order === 'number' && program.sort_order > 0
+    ? program.sort_order
+    : Number.MAX_SAFE_INTEGER
+}
+
+/**
+ * Orden total de los candidatos de una celda (#717): oficial > afinidad de
+ * sexo > destacado > `sort_order` del catálogo > nombre > id. Antes se cogía
+ * el primero de la lista tal como llegaba (ordenada por el JSON del nombre en
+ * PocketBase), así que «Mujer · …» nunca ganaba a su genérico y un renombre
+ * cambiaba la recomendación. Devuelve una copia: no toca la lista de entrada.
+ */
+export function rankCandidates(candidates: ProgramMeta[], user: MatchUserInput): ProgramMeta[] {
+  return [...candidates].sort((a, b) =>
+    Number(b.is_official ?? false) - Number(a.is_official ?? false) ||
+    sexAffinity(b, user.sex) - sexAffinity(a, user.sex) ||
+    Number(b.is_featured ?? false) - Number(a.is_featured ?? false) ||
+    catalogOrder(a) - catalogOrder(b) ||
+    a.name.localeCompare(b.name) ||
+    a.id.localeCompare(b.id),
+  )
+}
+
 export function matchUserToPrograms(
   user: MatchUserInput,
   programs: ProgramMeta[],
@@ -102,9 +140,10 @@ export function matchUserToPrograms(
 
   const goalType = inferGoalType(user.weight, user.goal_weight, user.primary_goal)
 
-  const primary = programs.find(p =>
-    p.difficulty === userDifficulty && p.goal_type === goalType
-  ) ?? null
+  const primary = rankCandidates(
+    programs.filter(p => p.difficulty === userDifficulty && p.goal_type === goalType),
+    user,
+  )[0] ?? null
 
   // Secondary: iterate FOCUS_AREA_IDS in order; pick the first focus the user
   // selected that has a skill-track program. The skill program's own level
@@ -114,7 +153,7 @@ export function matchUserToPrograms(
   for (const focus of FOCUS_AREA_IDS) {
     if (!userFocus.has(focus)) continue
     if (!SKILL_FOCUS_AREAS.includes(focus as SkillFocus)) continue
-    const found = programs.find(p => p.goal_type === 'skill' && p.skill === focus)
+    const found = rankCandidates(programs.filter(p => p.goal_type === 'skill' && p.skill === focus), user)[0]
     if (found && found.id !== primary?.id) {
       secondary = found
       break
@@ -124,9 +163,10 @@ export function matchUserToPrograms(
   // Objetivo "habilidades" sin focus areas de skill: aún así merece un skill
   // track de secundario; preferimos el que coincida con la dificultad del user.
   if (!secondary && user.primary_goal === 'habilidades') {
+    const skills = programs.filter(p => p.goal_type === 'skill' && p.id !== primary?.id)
     secondary =
-      programs.find(p => p.goal_type === 'skill' && p.difficulty === userDifficulty && p.id !== primary?.id) ??
-      programs.find(p => p.goal_type === 'skill' && p.id !== primary?.id) ??
+      rankCandidates(skills.filter(p => p.difficulty === userDifficulty), user)[0] ??
+      rankCandidates(skills, user)[0] ??
       null
   }
 

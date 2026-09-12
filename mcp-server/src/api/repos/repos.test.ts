@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { PB } from "./pb.js";
 import { getUserSingleton, upsertUserSingleton, listUserRange } from "./pb.js";
 import { getLatestLumbarCheck, upsertSettings } from "./user-singletons.js";
-import { getCurrentProgram, setCurrentProgram, listProgramExercises } from "./programs.js";
+import { getCurrentProgram, setCurrentProgram, listProgramExercises, listProgramStats } from "./programs.js";
 import { listSessions, listTodayNutritionEntries, listWeightEntries, SESSION_FIELDS } from "./activity.js";
 
 // ─── PocketBase stub ────────────────────────────────────────────────────────
@@ -153,5 +153,69 @@ describe("programs repo", () => {
       params: { programId: "p1", phase: 2, dayId: "day_1" },
     });
     expect(call.sort).toBe("priority");
+  });
+});
+
+// ─── listProgramStats (#669) ────────────────────────────────────────────────
+
+describe("listProgramStats", () => {
+  const row = (id: string, n: number) => ({
+    id,
+    active_count: n,
+    completed_count: 1,
+    followers_count: n + 1,
+    athletes_count: n - 1,
+  });
+
+  it("mapea los cuatro conteos de la view", async () => {
+    const { pb, coll } = stubPb();
+    coll("view_program_stats").getFullList.mockResolvedValueOnce([row("p1", 4)]);
+
+    expect(await listProgramStats(pb, ["p1"])).toEqual({
+      p1: { active_count: 4, completed_count: 1, followers_count: 5, athletes_count: 3 },
+    });
+  });
+
+  it("DEJA FUERA al programa que no vuelve, en vez de meterlo a cero", async () => {
+    // Lo importante del issue: si la regla de lectura no casa, PocketBase
+    // devuelve 0 filas sin error. Rellenar con ceros convertiría un fallo de
+    // permisos en un «0 personas lo siguen» perfectamente creíble.
+    const { pb, coll } = stubPb();
+    coll("view_program_stats").getFullList.mockResolvedValueOnce([row("p1", 4)]);
+
+    const stats = await listProgramStats(pb, ["p1", "p2"]);
+    expect(stats.p1).toBeDefined();
+    expect(stats.p2).toBeUndefined();
+    expect("p2" in stats).toBe(false);
+  });
+
+  it("un 404 de la view no tumba la tool", async () => {
+    // Un despliegue sin la migración de #620 no tiene la colección.
+    const { pb, coll } = stubPb();
+    coll("view_program_stats").getFullList.mockRejectedValueOnce(new Error("404"));
+
+    expect(await listProgramStats(pb, ["p1"])).toEqual({});
+  });
+
+  it("trocea el filtro de 50 en 50 para no reventar la URL", async () => {
+    const { pb, coll } = stubPb();
+    const ids = Array.from({ length: 120 }, (_, i) => `p${i}`);
+    coll("view_program_stats").getFullList.mockResolvedValue([]);
+
+    await listProgramStats(pb, ids);
+    expect(coll("view_program_stats").getFullList).toHaveBeenCalledTimes(3);
+  });
+
+  it("deduplica ids y no consulta con la lista vacía", async () => {
+    const { pb, coll } = stubPb();
+    coll("view_program_stats").getFullList.mockResolvedValue([]);
+
+    await listProgramStats(pb, ["p1", "p1", ""]);
+    const filter = parseFilter(coll("view_program_stats").getFullList.mock.calls[0][0].filter.split(" || ")[0]);
+    expect(filter.params).toEqual({ id: "p1" });
+    expect(coll("view_program_stats").getFullList.mock.calls[0][0].filter.split(" || ")).toHaveLength(1);
+
+    expect(await listProgramStats(pb, [])).toEqual({});
+    expect(coll("view_program_stats").getFullList).toHaveBeenCalledTimes(1);
   });
 });

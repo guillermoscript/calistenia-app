@@ -2,8 +2,14 @@
  * El service de notifee (app.notifee.core.ForegroundService) es ÚNICO y
  * compartido por todas las notificaciones FGS (entreno y cardio). Declaramos
  * en el manifest el SUPERCONJUNTO de tipos que usamos en runtime:
- *   - "dataSync"  → notificación del entreno (live-session). No exige permisos
- *                   de runtime y no tiene el límite de ~3 min de "shortService".
+ *   - "health"    → notificación del entreno en curso (live-session): cronómetro
+ *                   de series/descansos que sigue vivo con la app en segundo
+ *                   plano. Es el tipo que Android reserva a "exercise trackers"
+ *                   (categoría fitness). Exige FOREGROUND_SERVICE_HEALTH y, como
+ *                   prerrequisito de runtime, declarar HIGH_SAMPLING_RATE_SENSORS
+ *                   (permiso normal, sin diálogo) — ambos en app.json. Antes era
+ *                   "dataSync", que Play rechazó (vc35): ese tipo es para subir/
+ *                   bajar datos y no casa con un cronómetro de entreno.
  *   - "location"  → notificación de cardio (GPS en background; Android 14+ lo exige).
  * Cada notificación elige su tipo concreto con `foregroundServiceTypes`
  * (ver live-session.ts y cardio-live.ts); ese tipo DEBE ser subconjunto de lo
@@ -60,7 +66,7 @@ function withNotifeeFgsManifest(config) {
       service = { $: { 'android:name': SERVICE_NAME, 'android:exported': 'false' } }
       application.service.push(service)
     }
-    service.$['android:foregroundServiceType'] = 'dataSync|location'
+    service.$['android:foregroundServiceType'] = 'health|location'
     service.$['tools:replace'] = 'android:foregroundServiceType'
     return cfg
   })

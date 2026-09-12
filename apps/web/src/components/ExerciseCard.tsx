@@ -8,6 +8,7 @@ import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
 import ProgressionChain from './ProgressionChain'
 import { useProgressions } from '@calistenia/core/hooks/useProgressions'
+import { useExerciseMedia, hasResolvedMedia } from '@calistenia/core/hooks/useExerciseMedia'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { cn } from '../lib/utils'
@@ -43,6 +44,11 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const [showOverflow, setShowOverflow] = useState<boolean>(false)
   const overflowRef = useRef<HTMLDivElement>(null)
   const { getChainForExercise, shouldSuggestProgression } = useProgressions()
+  // El botón de media se enseñaba solo si había `demoImages`, así que un ejercicio
+  // con media estática del catálogo lo escondía aunque `MediaViewer` sí tendría
+  // algo que pintar. La condición es ahora "¿el resolutor devuelve algo?" (#608).
+  const media = useExerciseMedia(exercise)
+  const hasMedia = hasResolvedMedia(media)
   const chain = getChainForExercise(exercise.id)
   const hasProgression = chain.length > 0
   const advanceSuggested = hasProgression && shouldSuggestProgression(exercise.id, logs)
@@ -301,7 +307,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                   <span>{t('exercise.viewDetail')}</span>
                 </button>
 
-                {exercise.demoImages && exercise.demoImages.length > 0 && (
+                {hasMedia && (
                   <button
                     onClick={() => { setShowMedia(true); setShowOverflow(false) }}
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"

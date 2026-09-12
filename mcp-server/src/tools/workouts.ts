@@ -3,7 +3,8 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 import { exerciseHistoryPropsSchema } from "../views/exercise-history.schema.js";
-import { listExerciseSets } from "../api/repos/index.js";
+import { exerciseIdFilter, listExerciseSets } from "../api/repos/index.js";
+import { groupSetsByIdentity, loadUserExerciseResolver } from "../api/exercise-identity-server.js";
 
 export function registerWorkoutTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -227,7 +228,10 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
           exercise_id: z
             .string()
             .optional()
-            .describe("Filter by exercise ID (e.g. 'push-up', 'pull-up')"),
+            .describe(
+              "Filter by exercise ID (e.g. 'pushup_std', 'pullup'). Matches every id that resolves to the same exercise: "
+              + "the catalog id, retired aliases and the active program's slot keys.",
+            ),
           from_date: z
             .string()
             .optional()
@@ -250,9 +254,17 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         const from = from_date ?? daysAgo(30, tz);
         const to = to_date ?? today(tz);
 
+        // Identidad resuelta (#702): el filtro por ejercicio abarca todos los
+        // ids que son el mismo ejercicio, y el listado se agrupa por identidad.
+        const resolver = await loadUserExerciseResolver(pb, userId);
+
         const conditions = ['user = {:userId}', 'logged_at >= {:from}', 'logged_at <= {:to}'];
         const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
-        if (exercise_id) { conditions.push('exercise_id = {:exercise_id}'); params.exercise_id = exercise_id; }
+        if (exercise_id) {
+          const { expr, params: idParams } = exerciseIdFilter(resolver.aliasesOf(exercise_id).ids);
+          conditions.push(expr);
+          Object.assign(params, idParams);
+        }
         if (workout_key) { conditions.push('workout_key = {:workout_key}'); params.workout_key = workout_key; }
 
         const result = await pb.collection("sets_log").getList(offset / limit + 1, limit, {
@@ -265,14 +277,20 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
           return { content: [{ type: "text", text: "No sets found for the given filters." }] };
         }
 
-        const sets = result.items.map((s) => ({
-          id: s.id,
-          exercise_id: s.exercise_id,
-          workout_key: s.workout_key,
-          reps: s.reps,
-          note: s.note || null,
-          logged_at: s.logged_at,
-        }));
+        const sets = result.items.map((s) => {
+          const identity = resolver.resolve(String(s.exercise_id ?? ""), String(s.workout_key ?? ""));
+          return {
+            id: s.id,
+            exercise_id: s.exercise_id,
+            // La identidad que la app enseña para este id (#702): clave y nombre.
+            exercise_key: identity.key,
+            exercise_name: identity.name,
+            workout_key: s.workout_key,
+            reps: s.reps,
+            note: s.note || null,
+            logged_at: s.logged_at,
+          };
+        });
 
         const output = { total: result.totalItems, count: sets.length, sets };
 
@@ -281,16 +299,13 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
           text = JSON.stringify(output, null, 2);
         } else {
           const lines = [`# Sets Log (${from} → ${to})`, `Found **${result.totalItems}** set(s)\n`];
-          // Group by exercise
-          const grouped: Record<string, typeof sets> = {};
-          for (const s of sets) {
-            if (!grouped[s.exercise_id]) grouped[s.exercise_id] = [];
-            grouped[s.exercise_id].push(s);
-          }
-          for (const [ex, exSets] of Object.entries(grouped)) {
-            lines.push(`\n## ${ex}`);
-            for (const s of exSets) {
-              lines.push(`- **${toDateStr(s.logged_at, tz)}** — ${s.reps} reps${s.note ? ` _(${s.note})_` : ""}`);
+          // Un grupo por identidad resuelta, no por id crudo: `pushup` y
+          // `pushup_std` (o la clave de slot del programa) son el mismo ejercicio.
+          for (const g of groupSetsByIdentity(sets, resolver)) {
+            const ids = g.exercise_ids.length > 1 || g.exercise_ids[0] !== g.key ? ` _(${g.exercise_ids.join(", ")})_` : "";
+            lines.push(`\n## ${g.name}${ids}`);
+            for (const s of g.sets) {
+              lines.push(`- **${toDateStr(s.logged_at, tz)}** — ${s.reps}${g.is_timer ? " s" : " reps"}${s.note ? ` _(${s.note})_` : ""}`);
             }
           }
           text = lines.join("\n");
@@ -371,7 +386,12 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
       outputSchema: exerciseHistoryPropsSchema,
       schema: z
         .object({
-          exercise_id: z.string().describe("Exercise identifier (e.g. 'push-up', 'pull-up')"),
+          exercise_id: z
+            .string()
+            .describe(
+              "Exercise identifier (e.g. 'pushup_std', 'pullup'). The history merges every id that resolves to the same exercise: "
+              + "the catalog id, retired aliases and the active program's slot keys.",
+            ),
           days: z
             .number()
             .int()
@@ -394,12 +414,17 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         const userId = auth.getUserId();
         const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
-        const result = await listExerciseSets(pb, userId, exercise_id, { from });
+        // Todo el historial del ejercicio, bajo cualquiera de sus ids (#702).
+        const resolver = await loadUserExerciseResolver(pb, userId);
+        const { identity, ids } = resolver.aliasesOf(exercise_id);
+        const exercise_name = identity.resolved ? identity.name : undefined;
+        const merged = ids.length > 1 ? { exercise_ids: ids } : {};
+        const result = await listExerciseSets(pb, userId, ids, { from });
 
         if (result.length === 0) {
           return viewResult(
-            { exercise_id, days, total_sets: 0, sessions: [] },
-            `No se encontró historial para '${exercise_id}' en los últimos ${days} días.`
+            { exercise_id, exercise_name, ...merged, days, total_sets: 0, sessions: [] },
+            `No se encontró historial para '${exercise_name ?? exercise_id}' en los últimos ${days} días.`
           );
         }
 
@@ -415,8 +440,10 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
 
         // Readable summary for non-widget clients
         const summaryLines = [
-          `# ${exercise_id} — últimos ${days} días`,
-          `**${result.length} series** en **${sessions.length} sesiones**\n`,
+          `# ${exercise_name ?? exercise_id} — últimos ${days} días`,
+          `**${result.length} series** en **${sessions.length} sesiones**`
+            + (ids.length > 1 ? ` _(ids fusionados: ${ids.join(", ")})_` : "")
+            + "\n",
         ];
         for (const { date, sets } of sessions) {
           const setsStr = sets.map((s) => s.reps + (s.note ? ` (${s.note})` : "")).join(", ");
@@ -424,20 +451,12 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         }
         const summaryText = summaryLines.join("\n");
 
+        const props = { exercise_id, exercise_name, ...merged, days, total_sets: result.length, sessions };
         if (response_format === ResponseFormat.JSON) {
-          const jsonProps = { exercise_id, days, total_sets: result.length, sessions };
-          return viewResult(jsonProps, JSON.stringify(jsonProps, null, 2));
+          return viewResult(props, JSON.stringify(props, null, 2));
         }
 
-        return viewResult(
-          {
-            exercise_id,
-            days,
-            total_sets: result.length,
-            sessions,
-          },
-          summaryText
-        );
+        return viewResult(props, summaryText);
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

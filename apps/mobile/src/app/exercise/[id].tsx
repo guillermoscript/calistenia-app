@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { View, ScrollView, Pressable, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -11,6 +12,7 @@ import { getCatalogExercise } from '@/lib/catalog'
 import { localize, type TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { getExerciseEquipment, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { getVariantsByLevel, getRelatedExercises, type VariantEntry } from '@calistenia/core/lib/variants'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -19,6 +21,18 @@ export default function ExerciseDetailScreen() {
   const locale = i18n.language
 
   const ex = id ? getCatalogExercise(id) : undefined
+
+  // #636 §4: la ficha nativa tampoco emitía nada. El catálogo es síncrono, así
+  // que no hace falta esperar a ninguna carga.
+  useEffect(() => {
+    if (!ex) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.exerciseViewed, {
+      surface: 'exercise_catalog', source: 'exercise_screen',
+      exercise_id: ex.id,
+      category: ex.category,
+      difficulty: ex.difficulty,
+    })
+  }, [ex?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por ficha
 
   const openYoutube = () => {
     if (!ex) return

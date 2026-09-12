@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -11,7 +11,7 @@ import {
   discardCapturedReferralCode,
   useAuth,
 } from '@calistenia/core/hooks/useAuth'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { pb } from '@calistenia/core/lib/pocketbase'
 
 import { Sentry } from '@/lib/instrument'
@@ -40,6 +40,13 @@ export default function LoginScreen() {
 
   const error = authError ?? localError
 
+  // Espeja el de web (#636 §4).
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.authViewed, {
+      surface: 'auth', source: 'login_screen', mode,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
+
   const handleEmailSubmit = async () => {
     setLocalError(null)
     try {
@@ -62,6 +69,11 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     setLocalError(null)
     setGoogleLoading(true)
+    // El OAuth nativo no pasa por `signInWithGoogle` de core, así que los dos
+    // eventos del intento hay que emitirlos aquí (#636 §4).
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginStarted, {
+      surface: 'auth', source: 'login_screen', method: 'google',
+    })
     try {
       const result = await loginWithGoogle()
       if (result.record && !result.record.referral_code) {
@@ -73,8 +85,14 @@ export default function LoginScreen() {
       haptics.success()
       router.replace('/')
     } catch (e) {
+      // Cancelar el diálogo no es un fallo: contarlo hundiría la tasa de éxito
+      // del login con una acción deliberada del usuario.
       if (isAuthCancelled(e)) return
       haptics.error()
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.loginFailed, {
+        surface: 'auth', source: 'login_screen', method: 'google',
+        status: (e as { status?: number })?.status ?? 0,
+      })
       Sentry.captureException(e, { tags: { flow: 'google_login' } })
       setLocalError(t('auth.googleError'))
     } finally {

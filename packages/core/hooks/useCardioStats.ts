@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import dayjs from 'dayjs'
-import i18n from 'i18next'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import tz from 'dayjs/plugin/timezone'
 import utcPlugin from 'dayjs/plugin/utc'
 import { getTimezone } from '../lib/dateUtils'
+import { safeLocale } from '../lib/i18n-safe'
 
 dayjs.extend(utcPlugin)
 dayjs.extend(tz)
@@ -123,7 +123,9 @@ export function useCardioStats(userId: string | null) {
   // tz y locale solo afectan a las derivaciones (memos), no al fetch — por eso
   // NO entran en la query key: comparte caché con useCardioSessions.
   const userTz = getTimezone()
-  const locale = i18n.language
+  // `safeLocale` y no `i18n.language` a secas: el detector del navegador puede
+  // dar `en-US@posix` y `toLocaleDateString` lanza RangeError (GYM-GUILLE-21).
+  const locale = safeLocale()
 
   const query = useQuery({
     queryKey: qk.cardioSessions(userId),

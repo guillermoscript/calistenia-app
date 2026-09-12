@@ -39,12 +39,12 @@
           "name": { "es": "Sentadilla Goblet", "en": "Goblet Squat" },
           "slug": "goblet-squat",
           "description": {
-            "es": "Sentadilla sosteniendo un peso frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
-            "en": "Squat holding a weight at chest height. The front-loaded position helps keep your torso upright and improve depth."
+            "es": "Sentadilla sosteniendo una kettlebell o una mancuerna frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
+            "en": "Squat holding a kettlebell or a dumbbell at chest height. The front-loaded position helps keep your torso upright and improve depth."
           },
           "muscles": { "es": "Cuádriceps, glúteos, core", "en": "Quads, glutes, core" },
           "difficulty_level": "beginner",
-          "equipment": [],
+          "equipment": ["kettlebell"],
           "progression_order": 2,
           "default_sets": 3,
           "default_reps": "10-15",
@@ -93,7 +93,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Hindu Squat", "en": "Hindu Squat" },
+          "name": { "es": "Sentadilla Hindú", "en": "Hindu Squat" },
           "slug": "hindu-squat",
           "description": {
             "es": "Sentadilla fluida elevando los talones al bajar con movimiento de brazos coordinado. Excelente para resistencia y movilidad de rodilla.",
@@ -112,7 +112,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Squat Sissy", "en": "Sissy Squat" },
+          "name": { "es": "Sentadilla Sissy", "en": "Sissy Squat" },
           "slug": "sissy-squat",
           "description": {
             "es": "Sentadilla inclinando el torso hacia atrás con rodillas adelantadas. Aísla intensamente los cuádriceps con gran demanda articular.",
@@ -283,7 +283,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Dragon Squat", "en": "Dragon Squat" },
+          "name": { "es": "Sentadilla Dragón", "en": "Dragon Squat" },
           "slug": "dragon-squat",
           "description": {
             "es": "Sentadilla a una pierna con la pierna libre cruzada por detrás. Combina fuerza extrema, equilibrio y movilidad de cadera.",
@@ -315,7 +315,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Forward Lunge", "en": "Forward Lunge" },
+          "name": { "es": "Zancada Frontal", "en": "Forward Lunge" },
           "slug": "forward-lunge",
           "description": {
             "es": "Zancada básica dando un paso al frente y bajando la rodilla trasera. Fundamento de todos los ejercicios de zancada.",
@@ -353,7 +353,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Step-up", "en": "Step-up" },
+          "name": { "es": "Subida al Cajón", "en": "Step-up" },
           "slug": "step-up",
           "description": {
             "es": "Sube a un cajón impulsándote con una sola pierna. Trabaja fuerza unilateral y estabilidad de rodilla.",
@@ -372,7 +372,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Walking Lunge", "en": "Walking Lunge" },
+          "name": { "es": "Zancada Caminando", "en": "Walking Lunge" },
           "slug": "walking-lunge",
           "description": {
             "es": "Zancadas continuas avanzando con cada paso. Añade un componente de equilibrio dinámico y coordinación.",
@@ -391,7 +391,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Lateral Lunge", "en": "Lateral Lunge" },
+          "name": { "es": "Zancada Lateral", "en": "Lateral Lunge" },
           "slug": "lateral-lunge",
           "description": {
             "es": "Zancada lateral con una pierna extendida. Trabaja aductores y movilidad de cadera en el plano frontal.",
@@ -410,7 +410,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Curtsy Lunge", "en": "Curtsy Lunge" },
+          "name": { "es": "Zancada Cruzada", "en": "Curtsy Lunge" },
           "slug": "curtsy-lunge",
           "description": {
             "es": "Zancada cruzando la pierna por detrás en diagonal, como una reverencia. Enfatiza el glúteo medio y la estabilidad lateral.",
@@ -575,7 +575,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Sliding Leg Curl", "en": "Sliding Leg Curl" },
+          "name": { "es": "Curl Femoral Deslizante", "en": "Sliding Leg Curl" },
           "slug": "sliding-leg-curl",
           "description": {
             "es": "Curl de pierna deslizando los pies sobre el suelo desde posición de puente. Aísla los isquiotibiales con control excéntrico.",
@@ -702,7 +702,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Tibialis Raise", "en": "Tibialis Raise" },
+          "name": { "es": "Elevación de Tibial", "en": "Tibialis Raise" },
           "slug": "tibialis-raise",
           "description": {
             "es": "Elevación de la punta del pie apoyado en los talones. Fortalece el tibial anterior para prevenir dolor de espinillas.",
@@ -721,7 +721,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Calf Raises (bilateral)", "en": "Calf Raises (bilateral)" },
+          "name": { "es": "Elevaciones de Gemelos (bilateral)", "en": "Calf Raises (bilateral)" },
           "slug": "calf-raises-bilateral",
           "description": {
             "es": "Elevación de talones con ambos pies. Ejercicio base para fortalecer gastrocnemio y sóleo.",
@@ -759,7 +759,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Calf Raise Elevado (déficit)", "en": "Deficit Calf Raise" },
+          "name": { "es": "Elevación de Gemelos en Déficit", "en": "Deficit Calf Raise" },
           "slug": "deficit-calf-raise",
           "description": {
             "es": "Elevación de talón desde un escalón permitiendo bajar más allá del nivel del suelo. Aumenta el rango de movimiento completo.",
@@ -791,7 +791,7 @@
       },
       "exercises": [
         {
-          "name": { "es": "Skater Jumps", "en": "Skater Jumps" },
+          "name": { "es": "Salto de Patinador", "en": "Skater Jumps" },
           "slug": "skater-jumps",
           "description": {
             "es": "Saltos laterales de pierna a pierna imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
@@ -810,7 +810,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Box Jump", "en": "Box Jump" },
+          "name": { "es": "Salto al Cajón", "en": "Box Jump" },
           "slug": "box-jump",
           "description": {
             "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
@@ -829,7 +829,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Tuck Jumps", "en": "Tuck Jumps" },
+          "name": { "es": "Saltos Agrupados", "en": "Tuck Jumps" },
           "slug": "tuck-jumps",
           "description": {
             "es": "Salto vertical llevando las rodillas al pecho en el aire. Alta demanda de explosividad y core.",
@@ -848,7 +848,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Broad Jump", "en": "Broad Jump" },
+          "name": { "es": "Salto Horizontal", "en": "Broad Jump" },
           "slug": "broad-jump",
           "description": {
             "es": "Salto horizontal explosivo cubriendo la mayor distancia posible. Enfatiza cadena posterior y potencia de empuje.",
@@ -867,7 +867,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Depth Jump", "en": "Depth Jump" },
+          "name": { "es": "Salto de Profundidad", "en": "Depth Jump" },
           "slug": "depth-jump",
           "description": {
             "es": "Cae desde un cajón y salta inmediatamente al tocar el suelo. Entrena la potencia reactiva y el ciclo estiramiento-acortamiento.",
@@ -886,7 +886,7 @@
           "status": "official"
         },
         {
-          "name": { "es": "Single Leg Box Jump", "en": "Single Leg Box Jump" },
+          "name": { "es": "Salto al Cajón a Una Pierna", "en": "Single Leg Box Jump" },
           "slug": "single-leg-box-jump",
           "description": {
             "es": "Salto al cajón impulsándote con una sola pierna. El ejercicio pliométrico unilateral más avanzado.",

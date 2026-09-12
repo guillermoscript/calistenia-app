@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { captureReferralCode, captureChallengeId } from '@calistenia/core/hooks/useAuth'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 interface AuthPageProps {
   signInWithGoogle: () => Promise<void>
@@ -28,6 +29,19 @@ export default function AuthPage({ signInWithGoogle, signInWithEmail, signUpWith
     const challenge = searchParams.get('challenge')
     if (challenge) captureChallengeId(challenge)
   }, [searchParams])
+
+  // #636 §4: la pantalla de acceso no emitía nada, así que el embudo de
+  // registro empezaba en `signup_completed` y no había denominador para nada.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.authViewed, {
+      surface: 'auth', source: 'auth_page',
+      mode: initialMode,
+      // Solo si venía con invitación o reto, NO el código: es un identificador
+      // que apunta a otra persona (§6).
+      has_referral: !!searchParams.get('ref'),
+      has_challenge: !!searchParams.get('challenge'),
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

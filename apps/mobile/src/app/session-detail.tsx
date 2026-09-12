@@ -5,7 +5,7 @@
  *
  * Ruta: /session-detail?date=YYYY-MM-DD&workoutKey=p1_lun&title=...
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { View, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -26,6 +26,7 @@ import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
 import WorkoutShareButton from '@/components/share/WorkoutShareButton'
 import SessionDetailBody from '@/components/session/SessionDetailBody'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const MUTED = 'hsl(0 0% 55%)'
 
@@ -84,6 +85,21 @@ export default function SessionDetailScreen() {
     [exercises],
   )
 
+  const isFreeSession = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
+
+  // #636 §4: el detalle de una sesión pasada no emitía nada. `workout_key` es
+  // una clave de programa o un timestamp — nada libre ni identificable (§6).
+  useEffect(() => {
+    if (!workoutKey) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.sessionDetailViewed, {
+      surface: 'history', source: 'session_detail',
+      workout_key: workoutKey,
+      is_free_session: isFreeSession,
+      exercise_count: exercises.length,
+      sets_logged: totalSets,
+    })
+  }, [workoutKey]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por sesión
+
   // FC/calorías reales del reloj (Health Connect) para esta sesión. Viven en el
   // record PB `sessions` (no en el ProgressMap en memoria) → consulta aparte en
   // core (#473).
@@ -91,7 +107,6 @@ export default function SessionDetailScreen() {
 
   // Título: el que computó la pantalla de origen (programa activo) → WORKOUTS por
   // defecto → versión humanizada. Evita mostrar la clave cruda "p1_lun".
-  const isFreeSession = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
   const resolvedTitle =
     (title && title.trim()) ||
     (isFreeSession ? t('progress.freeSession') : WORKOUTS[workoutKey]?.title) ||

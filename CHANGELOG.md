@@ -9,6 +9,104 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.13.1] - 2026-09-08
+
+_This one also brings everything from the previous version: your first workout right after sign-up, reminders at your time and notifications fixed. New here: your charts no longer duplicate exercises._
+
+### Added
+
+- **Tell us how you found us** — On the welcome screen you can tell us where you heard about the app. One tap, and you can skip it.
+
+### Fixed
+
+- **One exercise, one row** — In your charts and stats the same exercise could show up twice depending on how the set was saved. Now they group by the actual exercise.
+- **No gaps in the catalog** — Some exercises used by the programs had no catalog entry and showed their internal name. Filled in.
+
+## [1.13.0] - 2026-09-03
+
+_Onboarding now ends with a short first workout and a reminder at your time. Also: follow, reaction and comment notifications arrive again, and programs show in Spanish with their timers._
+
+### Added
+
+- **Your first workout, right after sign-up** — When onboarding ends you start a short 4-exercise session instead of landing on the home screen. Once you finish it, the app asks whether you want notifications.
+- **A reminder from day one** — Pick your days and time during onboarding and the app reminds you then. Go 24 or 72 hours without training and you get a nudge; tapping it opens today’s workout.
+
+### Fixed
+
+- **Notifications arrive again** — Alerts for new followers, reactions, comments, achievements and streaks were not reaching the phone. Fixed on the server.
+- **Programs in Spanish, with timers** — Some exercises showed in English or with underscores, timed exercises had no timer and copying a program broke its name. All fixed.
+
+## [1.12.3] - 2026-08-31
+
+_Health Connect now only reads sleep, weight and body fat. Also: cardio history shows again, official programs come with their instructions and nutrition no longer asks twice._
+
+### Fixed
+
+- **Leaner health access** — The app no longer reads steps or heart rate from Health Connect: it only requests sleep, weight and body fat, all read-only. Heart-rate data from your past workouts is kept.
+- **Cardio history** — History showed up blank and the list took over the whole Cardio screen. Fixed.
+- **Programs with instructions** — The 15 official programs got a deep review: exercises, dosing and previously empty instructions are now complete.
+- **Nutrition without repeat questions** — When setting up your nutrition goals, what you already answered during onboarding comes pre-filled.
+
+## [1.12.2] - 2026-08-27
+
+_Hotfix: 1.12.1 did not start on Android. Includes everything from 1.12.1 (leaner Health Connect access, workout notification and Android 16)._
+
+### Fixed
+
+- **The app starts again** — A date-library update produced an invalid 'today' on Android and the streak calculation crashed the app on launch. The good version is pinned and the streak can no longer break startup.
+
+## [1.12.1] - 2026-08-27
+
+_Google Play compliance update: fewer health data types, the workout notification on the right service type, and Android 16 support._
+
+### Fixed
+
+- **Health Connect asks only for what it shows** — The app no longer reads active calories or resting heart rate. Steps, workout heart rate, sleep, weight and body fat remain. If you were already connected, reconnect from Watch & health so the dialog reflects the 5 types.
+- **Workout notification and Android 16** — The live workout timer now runs as a health service, the type Android reserves for exercise apps, and the app now targets Android 16.
+
+## [1.12.0] - 2026-08-26
+
+_The training-programs release: build and edit them end to end, share or remix them with credit to the author, and the app tells you which week you are on and how many reps you owe today. Training stats also land, and circuit days finally work._
+
+### Added
+
+- **Build and edit full programs from your phone** — The editor covers the whole program: phases, days, exercises and their catalog fields, with validation on steps 3 and 4 so you never publish a half-finished program. You can copy a day or an entire phase, upload the cover and an image or video per exercise, and from the program page edit, duplicate, leave or delete it.
+- **Auto progression: the app tells you what to do today** — Each program exercise looks at what you did last time and suggests today’s reps or seconds. When a variation gets too easy it proposes the next one, so you keep progressing without tracking it yourself.
+- **You always know which week and phase you are on** — The program shows “week X of Y” and moves to the next phase on its own as you advance, with no setting to touch. Progress is computed from what you actually trained.
+- **Share your programs and remix other people’s** — Every program picks whether it is private, link-only or public, and the link opens a page anyone can see without an account. If you start from someone else’s program, your copy carries a “based on X by @author” credit, and each program shows how many people follow it.
+- **Training stats** — A new view with the muscles you train most, your most frequent exercises, your personal records and the trend over recent weeks.
+
+### Fixed
+
+- **Circuit days finally work** — A circuit day now starts an actual circuit and, once finished, marks the day done and counts toward the program milestone — before it stayed blocked forever. And if the author deletes a program you were enrolled in, we now tell you instead of leaving you with a dead enrollment.
+
+## [1.11.1] - 2026-08-23
+
+_The cardio history gets filters by type, opens the detail straight from the row and adds a competition search. The app also now asks Health Connect only for the data it actually uses._
+
+### Added
+
+- **Cardio history with filters and direct detail** — You can filter the history by session type and open the detail by tapping the row, with no extra steps. A search box for finding competitions is also included.
+
+### Fixed
+
+- **Health Connect asks for less of your data** — The app used to request twelve health data types and several went unused. It now requests only seven, each with a screen that shows it to you: steps, active calories, heart rate, resting HR, sleep, weight and body fat. As a trade-off, the HRV and VO₂ max metrics are gone from “Watch & health”. If your watch was already connected, revoke and re-grant the permissions in Health Connect for the change to apply.
+
+## [1.11.0] - 2026-08-23
+
+_The feed now covers everything you do — free sessions, cardio, circuits, challenges, races and battles — your profile gets an athlete card with your numbers and personal bests, and you can make your account private and approve who follows you._
+
+### Added
+
+- **The feed covers all your activity** — Until now the feed only showed program workouts, and free sessions appeared with no title. It now covers six kinds of activity: program session, free session, cardio, circuit, challenge, race and battle. Scrolling down no longer repeats posts either.
+- **Profile with an athlete card** — Your profile now leads with you: level, program week, your numbers and your skills. Settings move to the bottom as a list with one row per topic that unfolds in place, so you edit without leaving the screen.
+- **Private accounts with approval** — Turn on "Private account" and anyone who wants to follow you has to ask: you approve or decline from notifications. The button becomes REQUEST / REQUESTED, private profiles show a lock instead of zeros, and in challenge leaderboards private accounts are hidden from others without throwing off the participant count.
+
+### Fixed
+
+- **Sharing a session, and seeing all of it** — The link you share for a session used to show the person opening it their own progress instead of yours — fixed. And a session with no sets now lists its timed exercises instead of just saying "no sets recorded".
+- **The leaderboard stops reloading itself** — The leaderboard screen kept reloading itself in the background, burning data and battery. It now loads once, and usage stats reflect what you actually do.
+
 ## [1.10.2] - 2026-08-22
 
 _Official programs show their training days again: the week no longer looks like rest only. Plus internal stability improvements._
@@ -319,7 +417,15 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...HEAD
+[1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
+[1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
+[1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3
+[1.12.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.1...mobile-v1.12.2
+[1.12.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.0...mobile-v1.12.1
+[1.12.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.1...mobile-v1.12.0
+[1.11.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.11.0...mobile-v1.11.1
+[1.11.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.2...mobile-v1.11.0
 [1.10.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.1...mobile-v1.10.2
 [1.10.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.1
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0

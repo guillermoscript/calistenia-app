@@ -24,6 +24,7 @@ import CardioStats from '@/components/cardio/CardioStats'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import RacePRsPanel from '@/components/race/RacePRsPanel'
+import ActiveRacesPanel from '@/components/race/ActiveRacesPanel'
 import CardioShareButton from '@/components/share/CardioShareButton'
 
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
@@ -63,6 +64,10 @@ export default function CardioScreen() {
   )
   const [history, setHistory] = useState<CardioSession[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyError, setHistoryError] = useState(false)
+  // Se incrementa desde el botón «Reintentar»: re-dispara el efecto sin tocar
+  // el resto de su estado.
+  const [historyRetry, setHistoryRetry] = useState(0)
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
   const [raceLink, setRaceLink] = useState('')
   const [refreshing, setRefreshing] = useState(false)
@@ -71,16 +76,30 @@ export default function CardioScreen() {
   useEffect(() => {
     if (!isIdle && !savedSession) return
     setHistoryLoading(true)
-    getHistory(20).then(setHistory).catch((e) => { Sentry.captureException(e, { tags: { feature: 'cardio', op: 'load_history' } }) }).finally(() => setHistoryLoading(false))
+    setHistoryError(false)
+    // Marcar el error, no solo reportarlo: si no, la lista vacía mentiría
+    // diciendo que no hay sesiones (#559, CALISTENIA-APP-S).
+    getHistory(20)
+      .then((sessions) => { setHistory(sessions); setHistoryError(false) })
+      .catch((e) => {
+        setHistoryError(true)
+        Sentry.captureException(e, { tags: { feature: 'cardio', op: 'load_history' } })
+      })
+      .finally(() => setHistoryLoading(false))
     void loadStats()
-  }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isIdle, getHistory, loadStats, historyRetry]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isCycling = (type: CardioActivityType) => type === 'cycling'
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await Promise.all([
-      getHistory(20).then(setHistory).catch((e) => { Sentry.captureException(e, { tags: { feature: 'cardio', op: 'refresh_history' } }) }),
+      getHistory(20)
+        .then((sessions) => { setHistory(sessions); setHistoryError(false) })
+        .catch((e) => {
+          setHistoryError(true)
+          Sentry.captureException(e, { tags: { feature: 'cardio', op: 'refresh_history' } })
+        }),
       loadStats(),
     ])
     setRefreshing(false)
@@ -320,18 +339,21 @@ export default function CardioScreen() {
               </Pressable>
             </View>
 
+            <ActiveRacesPanel />
+
             <RacePRsPanel userId={userId} />
 
-            {/* Historial */}
-            <View className="gap-3">
-              <Kicker>{t('cardio.history')}</Kicker>
-              <CardioHistory
-                sessions={history}
-                loading={historyLoading}
-                onDelete={handleDeleteSession}
-                onStart={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-              />
-            </View>
+            {/* Historial — sólo las últimas; la lista completa, con filtros y
+                paginación, vive en /cardio/history. */}
+            <CardioHistory
+              sessions={history}
+              loading={historyLoading}
+              onDelete={handleDeleteSession}
+              onStart={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+              error={historyError}
+              onRetry={() => setHistoryRetry((c) => c + 1)}
+              onSeeAll={() => router.push('/cardio/history')}
+            />
 
             {/* Estadísticas */}
             {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (

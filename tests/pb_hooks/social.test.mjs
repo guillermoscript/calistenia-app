@@ -7,7 +7,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  createUser, createAs, waitForPush, expectNotifications, resetPushes,
+  createUser, createAs, waitForPush, expectNotifications, resetPushes, api, authAs,
 } from "./helpers/client.mjs"
 
 function makeSession(user) {
@@ -184,4 +184,37 @@ test("reacción a comentario notifica a su autor", async () => {
   assert.equal(notif.reference_id, session.id, "reference_id es la sesión (deep-link al post)")
   assert.equal(notif.data.onComment, true)
   assert.equal(notif.data.commentId, comment.id)
+})
+
+test("comentarios: llegan con created/updated y expand=author conserva avatar y nombre", async () => {
+  // 1774000046 creó `comments` sin autodate (PB ≥ 0.23 no lo pone solo) y el
+  // cliente rellenaba con `new Date()`: todo salía «hace unos segundos».
+  // 1784700000 añade los campos; aquí se comprueba que un comentario nuevo
+  // vuelve fechado y que el expand del autor, leído por OTRO usuario, sigue
+  // trayendo lo que pinta el sheet (users_field_privacy deja avatar/display_name).
+  const owner = await createUser("Dueno Fechas")
+  const commenter = await createUser("Comentarista Fechado")
+  const session = await makeSession(owner)
+
+  const before = Date.now()
+  const c = await createAs(commenter, "comments", {
+    session_id: session.id,
+    author: commenter.id,
+    text: "¿Qué hora es?",
+  })
+  assert.ok(c.created, "el create devuelve `created`")
+  assert.ok(c.updated, "el create devuelve `updated`")
+  const createdMs = new Date(c.created.replace(" ", "T")).getTime()
+  assert.ok(Math.abs(createdMs - before) < 60_000, `created (${c.created}) es la hora del servidor, no vacío`)
+
+  const res = await api(
+    `/api/collections/comments/records?filter=${encodeURIComponent(`session_id = "${session.id}"`)}&expand=author`,
+    { token: await authAs(owner) },
+  )
+  assert.equal(res.items.length, 1)
+  const row = res.items[0]
+  assert.equal(row.created, c.created, "el list devuelve el mismo `created`")
+  assert.equal(row.expand.author.display_name, "Comentarista Fechado")
+  assert.ok("avatar" in row.expand.author, "users_field_privacy no recorta `avatar` del autor")
+  assert.equal(row.expand.author.weight, undefined, "…pero sí los campos privados")
 })

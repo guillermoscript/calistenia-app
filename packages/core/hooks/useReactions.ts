@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 
 export const REACTION_EMOJIS = ['🔥', '💪', '👏', '🎯', '🏆'] as const
 
@@ -158,6 +159,16 @@ export function useReactions(userId: string | null) {
 
       const current = reactions[sessionId]?.[emoji]
       const hasReacted = current?.hasReacted || false
+
+      // #636 §4: el muro (#588) no medía ninguna interacción. Va aquí y no en
+      // cada app porque las dos llaman a este mismo wrapper. `result` distingue
+      // poner de quitar: sin él, quitar una reacción contaría como ponerla.
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.feedReactionToggled, {
+        surface: 'feed', source: 'feed_card',
+        emoji,
+        result: hasReacted ? 'removed' : 'added',
+        own_post: sessionOwnerId === userId,
+      })
 
       toggleMutation.mutate({ sessionId, emoji, hasReacted, sessionOwnerId })
     },

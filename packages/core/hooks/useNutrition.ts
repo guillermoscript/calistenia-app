@@ -8,6 +8,7 @@ import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { todayStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
 import { calculateMacros as computeMacros, previewNutritionGoal, shouldRecomputeAutoGoal, ONBOARDING_ACTIVITY_TO_NUTRITION } from '../lib/nutritionGoal'
+import { readCachedNutritionGoal, cacheNutritionGoal } from '../lib/nutrition-profile'
 import type {
   NutritionEntry,
   NutritionSource,
@@ -58,7 +59,6 @@ function mapPBToEntry(r: any): NutritionEntry {
 }
 
 const LS_ENTRIES = 'calistenia_nutrition_entries'
-const LS_GOALS = 'calistenia_nutrition_goals'
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const lsGetEntries = (): NutritionEntry[] => {
@@ -67,12 +67,10 @@ const lsGetEntries = (): NutritionEntry[] => {
 const lsSetEntries = (d: NutritionEntry[]): void => {
   storage.setItem(LS_ENTRIES, JSON.stringify(d))
 }
-const lsGetGoals = (): NutritionGoal | null => {
-  try { return JSON.parse(storage.getItem(LS_GOALS) || 'null') } catch { return null }
-}
-const lsSetGoals = (d: NutritionGoal | null): void => {
-  storage.setItem(LS_GOALS, JSON.stringify(d))
-}
+// El espejo local del objetivo vive en `lib/nutrition-profile` para que el
+// onboarding pueda sembrarlo sin importar este hook entero.
+const lsGetGoals = readCachedNutritionGoal
+const lsSetGoals = cacheNutritionGoal
 
 const sortByLoggedDesc = (a: NutritionEntry, b: NutritionEntry) =>
   new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
@@ -147,6 +145,7 @@ export async function recomputeAutoNutritionGoal(
     return null
   }
 }
+
 
 /**
  * useNutrition — registro de nutrición. Migrado a TanStack Query conservando la
@@ -231,7 +230,12 @@ export function useNutrition(userId: string | null) {
 
   const entries = entriesQuery.data ?? []
   const goals = goalsQuery.data ?? null
-  const isReady = !userId || entriesQuery.isFetched
+  // `goals` tiene que estar resuelto, no solo `entries`: quien decide si se
+  // enseña el wizard de objetivos es `goals`, y con solo `entries` en el gate
+  // un usuario que YA tiene objetivo veía el wizard durante el hueco entre
+  // ambas queries (en un dispositivo nuevo, sin el `initialData` de LS, ese
+  // hueco es todo el viaje de red).
+  const isReady = !userId || (entriesQuery.isFetched && goalsQuery.isFetched)
 
   // Mirror entries into a ref so identity-stable callbacks (e.g. getRecentEntries)
   // can read the latest cache without listing `entries` in their deps — otherwise

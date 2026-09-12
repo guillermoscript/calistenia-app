@@ -20,15 +20,31 @@
     "changelog:md": "node scripts/generate-changelog-md.mjs",
     "release:web": "node scripts/release-web.mjs",
     "release:mobile": "node scripts/release-mobile.mjs",
+    "changelog:entry": "node scripts/extract-changelog-entry.mjs",
+    "build:aab": "node scripts/build-mobile-aab.mjs",
+    "play:status": "node scripts/play-status.mjs",
+    "play:publish": "node scripts/publish-play.mjs",
+    "play:promote": "node scripts/play-promote.mjs",
     "validate:catalog": "node scripts/validate-exercise-catalog.mjs packages/core/data/exercise-catalog.json",
     "test:catalog": "node scripts/test-validate-exercise-catalog.mjs",
     "build:catalog": "node scripts/build-exercise-catalog.mjs",
     "build:id-map": "node scripts/build-id-map.mjs",
-    "build:media": "node scripts/sync-exercise-media.mjs"
+    "build:media": "node scripts/sync-exercise-media.mjs",
+    "programs:seed": "node scripts/generate-program-seed-migration.mjs",
+    "programs:seed:check": "node scripts/generate-program-seed-migration.mjs --check",
+    "programs:reseed": "node scripts/generate-program-seed-migration.mjs --reseed",
+    "programs:clean-test": "node scripts/clean-test-programs.mjs",
+    "programs:content:check": "node scripts/check-program-content.mjs",
+    "programs:repair": "node scripts/repair-program-timers-muscles.mjs",
+    "programs:repair:check": "node scripts/repair-program-timers-muscles.mjs --check",
+    "test:program-content": "pnpm --filter @calistenia/core exec vitest run ../../scripts/check-program-content.test.mjs --root ../../scripts",
+    "test:program-reseed": "pnpm --filter @calistenia/core exec vitest run ../../scripts/reseed-program.test.mjs --root ../../scripts",
+    "test:program-catalog": "pnpm --filter @calistenia/core exec vitest run ../../scripts/program-catalog.test.mjs --root ../../scripts",
+    "test:catalog-migration": "pnpm --filter @calistenia/core exec vitest run ../../scripts/fix-exercises-catalog-714.test.mjs --root ../../scripts"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.1",
-    "@commitlint/config-conventional": "^21.2.0",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "husky": "^9.1.7"
   }
 }

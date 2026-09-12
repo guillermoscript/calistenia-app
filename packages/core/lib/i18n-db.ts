@@ -30,3 +30,28 @@ export function localize(
 export function toTranslatable(value: string, locale: string): Record<string, string> {
   return { [locale]: value }
 }
+
+/** Sufijo de copia por locale. Cae a español para locales sin traducción. */
+const COPY_SUFFIX: Record<string, string> = { es: '(copia)', en: '(copy)' }
+
+/**
+ * Nombre de una copia, conservando el mapa i18n del original (issue #602).
+ *
+ * Interpolar el campo directamente (`${field} (copia)`) daba
+ * «[object Object] (copia)», y además escribía un string plano en una columna
+ * `json`, así que `localize()` tampoco lo recuperaba después. Aquí cada locale
+ * presente en el original recibe su propio sufijo.
+ *
+ * Un string plano (fila anterior a la migración i18n) no dice en qué idioma
+ * está, así que la copia se guarda solo bajo `locale`, igual que `toTranslatable`.
+ */
+export function duplicatedName(
+  field: TranslatableField | undefined | null,
+  locale: string,
+): Record<string, string> {
+  const suffixed = (text: string, loc: string) =>
+    `${text} ${COPY_SUFFIX[loc] ?? COPY_SUFFIX.es}`.trim()
+  const entries = field && typeof field === 'object' ? Object.entries(field) : []
+  if (entries.length === 0) return toTranslatable(suffixed(localize(field, locale), locale), locale)
+  return Object.fromEntries(entries.map(([loc, text]) => [loc, suffixed(String(text), loc)]))
+}

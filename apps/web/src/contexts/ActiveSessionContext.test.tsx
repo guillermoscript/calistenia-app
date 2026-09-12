@@ -1,12 +1,13 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import type { Exercise, Workout } from '@calistenia/core/types'
 
 // op (core) hace tracking de analytics — se mockea entero; aquí solo se
 // verifica que el context llame a track() con los eventos/props correctos.
 // vi.hoisted porque vi.mock se hoistea sobre las declaraciones del archivo.
-const { mockTrack, lifecycleBus } = vi.hoisted(() => ({
+const { mockTrack, lifecycleBus, activeProgramId } = vi.hoisted(() => ({
   mockTrack: vi.fn(),
+  activeProgramId: { current: null as string | null },
   // #482: el estado bajó a `useActiveSessionState` de core, que resuelve el
   // primer plano / segundo plano por el adapter de plataforma en vez de
   // `document.visibilitychange`. Los tests lo disparan por aquí.
@@ -15,8 +16,14 @@ const { mockTrack, lifecycleBus } = vi.hoisted(() => ({
     background: new Set<() => void>(),
   },
 }))
+// #636: `lib/session-funnel` lee la plataforma y el programa activo de este
+// mismo módulo, así que el mock tiene que traerlos o el bloque de propiedades
+// revienta con un TypeError en cada evento.
 vi.mock('@calistenia/core/lib/analytics', () => ({
   op: { track: mockTrack },
+  analyticsPlatform: () => 'web',
+  getAnalyticsProgramId: () => activeProgramId.current,
+  setAnalyticsProgramId: (id: string | null) => { activeProgramId.current = id },
 }))
 
 // #482: el storage del entreno pasó de `localStorage` global al facade de core,
@@ -127,13 +134,23 @@ describe('ActiveSessionContext', () => {
       expect(saved.source).toBe('program')
     })
 
-    it('trackea session_started con workout_key y source', () => {
-      const workout = makeWorkout([makeExercise()])
+    it('trackea session_started con el bloque completo del embudo', () => {
+      const workout = makeWorkout([makeExercise({ sets: 3 }), makeExercise({ sets: 2 })])
       const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
 
       act(() => { result.current.startSession(workout, 'free_123', 'free') })
 
-      expect(mockTrack).toHaveBeenCalledWith('session_started', { workout_key: 'free_123', source: 'free' })
+      expect(mockTrack).toHaveBeenCalledWith('session_started', expect.objectContaining({
+        event_version: 1,
+        platform: 'web',
+        surface: 'session',
+        workout_key: 'free_123',
+        source: 'free',
+        is_free_session: true,
+        exercise_count: 2,
+        sets_logged: 0,
+        completion_pct: 0,
+      }))
     })
   })
 
@@ -162,6 +179,125 @@ describe('ActiveSessionContext', () => {
     expect(result.current.progress).toEqual(INITIAL_PROGRESS)
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
     expect(localStorage.getItem(FREE_QUEUE_KEY)).toBeNull()
+  })
+
+  // #636: una sesión arrancada tiene que acabar en EXACTAMENTE un evento
+  // terminal. Antes la decisión estaba repartida entre tres sitios que no se
+  // hablaban, así que había sesiones con cero (salir a propósito, y todo el
+  // móvil) y sesiones con dos (completar y cerrar después la pestaña).
+  describe('desenlace único de la sesión', () => {
+    const terminals = () => mockTrack.mock.calls
+      .filter(([name]) => name === 'session_exited' || name === 'workout_abandoned')
+
+    beforeEach(() => { mockTrack.mockClear() })
+
+    it('salir sin completar emite session_exited una sola vez', () => {
+      const workout = makeWorkout([makeExercise({ sets: 4 })])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+      act(() => { result.current.setProgress({ setsCount: 2 }) })
+
+      act(() => { result.current.endSession() })
+
+      expect(terminals()).toHaveLength(1)
+      expect(mockTrack).toHaveBeenCalledWith('session_exited', expect.objectContaining({
+        workout_key: 'p1_lun', phase: 1, day_id: 'lun', sets_logged: 2, completion_pct: 50,
+      }))
+    })
+
+    // La fase `celebrate` la pone `session-machine` en el `dispatch({type:'finish'})`
+    // que va justo después de `onMarkDone`, o sea después de `workout_completed`.
+    // Sin este pestillo, el cierre del panel de celebración emitía un segundo
+    // evento terminal para una sesión que ya estaba contada como completada.
+    it('cerrar desde el panel de celebración NO emite nada más', () => {
+      const workout = makeWorkout([makeExercise()])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+      act(() => { result.current.setProgress({ phase: 'celebrate' }) })
+
+      act(() => { result.current.endSession() })
+
+      expect(terminals()).toHaveLength(0)
+    })
+
+    it('completar y cerrar después la pestaña tampoco cuenta como abandono', () => {
+      const workout = makeWorkout([makeExercise()])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+      act(() => { result.current.setProgress({ phase: 'celebrate' }) })
+
+      act(() => { window.dispatchEvent(new Event('beforeunload')) })
+
+      expect(terminals()).toHaveLength(0)
+    })
+
+    // `beforeunload` y `pagehide` pueden dispararse los dos en la misma salida.
+    it('cerrar la pestaña emite un solo workout_abandoned aunque salten los dos eventos', () => {
+      const workout = makeWorkout([makeExercise()])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+
+      act(() => {
+        window.dispatchEvent(new Event('beforeunload'))
+        window.dispatchEvent(new Event('pagehide'))
+      })
+
+      expect(terminals()).toHaveLength(1)
+      expect(mockTrack).toHaveBeenCalledWith('workout_abandoned', expect.objectContaining({
+        workout_key: 'p1_lun', reason: 'page_closed',
+      }))
+    })
+
+    // El listener recibe el evento del DOM como primer argumento: si
+    // `trackAbandon` aceptase la causa por parámetro, `reason` sería un
+    // `BeforeUnloadEvent`.
+    it('el objeto del evento del DOM no se cuela como causa del abandono', () => {
+      const workout = makeWorkout([makeExercise()])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+
+      act(() => { window.dispatchEvent(new Event('beforeunload')) })
+
+      expect(terminals()[0][1]).toMatchObject({ reason: 'page_closed' })
+    })
+
+    // Esta es una de las dos señales de abandono que SÍ funcionan en nativo,
+    // donde no hay `beforeunload` de ningún tipo.
+    it('arrancar otro entreno abandona el anterior, con sus propios datos', () => {
+      const first = makeWorkout([makeExercise({ sets: 4 })])
+      const second = makeWorkout([makeExercise({ sets: 3 })])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(first, 'p1_lun', 'program') })
+      act(() => { result.current.setProgress({ setsCount: 1 }) })
+
+      act(() => { result.current.startSession(second, 'p2_mar', 'program') })
+
+      expect(terminals()).toHaveLength(1)
+      expect(mockTrack).toHaveBeenCalledWith('workout_abandoned', expect.objectContaining({
+        workout_key: 'p1_lun', phase: 1, reason: 'replaced', sets_logged: 1,
+      }))
+    })
+
+    it('reanudar el MISMO entreno no es un abandono', () => {
+      const workout = makeWorkout([makeExercise()])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+
+      expect(terminals()).toHaveLength(0)
+    })
+
+    it('el pestillo se rearma con cada sesión nueva', () => {
+      const workout = makeWorkout([makeExercise()])
+      const { result } = renderHook(() => ({ ...useActiveSession(), progress: useActiveSessionProgress() }), { wrapper: ActiveSessionProvider })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+      act(() => { result.current.endSession() })
+      act(() => { result.current.startSession(workout, 'p1_lun', 'program') })
+      act(() => { result.current.endSession() })
+
+      expect(terminals()).toHaveLength(2)
+    })
   })
 
   it('getProgressSnapshot devuelve el progreso actual sin suscribirse a él', () => {
@@ -313,14 +449,19 @@ describe('ActiveSessionContext', () => {
       expect(result.current.progress).toEqual({ stepIdx: 2, phase: 'exercise', setsCount: 1 })
     })
 
-    it('descarta y borra una sesión de más de 24h', async () => {
+    // #636: caducar es la otra señal de abandono que funciona en nativo. Antes
+    // la sesión se tiraba en silencio y el entreno que el usuario nunca terminó
+    // no dejaba ni un evento.
+    it('descarta una sesión de más de 24h y la declara abandonada', async () => {
+      mockTrack.mockClear()
       const old = Date.now() - 25 * 60 * 60 * 1000
       const persisted = {
-        workout: makeWorkout([makeExercise()]),
-        workoutKey: 'k',
+        workout: makeWorkout([makeExercise({ sets: 4 })]),
+        workoutKey: 'p2_mie',
         source: 'program',
-        progress: INITIAL_PROGRESS,
+        progress: { stepIdx: 3, phase: 'exercise', setsCount: 2 },
         startedAt: old,
+        savedAt: old + 600_000,
         sectionStartTime: null,
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
@@ -331,6 +472,24 @@ describe('ActiveSessionContext', () => {
 
       expect(result.current.isActive).toBe(false)
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+      // La duración es la REAL del entreno (arranque → último guardado), no el
+      // tiempo transcurrido hasta que la app volvió a abrirse.
+      expect(mockTrack).toHaveBeenCalledWith('workout_abandoned', expect.objectContaining({
+        workout_key: 'p2_mie', reason: 'expired', duration_seconds: 600, sets_logged: 2,
+      }))
+    })
+
+    // Una entrada corrupta no es un entreno abandonado: emitir por ella
+    // inflaría la cifra con basura de storage.
+    it('el shape inválido no se declara abandonado', async () => {
+      mockTrack.mockClear()
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ startedAt: Date.now() - 25 * 60 * 60 * 1000 }))
+
+      vi.resetModules()
+      const mod = await import('./ActiveSessionContext')
+      renderHook(() => mod.useActiveSession(), { wrapper: mod.ActiveSessionProvider })
+
+      expect(mockTrack).not.toHaveBeenCalledWith('workout_abandoned', expect.anything())
     })
 
     it('descarta JSON corrupto y limpia el storage', async () => {
@@ -355,4 +514,103 @@ describe('ActiveSessionContext', () => {
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
     })
   })
+
+  // #636 §3: los pasos de EN MEDIO del embudo (serie, ejercicio, descanso,
+  // calentamiento). A diferencia de los desenlaces no son excluyentes, pero sí
+  // tienen que llevar el mismo bloque de propiedades o el embudo no se puede
+  // segmentar por programa ni por plataforma.
+  describe('pasos intermedios del embudo', () => {
+    beforeEach(() => {
+      mockTrack.mockClear()
+      activeProgramId.current = null
+      localStorage.clear()
+    })
+
+    function startedSession(exercises = [makeExercise({ section: 'main', sets: 2 })]) {
+      const { result } = renderHook(
+        () => ({ ...useActiveSession(), progress: useActiveSessionProgress() }),
+        { wrapper: ActiveSessionProvider },
+      )
+      act(() => { result.current.startSession(makeWorkout(exercises), 'p2_mie', 'program') })
+      mockTrack.mockClear()
+      return result
+    }
+
+    it('un paso intermedio lleva el mismo bloque que los desenlaces', () => {
+      activeProgramId.current = 'prog123'
+      const result = startedSession()
+
+      act(() => { result.current.trackFunnelStep('set_logged', { exercise_id: 'ex' }) })
+
+      expect(mockTrack).toHaveBeenCalledWith('set_logged', expect.objectContaining({
+        event_version: 1,
+        platform: 'web',
+        surface: 'session',
+        workout_key: 'p2_mie',
+        source: 'program',
+        phase: 2,
+        day_id: 'mie',
+        program_id: 'prog123',
+        exercise_count: 1,
+        exercise_id: 'ex',
+      }))
+    })
+
+    // La serie que dispara el evento todavía no ha llegado al progreso del
+    // contexto: sin el override, la PRIMERA serie de cada entreno saldría con
+    // `sets_logged: 0`, que es justo el paso que el embudo quiere contar.
+    it('un sets_logged explícito manda y vuelve a derivar completion_pct', () => {
+      const result = startedSession()
+
+      act(() => { result.current.trackFunnelStep('set_logged', { sets_logged: 1 }) })
+
+      expect(mockTrack).toHaveBeenCalledWith('set_logged', expect.objectContaining({
+        sets_logged: 1,
+        completion_pct: 50, // 1 de 2 series planificadas
+      }))
+    })
+
+    // Un descanso que termina después de cerrar la sesión emitiría un evento con
+    // `workout_key` vacío, que en OpenPanel es un entreno fantasma.
+    it('sin sesión activa no emite nada', () => {
+      const { result } = renderHook(() => useActiveSession(), { wrapper: ActiveSessionProvider })
+
+      act(() => { result.current.trackFunnelStep('rest_skipped') })
+
+      expect(mockTrack).not.toHaveBeenCalled()
+    })
+
+    it('saltar el calentamiento emite una vez, aunque se llame dos veces', () => {
+      const result = startedSession([makeExercise({ section: 'warmup', sets: 1 })])
+
+      act(() => { result.current.skipWarmup() })
+      act(() => { result.current.skipWarmup() })
+
+      const warmups = mockTrack.mock.calls.filter(([name]) => name === 'warmup_skipped')
+      expect(warmups).toHaveLength(1)
+      expect(warmups[0][1]).toMatchObject({ workout_key: 'p2_mie', surface: 'session' })
+    })
+
+    it('el enfriamiento distingue saltarlo entero de saltar lo que queda', () => {
+      const result = startedSession([makeExercise({ section: 'cooldown', sets: 1 })])
+
+      act(() => { result.current.skipRemainingCooldown() })
+
+      const cooldowns = mockTrack.mock.calls.filter(([name]) => name === 'cooldown_skipped')
+      expect(cooldowns).toHaveLength(1)
+      expect(cooldowns[0][1]).toMatchObject({ scope: 'remaining' })
+    })
+
+    it('saltar el enfriamiento y luego lo que queda no cuenta dos veces', () => {
+      const result = startedSession([makeExercise({ section: 'cooldown', sets: 1 })])
+
+      act(() => { result.current.skipCooldown() })
+      act(() => { result.current.skipRemainingCooldown() })
+
+      const cooldowns = mockTrack.mock.calls.filter(([name]) => name === 'cooldown_skipped')
+      expect(cooldowns).toHaveLength(1)
+      expect(cooldowns[0][1]).toMatchObject({ scope: 'full' })
+    })
+  })
+
 })

@@ -8,7 +8,7 @@
  * Recovery: if user already has an active program and onboarding is not done,
  * markOnboardingDone immediately and go to tabs.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
@@ -16,15 +16,33 @@ import Animated, { FadeInRight } from 'react-native-reanimated'
 
 import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
-import { op } from '@calistenia/core/lib/analytics'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
+import { estimateFirstWorkoutMinutes, normalizeFirstWorkoutLevel } from '@calistenia/core/lib/first-workout'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import {
+  DEFAULT_TRAINING_TIME_PRESET,
+  findTrainingTimePreset,
+  formatReminderTime,
+  reminderDaysFromTraining,
+  type TrainingTimePresetId,
+} from '@calistenia/core/lib/onboarding-reminder'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
+import {
+  DISCOVERY_SOURCE_NOT_ANSWERED,
+  trackDiscoverySourceAnswered,
+  type DiscoverySourceId,
+} from '@calistenia/core/lib/discovery-source'
 
 import { Sentry } from '@/lib/instrument'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { haptics } from '@/lib/haptics'
+import { useStartFirstWorkout } from '@/lib/start-first-workout'
+import { ensureReminderPermission, getReminderPermission } from '@/lib/reminder-scheduler'
+import { registerPushTokenAsync } from '@/lib/push-registration'
 
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
@@ -33,6 +51,7 @@ import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth } from './StepHealth'
 import { StepTraining } from './StepTraining'
 import { StepProgram } from './StepProgram'
+import { StepReminder } from './StepReminder'
 import { StepPersonalizing } from './StepPersonalizing'
 import type { HealthValues } from '@calistenia/core/types/onboarding'
 import type { TrainingValues } from '@calistenia/core/types/onboarding'
@@ -58,6 +77,7 @@ export function OnboardingFlow() {
 
   const { programs, activeProgram } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
+  const startFirstWorkout = useStartFirstWorkout()
 
   const [step, setStep] = useState(0)
 
@@ -96,6 +116,16 @@ export function OnboardingFlow() {
   // Salud guardada (user_health): fallback para el matching de programas cuando
   // el flujo no pasó por el paso de salud (needsProfile=false).
   const { health: savedHealth } = useUserHealth(userId ?? null)
+  // Recordatorio de entreno por defecto (#695): comparte hook con la pantalla
+  // de Ajustes > Recordatorios.
+  const { reminders, saveReminder } = useWorkoutReminders(userId ?? null)
+  const [reminderPreset, setReminderPreset] = useState<TrainingTimePresetId>(DEFAULT_TRAINING_TIME_PRESET)
+  const [savingReminder, setSavingReminder] = useState(false)
+  const [reminderPermissionDenied, setReminderPermissionDenied] = useState(false)
+  // «¿Cómo conociste la app?» (#586). Se emite UNA vez, al salir de la
+  // bienvenida; volver atrás y salir de nuevo no lo repite.
+  const [discoverySource, setDiscoverySource] = useState<DiscoverySourceId | null>(null)
+  const discoveryTracked = useRef(false)
 
   // Step index layout (frozen via needsProfile)
   const profileStep = needsProfile ? 1 : -1
@@ -103,8 +133,9 @@ export function OnboardingFlow() {
   const healthStep = needsProfile ? 3 : -1
   const trainingStep = needsProfile ? 4 : -1
   const programStep = needsProfile ? 5 : 1
-  const personalizingStep = needsProfile ? 6 : 2
-  const totalSteps = needsProfile ? 7 : 3
+  const reminderStep = needsProfile ? 6 : 2
+  const personalizingStep = needsProfile ? 7 : 3
+  const totalSteps = needsProfile ? 8 : 4
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
@@ -113,15 +144,46 @@ export function OnboardingFlow() {
     if (s === healthStep) return 'health'
     if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
+    if (s === reminderStep) return 'reminder'
     if (s === personalizingStep) return 'personalizing'
     return `step_${s}`
   }
+
+  // Al llegar al paso del recordatorio, si ya hay permiso denegado a nivel OS
+  // (p. ej. lo rechazó antes en Ajustes), avisamos de una vez en vez de que
+  // lo descubra al tocar «Activar recordatorio».
+  useEffect(() => {
+    if (step !== reminderStep) return
+    let cancelled = false
+    getReminderPermission().then((status) => {
+      if (!cancelled) setReminderPermissionDenied(status === 'denied')
+    })
+    return () => { cancelled = true }
+  }, [step, reminderStep])
+
+  // `onboarding_step_viewed` solo se emite al AVANZAR, así que el primer paso
+  // no lo emitía nadie y no se sabía cuánta gente llega a ver el onboarding
+  // (#636 §4). Sin esto, `onboarding_completed` no tiene denominador.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.onboardingStarted, {
+      surface: 'onboarding', source: 'onboarding_mobile',
+      total_steps: totalSteps,
+      needs_profile: needsProfile,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vez por onboarding
 
   const goToStep = (s: number) => {
     haptics.light()
     setSaveError(false)
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
+  }
+
+  const leaveWelcome = () => {
+    if (discoverySource && !discoveryTracked.current) {
+      discoveryTracked.current = true
+      trackDiscoverySourceAnswered(discoverySource, 'onboarding_mobile')
+    }
   }
 
   const handleSelectProgram = async (programId: string) => {
@@ -139,7 +201,9 @@ export function OnboardingFlow() {
   }
 
   const handleSaveGoals = async () => {
-    if (await saveGoals(goals)) goToStep(healthStep)
+    // `basics` va con las metas para sembrar el objetivo de nutrición: es el
+    // primer momento con peso/altura/edad/sexo Y actividad/objetivo/ritmo.
+    if (await saveGoals(goals, basics)) goToStep(healthStep)
   }
 
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
@@ -158,11 +222,50 @@ export function OnboardingFlow() {
     if (await saveTraining(training)) goToStep(programStep)
   }
 
-  const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
+  // El recordatorio queda guardado SIEMPRE (offline-first, `saveReminder`
+  // escribe a local antes de intentar PB y nunca lanza), permiso concedido o
+  // no: negarlo solo cambia si sonará, no si el recordatorio existe (#695).
+  const handleSaveReminder = async () => {
+    setSavingReminder(true)
+    setSaveError(false)
+    try {
+      const presetMeta = findTrainingTimePreset(reminderPreset)
+      const granted = await ensureReminderPermission()
+      setReminderPermissionDenied(!granted)
+      if (granted && userId) {
+        registerPushTokenAsync(pb, userId).catch((e) => {
+          Sentry.captureException(e, { tags: { feature: 'onboarding_reminder', op: 'register_push_token' } })
+        })
+      }
+      const days = reminderDaysFromTraining(training.training_days)
+      await saveReminder(presetMeta.hour, presetMeta.minute, days, 'workout')
+      op.track('onboarding_reminder_set', {
+        preset: reminderPreset,
+        time: formatReminderTime(presetMeta.hour, presetMeta.minute),
+        days_count: days.length,
+        permission: granted ? 'granted' : 'denied',
+      })
+      goToStep(personalizingStep)
+    } catch (e) {
+      Sentry.captureException(e, { tags: { flow: 'onboarding_save', step: 'reminder' } })
+      setSaveError(true)
+      haptics.error()
+    } finally {
+      setSavingReminder(false)
+    }
+  }
+
+  const handleSkipReminder = () => {
+    op.track('onboarding_reminder_skipped', { preset: reminderPreset })
+    goToStep(personalizingStep)
+  }
+
+  const handleFinish = (destination: 'home' | 'measurements' | 'first_workout' = 'home') => {
     if (userId) {
       markOnboardingDone(userId)
     }
     op.track('onboarding_completed', {
+      destination,
       first_measurement_cta: destination === 'measurements',
       level: training.level || 'unknown',
       primary_goal: goals.primary_goal || 'unknown',
@@ -173,7 +276,15 @@ export function OnboardingFlow() {
       injuries_count: health.injuries.length,
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
+      has_reminder: reminders.some((r) => r.reminderType === 'workout' && r.enabled),
+      discovery_source: discoverySource ?? DISCOVERY_SOURCE_NOT_ANSWERED,
     })
+    if (destination === 'first_workout') {
+      // startFirstWorkout navega por su cuenta a /session — no hace falta
+      // (ni conviene) también reemplazar por /(tabs) aquí (#694).
+      startFirstWorkout(training.level || (user as Record<string, unknown>)?.level as string | undefined, 'onboarding')
+      return
+    }
     router.replace('/(tabs)')
     // Deep-link a la primera medición corporal (#227): la pantalla stacked se
     // apila sobre las tabs para que "atrás" caiga en la app normal.
@@ -194,6 +305,9 @@ export function OnboardingFlow() {
     injuries: health.injuries.length ? health.injuries : savedHealth.injuries,
     medical_conditions: health.medical_conditions.length ? health.medical_conditions : savedHealth.medical_conditions,
     primary_goal: goals.primary_goal || (user as Record<string, unknown>)?.primary_goal as string | undefined,
+    // Del estado del formulario y no de `users` (#717): el sexo es PII y vive
+    // en `nutrition_goals` (#676). Sin paso de básicos, programa genérico.
+    sex: basics.sex || undefined,
   }
 
   return (
@@ -248,8 +362,10 @@ export function OnboardingFlow() {
             <StepWelcome
               firstName={firstName}
               needsProfile={needsProfile}
-              onStart={() => goToStep(needsProfile ? profileStep : programStep)}
-              onSkipAll={handleFinish}
+              discoverySource={discoverySource}
+              onDiscoverySourceChange={setDiscoverySource}
+              onStart={() => { leaveWelcome(); goToStep(needsProfile ? profileStep : programStep) }}
+              onSkipAll={() => { leaveWelcome(); handleFinish() }}
             />
           ) : null}
 
@@ -314,7 +430,26 @@ export function OnboardingFlow() {
                 router.replace('/program-editor')
               }}
               onBack={() => goToStep(needsProfile ? trainingStep : 0)}
-              onContinue={() => goToStep(personalizingStep)}
+              onContinue={() => {
+                // Si ya tiene un recordatorio de entreno activo (perfil existente,
+                // o volvió atrás tras guardarlo), el paso no aporta nada: saltarlo.
+                const hasWorkoutReminder = reminders.some(
+                  (r) => r.reminderType === 'workout' && r.enabled,
+                )
+                goToStep(hasWorkoutReminder ? personalizingStep : reminderStep)
+              }}
+            />
+          ) : null}
+
+          {step === reminderStep ? (
+            <StepReminder
+              preset={reminderPreset}
+              onChange={setReminderPreset}
+              onBack={() => goToStep(programStep)}
+              onContinue={handleSaveReminder}
+              onSkip={handleSkipReminder}
+              saving={savingReminder}
+              permissionDenied={reminderPermissionDenied}
             />
           ) : null}
 
@@ -326,6 +461,10 @@ export function OnboardingFlow() {
               program={programs.find((p) => p.id === selectedProgramId) ?? null}
               onFinish={() => handleFinish()}
               onFirstMeasurement={() => handleFinish('measurements')}
+              onStartFirstWorkout={() => handleFinish('first_workout')}
+              firstWorkoutMinutes={estimateFirstWorkoutMinutes(
+                normalizeFirstWorkoutLevel(training.level || (user as Record<string, unknown>)?.level as string | undefined),
+              )}
             />
           ) : null}
         </Animated.View>

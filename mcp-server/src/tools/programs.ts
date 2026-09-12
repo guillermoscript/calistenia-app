@@ -1,7 +1,7 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, viewResult, ResponseFormat, PaginationSchema } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, PaginationSchema, today } from "../utils.js";
 import { localize, toTranslatable } from "../lib/i18n.js";
 import { programViewPropsSchema } from "../views/program-view.schema.js";
 import {
@@ -9,7 +9,11 @@ import {
   setCurrentProgram as setCurrentProgramRepo,
   listProgramPhases,
   listProgramExercises,
+  listProgramOverrides,
+  listProgramStats,
 } from "../api/repos/index.js";
+import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
+import { resolveProgramExercises, toProgramOverrides } from "../api/program-overrides-server.js";
 
 export function registerProgramTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -45,8 +49,20 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           }),
         ]);
 
+        // Cuánta gente sigue cada uno (#669). Va después de la lista porque
+        // se filtra por los ids que acaba de devolver, y nunca tumba la tool:
+        // un despliegue sin la migración de #620 devuelve 404 en la view.
+        const stats = await listProgramStats(pb, programs.map((p) => p.id));
+
         const activeIds = new Set(userPrograms.filter((up) => up.is_current).map((up) => up.program));
         const selectedIds = new Set(userPrograms.map((up) => up.program));
+
+        // El crédito del remix (#620) se resuelve contra esta misma lista, sin
+        // una consulta por programa. Un `forked_from` que no aparezca aquí es el
+        // caso normal y esperado: el original puede ser privado, o haber sido
+        // borrado (la relación va sin cascade a propósito, así que la copia
+        // sobrevive y deja de acreditar a nadie).
+        const nameById = new Map(programs.map((p) => [p.id, localize(p.name)]));
 
         const output = {
           count: programs.length,
@@ -57,6 +73,12 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             duration_weeks: p.duration_weeks,
             is_current: activeIds.has(p.id),
             is_selected: selectedIds.has(p.id),
+            forked_from: (p.forked_from as string) || null,
+            forked_from_name: p.forked_from ? nameById.get(p.forked_from as string) ?? null : null,
+            // `null` = no se sabe (la view no está o no se puede leer), que no
+            // es lo mismo que 0 = todavía no lo sigue nadie. Ver `listProgramStats`.
+            followers_count: stats[p.id]?.followers_count ?? null,
+            athletes_count: stats[p.id]?.athletes_count ?? null,
           })),
         };
 
@@ -71,6 +93,15 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             lines.push(`- **ID**: \`${p.id}\``);
             lines.push(`- **Duration**: ${p.duration_weeks} weeks`);
             lines.push(`- **Description**: ${p.description || "N/A"}`);
+            // Sin dato no se escribe la línea: un "0 followers" inventado a
+            // partir de un fallo de permisos es perfectamente creíble y falso.
+            if (p.followers_count !== null) {
+              const athletes = p.athletes_count ? `, ${p.athletes_count} training it` : "";
+              lines.push(`- **Followers**: ${p.followers_count}${athletes}`);
+            }
+            if (p.forked_from) {
+              lines.push(`- **Based on**: ${p.forked_from_name ?? `\`${p.forked_from}\``}`);
+            }
             lines.push("");
           }
           text = lines.join("\n");
@@ -107,6 +138,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const current = await getCurrentProgram(pb, userId);
 
         if (!current) {
@@ -124,10 +156,19 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // Load phases and exercises
         const programId = program.id as string;
-        const [phases, exercises] = await Promise.all([
+        const [phases, exercises, overrideRows, active, stats] = await Promise.all([
           listProgramPhases(pb, programId),
           listProgramExercises(pb, programId, { sort: "priority" }),
+          listProgramOverrides(pb, userId, programId),
+          // La semana y la fase reales (#616): derivadas de `started_at`, no del
+          // entero global `settings.phase`. Se le pasa el `current` que ya
+          // tenemos para que no vuelva a leer la inscripción.
+          resolveActiveProgramProgress(pb, userId, tz, today(tz), { current }),
+          // Cuánta gente más lo sigue (#620/#669). Nunca lanza y `undefined`
+          // significa «no se sabe», no «cero»: ver `listProgramStats`.
+          listProgramStats(pb, [programId]),
         ]);
+        const overrides = toProgramOverrides(overrideRows);
 
         // Organize exercises by phase + day
         const exercisesByPhaseDay: Record<string, Record<string, typeof exercises>> = {};
@@ -139,14 +180,42 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           exercisesByPhaseDay[phaseKey][dayKey].push(ex);
         }
 
+        const progress = active?.progress ?? null;
+
         const output = {
           program: {
             id: program.id,
             name: localize(program.name as string),
             description: localize(program.description as string),
             duration_weeks: program.duration_weeks,
+            instructions: localize(program.instructions as string) || null,
+            forked_from: (program.forked_from as string) || null,
+            followers_count: stats[programId]?.followers_count ?? null,
+            athletes_count: stats[programId]?.athletes_count ?? null,
           },
           started_at: userProgram.started_at,
+          // El estado de la inscripción, que es donde viven las dos cosas que
+          // el MCP ignoraba: la fase de ESTE programa y el interruptor de la
+          // progresión automática (#617).
+          enrollment: {
+            status: (userProgram.status as string) || "active",
+            auto_progress: !!userProgram.auto_progress,
+            phase_override: (userProgram.current_phase as number) || null,
+          },
+          progress: progress && {
+            current_week: progress.currentWeek,
+            total_weeks: progress.totalWeeks,
+            current_phase: progress.currentPhase,
+            // 'override' = la fijó el usuario a mano; 'derived' = sale de las
+            // semanas transcurridas; 'fallback' = el programa no tiene fases de
+            // donde derivarla.
+            phase_source: progress.phaseSource,
+            percent: progress.percent,
+            sessions_this_week: progress.sessionsThisWeek,
+            planned_this_week: progress.plannedThisWeek,
+            next_day: progress.nextDay,
+            is_completed: progress.isCompleted,
+          },
           phases: phases.map((ph) => ({
             phase_number: ph.phase_number,
             name: localize(ph.name),
@@ -157,17 +226,11 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
                 day_name: localize((exs[0] as Record<string, unknown>).day_name as string),
                 day_focus: localize((exs[0] as Record<string, unknown>).day_focus as string),
                 workout_title: localize((exs[0] as Record<string, unknown>).workout_title as string),
-                exercises: exs.map((e) => ({
-                  exercise_id: e.exercise_id,
-                  name: localize(e.exercise_name),
-                  sets: e.sets,
-                  reps: e.reps,
-                  rest_seconds: e.rest_seconds,
-                  muscles: localize(e.muscles),
-                  is_timer: e.is_timer,
-                  youtube: e.youtube || null,
-                  section: e.section || "main",
-                })),
+                // Con la progresión aceptada por el usuario ya aplicada (#617):
+                // en un programa ajeno esa dosis solo existe en
+                // `user_program_overrides`, así que servir la fila cruda sería
+                // darle una prescripción que su propia app ya no le enseña.
+                exercises: resolveProgramExercises(exs, overrides),
               })
             ),
           })),
@@ -177,19 +240,39 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
         if (response_format === ResponseFormat.JSON) {
           text = JSON.stringify(output, null, 2);
         } else {
+          const p = output.progress;
           const lines = [
             `# ${output.program.name}`,
-            `Started: ${userProgram.started_at?.slice(0, 10) ?? "unknown"} | Duration: ${output.program.duration_weeks} weeks\n`,
+            `Started: ${userProgram.started_at?.slice(0, 10) ?? "unknown"} | Duration: ${output.program.duration_weeks} weeks`,
+            p
+              ? `**Week ${p.current_week ?? "—"} of ${p.total_weeks}** · Phase **${p.current_phase}**` +
+                `${p.phase_source === "override" ? " (set manually)" : ""}` +
+                ` · ${p.sessions_this_week}/${p.planned_this_week} workouts this week` +
+                `${p.is_completed ? " · **program finished**" : ""}`
+              : "",
+            output.enrollment.auto_progress ? `_Auto-progression is ON for this enrollment._` : "",
+            // Sin dato no se escribe la línea: un «0 followers» sacado de un
+            // fallo de permisos es creíble y falso (#669).
+            output.program.followers_count !== null
+              ? `_${output.program.followers_count} people follow this program` +
+                `${output.program.athletes_count ? `, ${output.program.athletes_count} have trained it` : ""}._`
+              : "",
+            "",
             output.program.description ? `> ${output.program.description}\n` : "",
           ];
           for (const phase of output.phases) {
-            lines.push(`\n## Phase ${phase.phase_number}: ${phase.name} (${phase.weeks})`);
+            // La fase en curso se marca: sin la marca, un programa de 4 fases
+            // son cuatro bloques idénticos y el modelo elige el que quiere.
+            const isCurrent = p?.current_phase === phase.phase_number;
+            lines.push(`\n## Phase ${phase.phase_number}: ${phase.name} (${phase.weeks})${isCurrent ? " ← **CURRENT**" : ""}`);
             for (const day of phase.days) {
               lines.push(`\n### ${day.day_name} — ${day.day_focus}`);
               lines.push(`*${day.workout_title}*\n`);
               for (const ex of day.exercises) {
                 const timer = ex.is_timer ? " (timer)" : "";
-                lines.push(`- **${ex.name}**: ${ex.sets} sets × ${ex.reps}${timer} | Rest: ${ex.rest_seconds}s`);
+                const progressed = ex.auto_progressed ? " _(auto-progressed)_" : "";
+                lines.push(`- **${ex.name}**: ${ex.sets} sets × ${ex.reps}${timer} | Rest: ${ex.rest_seconds}s${progressed}`);
+                if (ex.variant_of) lines.push(`  _Doing variant \`${ex.variant_of}\` instead_`);
                 if (ex.muscles) lines.push(`  _Muscles: ${ex.muscles}_`);
               }
             }
@@ -373,6 +456,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           duration_weeks: input.duration_weeks || 0,
           difficulty: input.difficulty || "",
           is_active: true,
+          // Nace privado (#603): es un programa de usuario, no de catálogo.
+          // Se publica desde el editor cambiando la visibilidad.
+          visibility: "private",
           created_by: userId,
         });
 
@@ -436,7 +522,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
       name: "cal_delete_program",
       title: "Delete Training Program",
       description:
-        "Delete a training program. Phases and exercises are cascade-deleted by PocketBase. Only the program creator can delete.",
+        "Delete a training program. Phases and exercises are cascade-deleted by PocketBase; anyone enrolled keeps their history and is notified. Only the program creator can delete.",
       schema: z.object({ program_id: z.string().describe("Program ID to delete") }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
     },
@@ -446,21 +532,23 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
         const pb = auth.getClient();
         const program = await pb.collection("programs").getOne(program_id);
 
-        // Delete user_programs entries first — they have cascadeDelete: false + required,
-        // so PocketBase blocks program deletion if these exist
-        try {
-          const userProgs = await pb.collection("user_programs").getFullList({
-            filter: pb.filter("program = {:pid}", { pid: program_id }),
-            fields: "id",
-            requestKey: null,
-          });
-          for (const up of userProgs) {
-            await pb.collection("user_programs").delete(up.id);
-          }
-        } catch { /* no user_programs entries */ }
-
-        // Now safe to delete — program_exercises, program_phases, program_day_config
-        // are cascade-deleted by PocketBase automatically
+        // Las inscripciones NO se tocan desde aquí, y borrarlas antes era un bug
+        // (#663). El comentario que había —«PocketBase bloquea el borrado si
+        // existen»— dejó de ser cierto: `user_programs.program` es opcional
+        // desde 1784900000_user_programs_program_optional.js, así que el borrado
+        // pasa igual y la fila sobrevive, que es lo que se quiere: es el
+        // historial del inscrito, no un detalle del programa del autor.
+        //
+        // De cerrarlas se encarga `pb_hooks/programs_delete_cleanup.pb.js`, que
+        // las marca `abandoned` con `$app` (saltándose las API rules, cosa que
+        // el cliente no puede) y manda la notificación `program_deleted` de
+        // #633. Adelantarse al hook destruía ese historial y se saltaba el
+        // aviso — y encima solo a medias: el `deleteRule` es
+        // `user = @request.auth.id`, así que el bucle moría con un 403 en la
+        // primera inscripción ajena, dentro de un `catch {}` vacío.
+        //
+        // program_exercises, program_phases, program_day_config y
+        // user_program_overrides sí van con cascade y se los lleva PocketBase.
         await pb.collection("programs").delete(program_id);
         return {
           content: [{ type: "text", text: `Deleted program **${localize(program.name)}**` }],
@@ -804,6 +892,8 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           duration_weeks: input.duration_weeks || 0,
           difficulty: input.difficulty || "",
           is_active: true,
+          // Nace privado (#603): es un programa de usuario, no de catálogo.
+          visibility: "private",
           created_by: userId,
         });
 
@@ -999,6 +1089,8 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           difficulty: input.program.difficulty || "",
           is_active: true,
           is_official: input.is_official,
+          // Los sembrados como oficiales son catálogo; el resto, del usuario (#603).
+          visibility: input.is_official ? "public" : "private",
           created_by: userId,
         });
 
@@ -1141,6 +1233,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           duration_weeks: original.duration_weeks,
           difficulty: original.difficulty || "",
           is_active: true,
+          // La copia nace privada aunque el original fuera público (#603),
+          // igual que `duplicateProgram` en packages/core/hooks/usePrograms.ts.
+          visibility: "private",
           created_by: userId,
         });
 
@@ -1161,6 +1256,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             color: phase.color || "",
             bg_color: phase.bg_color || "",
             sort_order: phase.sort_order,
+            deload_last_week: phase.deload_last_week === true,
           });
         }
 
@@ -1187,6 +1283,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
             sort_order: ex.sort_order,
             priority: ex.priority,
             section: ex.section || "main",
+            // #755: sin esto la duplicación pierde las rampas semanales EN
+            // SILENCIO y la copia se queda con la dosis de la primera semana.
+            weekly_progression: ex.weekly_progression || [],
           });
         }
 

@@ -28,6 +28,12 @@ interface RestScreenProps {
   exerciseId?: string
   nextStep: Step | null
   onSkip: () => void
+  /**
+   * Solo el corte MANUAL del descanso. El que se agota solo llama a `onSkip`
+   * pero NO a esto: sin la distinción, `rest_skipped` contaría cada descanso
+   * completado como saltado (#636 §3).
+   */
+  onManualSkip?: (secondsRemaining: number) => void
   savedRest?: number
   onAdjust?: (exerciseId: string, seconds: number) => void
 }
@@ -37,6 +43,7 @@ export function RestScreen({
   exerciseId,
   nextStep,
   onSkip,
+  onManualSkip,
   savedRest,
   onAdjust,
 }: RestScreenProps) {
@@ -83,9 +90,16 @@ export function RestScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // El contador se declara más abajo, así que el segundero viaja por una ref:
+  // `handleSkip` tiene que seguir siendo estable.
+  const secondsLeftRef = useRef(0)
+  const onManualSkipRef = useRef(onManualSkip)
+  onManualSkipRef.current = onManualSkip
+
   /** Saltar a mano cancela la notificación programada; ya no hay nada que anunciar. */
   const handleSkip = useCallback(() => {
     cancelScheduled(notifIdRef.current)
+    onManualSkipRef.current?.(secondsLeftRef.current)
     onSkip()
   }, [onSkip])
 
@@ -105,6 +119,7 @@ export function RestScreen({
     // el aviso de los 10 s sigue sonando una sola vez como hasta ahora.
     resetKey: 'rest',
   })
+  secondsLeftRef.current = secondsLeft
 
   // Volver de segundo plano: mirar el reloj ya, sin esperar al siguiente intervalo.
   useEffect(() => {

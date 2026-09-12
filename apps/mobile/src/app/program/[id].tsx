@@ -1,25 +1,37 @@
-import { useState } from 'react'
-import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
+import { useCallback, useMemo, useState, useEffect } from 'react'
+import { View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, BadgeCheck, CalendarDays } from 'lucide-react-native'
+import { ArrowLeft, BadgeCheck, CalendarDays, ChevronRight, Copy, GitFork, LogOut, MoreVertical, Pencil, Trash2, Users } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { OptionSheet, type OptionSheetOption } from '@/components/ui/option-sheet'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
+import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
+import { useProgramDayBreakdown } from '@calistenia/core/hooks/useProgramDayBreakdown'
+import { defaultBreakdownPhase } from '@calistenia/core/lib/program-day-breakdown'
+import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import ProgramProgressBar from '@/components/programs/ProgramProgressBar'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useTranslation()
   const router = useRouter()
-  const { programs, activeProgram } = useWorkoutState()
-  const { selectProgram } = useWorkoutActions()
+  const { programs, activeProgram, programProgress } = useWorkoutState()
+  const { selectProgram, abandonProgram, duplicateProgram, deleteProgram } = useWorkoutActions()
+  const user = useAuthUser()
 
   // El catálogo en memoria solo trae programas is_active y puede no estar
   // hidratado en cold-start. Como la web (getOne por id), buscamos primero en el
@@ -34,8 +46,45 @@ export default function ProgramDetailScreen() {
   // localizados.
   const { program, days, notFound } = useProgramDetail(id ?? null, { knownProgram: catalogProgram })
 
+  // El contador de seguidores (#620) sale de una view agregada aparte, así que
+  // no viaja con el programa. La lista de ids se memoiza porque entra en la
+  // clave de caché: recrearla en cada render es un refetch por render (#451).
+  const statsIds = useMemo(() => (id ? [id] : []), [id])
+  const { statsById } = useProgramStats(statsIds)
+  const followersCount = statsById[id ?? '']?.followersCount
+
+  // #636 §4: `program_selected` no tenía denominador — se sabía cuánta gente
+  // elige un programa, pero no cuánta lo mira y pasa de él.
+  useEffect(() => {
+    if (!program) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programViewed, {
+      surface: 'program', source: 'program_screen',
+      program_id: id,
+      is_active: isActive,
+      followers_count: followersCount,
+      day_count: days?.length,
+    })
+    // Solo por programa: inscribirse recarga la ficha y no es una vista nueva.
+  }, [id, !!program]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por programa
+
+  // Ejercicios de todas las fases, para contar cada día y abrir su detalle
+  // (`/program-day`). El del programa activo ya está en caché por `usePrograms`.
+  const { detail } = useProgramDayBreakdown(id ?? null)
+  const phases = detail?.phases ?? []
+  const [phaseChoice, setPhaseChoice] = useState<number | null>(null)
+  const phase = phaseChoice ?? defaultBreakdownPhase(phases, isActive ? programProgress?.currentPhase : null)
+
   const [selecting, setSelecting] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [showActions, setShowActions] = useState(false)
   const [error, setError] = useState('')
+
+  // Mismo criterio que web (`ProgramDetailPage.tsx:149,560`): el dueño del
+  // programa, o quien tiene rol de edición, puede modificarlo y borrarlo.
+  const canManage = useMemo(() => {
+    if (!program || !user) return false
+    return program.created_by === user.id || user.role === 'admin' || user.role === 'editor'
+  }, [program, user])
 
   const handleSelect = async () => {
     if (!id || selecting) return
@@ -50,15 +99,126 @@ export default function ProgramDetailScreen() {
     }
   }
 
+  const handleEdit = useCallback(() => {
+    if (!id) return
+    router.push({ pathname: '/program-editor', params: { id } })
+  }, [id, router])
+
+  const handleDuplicate = useCallback(async () => {
+    if (!id || busy) return
+    setBusy(true)
+    const newId = await duplicateProgram(id)
+    setBusy(false)
+    if (newId) {
+      haptics.success()
+      // Igual que web: la copia se abre directamente en el editor, que es lo
+      // que se quiere hacer justo después de duplicar.
+      router.push({ pathname: '/program-editor', params: { id: newId } })
+    } else {
+      haptics.error()
+      Alert.alert(t('programDetail.duplicateError'))
+    }
+  }, [id, busy, duplicateProgram, router, t])
+
+  const handleAbandon = useCallback(() => {
+    if (!id) return
+    // Confirmación NATIVA (#345): en móvil `window.confirm` no existe.
+    Alert.alert(t('programDetail.abandonProgram'), t('programDetail.abandonConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('programDetail.abandonConfirmLabel'),
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true)
+          const ok = await abandonProgram(id)
+          setBusy(false)
+          if (ok) {
+            haptics.success()
+            router.replace('/(tabs)/programs')
+          } else {
+            haptics.error()
+            Alert.alert(t('programDetail.abandonError'))
+          }
+        },
+      },
+    ])
+  }, [id, abandonProgram, router, t])
+
+  const handleDelete = useCallback(() => {
+    if (!id) return
+    Alert.alert(t('programs.deleteProgram'), t('programs.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true)
+          const ok = await deleteProgram(id)
+          setBusy(false)
+          if (ok) {
+            haptics.success()
+            router.replace('/(tabs)/programs')
+          } else {
+            haptics.error()
+            Alert.alert(t('programs.deleteError'))
+          }
+        },
+      },
+    ])
+  }, [id, deleteProgram, router, t])
+
+  // El menú es un OptionSheet y no un Alert de opciones a propósito: el
+  // `Alert.alert` de Android admite tres botones como mucho y descarta los
+  // demás en silencio, y aquí puede haber cuatro entradas más cancelar.
+  const actions = useMemo<OptionSheetOption[]>(() => {
+    const opts: OptionSheetOption[] = []
+    if (canManage) {
+      opts.push({ key: 'edit', label: t('common.edit'), icon: Pencil, onPress: handleEdit })
+    }
+    opts.push({ key: 'duplicate', label: t('programDetail.duplicate'), icon: Copy, onPress: handleDuplicate })
+    if (isActive) {
+      opts.push({
+        key: 'abandon',
+        label: t('programDetail.abandonProgram'),
+        icon: LogOut,
+        destructive: true,
+        onPress: handleAbandon,
+      })
+    }
+    if (canManage) {
+      opts.push({
+        key: 'delete',
+        label: t('programs.deleteLabel'),
+        icon: Trash2,
+        destructive: true,
+        onPress: handleDelete,
+      })
+    }
+    return opts
+  }, [canManage, isActive, t, handleEdit, handleDuplicate, handleAbandon, handleDelete])
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-row items-center gap-2 px-2 py-1">
         <Pressable onPress={() => router.back()} hitSlop={8} className="p-2" accessibilityLabel={t('common.back')}>
           <ArrowLeft size={20} color="hsl(0 0% 55%)" />
         </Pressable>
+        {/* flex-1 + shrink-0 en el icono: en RN el shrink por defecto es 0, así
+            que sin esto un nombre largo empuja el botón de acciones fuera. */}
         <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
           {program?.name ?? ''}
         </Text>
+        {program && actions.length > 0 && (
+          <Pressable
+            onPress={() => { haptics.light(); setShowActions(true) }}
+            hitSlop={8}
+            className="shrink-0 p-2"
+            accessibilityLabel={t('programDetail.actions')}
+            accessibilityRole="button"
+          >
+            <MoreVertical size={20} color="hsl(0 0% 55%)" />
+          </Pressable>
+        )}
       </View>
 
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
@@ -70,6 +230,20 @@ export default function ProgramDetailScreen() {
           )
         ) : (
           <>
+            {!!program.cover_image_url && (
+              <View className="h-40 overflow-hidden rounded-xl border border-border bg-card">
+                <Image
+                  source={{ uri: program.cover_image_url }}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  transition={150}
+                  cachePolicy="memory-disk"
+                  recyclingKey={program.id}
+                  accessibilityLabel={program.name}
+                />
+              </View>
+            )}
+
             <Card>
               <CardContent className="gap-2 py-4">
                 <View className="flex-row flex-wrap items-center gap-2">
@@ -85,14 +259,84 @@ export default function ProgramDetailScreen() {
                   )}
                   {program.discipline === 'yoga' && <Chip label="Yoga" />}
                 </View>
+                {/* Crédito del remix y prueba social (#620). Las dos líneas se
+                    callan solas sin dato: `forked_from_name` falta en todo
+                    programa original, y el contador llega `undefined` cuando la
+                    view no devolvió la fila —que puede ser «nadie» o «no puedes
+                    verlo», indistinguibles desde aquí—. El cero también se
+                    calla: prueba social en negativo dice menos que nada. */}
+                {(!!program.forked_from_name || !!followersCount) && (
+                  <View className="mt-1 gap-1">
+                    {!!program.forked_from_name && (
+                      <View className="flex-row items-center gap-1.5">
+                        <GitFork size={11} color="hsl(0 0% 55%)" />
+                        <Text className="flex-1 font-mono text-[10px] tracking-wide text-muted-foreground" numberOfLines={1}>
+                          {program.forked_from_author
+                            ? t('programs.remix.basedOn', {
+                                program: program.forked_from_name,
+                                author: program.forked_from_author,
+                              })
+                            : t('programs.remix.basedOnNoAuthor', { program: program.forked_from_name })}
+                        </Text>
+                      </View>
+                    )}
+                    {!!followersCount && (
+                      <View className="flex-row items-center gap-1.5">
+                        <Users size={11} color="hsl(0 0% 55%)" />
+                        <Text className="font-mono text-[10px] tracking-wide text-muted-foreground">
+                          {t('programs.remix.followers', { count: followersCount })}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+                {/* Solo para el programa en curso: en el resto no hay
+                    inscripción de la que derivar semana ni fase. */}
+                {isActive && <ProgramProgressBar progress={programProgress} className="mt-2" />}
               </CardContent>
             </Card>
+
+            {/* «Cómo seguir este programa» (#618): las notas del autor sobre
+                cómo llevarlo. Van aparte de la descripción porque esa es la
+                frase corta que se pinta en la tarjeta del catálogo. */}
+            {!!program.instructions?.trim() && (
+              <Card>
+                <CardContent className="gap-2 py-4">
+                  <Kicker>{t('programDetail.howToFollow')}</Kicker>
+                  <Text className="text-sm leading-5 text-foreground/90">{program.instructions}</Text>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Semana tipo */}
             <View className="gap-2">
               <Kicker>
                 {t('workout.trainingDay')}
               </Kicker>
+              {/* Selector de fase: cada fase cambia los ejercicios del mismo día. */}
+              {phases.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+                  {phases.map(p => {
+                    const selected = p.id === phase
+                    return (
+                      <Pressable
+                        key={p.id}
+                        onPress={() => { haptics.light(); setPhaseChoice(p.id) }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        className={cn(
+                          'rounded-full border px-3 py-1.5',
+                          selected ? 'border-lime/40 bg-lime/10' : 'border-border bg-card active:bg-lime/10',
+                        )}
+                      >
+                        <Text className={cn('font-mono text-[10px] uppercase tracking-wide', selected ? 'text-lime' : 'text-muted-foreground')}>
+                          {`${t('programDetail.phaseLabel', { id: p.id })} · ${t('programDetail.weeksLabel', { weeks: p.weeks })}`}
+                        </Text>
+                      </Pressable>
+                    )
+                  })}
+                </ScrollView>
+              )}
               {days === null ? (
                 <ActivityIndicator />
               ) : days.length === 0 ? (
@@ -102,20 +346,66 @@ export default function ProgramDetailScreen() {
                   body={t('programDetail.emptyBody')}
                 />
               ) : (
-                days.map(day => (
-                  <View key={day.dayId} className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                    <View className="size-2.5 rounded-full" style={{ backgroundColor: day.color }} />
-                    <View className="flex-1">
-                      <Text className="font-sans-medium text-foreground">{day.name}</Text>
-                      <Text className="text-xs text-muted-foreground">{day.focus}</Text>
-                    </View>
-                    <Text className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">{day.type}</Text>
-                  </View>
-                ))
+                days.map(day => {
+                  const key = `p${phase}_${day.dayId}`
+                  const workout = detail?.workoutsMap[key]
+                  const cardio = detail?.cardioDayConfigs[key]
+                  const circuit = detail?.circuitDayConfigs[key]
+                  const exerciseCount = circuit?.exercises.length ?? workout?.exercises.length ?? 0
+                  // Solo abre detalle lo que tiene ejercicios: un descanso o un
+                  // cardio (cuya meta ya va en la propia fila) no llevan a nada.
+                  const openable = !cardio && exerciseCount > 0
+                  const minutes = workout && !circuit ? calculateWorkoutDuration(workout.exercises) : 0
+                  let summary = ''
+                  if (cardio) {
+                    const activity = cardio.activityType || 'running'
+                    summary = [
+                      `${CARDIO_ACTIVITY[activity]?.icon ?? ''} ${t(`cardio.${activity}`)}`,
+                      cardio.targetDistanceKm ? `${cardio.targetDistanceKm} km` : '',
+                      cardio.targetDurationMin ? `${cardio.targetDurationMin} ${t('common.minutes')}` : '',
+                    ].filter(Boolean).join(' · ')
+                  } else if (exerciseCount > 0) {
+                    summary = minutes > 0
+                      ? `${t('workout.exerciseCount', { count: exerciseCount })} · ~${minutes} ${t('common.minutes')}`
+                      : t('workout.exerciseCount', { count: exerciseCount })
+                  }
+                  return (
+                    <Pressable
+                      key={day.dayId}
+                      onPress={() => {
+                        haptics.light()
+                        router.push({ pathname: '/program-day', params: { id, phase: String(phase), day: day.dayId } })
+                      }}
+                      disabled={!openable}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: !openable }}
+                      className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:bg-lime/10"
+                    >
+                      <View className="size-2.5 rounded-full" style={{ backgroundColor: day.color }} />
+                      <View className="flex-1">
+                        <Text className="font-sans-medium text-foreground">{day.name}</Text>
+                        {!!day.focus && <Text className="text-xs text-muted-foreground">{day.focus}</Text>}
+                        {!!summary && (
+                          <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                            {summary}
+                          </Text>
+                        )}
+                      </View>
+                      <Text className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">{day.type}</Text>
+                      {openable && <ChevronRight size={16} color="hsl(0 0% 55%)" />}
+                    </Pressable>
+                  )
+                })
               )}
             </View>
 
             {error ? <Text className="text-center text-sm text-destructive">{error}</Text> : null}
+
+            {canManage && (
+              <Button size="lg" variant="outline" onPress={handleEdit} disabled={busy}>
+                <Text>{t('common.edit')}</Text>
+              </Button>
+            )}
 
             {isActive ? (
               <Button size="lg" variant="outline" onPress={() => router.dismissTo('/(tabs)')}>
@@ -131,6 +421,17 @@ export default function ProgramDetailScreen() {
           </>
         )}
       </ScrollView>
+
+      {program && (
+        <OptionSheet
+          visible={showActions}
+          kicker={t('programDetail.actions')}
+          title={program.name}
+          options={actions}
+          cancelLabel={t('common.cancel')}
+          onClose={() => setShowActions(false)}
+        />
+      )}
     </SafeAreaView>
   )
 }

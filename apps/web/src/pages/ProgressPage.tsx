@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
@@ -7,7 +7,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { cn } from '../lib/utils'
 import { relativeDate } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { useWorkoutState } from '../contexts/WorkoutContext'
+import { useTrainingStats } from '@calistenia/core/hooks/useTrainingStats'
+import { useCatalogIndex } from '@calistenia/core/hooks/useCatalogIndex'
+import { buildExerciseResolver, groupLogsByResolvedExercise } from '@calistenia/core/lib/exercise-resolver'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import type { ExerciseLog } from '@calistenia/core/types'
 import ProgressSummary from '../components/progress/ProgressSummary'
@@ -15,8 +18,9 @@ import ExerciseChart from '../components/progress/ExerciseChart'
 import WeightTracker from '../components/progress/WeightTracker'
 import BodyPhotosTimeline from '../components/progress/BodyPhotosTimeline'
 import WeightProgressionChart from '../components/progress/WeightProgressionChart'
-import MuscleVolumeChart from '../components/progress/MuscleVolumeChart'
 import VolumeLoadChart from '../components/progress/VolumeLoadChart'
+import TrainingStatsPanel from '../components/progress/stats/TrainingStatsPanel'
+import MuscleBarsChart from '../components/progress/stats/MuscleBarsChart'
 import OneRepMaxCalculator from '../components/progress/OneRepMaxCalculator'
 import PhotoComparator from '../components/progress/PhotoComparator'
 import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
@@ -27,12 +31,19 @@ import BattleHistory from '../components/progress/BattleHistory'
 import { Input } from '../components/ui/input'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
-function ChartsExerciseList({ exerciseLogs, t }: { exerciseLogs: Record<string, ExerciseLog[]>; t: (key: string) => string }) {
+function ChartsExerciseList({ exerciseLogs, exerciseNames, t }: { exerciseLogs: Record<string, ExerciseLog[]>; exerciseNames: Record<string, string>; t: (key: string) => string }) {
   const [search, setSearch] = useState('')
   const entries = Object.entries(exerciseLogs)
+  // Se busca sobre el nombre pintado Y sobre la clave: quien ya se sabe el id
+  // crudo de un ejercicio sigue encontrándolo.
   const filtered = search
-    ? entries.filter(([exId]) => exId.replace(/_/g, ' ').toLowerCase().includes(search.toLowerCase()))
+    ? entries.filter(([exId]) => {
+        const q = search.toLowerCase()
+        return exId.replace(/_/g, ' ').toLowerCase().includes(q)
+          || (exerciseNames[exId] ?? '').toLowerCase().includes(q)
+      })
     : entries
   const showSearch = entries.length > 6
 
@@ -53,7 +64,7 @@ function ChartsExerciseList({ exerciseLogs, t }: { exerciseLogs: Record<string, 
         {filtered.map(([exId, logs]) => (
           <ExerciseChart
             key={exId}
-            exerciseName={exId}
+            exerciseName={exerciseNames[exId] ?? exId}
             logs={logs}
             showSessionType
           />
@@ -78,19 +89,21 @@ interface SessionLog {
 }
 
 export default function ProgressPage() {
-  const { t } = useTranslation()
-  const { progress, settings, activeProgram } = useWorkoutState()
+  const { t, i18n } = useTranslation()
+  const { progress, settings, activeProgram, programProgress } = useWorkoutState()
+  const { getWorkout } = useWorkoutActions()
   const { userId } = useAuthState()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   // Deep-link a una tab concreta (p.ej. /progress?tab=cuerpo desde el CTA de
   // primera medición post-onboarding, #227).
-  const initialTab = ['resumen', 'graficas', 'cuerpo'].includes(searchParams.get('tab') || '')
+  const initialTab = ['resumen', 'estadisticas', 'graficas', 'cuerpo'].includes(searchParams.get('tab') || '')
     ? searchParams.get('tab')!
     : 'resumen'
   const { weights } = useWeight(userId || null)
   const { photos, getPhotosByPhase, uploadPhotos } = useBodyPhotos(userId || null)
-  const currentPhase = settings.phase || 1
+  // #616: fase derivada del programa activo, no del entero global.
+  const currentPhase = programProgress.currentPhase || 1
 
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)
@@ -120,20 +133,44 @@ export default function ProgressPage() {
       .sort((a, b) => b.date.localeCompare(a.date))
   }, [progress, t])
 
-  const exerciseLogs = useMemo<Record<string, ExerciseLog[]>>(() => {
-    const logs: Record<string, ExerciseLog[]> = {}
-    Object.values(progress).forEach(val => {
-      const v = val as ExerciseLog
-      if (v.exerciseId && v.sets) {
-        if (!logs[v.exerciseId]) logs[v.exerciseId] = []
-        logs[v.exerciseId].push(v)
-      }
+  // Los gráficos etiquetaban cada serie con la CLAVE cruda del ProgressMap, así
+  // que un ejercicio registrado como `arm_circles` salía «arm circles» y uno de
+  // programa como «lun_1_9» (#690). El mismo resolutor que ya nombra las
+  // estadísticas: catálogo primero y, si no, el ejercicio del programa activo
+  // en ese `workoutKey`. Lo que no resuelve se queda con su clave, como antes.
+  //
+  // Y se AGRUPA por esa misma identidad (#692): la plancha de un programa viejo
+  // vive en el historial como `mie_1_10` y la de una sesión libre como `plank`;
+  // agrupar por la clave cruda pintaba dos «Plancha» en las gráficas y el 1RM.
+  const { index: catalogIndex } = useCatalogIndex()
+  const resolveExercise = useMemo(
+    () => buildExerciseResolver({ index: catalogIndex, getWorkout, locale: i18n.language }),
+    [catalogIndex, getWorkout, i18n.language],
+  )
+  const { logs: exerciseLogs, names: exerciseNames } = useMemo(
+    () => groupLogsByResolvedExercise(progress, resolveExercise),
+    [progress, resolveExercise],
+  )
+
+  // #636 §4: la pantalla de progreso no emitía nada, así que no se sabía si
+  // alguien vuelve a mirar lo que ha hecho — que es la señal de retención más
+  // barata que tiene el producto.
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.progressViewed, {
+      surface: 'progress', source: 'progress_page',
+      tab: initialTab,
+      session_count: allLogs.length,
+      phase: currentPhase,
+      has_program: !!activeProgram,
     })
-    return logs
-  }, [progress])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   const programName = activeProgram?.name || null
   const freeLogCount = allLogs.filter(l => l.isFree).length
+
+  // Sustituye al gráfico de músculos anterior (#596): series REGISTRADAS a
+  // 4 semanas, no series planificadas de un mapa estático.
+  const { stats: fourWeekStats } = useTrainingStats(progress, getWorkout, '4w')
 
   return (
     <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -157,6 +194,7 @@ export default function ProgressPage() {
         <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="w-full mb-6">
             <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
+            <TabsTrigger value="estadisticas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.stats')}</TabsTrigger>
             <TabsTrigger value="graficas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.charts')}</TabsTrigger>
             <TabsTrigger value="cuerpo" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.body')}</TabsTrigger>
           </TabsList>
@@ -242,7 +280,12 @@ export default function ProgressPage() {
             <ExportData progress={progress} weights={weights} />
           </TabsContent>
 
-          {/* ── Tab 2: Gráficas ── */}
+          {/* ── Tab 2: Estadísticas ── */}
+          <TabsContent value="estadisticas">
+            <TrainingStatsPanel />
+          </TabsContent>
+
+          {/* ── Tab 3: Gráficas ── */}
           <TabsContent value="graficas">
             {Object.keys(exerciseLogs).length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
@@ -260,26 +303,29 @@ export default function ProgressPage() {
                 {/* Headline: Weekly Volume + Muscle Distribution */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 [&>*]:mb-0">
                   <VolumeLoadChart progress={progress} />
-                  <MuscleVolumeChart progress={progress} />
+                  <MuscleBarsChart
+                    groups={fourWeekStats.muscles.groups}
+                    unassignedSets={fourWeekStats.muscles.unassignedSets}
+                  />
                 </div>
 
                 {/* Weight Progression (lastre) */}
-                <WeightProgressionChart exerciseLogs={exerciseLogs} />
+                <WeightProgressionChart exerciseLogs={exerciseLogs} exerciseNames={exerciseNames} />
 
                 {/* 1RM Calculator */}
-                <OneRepMaxCalculator exerciseLogs={exerciseLogs} bodyweightKg={
+                <OneRepMaxCalculator exerciseLogs={exerciseLogs} exerciseNames={exerciseNames} bodyweightKg={
                   weights.length > 0
                     ? [...weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight_kg
                     : undefined
                 } />
 
                 {/* Exercise Charts with filter */}
-                <ChartsExerciseList exerciseLogs={exerciseLogs} t={t} />
+                <ChartsExerciseList exerciseLogs={exerciseLogs} exerciseNames={exerciseNames} t={t} />
               </>
             )}
           </TabsContent>
 
-          {/* ── Tab 3: Cuerpo ── */}
+          {/* ── Tab 4: Cuerpo ── */}
           <TabsContent value="cuerpo">
             {/* Phase Photo Timeline */}
             {userId && (

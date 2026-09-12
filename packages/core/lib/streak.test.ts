@@ -94,3 +94,12 @@ describe('computeLongestStreak', () => {
     expect(computeLongestStreak(['2025-12-31', '2026-01-01', '2026-01-02'])).toBe(3)
   })
 })
+
+describe('computeCurrentStreak con `today` inválido', () => {
+  it('devuelve 0 en vez de lanzar RangeError (dayjs 1.11.22+ en Hermes daba «Invalid Date»)', () => {
+    const done = new Set(['2026-08-26', '2026-08-27'])
+    expect(() => computeCurrentStreak(done, 'Invalid Date')).not.toThrow()
+    expect(computeCurrentStreak(done, 'Invalid Date')).toBe(0)
+    expect(computeCurrentStreak(done, '')).toBe(0)
+  })
+})

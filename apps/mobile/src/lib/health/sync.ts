@@ -3,10 +3,10 @@
  *
  * Reads the last N days from Health Connect via the bridge, aggregates to a
  * per-local-day summary, and upserts the `daily_health_cache` PocketBase
- * collection. Writes are confined to that NEW collection — existing
- * user-entered data (sleep_entries, weight_entries, sessions) is untouched in
- * this slice. Merging watch sleep/weight into those logs and matching HR to
- * sessions is the next slice (see docs/health-connect-integration-plan.md WS4).
+ * collection, plus merges watch sleep/weight into sleep_entries/weight_entries
+ * (manual-safe). v1.12.3 retiró Steps y HeartRate (tercer rechazo de Play por
+ * acceso mínimo a datos): las columnas steps y hr_avg/hr_max ya no se escriben;
+ * los valores históricos se conservan.
  */
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { DailyHealthSummary, HealthDataType, HealthSyncResult } from '@calistenia/core/types'
@@ -18,23 +18,9 @@ import { Sentry } from '@/lib/instrument'
 // interfaces declaran solo lo que pide cada `fields:` de la query.
 
 interface DatedRow { id: string; date: string; source?: string }
-interface SessionRow {
-  id: string
-  started_at?: string
-  finished_at?: string
-  completed_at?: string
-  duration_seconds?: number
-  hr_avg?: number
-}
 interface DailyCacheRow {
   id: string
   date: string
-  steps?: number
-  active_calories?: number
-  total_calories?: number
-  resting_hr?: number
-  hrv_ms?: number
-  vo2max?: number
   sleep_minutes?: number
   sleep_quality?: number
   weight_kg?: number
@@ -53,15 +39,6 @@ function localDay(iso: string): string {
 
 function minutesBetween(start: string, end: string): number {
   return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000))
-}
-
-function sumByDay<T>(samples: T[], dayOf: (s: T) => string, val: (s: T) => number): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const s of samples) {
-    const d = dayOf(s)
-    out[d] = (out[d] ?? 0) + val(s)
-  }
-  return out
 }
 
 /** Latest reading per local day (by timestamp). */
@@ -204,118 +181,6 @@ async function mergeWeightEntries(
   return written
 }
 
-/** Avg/max bpm of HR samples inside [startMs, endMs]. */
-function hrStatsInWindow(hr: hc.HrSample[], startMs: number, endMs: number): { avg: number; max: number; n: number } {
-  let sum = 0
-  let max = 0
-  let n = 0
-  for (const s of hr) {
-    const t = new Date(s.time).getTime()
-    if (t >= startMs && t <= endMs) {
-      sum += s.bpm
-      if (s.bpm > max) max = s.bpm
-      n++
-    }
-  }
-  return n > 0 ? { avg: Math.round(sum / n), max: Math.round(max), n } : { avg: 0, max: 0, n: 0 }
-}
-
-/** kcal of energy records overlapping [startMs, endMs] (prorated by overlap). */
-function kcalInWindow(energy: hc.EnergySample[], startMs: number, endMs: number): number {
-  let kcal = 0
-  for (const e of energy) {
-    const s = new Date(e.startTime).getTime()
-    const en = new Date(e.endTime).getTime()
-    if (en > s) {
-      const overlap = Math.min(en, endMs) - Math.max(s, startMs)
-      if (overlap > 0) kcal += e.kcal * (overlap / (en - s))
-    } else if (s >= startMs && s <= endMs) {
-      kcal += e.kcal // registro instantáneo dentro de la ventana
-    }
-  }
-  return kcal
-}
-
-interface SessionWindow { id: string; start: number; end: number; hasHr: boolean }
-
-/** Write hr_avg/hr_max/calories_actual onto sessions whose window has HR/energy. */
-async function applySessionMetrics(
-  collection: string,
-  sessions: SessionWindow[],
-  hr: hc.HrSample[],
-  active: hc.EnergySample[],
-): Promise<number> {
-  let written = 0
-  for (const s of sessions) {
-    if (s.hasHr) continue // ya importado en una sync previa — no re-escribir
-    if (!(s.end > s.start)) continue
-    const { avg, max, n } = hrStatsInWindow(hr, s.start, s.end)
-    const kcal = kcalInWindow(active, s.start, s.end)
-    const payload: Record<string, number> = {}
-    if (n > 0) {
-      payload.hr_avg = avg
-      payload.hr_max = max
-    }
-    if (kcal > 0) payload.calories_actual = Math.round(kcal)
-    if (Object.keys(payload).length === 0) continue
-    await pb.collection(collection).update(s.id, payload)
-    written++
-  }
-  return written
-}
-
-/**
- * Casa la serie de frecuencia cardíaca (+ calorías activas) del reloj con la
- * ventana temporal de cada sesión de entreno y rellena hr_avg/hr_max/
- * calories_actual. Tres colecciones:
- *   - cardio_sessions / circuit_sessions: tienen started_at + finished_at (ISO).
- *   - sessions (fuerza): solo completed_at + duration_seconds → ventana
- *     aproximada [completed_at - duration, completed_at].
- * Solo escribe en sesiones que aún no tienen hr_avg. Best-effort.
- */
-async function mergeSessionMetrics(
-  userId: string,
-  rangeStartISO: string,
-  hr: hc.HrSample[],
-  active: hc.EnergySample[],
-): Promise<void> {
-  if (hr.length === 0 && active.length === 0) return
-
-  // cardio + circuit: ventana exacta por started_at/finished_at (texto ISO)
-  for (const coll of ['cardio_sessions', 'circuit_sessions']) {
-    const rows = await pb.collection(coll).getFullList({
-      requestKey: null,
-      filter: pb.filter('user = {:uid} && started_at >= {:s}', { uid: userId, s: rangeStartISO }),
-      fields: 'id,started_at,finished_at,hr_avg',
-    })
-    const windows: SessionWindow[] = (rows as unknown as SessionRow[])
-      .filter((r): r is SessionRow & { started_at: string; finished_at: string } =>
-        !!r.started_at && !!r.finished_at)
-      .map((r) => ({
-        id: r.id,
-        start: new Date(r.started_at).getTime(),
-        end: new Date(r.finished_at).getTime(),
-        hasHr: !!r.hr_avg,
-      }))
-    await applySessionMetrics(coll, windows, hr, active)
-  }
-
-  // fuerza/yoga: ventana aproximada con completed_at - duration_seconds
-  const strength = await pb.collection('sessions').getFullList({
-    requestKey: null,
-    filter: pb.filter('user = {:uid} && completed_at >= {:s}', { uid: userId, s: rangeStartISO }),
-    fields: 'id,completed_at,duration_seconds,hr_avg',
-  })
-  const strengthWindows: SessionWindow[] = (strength as unknown as SessionRow[])
-    .filter((r): r is SessionRow & { completed_at: string; duration_seconds: number } =>
-      !!r.completed_at && (r.duration_seconds ?? 0) > 0)
-    .map((r) => {
-      const end = new Date(r.completed_at).getTime()
-      return { id: r.id, start: end - r.duration_seconds * 1000, end, hasHr: !!r.hr_avg }
-    })
-  await applySessionMetrics('sessions', strengthWindows, hr, active)
-}
-
 /**
  * Pull the last `days` from Health Connect and upsert daily_health_cache.
  * Re-reading a rolling window each sync naturally absorbs late-arriving data
@@ -330,35 +195,16 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
   const imported: Partial<Record<HealthDataType, number>> = {}
 
   try {
-    const [steps, active, total, resting, hrv, vo2, weight, bodyFat, sleep, heartRate] = await Promise.all([
-      hc.readSteps(range),
-      hc.readActiveCalories(range),
-      hc.readTotalCalories(range),
-      hc.readRestingHeartRate(range),
-      hc.readHrv(range),
-      hc.readVo2Max(range),
+    const [weight, bodyFat, sleep] = await Promise.all([
       hc.readWeight(range),
       hc.readBodyFat(range),
       hc.readSleep(range),
-      hc.readHeartRate(range),
     ])
 
-    imported.steps = steps.length
-    imported.active_calories = active.length
-    imported.total_calories = total.length
-    imported.resting_hr = resting.length
-    imported.hrv = hrv.length
-    imported.vo2max = vo2.length
     imported.weight = weight.length
     imported.body_fat = bodyFat.length
     imported.sleep = sleep.length
 
-    const stepsByDay = sumByDay(steps, (s) => localDay(s.startTime), (s) => s.count)
-    const activeByDay = sumByDay(active, (s) => localDay(s.startTime), (s) => s.kcal)
-    const totalByDay = sumByDay(total, (s) => localDay(s.startTime), (s) => s.kcal)
-    const restingByDay = latestByDay(resting, (s) => s.bpm)
-    const hrvByDay = latestByDay(hrv, (s) => s.value)
-    const vo2ByDay = latestByDay(vo2, (s) => s.value)
     const weightByDay = latestByDay(weight, (s) => s.kg)
     const bodyFatByDay = latestByDay(bodyFat, (s) => s.pct)
 
@@ -370,12 +216,6 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     }
 
     const dates = new Set<string>([
-      ...Object.keys(stepsByDay),
-      ...Object.keys(activeByDay),
-      ...Object.keys(totalByDay),
-      ...Object.keys(restingByDay),
-      ...Object.keys(hrvByDay),
-      ...Object.keys(vo2ByDay),
       ...Object.keys(weightByDay),
       ...Object.keys(bodyFatByDay),
       ...Object.keys(sleepByDay),
@@ -395,12 +235,6 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
         const row = dropUndefined({
           user: opts.userId,
           date,
-          steps: stepsByDay[date] != null ? Math.round(stepsByDay[date]) : undefined,
-          active_calories: activeByDay[date] != null ? Math.round(activeByDay[date]) : undefined,
-          total_calories: totalByDay[date] != null ? Math.round(totalByDay[date]) : undefined,
-          resting_hr: restingByDay[date] != null ? Math.round(restingByDay[date]) : undefined,
-          hrv_ms: hrvByDay[date],
-          vo2max: vo2ByDay[date],
           weight_kg: weightByDay[date],
           body_fat_pct: bodyFatByDay[date],
           sleep_minutes: sleepByDay[date] != null ? Math.round(sleepByDay[date]) : undefined,
@@ -425,13 +259,6 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
       Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_weight_entries' } })
       /* merge peso best-effort */
     }
-    try {
-      await mergeSessionMetrics(opts.userId, range.startTime, heartRate, active)
-    } catch (e) {
-      Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_session_metrics' } })
-      /* merge HR→sesiones best-effort */
-    }
-
     return { ok: true, syncedAt, imported }
   } catch (e) {
     return { ok: false, syncedAt, imported, error: e instanceof Error ? e.message : String(e) }
@@ -447,12 +274,6 @@ export async function readDailyCache(userId: string, date: string): Promise<Dail
     return {
       id: r.id,
       date: r.date,
-      steps: r.steps || undefined,
-      active_calories: r.active_calories || undefined,
-      total_calories: r.total_calories || undefined,
-      resting_hr: r.resting_hr || undefined,
-      hrv_ms: r.hrv_ms || undefined,
-      vo2max: r.vo2max || undefined,
       sleep_minutes: r.sleep_minutes || undefined,
       sleep_quality: r.sleep_quality || undefined,
       weight_kg: r.weight_kg || undefined,

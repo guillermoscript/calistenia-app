@@ -223,6 +223,12 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
     const internalKey = process.env.INTERNAL_API_KEY;
     const providedKey = c.req.header("x-internal-key");
     const isInternal = !!(internalKey && providedKey === internalKey);
+    // Una clave presente pero que no casa suele ser un despliegue con
+    // INTERNAL_API_KEY desincronizada entre PocketBase y el AI API — cae a
+    // auth de usuario en silencio y el push de PB nunca llega (ver notifications.js).
+    if (providedKey && !isInternal) {
+      console.warn("[send-push] clave interna no coincide: revisa INTERNAL_API_KEY en PocketBase y en el AI API");
+    }
     let authUser: Awaited<ReturnType<typeof getAuthUser>> = null;
     if (!isInternal) {
       authUser = await getAuthUser(c, pbUrl);
@@ -230,7 +236,7 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
     }
     try {
       const body = await c.req.json().catch(() => ({}));
-      const { user_id, user_ids, title, body: notifBody, url } = body ?? {};
+      const { user_id, user_ids, title, body: notifBody, url, campaign } = body ?? {};
 
       // Fan-out en lote (#481): los hooks de PocketBase mandan la lista completa de
       // destinatarios en UNA llamada en vez de un POST por seguidor dentro del hook
@@ -243,7 +249,7 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
         if (!title) return c.json({ error: "Se requiere title" }, 400);
         const ids = [...new Set(user_ids.filter((id): id is string => typeof id === "string" && id.length > 0))].slice(0, 500);
         if (ids.length === 0) return c.json({ error: "Se requiere al menos un user_id" }, 400);
-        void Promise.allSettled(ids.map((id) => sendPushToUser(id, { title, body: notifBody, url })))
+        void Promise.allSettled(ids.map((id) => sendPushToUser(id, { title, body: notifBody, url, campaign })))
           .then((results) => {
             const failed = results.filter((r) => r.status === "rejected").length;
             if (failed > 0) console.error(`[send-push] lote: ${failed}/${ids.length} envíos fallaron`);
@@ -256,7 +262,7 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
       if (!isInternal && user_id !== authUser!.id) {
         return c.json({ error: "Solo puedes enviar notificaciones a tu propia cuenta" }, 403);
       }
-      const result = await sendPushToUser(user_id, { title, body: notifBody, url });
+      const result = await sendPushToUser(user_id, { title, body: notifBody, url, campaign });
       return c.json(result);
     } catch (err) { return apiError(c, err); }
   });

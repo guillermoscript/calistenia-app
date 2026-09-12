@@ -4,9 +4,7 @@ import { resolveModel, resolveTier, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
 import config from "./config.js";
-import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { readCatalogFile } from "../lib/catalog-file.js";
 
 // ── Load exercise catalog from JSON ────────────────────────────────────────
 
@@ -30,21 +28,11 @@ let exerciseCatalog: CatalogExercise[] = [];
 function loadCatalog() {
   if (exerciseCatalog.length > 0) return;
   try {
-    // Try multiple paths: CWD/data (Docker), relative to file (dev), monorepo (dev fallback)
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const candidates = [
-      resolve(process.cwd(), "data/exercise-catalog.json"),           // Docker: /app/data/
-      resolve(__dirname, "../../data/exercise-catalog.json"),          // Compiled: build/api/ → data/
-      resolve(__dirname, "../../../src/data/exercise-catalog.json"),   // Dev: src/api/ → ../../../src/data/
-    ];
-    let catalogPath = "";
-    for (const p of candidates) {
-      try { readFileSync(p); catalogPath = p; break; } catch { /* try next */ }
-    }
-    if (!catalogPath) throw new Error(`Catalog not found. Tried: ${candidates.join(", ")}`);
-    const raw = JSON.parse(readFileSync(catalogPath, "utf-8"));
+    // Mismo fichero (y mismas rutas) que el resolutor de identidades del
+    // servidor: `lib/catalog-file.ts` es el único sitio que sabe dónde está.
+    const raw = readCatalogFile() as { categories?: Record<string, { exercises?: CatalogExercise[] }> };
     const categories = raw.categories || {};
-    for (const [catKey, catData] of Object.entries(categories) as any[]) {
+    for (const [catKey, catData] of Object.entries(categories)) {
       for (const ex of catData.exercises || []) {
         exerciseCatalog.push({ ...ex, category: ex.category || catKey });
       }

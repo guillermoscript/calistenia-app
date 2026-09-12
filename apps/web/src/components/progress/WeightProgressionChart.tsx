@@ -7,9 +7,15 @@ import type { ExerciseLog } from '@calistenia/core/types'
 
 interface WeightProgressionChartProps {
   exerciseLogs: Record<string, ExerciseLog[]>
+  /**
+   * Nombre a pintar por clave del ProgressMap (#690). Sin él el selector
+   * enseñaba la clave cruda con los guiones bajos cambiados por espacios
+   * («arm circles», «lun 1 9»); lo que no esté en el mapa sigue cayendo a eso.
+   */
+  exerciseNames?: Record<string, string>
 }
 
-export default function WeightProgressionChart({ exerciseLogs }: WeightProgressionChartProps) {
+export default function WeightProgressionChart({ exerciseLogs, exerciseNames }: WeightProgressionChartProps) {
   const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
 
@@ -52,11 +58,11 @@ export default function WeightProgressionChart({ exerciseLogs }: WeightProgressi
                 size="sm"
                 onClick={() => setSelectedExercise(id)}
                 className={cn(
-                  'h-7 px-3 text-[10px] tracking-wide capitalize',
+                  'h-7 px-3 text-[10px] tracking-wide',
                   (active === id) && 'border-amber-400/50 text-amber-400 bg-amber-400/10'
                 )}
               >
-                {id.replace(/_/g, ' ')}
+                {exerciseNames?.[id] ?? id.replace(/_/g, ' ')}
               </Button>
             ))}
           </div>

@@ -16,8 +16,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const mockTrack = vi.hoisted(() => vi.fn())
 const getFullList = vi.hoisted(() => vi.fn())
 
-vi.mock('@calistenia/core/lib/analytics', () => ({
+// #636 §5: la página pasó al facade canónico para llevar `event_version` y
+// `surface`. El nombre del evento no cambia, así que la aserción de abajo sigue
+// midiendo lo mismo: UN `leaderboard_viewed` por visita.
+vi.mock('@calistenia/core/lib/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@calistenia/core/lib/analytics')>()),
   op: { track: mockTrack },
+  trackCanonicalEvent: (event: string, properties: Record<string, unknown>) => mockTrack(event, properties),
 }))
 
 vi.mock('@calistenia/core/lib/pocketbase', () => ({
@@ -69,7 +74,9 @@ describe('useLeaderboard / LeaderboardPage (#578)', () => {
     const { rerender } = render(<Wrapper><LeaderboardPage userId="user1" /></Wrapper>)
     await waitFor(() => expect(getFullList).toHaveBeenCalled())
     rerender(<Wrapper><LeaderboardPage userId="user1" /></Wrapper>)
-    await waitFor(() => expect(mockTrack).toHaveBeenCalledWith('leaderboard_viewed'))
+    await waitFor(() => expect(mockTrack).toHaveBeenCalledWith('leaderboard_viewed', expect.objectContaining({
+      surface: 'leaderboard',
+    })))
     expect(mockTrack.mock.calls.filter(c => c[0] === 'leaderboard_viewed')).toHaveLength(1)
     expect(getFullList).toHaveBeenCalledTimes(1)
   })

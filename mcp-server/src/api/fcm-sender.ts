@@ -26,6 +26,7 @@ interface FcmPayload {
   title: string;
   body: string;
   url?: string;
+  campaign?: string;
 }
 
 export interface FcmSendResult {
@@ -129,7 +130,7 @@ export async function sendFcmV1(
         token,
         notification: { title: payload.title, body: payload.body },
         // FCM data values must be strings.
-        data: { url: payload.url ?? "", source: "push" },
+        data: { url: payload.url ?? "", source: "push", campaign: payload.campaign ?? "" },
         android: {
           priority: "HIGH" as const,
           notification: {

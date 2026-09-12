@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { pickActiveMilestone } from '@calistenia/core/lib/streak-milestones'
 
@@ -48,7 +48,9 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
   }, [streak, t, referralCode])
 
   const handleDismiss = useCallback(() => {
-    op.track('streak_milestone', { days: streak })
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
+      surface: 'streak', source: 'streak_card', days: streak,
+    })
     markMilestoneShown(streak, userId)
     onDismiss()
   }, [streak, userId, onDismiss])

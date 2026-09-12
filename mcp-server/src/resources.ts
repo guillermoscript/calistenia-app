@@ -1,6 +1,9 @@
 import type { AppServer } from "./mcpuse/auth-bridge.js";
 import { getAuthManager } from "./mcpuse/auth-bridge.js";
 import { today, startOfWeek } from "./utils.js";
+import { resolveActiveProgramProgress } from "./api/program-progress-server.js";
+import { resolvePersonalRecords } from "./api/prs-server.js";
+import { loadUserExerciseResolver } from "./api/exercise-identity-server.js";
 
 export function registerResources(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -27,22 +30,45 @@ export function registerResources(server: AppServer, pbUrl: string) {
       ]);
 
       const currentProgram = userPrograms[0]?.expand?.program as Record<string, unknown> | undefined;
+      // La fase y la semana reales del programa (#663). Va aparte de la lectura
+      // de arriba porque necesita las fases y las sesiones, no solo el expand.
+      const tz = auth.getTimezone();
+      const active = currentProgram
+        ? await resolveActiveProgramProgress(pb, auth.getUserId(), tz, today(tz))
+        : null;
+      // Los récords de TODOS los ejercicios, recalculados desde `sets_log`
+      // (#666). Los cinco `pr_*` de la fila son espejos heredados y solo
+      // cubren lo que `legacyPrKey` sabe traducir.
+      // El resolutor de identidades (#702) necesita el programa activo, que ya
+      // está leído arriba: se le pasa para no repetir la consulta.
+      const current = currentProgram ? { userProgram: userPrograms[0], program: userPrograms[0].expand!.program } : null;
+      const resolver = settings ? await loadUserExerciseResolver(pb, auth.getUserId(), { current }) : null;
+      const prs = settings && resolver ? await resolvePersonalRecords(pb, auth.getUserId(), settings, { resolver }) : null;
 
       const profile = {
         user_id: auth.getUserId(),
         email: auth.getEmail(),
         settings: settings
           ? {
-              phase: settings.phase,
+              // Entero global heredado, NO la fase del programa activo: esa se
+              // deriva de `started_at` desde #616 y va en `current_program`.
+              legacy_global_phase: settings.phase,
               start_date: settings.start_date,
               weekly_goal: settings.weekly_goal,
               personal_records: {
-                pullups: settings.pr_pullups ?? null,
-                pushups: settings.pr_pushups ?? null,
-                l_sit: settings.pr_lsit ?? null,
-                pistol: settings.pr_pistol ?? null,
-                handstand: settings.pr_handstand ?? null,
+                pullups: prs?.legacy.pullups || null,
+                pushups: prs?.legacy.pushups || null,
+                l_sit: prs?.legacy.l_sit || null,
+                pistol: prs?.legacy.pistol_squat || null,
+                handstand: prs?.legacy.handstand || null,
               },
+              // Clave de identidad → mejor marca, de todo lo registrado y
+              // fusionando los ids que son el mismo ejercicio (#702);
+              // `exercises` dice qué nombre e ids hay detrás de cada clave. En
+              // un ejercicio de temporizador el número son SEGUNDOS.
+              all_records: prs
+                ? { tracked_exercises: prs.tracked_exercises, reps: prs.reps, weight: prs.weight, exercises: prs.exercises }
+                : null,
             }
           : null,
         current_program: currentProgram
@@ -51,6 +77,10 @@ export function registerResources(server: AppServer, pbUrl: string) {
               name: currentProgram.name,
               duration_weeks: currentProgram.duration_weeks,
               started_at: userPrograms[0]?.started_at ?? null,
+              current_phase: active?.progress.currentPhase ?? null,
+              phase_source: active?.progress.phaseSource ?? null,
+              current_week: active?.progress.currentWeek ?? null,
+              auto_progress: !!userPrograms[0]?.auto_progress,
             }
           : null,
       };
@@ -168,15 +198,17 @@ export function registerResources(server: AppServer, pbUrl: string) {
       const auth = getAuthManager(ctx.auth, pbUrl);
       const pb = auth.getClient();
       const userId = auth.getUserId();
-      const weekStart = startOfWeek();
-      const todayStr = today();
+      const tz = auth.getTimezone();
+      const weekStart = startOfWeek(tz);
+      const todayStr = today(tz);
 
-      const [sessions, settings] = await Promise.all([
+      const [sessions, settings, active] = await Promise.all([
         pb.collection("sessions").getFullList({
           filter: pb.filter("user = {:userId} && completed_at >= {:weekStart}", { userId, weekStart }),
           sort: "completed_at",
         }),
         pb.collection("settings").getFirstListItem(pb.filter("user = {:userId}", { userId })).catch(() => null),
+        resolveActiveProgramProgress(pb, userId, tz, todayStr),
       ]);
 
       const weeklyGoal = settings?.weekly_goal ?? null;
@@ -190,7 +222,12 @@ export function registerResources(server: AppServer, pbUrl: string) {
         sessions_completed: sessions.length,
         weekly_goal: weeklyGoal,
         completion_pct: completionPct,
-        current_phase: settings?.phase ?? null,
+        // La fase del PROGRAMA (#663). `settings.phase` es un entero global que
+        // dejó de ser la fuente de verdad en #616: solo se usa como último
+        // recurso, y es core quien decide cuándo (`phase_source: 'fallback'`).
+        current_phase: active?.progress.currentPhase ?? settings?.phase ?? null,
+        phase_source: active?.progress.phaseSource ?? null,
+        program_week: active ? { current: active.progress.currentWeek, total: active.progress.totalWeeks } : null,
         sessions: sessions.map((s) => ({
           id: s.id,
           workout_key: s.workout_key,

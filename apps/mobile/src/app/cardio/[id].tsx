@@ -23,6 +23,7 @@ import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import CardioShareButton from '@/components/share/CardioShareButton'
 import type { CardioSession } from '@calistenia/core/types'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const LIME = 'hsl(74 90% 45%)'
 
@@ -127,6 +128,16 @@ export default function CardioDetailScreen() {
   }, [id, me?.id])
 
   const isOwnSession = !!me && !!session?.user && me.id === session.user
+
+  // Mismo evento y misma propiedad que web (#636 §5).
+  const sessionLoaded = !!session
+  useEffect(() => {
+    if (sessionLoaded && id) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.cardioDetailViewed, {
+        surface: 'cardio', source: 'cardio_detail', own: isOwnSession,
+      })
+    }
+  }, [id, isOwnSession, sessionLoaded])
   const shareUserName = authorName
   const shareReferralCode = isOwnSession
     ? me?.referral_code ?? null

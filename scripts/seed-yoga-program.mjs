@@ -90,6 +90,8 @@ async function main() {
     difficulty: input.program.difficulty || "",
     is_active: true,
     is_official: input.is_official ?? true,
+    // Catálogo curado: público explícito (#603).
+    visibility: "public",
   });
   console.log(`✓ Created program "${input.program.name}" (ID: ${program.id})`);
 

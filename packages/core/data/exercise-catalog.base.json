@@ -1,18 +1,18 @@
 {
   "generated_at": "2026-03-27T00:28:21.066Z",
-  "total_count": 171,
+  "total_count": 169,
   "local_count": 127,
-  "wger_count": 44,
+  "wger_count": 42,
   "with_images": 8,
   "with_video_links": 171,
   "categories": {
     "core": {
-      "count": 16,
+      "count": 15,
       "exercises": [
         {
           "id": "ab_wheel_rollout",
           "name": {
-            "es": "Ab Wheel Rollout",
+            "es": "Rueda Abdominal (Rollout)",
             "en": "Ab Wheel Rollout"
           },
           "muscles": {
@@ -41,7 +41,7 @@
         {
           "id": "incline_plank_with_alternate_floor_touch",
           "name": {
-            "es": "Ball crunches",
+            "es": "Crunch en Fitball",
             "en": "Ball crunches"
           },
           "muscles": {
@@ -62,7 +62,7 @@
           "category": "core",
           "difficulty": "beginner",
           "equipment": [
-            "ninguno"
+            "fitball"
           ],
           "source": "wger",
           "wger_id": 165,
@@ -74,7 +74,7 @@
         {
           "id": "biceps_curl_cable",
           "name": {
-            "es": "Biceps Curl With Cable",
+            "es": "Curl de Bíceps en Polea",
             "en": "Biceps Curl With Cable"
           },
           "muscles": {
@@ -97,7 +97,7 @@
           "category": "core",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 95,
@@ -114,7 +114,7 @@
         {
           "id": "leg_curls_laying",
           "name": {
-            "es": "Chin-ups",
+            "es": "Dominadas Supinas",
             "en": "Chin-ups"
           },
           "muscles": {
@@ -179,44 +179,9 @@
           "images": []
         },
         {
-          "id": "medicine_ball_booklet_crunch",
-          "name": {
-            "es": "Dynamic Planche",
-            "en": "Dynamic Planche"
-          },
-          "muscles": {
-            "es": "Core, Cuadriceps",
-            "en": "Core, Cuadriceps"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": {
-            "es": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs",
-            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs"
-          },
-          "description": {
-            "es": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles.",
-            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "core",
-          "difficulty": "beginner",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1286,
-          "youtube_search": "https://www.youtube.com/results?search_query=Medicine%20ball%20booklet%20crunch%20exercise%20tutorial",
-          "youtube_query": "Medicine ball booklet crunch exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "hanging_knee_raise",
           "name": {
-            "es": "Hanging Knee Raise",
+            "es": "Elevación de Rodillas Colgado",
             "en": "Hanging Knee Raise"
           },
           "muscles": {
@@ -245,7 +210,7 @@
         {
           "id": "hanging_leg_raise",
           "name": {
-            "es": "Hanging Leg Raise",
+            "es": "Elevación de Piernas Colgado",
             "en": "Hanging Leg Raise"
           },
           "muscles": {
@@ -332,7 +297,7 @@
         {
           "id": "mountain_climbers",
           "name": {
-            "es": "Mountain Climbers",
+            "es": "Escaladores",
             "en": "Mountain Climbers"
           },
           "muscles": {
@@ -361,7 +326,7 @@
         {
           "id": "plank",
           "name": {
-            "es": "Plank",
+            "es": "Plancha",
             "en": "Plank"
           },
           "muscles": {
@@ -420,7 +385,7 @@
         {
           "id": "side_plank",
           "name": {
-            "es": "Side Plank",
+            "es": "Plancha Lateral",
             "en": "Side Plank"
           },
           "muscles": {
@@ -450,7 +415,7 @@
         {
           "id": "v_ups",
           "name": {
-            "es": "V-ups",
+            "es": "Abdominales en V",
             "en": "V-ups"
           },
           "muscles": {
@@ -479,7 +444,7 @@
         {
           "id": "windshield_wipers",
           "name": {
-            "es": "Windshield Wipers",
+            "es": "Limpiaparabrisas",
             "en": "Windshield Wipers"
           },
           "muscles": {
@@ -508,12 +473,12 @@
       ]
     },
     "full": {
-      "count": 14,
+      "count": 13,
       "exercises": [
         {
           "id": "bear_crawl",
           "name": {
-            "es": "Bear Crawl",
+            "es": "Marcha del Oso",
             "en": "Bear Crawl"
           },
           "muscles": {
@@ -542,7 +507,7 @@
         {
           "id": "butterfly_reverse",
           "name": {
-            "es": "Braced Squat",
+            "es": "Sentadilla con Soporte",
             "en": "Braced Squat"
           },
           "muscles": {
@@ -565,7 +530,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "lastre"
           ],
           "source": "wger",
           "wger_id": 124,
@@ -606,7 +571,7 @@
         {
           "id": "lateral_raises",
           "name": {
-            "es": "Calf Raises on Hackenschmitt Machine",
+            "es": "Elevación de Gemelos en Máquina Hackenschmidt",
             "en": "Calf Raises on Hackenschmitt Machine"
           },
           "muscles": {
@@ -629,7 +594,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "maquina"
           ],
           "source": "wger",
           "wger_id": 148,
@@ -641,7 +606,7 @@
         {
           "id": "reverse_bar_curl",
           "name": {
-            "es": "Dumbbells on Scott Machine",
+            "es": "Curl con Mancuernas en Banco Scott",
             "en": "Dumbbells on Scott Machine"
           },
           "muscles": {
@@ -662,7 +627,8 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "mancuernas",
+            "banco"
           ],
           "source": "wger",
           "wger_id": 208,
@@ -674,7 +640,7 @@
         {
           "id": "rear_delt_raises",
           "name": {
-            "es": "Fly With Cable",
+            "es": "Aperturas en Polea",
             "en": "Fly With Cable"
           },
           "muscles": {
@@ -695,7 +661,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 237,
@@ -710,7 +676,7 @@
         {
           "id": "high_knees",
           "name": {
-            "es": "High Knees",
+            "es": "Rodillas Altas",
             "en": "High Knees"
           },
           "muscles": {
@@ -739,7 +705,7 @@
         {
           "id": "axe_hold",
           "name": {
-            "es": "High Pull",
+            "es": "Tirón Alto",
             "en": "High Pull"
           },
           "muscles": {
@@ -762,7 +728,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra"
           ],
           "source": "wger",
           "wger_id": 289,
@@ -774,7 +740,7 @@
         {
           "id": "jumping_jacks",
           "name": {
-            "es": "Jumping Jacks",
+            "es": "Saltos de Tijera",
             "en": "Jumping Jacks"
           },
           "muscles": {
@@ -803,7 +769,7 @@
         {
           "id": "hip_raise_lying",
           "name": {
-            "es": "Leg Raise",
+            "es": "Elevación de Piernas",
             "en": "Leg Raise"
           },
           "muscles": {
@@ -836,44 +802,9 @@
           "videos": []
         },
         {
-          "id": "jogging",
-          "name": {
-            "es": "Muscle up",
-            "en": "Muscle up"
-          },
-          "muscles": {
-            "es": "Biceps",
-            "en": "Biceps"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": {
-            "es": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the",
-            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the"
-          },
-          "description": {
-            "es": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion.",
-            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion."
-          },
-          "priority": "med",
-          "isTimer": false,
-          "category": "full",
-          "difficulty": "intermediate",
-          "equipment": [
-            "barra_dominadas"
-          ],
-          "source": "wger",
-          "wger_id": 423,
-          "youtube_search": "https://www.youtube.com/results?search_query=Jogging%20exercise%20tutorial",
-          "youtube_query": "Jogging exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "front_plate_raise",
           "name": {
-            "es": "Plate twist",
+            "es": "Giro con Disco",
             "en": "Plate twist"
           },
           "muscles": {
@@ -896,7 +827,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "lastre"
           ],
           "source": "wger",
           "wger_id": 1079,
@@ -945,7 +876,7 @@
         {
           "id": "shoulder_shrug",
           "name": {
-            "es": "Tricep Pushdown on Cable",
+            "es": "Extensión de Tríceps en Polea",
             "en": "Tricep Pushdown on Cable"
           },
           "muscles": {
@@ -968,7 +899,7 @@
           "category": "full",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 805,
@@ -1043,7 +974,7 @@
         {
           "id": "bulgarian",
           "name": {
-            "es": "Bulgarian Split Squat",
+            "es": "Sentadilla Búlgara",
             "en": "Bulgarian Split Squat"
           },
           "muscles": {
@@ -1072,7 +1003,7 @@
         {
           "id": "calf_uni",
           "name": {
-            "es": "Calf Raise Unilateral",
+            "es": "Elevación de Gemelo Unilateral",
             "en": "Unilateral Calf Raise"
           },
           "muscles": {
@@ -1101,7 +1032,7 @@
         {
           "id": "calf_raise",
           "name": {
-            "es": "Calf Raises",
+            "es": "Elevaciones de Gemelos",
             "en": "Calf Raises"
           },
           "muscles": {
@@ -1159,7 +1090,7 @@
         {
           "id": "jump_squat",
           "name": {
-            "es": "Jump Squat",
+            "es": "Sentadilla con Salto",
             "en": "Jump Squat"
           },
           "muscles": {
@@ -1212,7 +1143,11 @@
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Nordic%20Curl%20(Regresi%C3%B3n)%20exercise%20tutorial",
           "youtube_query": "nordic curl tutorial hamstrings beginners",
-          "images": []
+          "images": [],
+          "description": {
+            "es": "Regresión del nordic curl: de rodillas, con los pies anclados bajo un sofá o sujetos por un compañero, baja el tronco hacia el suelo lo más lento que puedas y usa las manos para amortiguar y volver. Solo se entrena la fase excéntrica.",
+            "en": "Nordic curl regression: kneeling with your feet anchored under a couch or held by a partner, lower your torso toward the floor as slowly as you can and use your hands to catch yourself and push back up. Eccentric phase only."
+          }
         },
         {
           "id": "nordic_adv",
@@ -1234,7 +1169,7 @@
           "priority": "high",
           "isTimer": false,
           "category": "legs",
-          "difficulty": "intermediate",
+          "difficulty": "advanced",
           "equipment": [
             "ninguno"
           ],
@@ -1246,8 +1181,8 @@
         {
           "id": "nordic_full",
           "name": {
-            "es": "Nordic Curl Full",
-            "en": "Nordic Curl Full"
+            "es": "Nordic Curl Completo sin manos",
+            "en": "Full Nordic Curl (no hands)"
           },
           "muscles": {
             "es": "Isquiotibiales",
@@ -1263,14 +1198,18 @@
           "priority": "high",
           "isTimer": false,
           "category": "legs",
-          "difficulty": "intermediate",
+          "difficulty": "advanced",
           "equipment": [
             "ninguno"
           ],
           "source": "local",
-          "youtube_search": "https://www.youtube.com/results?search_query=Nordic%20Curl%20Full%20exercise%20tutorial",
+          "youtube_search": "https://www.youtube.com/results?search_query=Full%20Nordic%20Curl%20no%20hands%20exercise%20tutorial",
           "youtube_query": "nordic hamstring curl advanced",
-          "images": []
+          "images": [],
+          "description": {
+            "es": "Nordic curl con fase excéntrica y concéntrica completas sin apoyar las manos en ningún punto. Pies anclados bajo un sofá o sujetos por un compañero. Es el escalón final: antes viene el nordic completo con ayuda de manos.",
+            "en": "Nordic curl with full eccentric and concentric phases without touching the floor with your hands at any point. Feet anchored under a couch or held by a partner. Final step of the chain: the full nordic with hand assistance comes before it."
+          }
         },
         {
           "id": "pistol_free",
@@ -1362,7 +1301,7 @@
         {
           "id": "reverse_lunge",
           "name": {
-            "es": "Reverse Lunge",
+            "es": "Zancada Inversa",
             "en": "Reverse Lunge"
           },
           "muscles": {
@@ -1478,7 +1417,7 @@
         {
           "id": "single_rdl",
           "name": {
-            "es": "Single Leg RDL",
+            "es": "Peso Muerto Rumano a Una Pierna",
             "en": "Single Leg RDL"
           },
           "muscles": {
@@ -1507,7 +1446,7 @@
         {
           "id": "skaters",
           "name": {
-            "es": "Skater Jumps",
+            "es": "Patinadores",
             "en": "Skater Jumps"
           },
           "muscles": {
@@ -1594,7 +1533,7 @@
         {
           "id": "wger_1529",
           "name": {
-            "es": "Toes to bar",
+            "es": "Punteras a la Barra",
             "en": "Toes to bar"
           },
           "muscles": {
@@ -1629,7 +1568,7 @@
         {
           "id": "tuck_jumps",
           "name": {
-            "es": "Tuck Jumps",
+            "es": "Saltos Agrupados",
             "en": "Tuck Jumps"
           },
           "muscles": {
@@ -1750,7 +1689,7 @@
         {
           "id": "glute_activation_peak",
           "name": {
-            "es": "Glute Activation Peak",
+            "es": "Activación Máxima de Glúteo",
             "en": "Glute Activation Peak"
           },
           "muscles": {
@@ -1779,7 +1718,7 @@
         {
           "id": "glute_bridge",
           "name": {
-            "es": "Glute Bridge",
+            "es": "Puente de Glúteo",
             "en": "Glute Bridge"
           },
           "muscles": {
@@ -1808,7 +1747,7 @@
         {
           "id": "glute_bridge_pause",
           "name": {
-            "es": "Glute Bridge con Pausa (3s)",
+            "es": "Puente de Glúteo con Pausa (3s)",
             "en": "Glute Bridge with Pause (3s)"
           },
           "muscles": {
@@ -1837,7 +1776,7 @@
         {
           "id": "glute_bridge_march",
           "name": {
-            "es": "Glute Bridge March",
+            "es": "Puente de Glúteo con Marcha",
             "en": "Glute Bridge March"
           },
           "muscles": {
@@ -1866,7 +1805,7 @@
         {
           "id": "glute_bridge_uni",
           "name": {
-            "es": "Glute Bridge Unilateral",
+            "es": "Puente de Glúteo Unilateral",
             "en": "Unilateral Glute Bridge"
           },
           "muscles": {
@@ -1959,7 +1898,7 @@
         {
           "id": "ankle_mobility",
           "name": {
-            "es": "Ankle Mobility Drill",
+            "es": "Movilidad de Tobillo",
             "en": "Ankle Mobility Drill"
           },
           "muscles": {
@@ -1988,7 +1927,7 @@
         {
           "id": "arm_circles",
           "name": {
-            "es": "Arm Circles",
+            "es": "Círculos de Brazos",
             "en": "Arm Circles"
           },
           "muscles": {
@@ -2017,7 +1956,7 @@
         {
           "id": "right_levator_scapulae_stretch",
           "name": {
-            "es": "Cat Plank",
+            "es": "Plancha del Gato",
             "en": "Cat Plank"
           },
           "muscles": {
@@ -2052,7 +1991,7 @@
         {
           "id": "cat_cow",
           "name": {
-            "es": "Cat-Cow",
+            "es": "Gato-Vaca",
             "en": "Cat-Cow"
           },
           "muscles": {
@@ -2111,7 +2050,7 @@
         {
           "id": "cossack_squat",
           "name": {
-            "es": "Cossack Squat",
+            "es": "Sentadilla Cosaca",
             "en": "Cossack Squat"
           },
           "muscles": {
@@ -2140,7 +2079,7 @@
         {
           "id": "hip_flexor_deep",
           "name": {
-            "es": "Hip Flexor 90/90",
+            "es": "Flexores de Cadera 90/90",
             "en": "Hip Flexor 90/90"
           },
           "muscles": {
@@ -2170,7 +2109,7 @@
         {
           "id": "hip_flexor",
           "name": {
-            "es": "Hip Flexor Stretch (Psoas)",
+            "es": "Estiramiento de Flexores de Cadera (Psoas)",
             "en": "Hip Flexor Stretch (Psoas)"
           },
           "muscles": {
@@ -2200,7 +2139,7 @@
         {
           "id": "deep_hip_mobility",
           "name": {
-            "es": "Hip Mobility Full Routine",
+            "es": "Rutina Completa de Movilidad de Cadera",
             "en": "Hip Mobility Full Routine"
           },
           "muscles": {
@@ -2229,7 +2168,7 @@
         {
           "id": "inchworm",
           "name": {
-            "es": "Inchworm",
+            "es": "Oruga",
             "en": "Inchworm"
           },
           "muscles": {
@@ -2316,7 +2255,7 @@
         {
           "id": "leg_swings",
           "name": {
-            "es": "Leg Swings",
+            "es": "Balanceos de Pierna",
             "en": "Leg Swings"
           },
           "muscles": {
@@ -2345,7 +2284,7 @@
         {
           "id": "pancake_stretch",
           "name": {
-            "es": "Pancake Stretch",
+            "es": "Estiramiento Pancake",
             "en": "Pancake Stretch"
           },
           "muscles": {
@@ -2375,7 +2314,7 @@
         {
           "id": "pigeon",
           "name": {
-            "es": "Pigeon Pose",
+            "es": "Postura de la Paloma",
             "en": "Pigeon Pose"
           },
           "muscles": {
@@ -2405,7 +2344,7 @@
         {
           "id": "right_neck_stretch",
           "name": {
-            "es": "Pigeon Stretch",
+            "es": "Estiramiento de la Paloma",
             "en": "Pigeon Stretch"
           },
           "muscles": {
@@ -2442,7 +2381,7 @@
         {
           "id": "pike_stretch",
           "name": {
-            "es": "Pike Stretch",
+            "es": "Estiramiento en Pike",
             "en": "Pike Stretch"
           },
           "muscles": {
@@ -2472,7 +2411,7 @@
         {
           "id": "forward_fold",
           "name": {
-            "es": "Seated Forward Fold",
+            "es": "Estiramiento Sentado hacia Delante",
             "en": "Seated Forward Fold"
           },
           "muscles": {
@@ -2502,7 +2441,7 @@
         {
           "id": "shoulder_dislocates",
           "name": {
-            "es": "Shoulder Dislocates",
+            "es": "Dislocaciones de Hombro",
             "en": "Shoulder Dislocates"
           },
           "muscles": {
@@ -2591,7 +2530,7 @@
         {
           "id": "thoracic_mobility",
           "name": {
-            "es": "Thoracic Mobility Full",
+            "es": "Movilidad Torácica Completa",
             "en": "Thoracic Mobility Full"
           },
           "muscles": {
@@ -2620,7 +2559,7 @@
         {
           "id": "thoracic_rotation_side",
           "name": {
-            "es": "Thoracic Rotation (Side-Lying)",
+            "es": "Rotación Torácica (Tumbado de Lado)",
             "en": "Thoracic Rotation (Side-Lying)"
           },
           "muscles": {
@@ -2649,7 +2588,7 @@
         {
           "id": "worlds_stretch",
           "name": {
-            "es": "World's Greatest Stretch",
+            "es": "El Mejor Estiramiento del Mundo (dinámico)",
             "en": "World's Greatest Stretch"
           },
           "muscles": {
@@ -2678,7 +2617,7 @@
         {
           "id": "wrist_mobility",
           "name": {
-            "es": "Wrist Mobility Routine",
+            "es": "Rutina de Movilidad de Muñecas",
             "en": "Wrist Mobility Routine"
           },
           "muscles": {
@@ -2746,7 +2685,7 @@
           "timerSeconds": 30,
           "category": "movilidad",
           "difficulty": "beginner",
-          "equipment": ["ninguno"],
+          "equipment": ["pared"],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Pectoral%20Stretch%20exercise%20tutorial",
           "youtube_query": "pectoral stretch doorway chest",
@@ -2803,7 +2742,7 @@
           "timerSeconds": 30,
           "category": "movilidad",
           "difficulty": "beginner",
-          "equipment": ["ninguno"],
+          "equipment": ["pared"],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Biceps%20Stretch%20exercise%20tutorial",
           "youtube_query": "biceps stretch wall",
@@ -2879,7 +2818,7 @@
           "timerSeconds": 30,
           "category": "movilidad",
           "difficulty": "beginner",
-          "equipment": ["ninguno"],
+          "equipment": ["pared"],
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Calf%20Stretch%20exercise%20tutorial",
           "youtube_query": "calf stretch wall standing",
@@ -2984,7 +2923,7 @@
         {
           "id": "australian_pullup",
           "name": {
-            "es": "Australian Pull-up",
+            "es": "Remo Australiano",
             "en": "Australian Pull-up"
           },
           "muscles": {
@@ -3042,7 +2981,7 @@
         {
           "id": "close_grip_pullup",
           "name": {
-            "es": "Close Grip Pull-up",
+            "es": "Dominadas Agarre Cerrado",
             "en": "Close Grip Pull-up"
           },
           "muscles": {
@@ -3071,7 +3010,7 @@
         {
           "id": "commando_pullup",
           "name": {
-            "es": "Commando Pull-up",
+            "es": "Dominadas Comando",
             "en": "Commando Pull-up"
           },
           "muscles": {
@@ -3224,7 +3163,7 @@
         {
           "id": "t_bar_row",
           "name": {
-            "es": "Inverted Rows",
+            "es": "Remo Invertido en Barra",
             "en": "Inverted Rows"
           },
           "muscles": {
@@ -3247,7 +3186,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "barra_dominadas"
           ],
           "source": "wger",
           "wger_id": 1198,
@@ -3290,7 +3229,7 @@
         {
           "id": "facepull",
           "name": {
-            "es": "Long-Pulley (low Row)",
+            "es": "Remo Bajo en Polea",
             "en": "Long-Pulley (low Row)"
           },
           "muscles": {
@@ -3313,7 +3252,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 394,
@@ -3328,7 +3267,7 @@
         {
           "id": "chin_up",
           "name": {
-            "es": "One Arm Triceps Extensions on Cable",
+            "es": "Extensiones de Tríceps a Un Brazo en Polea",
             "en": "One Arm Triceps Extensions on Cable"
           },
           "muscles": {
@@ -3349,7 +3288,7 @@
           "category": "pull",
           "difficulty": "intermediate",
           "equipment": [
-            "ninguno"
+            "polea"
           ],
           "source": "wger",
           "wger_id": 803,
@@ -3363,7 +3302,7 @@
         {
           "id": "leg_raises_pull_up_bar",
           "name": {
-            "es": "One armed push-ups",
+            "es": "Flexiones a Un Solo Brazo",
             "en": "One armed push-ups"
           },
           "muscles": {
@@ -3398,7 +3337,7 @@
         {
           "id": "one_arm_pullup_prog",
           "name": {
-            "es": "One-Arm Pull-up Progresión",
+            "es": "Progresión de Dominada a Un Brazo",
             "en": "One-Arm Pull-up Progression"
           },
           "muscles": {
@@ -3516,7 +3455,7 @@
         {
           "id": "renegade_row",
           "name": {
-            "es": "Renegade Row",
+            "es": "Remo Renegado",
             "en": "Renegade Row"
           },
           "muscles": {
@@ -3574,7 +3513,7 @@
         {
           "id": "pull_apart",
           "name": {
-            "es": "Towel Pull Apart",
+            "es": "Aperturas con Toalla",
             "en": "Towel Pull Apart"
           },
           "muscles": {
@@ -3603,7 +3542,7 @@
         {
           "id": "towel_pullup",
           "name": {
-            "es": "Towel Pull-up",
+            "es": "Dominadas con Toalla",
             "en": "Towel Pull-up"
           },
           "muscles": {
@@ -3633,7 +3572,7 @@
         {
           "id": "typewriter_pullup",
           "name": {
-            "es": "Typewriter Pull-up",
+            "es": "Dominadas Typewriter",
             "en": "Typewriter Pull-up"
           },
           "muscles": {
@@ -3662,7 +3601,7 @@
         {
           "id": "wide_pullup",
           "name": {
-            "es": "Wide Grip Pull-up",
+            "es": "Dominadas Agarre Ancho",
             "en": "Wide Grip Pull-up"
           },
           "muscles": {
@@ -3696,7 +3635,7 @@
         {
           "id": "archer2",
           "name": {
-            "es": "Archer Push-up",
+            "es": "Flexiones Arquero",
             "en": "Archer Push-up"
           },
           "muscles": {
@@ -3754,7 +3693,7 @@
         {
           "id": "clapping_pushup",
           "name": {
-            "es": "Clapping Push-up",
+            "es": "Flexiones con Aplauso",
             "en": "Clapping Push-up"
           },
           "muscles": {
@@ -3783,7 +3722,7 @@
         {
           "id": "decline_pushup",
           "name": {
-            "es": "Decline Push-up",
+            "es": "Flexiones Declinadas",
             "en": "Decline Push-up"
           },
           "muscles": {
@@ -3812,7 +3751,7 @@
         {
           "id": "diamond_pushup",
           "name": {
-            "es": "Diamond Push-up",
+            "es": "Flexiones Diamante",
             "en": "Diamond Push-up"
           },
           "muscles": {
@@ -3899,7 +3838,7 @@
         {
           "id": "hindu_pushup",
           "name": {
-            "es": "Hindu Push-up",
+            "es": "Flexiones Hindú",
             "en": "Hindu Push-up"
           },
           "muscles": {
@@ -3928,7 +3867,7 @@
         {
           "id": "one_arm_actual",
           "name": {
-            "es": "One-Arm Push-up",
+            "es": "Flexión a Un Brazo",
             "en": "One-Arm Push-up"
           },
           "muscles": {
@@ -3957,7 +3896,7 @@
         {
           "id": "one_arm_prog",
           "name": {
-            "es": "One-Arm Push-up Progresión",
+            "es": "Progresión de Flexión a Un Brazo",
             "en": "One-Arm Push-up Progression"
           },
           "muscles": {
@@ -3986,7 +3925,7 @@
         {
           "id": "pike_hspu",
           "name": {
-            "es": "Pike HSPU",
+            "es": "Flexión Vertical en Pike (HSPU)",
             "en": "Pike HSPU"
           },
           "muscles": {
@@ -4015,7 +3954,7 @@
         {
           "id": "pike_pushup",
           "name": {
-            "es": "Pike Push-up",
+            "es": "Flexiones Pike",
             "en": "Pike Push-up"
           },
           "muscles": {
@@ -4102,7 +4041,7 @@
         {
           "id": "ring_dip_prog",
           "name": {
-            "es": "Ring Dips (o Dips con peso)",
+            "es": "Fondos en Anillas (o Fondos con Lastre)",
             "en": "Ring Dips (or Weighted Dips)"
           },
           "muscles": {
@@ -4131,7 +4070,7 @@
         {
           "id": "sphinx_pushup",
           "name": {
-            "es": "Sphinx Push-up",
+            "es": "Flexiones Esfinge",
             "en": "Sphinx Push-up"
           },
           "muscles": {
@@ -4160,7 +4099,7 @@
         {
           "id": "tiger_bend_pushup",
           "name": {
-            "es": "Tiger Bend Push-up",
+            "es": "Flexiones Tiger Bend",
             "en": "Tiger Bend Push-up"
           },
           "muscles": {
@@ -4189,7 +4128,7 @@
         {
           "id": "wide_pushup",
           "name": {
-            "es": "Wide Push-up",
+            "es": "Flexiones Agarre Ancho",
             "en": "Wide Push-up"
           },
           "muscles": {
@@ -4253,7 +4192,7 @@
         {
           "id": "crow_pose",
           "name": {
-            "es": "Crow Pose / Frog Stand",
+            "es": "Postura del Cuervo / Frog Stand",
             "en": "Crow Pose / Frog Stand"
           },
           "muscles": {
@@ -4470,14 +4409,15 @@
             "en": "Balance, shoulders, core"
           },
           "sets": 3,
-          "reps": "intentos 5-15s",
+          "reps": "5-15s",
           "rest": 60,
           "note": {
             "es": "Practica el balance libre. Múltiples intentos con descanso.",
             "en": "Practice free balance. Multiple attempts with rest."
           },
           "priority": "high",
-          "isTimer": false,
+          "isTimer": true,
+          "timerSeconds": 10,
           "category": "skill",
           "difficulty": "intermediate",
           "equipment": [
@@ -4816,7 +4756,7 @@
         {
           "id": "ring_support",
           "name": {
-            "es": "Ring Support Hold",
+            "es": "Sostén en Anillas",
             "en": "Ring Support Hold"
           },
           "muscles": {
@@ -4992,7 +4932,7 @@
         {
           "id": "wall_sit",
           "name": {
-            "es": "Wall Sit",
+            "es": "Sentadilla en la Pared",
             "en": "Wall Sit"
           },
           "muscles": {

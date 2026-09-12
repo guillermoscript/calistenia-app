@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
 import { getSettings, upsertSettings, listSessions, listWeightEntries } from "../api/repos/index.js";
+import { resolveActiveProgramProgress } from "../api/program-progress-server.js";
+import { resolvePersonalRecords, topRepRecords } from "../api/prs-server.js";
 
 export function registerProgressTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -13,7 +15,10 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
       name: "cal_get_settings",
       title: "Get User Settings",
       description:
-        "Get the user's training settings: current phase, start date, weekly workout goal, and personal records (PR) for key exercises.",
+        "Get the user's training settings: start date, weekly workout goal, and personal records. "
+        + "PRs are recomputed from the full `sets_log` history, so they cover EVERY exercise the user has logged, not just the five legacy fields. "
+        + "Records for timer exercises (L-sit, plank, handstand) are in SECONDS, because timers store their seconds in `reps`. " +
+        "NOTE: `phase` here is a legacy global counter, NOT the phase of the active program \u2014 read that from `cal_get_current_program` (`progress.current_phase`).",
       schema: z
         .object({
           response_format: z
@@ -42,16 +47,27 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
           };
         }
 
+        const prs = await resolvePersonalRecords(pb, userId, settings);
+
         const output = {
           phase: settings.phase,
           start_date: settings.start_date,
           weekly_goal: settings.weekly_goal,
+          // Los cinco de siempre, para lo que ya dependía de ellos.
           personal_records: {
-            pullups: settings.pr_pullups ?? null,
-            pushups: settings.pr_pushups ?? null,
-            l_sit: settings.pr_lsit ?? null,
-            pistol_squat: settings.pr_pistol ?? null,
-            handstand: settings.pr_handstand ?? null,
+            pullups: prs.legacy.pullups || null,
+            pushups: prs.legacy.pushups || null,
+            l_sit: prs.legacy.l_sit || null,
+            pistol_squat: prs.legacy.pistol_squat || null,
+            handstand: prs.legacy.handstand || null,
+          },
+          // Y los de verdad: todos los ejercicios con serie registrada (#666).
+          all_records: {
+            tracked_exercises: prs.tracked_exercises,
+            reps: prs.reps,
+            weight: prs.weight,
+            // Clave → nombre e ids crudos fusionados (#702).
+            exercises: prs.exercises,
           },
         };
 
@@ -62,7 +78,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
           const pr = output.personal_records;
           text = [
             `# Training Settings`,
-            `- **Current Phase**: ${output.phase}`,
+            `- **Legacy global phase**: ${output.phase} _(not the active program's phase \u2014 see \`cal_get_current_program\`)_`,
             `- **Start Date**: ${output.start_date}`,
             `- **Weekly Goal**: ${output.weekly_goal} workouts/week`,
             `\n## Personal Records`,
@@ -71,6 +87,22 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             pr.l_sit ? `- L-Sit: **${pr.l_sit}**` : `- L-Sit: not set`,
             pr.pistol_squat ? `- Pistol Squat: **${pr.pistol_squat}**` : `- Pistol Squat: not set`,
             pr.handstand ? `- Handstand: **${pr.handstand}**` : `- Handstand: not set`,
+            ...(prs.tracked_exercises > 0
+              ? [
+                  `\n## All-Time Records (${prs.tracked_exercises} exercises)`,
+                  `_Best set per exercise, from the full \`sets_log\` history, merged across every id of the same exercise. Timer exercises are in seconds._`,
+                  ...topRepRecords(prs).map(({ exercise_id, name, best, unit, merged_from }) => {
+                    const w = prs.weight[exercise_id];
+                    const label = name !== exercise_id ? `${name} (\`${exercise_id}\`)` : `\`${exercise_id}\``;
+                    return `- ${label}: **${best}${unit === "s" ? " s" : ""}**`
+                      + (w ? ` \u00b7 ${w.weight}kg \u00d7 ${w.reps} (e1RM ${w.e1rm}kg)` : "")
+                      + (merged_from ? ` _(merged: ${merged_from.join(", ")})_` : "");
+                  }),
+                  ...(prs.tracked_exercises > 10
+                    ? [`_\u2026 and ${prs.tracked_exercises - 10} more \u2014 read them all from \`all_records.reps\` in JSON format._`]
+                    : []),
+                ]
+              : []),
           ].join("\n");
         }
 
@@ -89,17 +121,30 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
       name: "cal_update_settings",
       title: "Update Training Settings",
       description:
-        "Update training settings: phase, start date, weekly goal, or personal records. Only provide fields you want to change.",
+        "Update training settings: phase, start date, weekly goal, or personal records. Only provide fields you want to change. "
+        + "PRs are numbers, and the app already derives them from logged sets \u2014 only write one to correct a record the user never logged as a set. "
+        + "The L-sit and handstand records are SECONDS held, not reps.",
       schema: z
         .object({
-          phase: z.number().int().min(1).optional().describe("Current training phase (1, 2, 3, ...)"),
+          phase: z
+            .number()
+            .int()
+            .min(1)
+            .optional()
+            .describe(
+              "Legacy global phase counter. Since #616 the active program's phase lives in `user_programs.current_phase` and is derived from the start date \u2014 changing this does NOT change the program's phase.",
+            ),
           start_date: z.string().optional().describe("Program start date (YYYY-MM-DD)"),
           weekly_goal: z.number().int().min(1).max(7).optional().describe("Target workouts per week (1-7)"),
-          pr_pullups: z.string().optional().describe("Pull-up personal record (e.g. '15', '10 strict')"),
-          pr_pushups: z.string().optional().describe("Push-up personal record"),
-          pr_lsit: z.string().optional().describe("L-Sit personal record (e.g. '30s')"),
-          pr_pistol: z.string().optional().describe("Pistol squat personal record"),
-          pr_handstand: z.string().optional().describe("Handstand personal record"),
+          // Campos NUMÉRICOS en PocketBase (pb_migrations/1773246964_updated_settings.js).
+          // Estaban declarados como texto con ejemplos tipo '10 strict', valores que
+          // la colección no puede guardar y que rompían el ranking, que los ordena
+          // como números (#666).
+          pr_pullups: z.number().min(0).optional().describe("Pull-up personal record, in reps (e.g. 15)"),
+          pr_pushups: z.number().min(0).optional().describe("Push-up personal record, in reps"),
+          pr_lsit: z.number().min(0).optional().describe("L-Sit personal record, in SECONDS held (e.g. 30)"),
+          pr_pistol: z.number().min(0).optional().describe("Pistol squat personal record, in reps"),
+          pr_handstand: z.number().min(0).optional().describe("Handstand personal record, in SECONDS held"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -446,7 +491,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
         const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
 
-        const [sessions, weightEntries, lumbarChecks, settings] = await Promise.all([
+        const [sessions, weightEntries, lumbarChecks, settings, active] = await Promise.all([
           listSessions(pb, userId, { from, sort: "completed_at", fields: "id,completed_at" }),
           listWeightEntries(pb, userId, { from, sort: "date" }),
           pb.collection("lumbar_checks").getFullList({
@@ -454,6 +499,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             requestKey: null,
           }),
           getSettings(pb, userId),
+          resolveActiveProgramProgress(pb, userId, tz, today(tz)),
         ]);
 
         // Workout consistency (sessions per week)
@@ -482,7 +528,10 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             total_sessions: sessions.length,
             sessions_per_week: Math.round(sessionsPerWeek * 10) / 10,
             weekly_goal: settings?.weekly_goal ?? null,
-            current_phase: settings?.phase ?? null,
+            // La fase del programa activo, no el entero global (#663).
+            current_phase: active?.progress.currentPhase ?? settings?.phase ?? null,
+            program_week: active?.progress.currentWeek ?? null,
+            program_total_weeks: active?.progress.totalWeeks ?? null,
           },
           weight: weightTrend,
           lumbar: { avg_score: lumbarAvg, checks_count: lumbarChecks.length },
@@ -505,7 +554,10 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
             `_${from} → ${today(tz)}_\n`,
             `## Training`,
             `- Sessions: **${sessions.length}** total (avg **${sessionsPerWeek.toFixed(1)}/week**${consistency})`,
-            settings?.phase ? `- Current Phase: **${settings.phase}**` : "",
+            output.training.current_phase ? `- Current Phase: **${output.training.current_phase}**` : "",
+            active?.progress.currentWeek
+              ? `- Program: week **${active.progress.currentWeek}** of ${active.progress.totalWeeks}`
+              : "",
             `\n## Body Weight`,
             `- Trend: **${weightLine}**`,
             weightEntries.length > 0 ? `- Entries: ${weightEntries.length} measurements` : "",

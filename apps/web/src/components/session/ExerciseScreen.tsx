@@ -4,6 +4,8 @@ import { Image } from 'lucide-react'
 import type { ExerciseLog, SetData } from '@calistenia/core/types'
 import type { Step } from '@calistenia/core/lib/session-machine'
 import { formatTempo, quickReps } from '@calistenia/core/lib/exercise-format'
+import { useExerciseMedia, hasResolvedMedia } from '@calistenia/core/hooks/useExerciseMedia'
+import ProgressionChip from './ProgressionChip'
 import YoutubeModal from '../YoutubeModal'
 import MediaViewer from '../MediaViewer'
 import Timer from '../Timer'
@@ -31,6 +33,11 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
   const { exercise, setNumber, totalSets } = step
   const recentLogs = logs.slice(0, 2)
+
+  // Misma corrección que en `ExerciseCard`: el botón depende de lo que resuelva
+  // `exerciseMedia`, no de que `demoImages` venga lleno (#608).
+  const media = useExerciseMedia(exercise)
+  const hasMedia = hasResolvedMedia(media)
 
   // Progressive overload hint
   const lastLog = logs[0]
@@ -111,6 +118,10 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
             </span>
           </div>
         </div>
+
+        {/* Progresión automática (#617): solo con el opt-in encendido y algo
+            seguro que proponer — el propio chip decide si se pinta. */}
+        <ProgressionChip exercise={exercise} logs={logs} />
 
         {/* Superset badge */}
         {exercise.supersetGroup && (
@@ -232,7 +243,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
               {t('session.editBtn')}
             </button>
 
-            {exercise.demoImages && exercise.demoImages.length > 0 && (
+            {hasMedia && (
               <button
                 onClick={() => setShowMedia(true)}
                 aria-label="Ver fotos del ejercicio"

@@ -1,19 +1,27 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
+import { describeFeedItem } from '@calistenia/core/lib/feed-item'
+import type { FeedItem } from '@calistenia/core/types'
 import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
 
 interface ActivityFeedWidgetProps {
   items: FeedItem[]
   /** "Ver todo" → muro completo. */
   onNavigate: () => void
-  /** Fila → detalle de esa sesión. */
+  /** Fila → detalle de esa actividad. */
   onOpenSession: (item: FeedItem) => void
   /** Nombre/avatar → perfil del autor. */
   onOpenUser: (userId: string) => void
 }
 
+/**
+ * Resumen de las últimas tres actividades de los seguidos.
+ *
+ * Decía "<nombre> completó <título>" para TODO, así que una carrera de un amigo
+ * se leía como "Ana completó Carrera" y un reto como "Ana completó 100
+ * flexiones al día". Ahora la frase la pone `describeFeedItem`, la misma que el
+ * muro y la app nativa, y cada tipo dice lo suyo.
+ */
 export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, onOpenUser }: ActivityFeedWidgetProps) {
   const { t } = useTranslation()
   if (items.length === 0) return null
@@ -33,14 +41,14 @@ export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, o
       </div>
       <div className="flex flex-col gap-2.5">
         {recent.map(item => {
-          const phaseColor = PHASE_COLORS[item.phase]
+          const view = describeFeedItem(item)
           return (
-            // La fila entera abre la sesión; el nombre se superpone para ir al
+            // La fila entera abre la actividad; el nombre se superpone para ir al
             // perfil. Overlay en vez de anidar botones (HTML inválido).
             <div key={item.id} className="relative flex items-center gap-2.5 -mx-1.5 px-1.5 py-1 rounded-md hover:bg-muted/40 transition-colors">
               <button
                 onClick={() => onOpenSession(item)}
-                aria-label={`${item.displayName} · ${item.workoutTitle}`}
+                aria-label={`${item.displayName} · ${view.title}`}
                 className="absolute inset-0 rounded-md"
               />
               <button
@@ -62,8 +70,8 @@ export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, o
                   >
                     {item.displayName}
                   </button>
-                  <span className="text-muted-foreground"> {t('widgets.completed')} </span>
-                  <span className={cn('font-medium', phaseColor?.text || 'text-lime')}>{item.workoutTitle}</span>
+                  <span className="text-muted-foreground"> {view.verb} </span>
+                  <span className={cn('font-medium', view.accent.text)}>{view.title}</span>
                 </div>
               </div>
               <span className="text-[10px] text-muted-foreground shrink-0">{timeAgoShort(item.completedAt)}</span>

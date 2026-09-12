@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as Sentry from '@sentry/react'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
-import { inferNutritionGoalType, ONBOARDING_ACTIVITY_TO_NUTRITION, previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
+import { previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
 import { op } from '@calistenia/core/lib/analytics'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
@@ -28,13 +28,14 @@ import WaterTracker from '../components/WaterTracker'
 import { CoachPanel } from '../components/nutrition/CoachPanel'
 import { QualityScoreBadge } from '../components/nutrition/QualityScoreBadge'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import { useNutritionProfilePrefill } from '@calistenia/core/hooks/useNutritionProfilePrefill'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
 import { NUTRITION_GOALS, GOAL_LABEL_KEYS } from '../components/nutrition/nutrition-goal-options'
-import type { NutritionGoal, NutritionGoalType, NutritionEntry, Sex } from '@calistenia/core/types'
+import type { NutritionGoal, NutritionGoalType, NutritionEntry } from '@calistenia/core/types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -46,19 +47,11 @@ interface NutritionPageProps {
   trainingPhase?: number
 }
 
-interface UserProfileData {
-  weight?: number
-  height?: number
-  age?: number
-  sex?: Sex
-  goalWeight?: number
-  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
-  pace?: 'gradual' | 'balanced' | 'aggressive'
-  goalType?: 'muscle_gain' | 'fat_loss' | 'recomp' | 'maintain'
-}
-
 export default function NutritionPage({ userId, trainingPhase }: NutritionPageProps) {
-  const [profileData, setProfileData] = useState<UserProfileData>({})
+  // El wizard congela sus props iniciales en `useState`, así que montarlo antes
+  // de tener el perfil lo deja vacío para siempre aunque el fetch llegue medio
+  // segundo después: por eso `profileLoaded` entra en el gate de render.
+  const { profile: profileData, loaded: profileLoaded } = useNutritionProfilePrefill(userId)
   const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
   // #243 F2: cambio de objetivo post-onboarding — reabre el wizard sobre goals existentes
@@ -82,31 +75,6 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         toast.error(t('nutrition.logger.analyzeError'), { description: t('nutrition.logger.checkConnection') })
       })
   }, [addJob, clearJob, t])
-
-  // Fetch user profile data for pre-filling nutrition goal setup
-  useEffect(() => {
-    if (!userId) return
-    const load = async () => {
-      const available = await isPocketBaseAvailable()
-      if (!available) return
-      try {
-        const user = await pb.collection('users').getOne(userId, { requestKey: null })
-        const weight = user.weight || undefined
-        const goalWeight = user.goal_weight || undefined
-        // Edad/sexo ya no existen en `users` (PII → nutrition_goals); el wizard
-        // los pide y los guarda en la propia fila del objetivo.
-        setProfileData({
-          weight,
-          height: user.height || undefined,
-          goalWeight,
-          activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_TO_NUTRITION[user.activity_level] : undefined,
-          pace: user.pace || undefined,
-          goalType: inferNutritionGoalType(weight, goalWeight, user.primary_goal),
-        })
-      } catch { /* ignore */ }
-    }
-    load()
-  }, [userId])
 
   // US-14: Detect training phase change → suggest recalculating macros
   useEffect(() => {
@@ -379,7 +347,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         </div>
       )}
 
-      {!isReady ? (
+      {/* Solo se espera al perfil cuando toca estrenar el wizard: en modo
+          edición el pre-relleno sale de `goals`, que ya está cargado. */}
+      {(!isReady || (!goals && !profileLoaded)) ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />

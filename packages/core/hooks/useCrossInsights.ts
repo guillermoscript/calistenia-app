@@ -93,6 +93,10 @@ function reportInsightError(op: string, periodType: InsightPeriodType, err: unkn
   // Sin PII: solo op + periodType + código de estado PB.
   if (isAutoCancelError(err)) return
   const status = (err as any)?.status ?? (err as any)?.response?.status
+  // status 0 = «no hubo respuesta» (#301): red caída u offline del usuario.
+  // No es un fallo nuestro y solo mete ruido en Sentry (GYM-GUILLE-1P/14) —
+  // la query ya reintenta sola al reconectar.
+  if (status === 0) return
   const wrapped = new Error(
     `[cross-insights] ${op} failed (period=${periodType}${status != null ? `, pbStatus=${status}` : ''})`,
   )

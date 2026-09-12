@@ -26,6 +26,14 @@ export interface StubWrite {
   op: 'create' | 'update' | 'delete'
   collection: string
   options: unknown
+  /**
+   * Cuerpo de la escritura, tal cual se pasó. Es `FormData` en las subidas de
+   * ficheros (#618) y un objeto plano en el resto; los tests que solo miran
+   * `op`/`collection` pueden ignorarlo.
+   */
+  data?: unknown
+  /** Id del registro en `update` y `delete`; ausente en `create`. */
+  id?: string
 }
 
 export interface PbAutoCancelStub {
@@ -100,7 +108,7 @@ export function createPbAutoCancelStub(): PbAutoCancelStub {
     const rows = () => (stub.rows[name] ??= [])
     return {
       create: (data: Record<string, unknown>, options?: any) => {
-        stub.writes.push({ op: 'create', collection: name, options })
+        stub.writes.push({ op: 'create', collection: name, options, data })
         return send('POST', path, options, () => {
           const rec = { ...data, id: `${name}_${++seq}` } as StubRow
           rows().push(rec)
@@ -108,7 +116,7 @@ export function createPbAutoCancelStub(): PbAutoCancelStub {
         })
       },
       update: (id: string, data: Record<string, unknown>, options?: any) => {
-        stub.writes.push({ op: 'update', collection: name, options })
+        stub.writes.push({ op: 'update', collection: name, options, data, id })
         return send('PATCH', `${path}/${id}`, options, () => {
           const rec = rows().find(r => r.id === id)
           if (rec) Object.assign(rec, data)
@@ -116,7 +124,7 @@ export function createPbAutoCancelStub(): PbAutoCancelStub {
         })
       },
       delete: (id: string, options?: any) => {
-        stub.writes.push({ op: 'delete', collection: name, options })
+        stub.writes.push({ op: 'delete', collection: name, options, id })
         return send('DELETE', `${path}/${id}`, options, () => {
           stub.rows[name] = rows().filter(r => r.id !== id)
           return true

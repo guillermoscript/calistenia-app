@@ -8,41 +8,35 @@ import { inferDifficulty, DIFFICULTY_COLORS } from '@calistenia/core/lib/difficu
 import type { DifficultyLevel } from '@calistenia/core/types'
 import { calculateWorkoutDuration, formatDuration } from '@calistenia/core/lib/duration'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
+import { ProgramFollowers } from '../components/programs/ProgramRemixCredit'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '@calistenia/core/types'
 import { ShareIcon, PlusIcon, EditIcon, SearchIcon } from '../components/icons/nav-icons'
 import i18n from '../lib/i18n'
+import { shareProgram } from '../lib/share'
 import { toast } from 'sonner'
 
 // ── Share helper ───────────────────────────────────────────────────────────
 
-async function shareProgram(programId: string, programName: string) {
-  const url = `${window.location.origin}/shared/${programId}`
-  const shareData = {
-    title: programName,
-    text: i18n.t('programs.shareText', { name: programName }),
-    url,
-  }
-
-  if (navigator.share && navigator.canShare?.(shareData)) {
-    try {
-      await navigator.share(shareData)
-      return
-    } catch {
-      // User cancelled or share failed — fall through to clipboard
-    }
-  }
-
-  // Fallback: copy to clipboard
-  try {
-    await navigator.clipboard.writeText(url)
-    alert(i18n.t('programs.linkCopied'))
-  } catch {
-    // Last resort
-    prompt(i18n.t('programs.copyThisLink'), url)
-  }
+/**
+ * Compartir un programa vive en `lib/share.ts` sobre el constructor de core
+ * (#604). Aquí había una copia propia que armaba el enlace con
+ * `window.location.origin`: en desarrollo generaba
+ * `http://localhost:5173/shared/…`, que no le abre a nadie más. Y era esta la
+ * que colgaba del botón de las tarjetas, así que la de `lib/share.ts` —la que
+ * sí usaba `WEB_BASE_URL`— llevaba sin llamarse desde ninguna parte.
+ *
+ * El aviso solo sale por el camino del portapapeles, igual que antes: la hoja
+ * nativa ya es su propia confirmación, y `navigator.share` no distingue un
+ * envío hecho de uno cancelado.
+ */
+async function handleShareProgram(programId: string, programName: string) {
+  const willCopy = !navigator.share
+  const ok = await shareProgram(programName, programId)
+  if (ok && willCopy) toast.success(i18n.t('programs.linkCopied'))
 }
 
 // ── Program Card ───────────────────────────────────────────────────────────
@@ -61,6 +55,12 @@ interface ProgramCardProps {
   isOwn: boolean
   canEdit: boolean
   isActive: boolean
+  /**
+   * Cuánta gente sigue el programa (#620). `undefined` cuando la view todavía
+   * no respondió o no dejó ver esa fila; la tarjeta no pinta nada en ese caso
+   * ni tampoco con cero, así que no hace falta distinguirlos aquí.
+   */
+  followersCount?: number
   onSelect: () => void
   onShare: () => void
   onDelete?: () => void | Promise<void>
@@ -68,7 +68,7 @@ interface ProgramCardProps {
   onView?: () => void
 }
 
-function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onDelete, onEdit, onView }: ProgramCardProps) {
+function ProgramCard({ program, isOwn, canEdit, isActive, followersCount, onSelect, onShare, onDelete, onEdit, onView }: ProgramCardProps) {
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -211,6 +211,9 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
             {t('programs.by', { name: program.created_by_name })}
           </span>
         )}
+        {/* La prueba social va en esta fila y no en un bloque propio: es un dato
+            más del programa, del mismo peso que las semanas o la dificultad. */}
+        <ProgramFollowers count={followersCount} className="text-[10px]" />
       </div>
 
       {/* Actions */}
@@ -306,6 +309,12 @@ export default function ProgramsPage() {
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const [search, setSearch] = useState('')
 
+  // Los conteos de seguidores del catálogo entero en una sola consulta a la
+  // view (#620). Se piden sobre `programs` sin filtrar por la búsqueda: teclear
+  // en el buscador no debe disparar una consulta por pulsación.
+  const programIds = useMemo(() => programs.map(p => p.id), [programs])
+  const { statsById } = useProgramStats(programIds)
+
   // Always show all programs: featured first → official → user's own → community
   const sortedPrograms = useMemo(() => {
     let result = [...programs]
@@ -328,10 +337,23 @@ export default function ProgramsPage() {
       const bIsOwn = b.created_by === userId
       if (aIsOwn && !bIsOwn) return -1
       if (!aIsOwn && bIsOwn) return 1
+      // Dentro de la comunidad manda cuánta gente lo sigue (#620): el orden
+      // alfabético premiaba llamarse «Abdominales». Solo aquí — los oficiales
+      // los ordena el equipo con `is_featured`, y los propios son tan pocos que
+      // buscarlos por nombre sigue siendo lo más rápido.
+      //
+      // El programa sin fila en la view cuenta como 0 SOLO para ordenar. No es
+      // lo mismo que pintarlo: colocarlo abajo es una suposición reversible, y
+      // escribir «0 personas lo siguen» sería afirmar algo que no sabemos.
+      if (!aIsOwn && !bIsOwn) {
+        const aFollowers = statsById[a.id]?.followersCount ?? 0
+        const bFollowers = statsById[b.id]?.followersCount ?? 0
+        if (aFollowers !== bFollowers) return bFollowers - aFollowers
+      }
       return a.name.localeCompare(b.name)
     })
     return result
-  }, [programs, userId, search])
+  }, [programs, userId, search, statsById])
 
   const officialPrograms = useMemo(() => sortedPrograms.filter(p => p.is_official), [sortedPrograms])
   const userPrograms = useMemo(() => sortedPrograms.filter(p => !p.is_official), [sortedPrograms])
@@ -399,8 +421,9 @@ export default function ProgramsPage() {
                 isOwn={program.created_by === userId}
                 canEdit={isAdmin || program.created_by === userId}
                 isActive={program.id === activeProgram?.id}
+                followersCount={statsById[program.id]?.followersCount}
                 onSelect={() => onSelectProgram(program.id)}
-                onShare={() => shareProgram(program.id, program.name)}
+                onShare={() => handleShareProgram(program.id, program.name)}
                 onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
                 onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
                 onView={onViewProgram ? () => onViewProgram(program.id) : undefined}
@@ -442,8 +465,9 @@ export default function ProgramsPage() {
                 isOwn={program.created_by === userId}
                 canEdit={isAdmin || program.created_by === userId}
                 isActive={program.id === activeProgram?.id}
+                followersCount={statsById[program.id]?.followersCount}
                 onSelect={() => onSelectProgram(program.id)}
-                onShare={() => shareProgram(program.id, program.name)}
+                onShare={() => handleShareProgram(program.id, program.name)}
                 onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
                 onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
                 onView={onViewProgram ? () => onViewProgram(program.id) : undefined}

@@ -12,3 +12,4 @@ export * from "./pb.js";
 export * from "./user-singletons.js";
 export * from "./programs.js";
 export * from "./activity.js";
+export * from "./social.js";

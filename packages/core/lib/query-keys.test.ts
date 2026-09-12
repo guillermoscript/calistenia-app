@@ -26,15 +26,39 @@ describe('qk — estabilidad y distinción de factorías', () => {
     expect(qk.follows(null)).toEqual(['follows', null])
     expect(qk.favorites(null)).toEqual(['favorites', null])
     expect(qk.programs.detail(null)).toEqual(['programs', 'detail', null])
+    expect(qk.programs.detailView(null)).toEqual(['programs', 'detailView', null])
+  })
+
+  it('programs.detail y programs.detailView NO colisionan para el mismo programa (#606)', () => {
+    // La aserción del bug: las dos claves eran idénticas, así que `usePrograms`
+    // (phases/weekDays/workoutsMap/cardioDayConfigs) y `useProgramDetail`
+    // (program/days) compartían entrada de caché y se pisaban.
+    expect(qk.programs.detailView('p1')).not.toEqual(qk.programs.detail('p1'))
+    expect(qk.programs.detailView('p1')).toEqual(qk.programs.detailView('p1'))
+    expect(qk.programs.detailView('p1')).not.toEqual(qk.programs.detailView('p2'))
   })
 })
 
 describe('qk — jerarquía de invalidación (sub-keys empiezan con el prefijo de "all")', () => {
-  it('programs: catalog/activeEnrollment/detail comparten el prefijo de programs.all', () => {
+  it('programs: catalog/enrollment/detail/detailView comparten el prefijo de programs.all', () => {
     const prefix = qk.programs.all[0]
-    expect(qk.programs.catalog[0]).toBe(prefix)
-    expect(qk.programs.activeEnrollment('u1')[0]).toBe(prefix)
+    expect(qk.programs.catalog('u1')[0]).toBe(prefix)
+    expect(qk.programs.enrollment('u1')[0]).toBe(prefix)
     expect(qk.programs.detail('p1')[0]).toBe(prefix)
+    expect(qk.programs.detailView('p1')[0]).toBe(prefix)
+  })
+
+  it('invalidar por programs.all alcanza a las DOS claves de detalle', () => {
+    // `qk.programs.all` es prefijo estructural de ambas: es lo que hace que una
+    // sola invalidación en refreshPrograms/saveProgram las cubra a las dos.
+    const startsWith = (key: readonly unknown[], prefix: readonly unknown[]) =>
+      prefix.every((part, i) => key[i] === part)
+
+    expect(startsWith(qk.programs.detail('p1'), qk.programs.all)).toBe(true)
+    expect(startsWith(qk.programs.detailView('p1'), qk.programs.all)).toBe(true)
+    // La clave literal que se usaba antes (`['programs', 'detail']`) NO alcanza
+    // a detailView: por eso hubo que sustituirla y no solo añadir la clave.
+    expect(startsWith(qk.programs.detailView('p1'), ['programs', 'detail'])).toBe(false)
   })
 
   it('feed: meta/sessions/users comparten el prefijo de feed.all', () => {

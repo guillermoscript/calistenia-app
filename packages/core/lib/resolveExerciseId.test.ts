@@ -102,3 +102,17 @@ describe('resolveExerciseId — ambiguous names do not mis-resolve', () => {
     expect(result).toBe('Mountain Climbers')
   })
 })
+
+describe('resolveExerciseId — step 1b: ids retirados con historial huérfano (#692)', () => {
+  it('pushup → pushup_std (el programa «8 Semanas» lo grabó así hasta junio de 2026)', () => {
+    expect(resolveExerciseId('pushup')).toBe('pushup_std')
+  })
+
+  it('jogging → muscle_up (entrada de wger retirada cuyo contenido era un muscle-up)', () => {
+    expect(resolveExerciseId('jogging')).toBe('muscle_up')
+  })
+
+  it('el alias no gana a un id real del catálogo', () => {
+    expect(resolveExerciseId('pushup_std')).toBe('pushup_std')
+  })
+})
