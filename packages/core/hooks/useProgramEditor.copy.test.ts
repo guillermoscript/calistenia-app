@@ -83,6 +83,12 @@ describe('cloneExerciseForCopy', () => {
     expect(copia.removeVideo).toBeUndefined()
   })
 
+  it('conserva la rampa semanal (#755): copiar un día no puede perder la progresión', () => {
+    const prog = [{ field: 'timerSeconds' as const, values: [20, 25, 30, 20] }]
+    const copia = cloneExerciseForCopy(ex('colgado', { weeklyProgression: prog }))
+    expect(copia.weeklyProgression).toEqual(prog)
+  })
+
   it('conserva el contenido de entrenamiento, y `youtube` porque es una URL', () => {
     const original = ex('fondos', {
       sets: 5,

@@ -4,6 +4,7 @@ import {
   dayIdFromDateStr,
   isDeloadWeek,
   parsePhaseWeeks,
+  weekInPhase,
   phaseForWeek,
   resolvePhase,
   completedWorkoutsFromProgress,
@@ -368,5 +369,35 @@ describe('isDeloadWeek (#716)', () => {
     expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-05-01' })).isDeloadWeek).toBe(false)
     // Terminado: currentWeek se queda en 12 (última de la fase 3, con flag), pero no descarga.
     expect(computeProgramProgress(input({ phases: WITH_DELOAD, today: '2026-09-01' })).isDeloadWeek).toBe(false)
+  })
+})
+
+describe('weekInPhase (#755)', () => {
+  it('traduce la semana del PROGRAMA a la semana de la FASE', () => {
+    expect(weekInPhase(PHASES, 1, 1)).toBe(1)
+    expect(weekInPhase(PHASES, 1, 3)).toBe(3)
+    expect(weekInPhase(PHASES, 1, 4)).toBe(4)
+    // La semana 6 del programa es la 2 de una fase que va de la 5 a la 8.
+    expect(weekInPhase(PHASES, 2, 6)).toBe(2)
+    expect(weekInPhase(PHASES, 3, 12)).toBe(4)
+  })
+
+  it('una fase de una sola semana siempre es su semana 1', () => {
+    const one: Phase[] = [{ ...PHASES[0], weeks: '9' }]
+    expect(weekInPhase(one, 1, 9)).toBe(1)
+    expect(weekInPhase(one, 1, 20)).toBe(1)
+  })
+
+  it('mirar una fase que no es la de la semana en curso da su extremo más cercano', () => {
+    // La pantalla de entreno deja mirar otras fases: antes de empezar la fase 3
+    // se enseña la dosis con la que arranca; después de acabar la 1, la que la cierra.
+    expect(weekInPhase(PHASES, 3, 2)).toBe(1)
+    expect(weekInPhase(PHASES, 1, 11)).toBe(4)
+  })
+
+  it('sin semana o con un rango ilegible no hay rampa', () => {
+    expect(weekInPhase(PHASES, 1, null)).toBeNull()
+    expect(weekInPhase(PHASES, 9, 3)).toBeNull()
+    expect(weekInPhase([{ ...PHASES[0], weeks: 'todas' }], 1, 3)).toBeNull()
   })
 })

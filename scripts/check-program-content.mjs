@@ -42,7 +42,7 @@ import { readFileSync, readdirSync } from 'fs'
 import { resolve, dirname, basename, join } from 'path'
 import { fileURLToPath } from 'url'
 import { CATALOG_BY_SLUG } from './lib/program-catalog.mjs'
-import { PRIORITY_ALIASES } from './lib/program-exercise-fields.mjs'
+import { PRIORITY_ALIASES, normalizeWeeklyProgression } from './lib/program-exercise-fields.mjs'
 import {
   inferTimerFromReps,
   needsMuscleRepair,
@@ -263,6 +263,182 @@ function patternOf(entry) {
   return entry.category
 }
 
+// ── Progresión semanal dentro de la fase (#755) ──────────────────────────────
+
+/**
+ * Ventana razonable del valor FINAL de una rampa, por campo.
+ *
+ * No son límites del motor —una rampa puede acabar donde quiera— sino un
+ * cinturón contra el error de dedo, que en una rampa es especialmente difícil
+ * de ver: un `step: 50` en vez de `5` no rompe nada, solo pide medio minuto más
+ * de colgado cada semana y nadie se da cuenta hasta que el usuario se queda
+ * mirando un cronómetro de cuatro minutos.
+ */
+const PROGRESSION_BOUNDS = {
+  timerSeconds: { min: 5, max: 300, label: 'segundos de cronómetro' },
+  sets: { min: 1, max: 8, label: 'series' },
+  reps: { min: 1, max: 60, label: 'repeticiones' },
+  rest: { min: 15, max: 600, label: 'segundos de descanso' },
+}
+
+/** El campo del JSON que espeja cada campo de la rampa. */
+const PROGRESSION_SOURCE = {
+  timerSeconds: 'timer_seconds',
+  sets: 'sets',
+  reps: 'reps',
+  rest: 'rest_seconds',
+}
+
+/**
+ * Una cadena de números encadenados con flechas: «20 → 25 → 30». Es como están
+ * escritas en prosa TODAS las rampas numéricas del contenido actual, así que
+ * sirve igual para detectar la que falta migrar y la que se quedó duplicada.
+ */
+const RAMP_CHAIN_RE = /(\d+)\s*(?:→|->|—>|–>)\s*(\d+)/
+
+/** Primer número comparable de un valor de campo: «8-12» → 8, «20 s» → 20. */
+function firstNumber(value) {
+  const m = /(\d+)/.exec(String(value ?? ''))
+  return m ? Number(m[1]) : null
+}
+
+/** Semanas que dura una fase según su rango `weeks` («1-4» → 4). */
+function phaseWeekCount(phase) {
+  const nums = String(phase?.weeks ?? '').match(/\d+/g)
+  if (!nums || nums.length === 0) return null
+  const from = Number(nums[0])
+  const to = nums.length > 1 ? Number(nums[1]) : from
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return null
+  return Math.abs(to - from) + 1
+}
+
+/**
+ * Reglas de la rampa semanal de un ejercicio (#755).
+ *
+ * Cinco cosas, en orden de gravedad:
+ *
+ * - **`progression_shape`** (ERROR): la rampa no se puede leer. Es error y no
+ *   aviso por la misma razón que un `priority` fuera del enum: una rampa mal
+ *   escrita no se nota mirando la pantalla —la sesión sale como antes de
+ *   #755—, así que una progresión muerta llegaría a producción en silencio.
+ * - **`progression_base`**: el valor de la fila no coincide con el de la
+ *   primera semana de la rampa. Todo lo que NO aplica la rampa (la pantalla de
+ *   detalle del programa, el MCP, una exportación) enseña el valor de la fila,
+ *   y si no es el de la semana 1, miente.
+ * - **`progression_range`**: la rampa acaba fuera de la ventana razonable.
+ * - **`progression_duplicated`**: la rampa está en el campo Y los números
+ *   siguen en la nota. La nota se queda con el «por qué», no con los números:
+ *   duplicarlos garantiza que algún día discrepen.
+ * - **`progression_in_prose`**: la nota describe una rampa numérica sobre un
+ *   campo que la fila tiene, y la fila no la declara. Es la regla que habría
+ *   cazado #755. Se exige que el primer número de la cadena COINCIDA con el
+ *   valor actual del campo: sin ese emparejamiento la regla saltaría con los
+ *   tempos («baja 4 s… 5 s… 6 s») y las progresiones cualitativas, que no
+ *   tienen campo donde vivir.
+ */
+function checkWeeklyProgression(ex, phase, where, { err, logic }) {
+  const note = textOf(ex.note)
+  const chain = RAMP_CHAIN_RE.exec(note)
+
+  let ramps = null
+  try {
+    ramps = normalizeWeeklyProgression(ex.weekly_progression, ex.name?.es || ex.name)
+  } catch (e) {
+    err(`${where}: ${e.message}`, 'progression_shape')
+    return
+  }
+
+  if (!ramps) {
+    // Sin rampa declarada: ¿la describe la nota sobre un campo que existe?
+    if (chain) {
+      const start = Number(chain[1])
+      const match = Object.entries(PROGRESSION_SOURCE)
+        .find(([, src]) => firstNumber(ex[src]) === start)
+      if (match) {
+        logic(
+          'progression_in_prose',
+          `${where}: la nota rampa ${chain[1]} → ${chain[2]} y el ejercicio arranca justo en ${start} ` +
+          `(${match[1]}), pero no declara 'weekly_progression' — la pantalla enseñará ${start} las cuatro semanas`,
+        )
+      }
+    }
+    return
+  }
+
+  const weeks = phaseWeekCount(phase)
+
+  for (const r of ramps) {
+    const source = PROGRESSION_SOURCE[r.field]
+    const base = ex[source]
+
+    // El campo sobre el que rampa tiene que existir en la fila.
+    if (base === undefined || base === null || base === '') {
+      err(
+        `${where}: rampa sobre '${source}' y el ejercicio no lo trae — la rampa no haría nada`,
+        'progression_shape',
+      )
+      continue
+    }
+
+    if (r.values) {
+      if (weeks !== null && r.values.length > weeks) {
+        err(
+          `${where}: rampa de '${source}' con ${r.values.length} valores y la fase dura ${weeks} semanas`,
+          'progression_shape',
+        )
+      }
+      const first = r.values[0]
+      if (String(first) !== String(base)) {
+        logic(
+          'progression_base',
+          `${where}: rampa de '${source}' empieza en ${JSON.stringify(first)} y la fila dice ` +
+          `${JSON.stringify(base)} — todo lo que no aplica la rampa (detalle del programa, MCP) enseñará el de la fila`,
+        )
+      }
+    } else if (r.field === 'reps' && !/^\d+(\s*-\s*\d+)?$/.test(String(base).trim())) {
+      // La forma lineal sobre `reps` solo sabe mover «6» y «8-12».
+      err(
+        `${where}: rampa lineal de 'reps' sobre "${base}", que no es un número ni un rango — usa 'values'`,
+        'progression_shape',
+      )
+      continue
+    }
+
+    // Valor final de la rampa, dentro de una ventana razonable.
+    const bounds = PROGRESSION_BOUNDS[r.field]
+    const last = r.values
+      ? firstNumber(r.values[r.values.length - 1])
+      : firstNumber(base) === null
+        ? null
+        : clampBound(firstNumber(base) + r.step * Math.max(0, (weeks ?? 4) - 1), r)
+    if (bounds && last !== null && (last < bounds.min || last > bounds.max)) {
+      logic(
+        'progression_range',
+        `${where}: la rampa de '${source}' acaba en ${last} ${bounds.label} ` +
+        `(fuera de ${bounds.min}-${bounds.max}) — repasa el 'step' o los 'values'`,
+      )
+    }
+
+  }
+
+  // Una sola vez por ejercicio, aunque declare varias rampas.
+  if (chain) {
+    logic(
+      'progression_duplicated',
+      `${where}: la rampa está en 'weekly_progression' y los números siguen en la nota ` +
+      `(«${chain[1]} → ${chain[2]}») — la nota se queda con el por qué, no con los números`,
+    )
+  }
+}
+
+/** `min`/`max` de la forma lineal, aplicados como los aplica el motor. */
+function clampBound(n, r) {
+  let out = n
+  if (typeof r.min === 'number') out = Math.max(out, r.min)
+  if (typeof r.max === 'number') out = Math.min(out, r.max)
+  return out
+}
+
 // ── Comprobación de un programa ──────────────────────────────────────────────
 
 export function checkProgram(slug, doc, { strict = false } = {}) {
@@ -402,6 +578,9 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
         if (ex.priority && !(String(ex.priority).toLowerCase() in PRIORITY_ALIASES)) {
           err(`${where}: priority "${ex.priority}" fuera del enum`, 'priority')
         }
+
+        // 4b — Progresión semanal dentro de la fase (#755).
+        checkWeeklyProgression(ex, phase, where, { err, logic })
 
         const entry = byId.get(resolved)
         for (const eq of entry?.equipment ?? []) {

@@ -28,9 +28,11 @@ import {
   completedWorkoutsFromProgress,
   computeProgramProgress,
   isDeloadWeek,
+  weekInPhase,
   type ProgramProgress,
 } from '../lib/programProgress'
 import { applyDeload } from '../lib/deload'
+import { applyWeeklyProgression } from '../lib/weeklyProgression'
 import type { ActiveEnrollment } from './usePrograms'
 import type { Phase, ProgramMeta, ProgressMap, WeekDay, Workout } from '../types'
 
@@ -138,19 +140,27 @@ export function useProgramProgress({
 }
 
 /**
- * `getWorkout` con la semana de descarga aplicada (#716).
+ * `getWorkout` con la semana en curso aplicada: progresión semanal (#755) y
+ * descarga (#716).
  *
  * Envuelve el `getWorkout` de `usePrograms`, que no puede saber en qué semana
  * está el usuario: la semana sale de `programProgress`, que se calcula DESPUÉS
  * con las fases que `usePrograms` devuelve. Va aquí y no en cada contexto para
- * que web y móvil no lleven dos copias.
+ * que web y móvil no lleven dos copias — y por eso las dos plataformas enseñan
+ * lo mismo sin que ninguna pantalla sepa que existe una rampa.
+ *
+ * **El orden importa**: primero la rampa y después la descarga. La descarga
+ * parte las series de lo que toca ESA semana, no de lo que tocaba la primera.
+ * Este es el único sitio donde una sesión ya construida se transforma, y las
+ * dos transformaciones son funciones puras (`weeklyProgression.ts`,
+ * `deload.ts`) que no saben nada de React.
  *
  * Los resultados se cachean por clave `p{fase}_{día}` mientras no cambien las
  * entradas: `WorkoutPage` llama a `getWorkout` en cada render y varios efectos
  * dependen de la identidad del `Workout` (el evento `workout_day_viewed`, la
  * duración estimada). Devolver un objeto nuevo cada vez los dispararía en bucle.
  */
-export function useDeloadGetWorkout(
+export function useWeekAwareGetWorkout(
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null,
   phases: Phase[],
   programProgress: Pick<ProgramProgress, 'currentWeek' | 'isCompleted' | 'hasStarted'>,
@@ -161,7 +171,12 @@ export function useDeloadGetWorkout(
     const key = `p${phaseNumber}_${dayId}`
     if (cache.has(key)) return cache.get(key)!
     const raw = getWorkout(phaseNumber, dayId)
-    const out = raw && isDeloadWeek(phases, phaseNumber, week) ? applyDeload(raw) : raw
+    let out = raw
+    if (out) {
+      const deload = isDeloadWeek(phases, phaseNumber, week)
+      out = applyWeeklyProgression(out, weekInPhase(phases, phaseNumber, week), deload)
+      if (deload) out = applyDeload(out)
+    }
     cache.set(key, out)
     return out
   }, [cache, getWorkout, phases, week])

@@ -180,6 +180,37 @@ export function isDeloadWeek(phases: readonly Phase[], phaseNumber: number, week
   return !!range && week === range.to
 }
 
+/**
+ * ¿Qué número de semana es `week` DENTRO de la fase `phaseNumber`? (#755)
+ *
+ * La progresión semanal de un ejercicio se escribe en semanas de su FASE («suma
+ * 5 s cada semana»), no en semanas del programa, que es lo único que sabe
+ * `currentWeek`. En una fase `"5-8"`, la semana 6 del programa es la semana 2 de
+ * la fase.
+ *
+ * Va por fase y no por «fase en curso» por la misma razón que `isDeloadWeek`:
+ * la pantalla de entreno deja mirar otras fases. Mirar una fase que no es la
+ * de `week` devuelve el extremo más cercano de su rango —antes de empezarla, su
+ * primera semana; después de acabarla, su última—, que es lo que la pantalla
+ * tiene que enseñar: la dosis con la que esa fase empieza, o la que la cierra.
+ *
+ * `null` cuando no hay semana (programa sin empezar) o cuando el rango de la
+ * fase no se puede leer: sin semana no hay rampa, y la sesión sale sin tocar.
+ */
+export function weekInPhase(
+  phases: readonly Phase[],
+  phaseNumber: number,
+  week: number | null,
+): number | null {
+  if (week === null || !Number.isFinite(week)) return null
+  const phase = phases.find(p => p.id === phaseNumber)
+  if (!phase) return null
+  const range = parsePhaseWeeks(phase.weeks)
+  if (!range) return null
+  const clamped = Math.min(Math.max(Math.floor(week), range.from), range.to)
+  return clamped - range.from + 1
+}
+
 /** De dónde sale `currentPhase`, para que la UI pueda decir «automática». */
 export type PhaseSource = 'override' | 'derived' | 'fallback'
 

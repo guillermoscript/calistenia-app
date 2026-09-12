@@ -91,3 +91,107 @@ export function resolveSection(exercise) {
   const key = marker ? String(marker).trim().toLowerCase() : ''
   return SECTION_MARKERS.includes(key) ? key : DEFAULT_SECTION
 }
+
+// ── Progresión semanal dentro de la fase (#755) ──────────────────────────────
+
+/**
+ * Campos de un ejercicio sobre los que una rampa puede actuar, del vocabulario
+ * del JSON al de la app. Espejo de `PROGRESSION_FIELDS` en
+ * `packages/core/types/index.ts`.
+ *
+ * Los nombres de la app se aceptan además de los del JSON: escribir
+ * `timerSeconds` en vez de `timer_seconds` no es un error del autor, solo el
+ * otro dialecto del mismo campo.
+ */
+export const PROGRESSION_FIELDS = {
+  sets: 'sets',
+  reps: 'reps',
+  timer_seconds: 'timerSeconds',
+  timerSeconds: 'timerSeconds',
+  rest_seconds: 'rest',
+  rest: 'rest',
+}
+
+/**
+ * `weekly_progression` del JSON → el valor que va a la fila (#755).
+ *
+ * Una rampa dice cómo cambia UN campo a lo largo de las semanas de su fase, en
+ * una de dos formas excluyentes: `step` (lineal, acotada por `min`/`max`) o
+ * `values` (un valor por semana, índice 0 = primera semana de la fase). Se
+ * acepta una rampa suelta o una lista, y nunca dos sobre el mismo campo.
+ *
+ * Igual que `normalizePriority`, lo que no encaja **revienta** en vez de
+ * colarse en la base de datos. Aquí el fallo silencioso sería especialmente
+ * caro: una rampa mal escrita no se nota mirando la pantalla —la sesión sale
+ * igual que antes de #755— así que una progresión muerta llegaría a producción
+ * sin que nada chistara.
+ *
+ * Devuelve SIEMPRE una lista, para que la fila tenga una sola forma y el motor
+ * no tenga que distinguir.
+ *
+ * @param {unknown} raw     valor de `weekly_progression` tal cual viene del JSON
+ * @param {string} [label]  nombre del ejercicio, solo para el mensaje de error
+ * @returns {object[]|null} lista normalizada, o `null` si no hay rampa
+ */
+export function normalizeWeeklyProgression(raw, label = '') {
+  if (raw === undefined || raw === null || raw === '') return null
+
+  const where = label ? ` (ejercicio: ${label})` : ''
+  const list = Array.isArray(raw) ? raw : [raw]
+  if (list.length === 0) return null
+
+  const seen = new Set()
+  return list.map(entry => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error(`weekly_progression: cada rampa debe ser un objeto${where}.`)
+    }
+
+    const field = PROGRESSION_FIELDS[String(entry.field ?? '').trim()]
+    if (!field) {
+      throw new Error(
+        `weekly_progression: campo "${entry.field}" fuera del enum${where}. ` +
+        `Valores aceptados: ${Object.keys(PROGRESSION_FIELDS).join(', ')}.`
+      )
+    }
+    if (seen.has(field)) {
+      throw new Error(`weekly_progression: dos rampas sobre "${entry.field}"${where}. Una por campo.`)
+    }
+    seen.add(field)
+
+    const hasStep = entry.step !== undefined && entry.step !== null
+    const hasValues = Array.isArray(entry.values) && entry.values.length > 0
+    if (entry.values !== undefined && !Array.isArray(entry.values)) {
+      throw new Error(`weekly_progression: "values" debe ser una lista${where}.`)
+    }
+    if (hasStep && hasValues) {
+      throw new Error(`weekly_progression: "step" y "values" son excluyentes${where}. Elige una.`)
+    }
+    if (!hasStep && !hasValues) {
+      throw new Error(`weekly_progression: hace falta "step" o "values"${where}.`)
+    }
+
+    const norm = { field }
+    if (hasValues) {
+      norm.values = entry.values.map(v => (typeof v === 'number' ? v : String(v)))
+      return norm
+    }
+
+    const step = Number(entry.step)
+    if (!Number.isFinite(step) || step === 0) {
+      throw new Error(`weekly_progression: "step" debe ser un número distinto de 0${where}.`)
+    }
+    norm.step = step
+    for (const bound of ['min', 'max']) {
+      if (entry[bound] === undefined || entry[bound] === null) continue
+      const n = Number(entry[bound])
+      if (!Number.isFinite(n)) {
+        throw new Error(`weekly_progression: "${bound}" debe ser un número${where}.`)
+      }
+      norm[bound] = n
+    }
+    if (norm.min !== undefined && norm.max !== undefined && norm.min > norm.max) {
+      throw new Error(`weekly_progression: "min" (${norm.min}) por encima de "max" (${norm.max})${where}.`)
+    }
+    return norm
+  })
+}

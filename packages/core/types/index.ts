@@ -17,6 +17,33 @@ export type ExerciseStatus = 'official' | 'private' | 'promoted'
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
 
+/** Campos de `Exercise` sobre los que una rampa semanal puede actuar (#755). */
+export const PROGRESSION_FIELDS = ['sets', 'reps', 'timerSeconds', 'rest'] as const
+
+export type ProgressionField = (typeof PROGRESSION_FIELDS)[number]
+
+/**
+ * Cómo cambia UN campo de un ejercicio a lo largo de las semanas de su fase
+ * (#755). Dos formas, excluyentes: `step` (lineal, acotada por `min`/`max`) o
+ * `values` (un valor por semana, índice 0 = primera semana de la fase). Lo
+ * aplica `lib/weeklyProgression.ts`, que es donde está documentada la
+ * semántica completa.
+ */
+export interface WeeklyProgression {
+  field: ProgressionField
+  /** Delta por semana. Excluyente con `values`. */
+  step?: number
+  /** Valor por semana; índice 0 = primera semana de la fase. Excluyente con `step`. */
+  values?: readonly (number | string)[]
+  /** Suelo de la forma lineal (para `step` negativo). */
+  min?: number
+  /** Techo de la forma lineal. */
+  max?: number
+}
+
+/** Una rampa o varias sobre el mismo ejercicio, nunca dos sobre el mismo campo. */
+export type WeeklyProgressionSpec = WeeklyProgression | readonly WeeklyProgression[]
+
 export interface ExerciseTempo {
   /** Lowering phase duration in seconds (e.g. eccentric: 5 = "baja 5s") */
   eccentric?: number
@@ -54,6 +81,13 @@ export interface Exercise {
   section?: 'warmup' | 'main' | 'cooldown'
   stretchType?: 'dynamic' | 'static'
   tempo?: ExerciseTempo
+  /**
+   * Cómo cambia este ejercicio a lo largo de las semanas de su fase (#755).
+   * `program_exercises.weekly_progression`. Lo aplica `applyWeeklyProgression`
+   * (`lib/weeklyProgression.ts`); sin el campo, el ejercicio se comporta
+   * exactamente como antes de #755.
+   */
+  weeklyProgression?: WeeklyProgressionSpec
 }
 
 export interface Workout {

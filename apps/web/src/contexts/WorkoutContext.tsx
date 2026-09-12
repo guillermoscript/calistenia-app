@@ -1,7 +1,7 @@
 import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms, type ActiveEnrollment } from '@calistenia/core/hooks/usePrograms'
-import { useDeloadGetWorkout, useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
+import { useWeekAwareGetWorkout, useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, CircuitDefinition, ExerciseTiming } from '@calistenia/core/types'
 
@@ -110,10 +110,12 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     settingsPhase: settings.phase,
   })
 
-  // #716: en la última semana de una fase con `deload_last_week` el día sale
-  // con la mitad de series y `workout.deload`. Se envuelve AQUÍ, después de
-  // saber la semana, y es lo que reciben todos los consumidores del día.
-  const getWorkout = useDeloadGetWorkout(rawGetWorkout, phases, programProgress)
+  // #755/#716: el día sale con la dosis de la semana en curso — la rampa de
+  // `weekly_progression` primero y, en la última semana de una fase con
+  // `deload_last_week`, la mitad de series y `workout.deload`. Se envuelve
+  // AQUÍ, después de saber la semana, y es lo que reciben todos los
+  // consumidores del día.
+  const getWorkout = useWeekAwareGetWorkout(rawGetWorkout, phases, programProgress)
 
   // Wrap logSet to auto-detect PRs
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string): Promise<PREvent | null> => {
