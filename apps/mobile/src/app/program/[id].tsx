@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, BadgeCheck, CalendarDays, Copy, GitFork, LogOut, MoreVertical, Pencil, Trash2, Users } from 'lucide-react-native'
+import { ArrowLeft, BadgeCheck, CalendarDays, ChevronRight, Copy, GitFork, LogOut, MoreVertical, Pencil, Trash2, Users } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
@@ -18,6 +18,10 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
+import { useProgramDayBreakdown } from '@calistenia/core/hooks/useProgramDayBreakdown'
+import { defaultBreakdownPhase } from '@calistenia/core/lib/program-day-breakdown'
+import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import ProgramProgressBar from '@/components/programs/ProgramProgressBar'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
@@ -62,6 +66,13 @@ export default function ProgramDetailScreen() {
     })
     // Solo por programa: inscribirse recarga la ficha y no es una vista nueva.
   }, [id, !!program]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por programa
+
+  // Ejercicios de todas las fases, para contar cada día y abrir su detalle
+  // (`/program-day`). El del programa activo ya está en caché por `usePrograms`.
+  const { detail } = useProgramDayBreakdown(id ?? null)
+  const phases = detail?.phases ?? []
+  const [phaseChoice, setPhaseChoice] = useState<number | null>(null)
+  const phase = phaseChoice ?? defaultBreakdownPhase(phases, isActive ? programProgress?.currentPhase : null)
 
   const [selecting, setSelecting] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -302,6 +313,30 @@ export default function ProgramDetailScreen() {
               <Kicker>
                 {t('workout.trainingDay')}
               </Kicker>
+              {/* Selector de fase: cada fase cambia los ejercicios del mismo día. */}
+              {phases.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+                  {phases.map(p => {
+                    const selected = p.id === phase
+                    return (
+                      <Pressable
+                        key={p.id}
+                        onPress={() => { haptics.light(); setPhaseChoice(p.id) }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        className={cn(
+                          'rounded-full border px-3 py-1.5',
+                          selected ? 'border-lime/40 bg-lime/10' : 'border-border bg-card active:bg-lime/10',
+                        )}
+                      >
+                        <Text className={cn('font-mono text-[10px] uppercase tracking-wide', selected ? 'text-lime' : 'text-muted-foreground')}>
+                          {`${t('programDetail.phaseLabel', { id: p.id })} · ${t('programDetail.weeksLabel', { weeks: p.weeks })}`}
+                        </Text>
+                      </Pressable>
+                    )
+                  })}
+                </ScrollView>
+              )}
               {days === null ? (
                 <ActivityIndicator />
               ) : days.length === 0 ? (
@@ -311,16 +346,56 @@ export default function ProgramDetailScreen() {
                   body={t('programDetail.emptyBody')}
                 />
               ) : (
-                days.map(day => (
-                  <View key={day.dayId} className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                    <View className="size-2.5 rounded-full" style={{ backgroundColor: day.color }} />
-                    <View className="flex-1">
-                      <Text className="font-sans-medium text-foreground">{day.name}</Text>
-                      <Text className="text-xs text-muted-foreground">{day.focus}</Text>
-                    </View>
-                    <Text className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">{day.type}</Text>
-                  </View>
-                ))
+                days.map(day => {
+                  const key = `p${phase}_${day.dayId}`
+                  const workout = detail?.workoutsMap[key]
+                  const cardio = detail?.cardioDayConfigs[key]
+                  const circuit = detail?.circuitDayConfigs[key]
+                  const exerciseCount = circuit?.exercises.length ?? workout?.exercises.length ?? 0
+                  // Solo abre detalle lo que tiene ejercicios: un descanso o un
+                  // cardio (cuya meta ya va en la propia fila) no llevan a nada.
+                  const openable = !cardio && exerciseCount > 0
+                  const minutes = workout && !circuit ? calculateWorkoutDuration(workout.exercises) : 0
+                  let summary = ''
+                  if (cardio) {
+                    const activity = cardio.activityType || 'running'
+                    summary = [
+                      `${CARDIO_ACTIVITY[activity]?.icon ?? ''} ${t(`cardio.${activity}`)}`,
+                      cardio.targetDistanceKm ? `${cardio.targetDistanceKm} km` : '',
+                      cardio.targetDurationMin ? `${cardio.targetDurationMin} ${t('common.minutes')}` : '',
+                    ].filter(Boolean).join(' · ')
+                  } else if (exerciseCount > 0) {
+                    summary = minutes > 0
+                      ? `${t('workout.exerciseCount', { count: exerciseCount })} · ~${minutes} ${t('common.minutes')}`
+                      : t('workout.exerciseCount', { count: exerciseCount })
+                  }
+                  return (
+                    <Pressable
+                      key={day.dayId}
+                      onPress={() => {
+                        haptics.light()
+                        router.push({ pathname: '/program-day', params: { id, phase: String(phase), day: day.dayId } })
+                      }}
+                      disabled={!openable}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: !openable }}
+                      className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:bg-lime/10"
+                    >
+                      <View className="size-2.5 rounded-full" style={{ backgroundColor: day.color }} />
+                      <View className="flex-1">
+                        <Text className="font-sans-medium text-foreground">{day.name}</Text>
+                        {!!day.focus && <Text className="text-xs text-muted-foreground">{day.focus}</Text>}
+                        {!!summary && (
+                          <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                            {summary}
+                          </Text>
+                        )}
+                      </View>
+                      <Text className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">{day.type}</Text>
+                      {openable && <ChevronRight size={16} color="hsl(0 0% 55%)" />}
+                    </Pressable>
+                  )
+                })
               )}
             </View>
 

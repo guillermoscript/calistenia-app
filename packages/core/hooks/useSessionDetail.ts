@@ -23,6 +23,13 @@ export interface SessionExercise {
   hasNotes: boolean
   /** Wall-clock seconds spent on this exercise (only on sessions that tracked it) */
   seconds?: number
+  /**
+   * Solo en la PAUTA de un día de programa (`program-day-breakdown`): una
+   * sesión registrada no guarda sección, descanso ni nota del ejercicio.
+   */
+  section?: 'warmup' | 'main' | 'cooldown'
+  restSeconds?: number
+  note?: string
 }
 
 export interface SessionDetailResult {
