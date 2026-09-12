@@ -5,8 +5,8 @@
     "difficulty": "beginner",
     "duration_weeks": 8,
     "instructions": {
-      "es": "Progresión: cuando completes el número máximo de repeticiones indicado en TODAS las series de un ejercicio durante dos sesiones seguidas, súmale 1 repetición más en la siguiente sesión. Si ya estás en el tope del rango y te sigue resultando fácil, pasa a la variante más difícil del mismo movimiento (por ejemplo, de flexión sobre rodillas a flexión estándar, o de remo en sentadilla a remo a un brazo con toalla) en vez de acumular repeticiones sin límite — es la misma lógica de progresión que usa la Recommended Routine de r/bodyweightfitness. Descarga: cada 4-6 semanas dedica 5-7 días a moverte suave (caminar, estirar, jugar) sin entrenar fuerza, para que el cuerpo asimile el trabajo acumulado antes de subir de intensidad — la fase 2 de este programa ya llega con algo más de volumen y variantes algo más exigentes, así que respeta el descanso al terminarla. Para quién es: alguien que nunca ha entrenado calistenia o que vuelve después de mucho tiempo parado. No necesitas ningún material, solo constancia con las 3 sesiones semanales.",
-      "en": "Progression: once you complete the top rep count on EVERY set of an exercise for two sessions in a row, add 1 more rep the next session. Once you're at the top of the range and it still feels easy, move to the harder variant of the same movement (e.g. from knee push-up to standard push-up, or from squatting row to one-arm towel row) instead of stacking reps forever — the same logic the r/bodyweightfitness Recommended Routine uses. Deload: every 4-6 weeks take 5-7 days of easy movement (walking, stretching, play) with no strength training, so your body absorbs the accumulated work before the next intensity bump — phase 2 already brings a bit more volume and slightly harder variants, so respect the deload once you finish it. Who it's for: someone who has never trained calisthenics, or who is returning after a long break. No equipment needed — just showing up for the 3 weekly sessions."
+      "es": "Progresión: cuando completes el número máximo de repeticiones indicado en TODAS las series de un ejercicio durante dos sesiones seguidas, súmale 1 repetición más en la siguiente sesión. Cuando llegues al tope del rango y te siga resultando fácil, pasa a la variante más difícil del mismo movimiento en vez de acumular repeticiones sin límite — es la lógica de progresión de la Recommended Routine de r/bodyweightfitness. En este programa las variantes ya están puestas: empiezas con flexiones desde rodillas y remo en sentadilla en la fase 1, y la fase 2 pasa a flexiones estándar y remo de pie con toalla. Los rangos de la fase 2 son SUELOS, no techos: si en la fase 1 llegaste más arriba, sigue desde donde llegaste, nunca bajes de repeticiones al cambiar de fase. Descarga: la semana 4 es de descarga y la app te la aplica sola, la mitad de series en los ejercicios principales con las mismas repeticiones y el mismo descanso. No dejes de entrenar: descargar es entrenar menos, no parar — con 3 sesiones a la semana y este volumen lo que te hace falta es no romper el hábito. Para quién es: alguien que nunca ha entrenado calistenia o que vuelve después de mucho tiempo parado. No necesitas equipamiento de gimnasio: te basta una toalla, una pared y una mesa o un marco de puerta firmes. Antes de tirar de una mesa comprueba que no vuelca ni se desliza; si dudas, usa el marco de la puerta. Al terminar las 8 semanas no te quedes aquí: el siguiente programa del catálogo es el roadmap de barra fija, que arranca justo donde acaba este y te lleva a tu primera repetición estricta en la barra.",
+      "en": "Progression: once you complete the top rep count on EVERY set of an exercise for two sessions in a row, add 1 more rep the next session. When you reach the top of the range and it still feels easy, move to the harder variant of the same movement instead of stacking reps forever — the logic the r/bodyweightfitness Recommended Routine uses. Here the variants are already laid out: phase 1 starts with knee push-ups and squatting rows, phase 2 moves to standard push-ups and standing towel rows. Phase 2 rep ranges are FLOORS, not ceilings: if phase 1 took you higher, carry on from there — never drop reps when the phase changes. Deload: week 4 is a deload week and the app applies it for you, halving the sets on your main exercises while keeping the same reps and rest. Do not stop training: a deload means training less, not quitting — with 3 sessions a week at this volume what you need is to keep the habit intact. Who it's for: someone who has never trained calisthenics, or who is returning after a long break. No gym equipment needed: a towel, a wall and a sturdy table or door frame are enough. Before pulling on a table, check that it will not tip or slide; if in doubt, use the door frame. When the 8 weeks are done, do not stop here: the next program in the catalogue is the bar roadmap, which starts exactly where this one ends and takes you to your first strict rep on the bar."
     }
   },
   "phases": [
@@ -15,6 +15,7 @@
       "name": "Fase 1 – Aprende los básicos",
       "weeks": "1-4",
       "color": "#10B981",
+      "deload_last_week": true,
       "days": [
         {
           "day_id": "lun",
@@ -63,15 +64,15 @@
             },
             {
               "sort_order": 4,
-              "name": "Flexiones estándar",
-              "exercise_id": "pushup_std",
+              "name": "Flexiones desde rodillas",
+              "exercise_id": "knee_push_up",
               "muscles": "Pecho, tríceps, hombros",
               "sets": 4,
               "reps": "5-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Hazlas desde las rodillas si no puedes completas. Baja controlado, 2 seg abajo y 2 seg arriba."
+              "note": "Rodillas apoyadas, cuerpo recto de rodillas a hombros (no saques el culo). Baja controlado: 2 seg abajo, 2 seg arriba. Cuando completes 4x8 limpias dos sesiones seguidas, pasa a las flexiones estándar: son las de la fase 2 y la app las registra aparte."
             },
             {
               "sort_order": 5,
@@ -95,7 +96,7 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Sujétate al borde de una mesa firme o al marco de una puerta. Baja el cuerpo en sentadilla y tira juntando los omóplatos."
+              "note": "Sujétate al borde de una mesa firme o al marco de una puerta; comprueba antes que la mesa no vuelca ni se desliza. Baja el cuerpo en sentadilla y tira juntando los omóplatos. Cuanto más te inclines hacia atrás, más difícil: ahí regulas la carga."
             },
             {
               "sort_order": 7,
@@ -120,22 +121,10 @@
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Aprieta abdomen y glúteos. No dejes caer la cadera."
+              "note": "Aprieta abdomen y glúteos. No dejes caer la cadera. Si no aguantas 20 seg, hazla con las rodillas apoyadas y ve subiendo."
             },
             {
               "sort_order": 9,
-              "name": "Superman",
-              "exercise_id": "superman",
-              "muscles": "Espalda baja, glúteos, dorsales",
-              "sets": 3,
-              "reps": "8-10",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Eleva brazos y piernas a la vez. Mantén 2 seg arriba, baja con control."
-            },
-            {
-              "sort_order": 10,
               "name": "Dead bug",
               "exercise_id": "dead_bug",
               "muscles": "Core profundo, estabilización",
@@ -147,7 +136,7 @@
               "note": "Espalda baja pegada al suelo TODO el tiempo. Movimiento lento y controlado."
             },
             {
-              "sort_order": 11,
+              "sort_order": 10,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
               "muscles": "Pectorales, hombros",
@@ -160,7 +149,7 @@
               "note": "Brazo contra la pared, gira el torso suavemente. 15 seg por lado."
             },
             {
-              "sort_order": 12,
+              "sort_order": 11,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
               "muscles": "Tríceps",
@@ -173,7 +162,7 @@
               "note": "Lleva la mano detrás de la cabeza, empuja el codo con la otra mano."
             },
             {
-              "sort_order": 13,
+              "sort_order": 12,
               "name": "Postura del niño",
               "exercise_id": "childs_pose",
               "muscles": "Espalda, hombros, relajación",
@@ -191,8 +180,8 @@
         {
           "day_id": "mie",
           "day_name": "Miércoles",
-          "day_focus": "Tren inferior + movilidad",
-          "workout_title": "Piernas y equilibrio",
+          "day_focus": "Tren inferior + espalda",
+          "workout_title": "Piernas y remo",
           "exercises": [
             {
               "sort_order": 1,
@@ -238,12 +227,12 @@
               "name": "Sentadilla con pausa",
               "exercise_id": "squat_pause",
               "muscles": "Cuádriceps, glúteos, core",
-              "sets": 3,
+              "sets": 4,
               "reps": "10-12",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pecho arriba, rodillas hacia fuera. Pausa de 2 seg abajo."
+              "note": "Pecho arriba, rodillas hacia fuera. Pausa de 2 seg abajo. Es el ejercicio ancla del día: cuatro series, y si la última se te va de técnica, párala ahí."
             },
             {
               "sort_order": 5,
@@ -271,15 +260,15 @@
             },
             {
               "sort_order": 7,
-              "name": "Elevación de talones",
-              "exercise_id": "calf_raise",
-              "muscles": "Gemelos, sóleo",
+              "name": "Remo en sentadilla",
+              "exercise_id": "bodyweight_squatting_row",
+              "muscles": "Espalda alta, bíceps, hombros",
               "sets": 3,
-              "reps": "12-15",
+              "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Sube lento, aprieta arriba 2 seg. Baja controlado."
+              "note": "Sí, remo en el día de piernas: es el patrón que más tarda en construirse y así no pasas la semana con una sola sesión de espalda. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos."
             },
             {
               "sort_order": 8,
@@ -383,15 +372,15 @@
             },
             {
               "sort_order": 4,
-              "name": "Flexiones estándar",
-              "exercise_id": "pushup_std",
+              "name": "Flexiones desde rodillas",
+              "exercise_id": "knee_push_up",
               "muscles": "Pecho, tríceps, hombros",
               "sets": 4,
               "reps": "5-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Codos a 45°, cuerpo recto. Usa rodillas si necesitas."
+              "note": "Codos a 45°, cuerpo recto desde las rodillas. Si ya completas 4x8 limpias, pásate a las flexiones estándar de la fase 2."
             },
             {
               "sort_order": 5,
@@ -403,19 +392,19 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Baja hasta que los muslos queden paralelos al suelo, espalda recta. Solo tu cuerpo, sin peso extra."
+              "note": "Baja hasta que los muslos queden paralelos al suelo, espalda recta. El miércoles fue el día fuerte de piernas: aquí quédate 2-3 repeticiones lejos del fallo, es trabajo ligero a propósito."
             },
             {
               "sort_order": 6,
-              "name": "Remo a un brazo con toalla",
-              "exercise_id": "one_arm_towel_row",
-              "muscles": "Espalda alta, bíceps, antebrazos",
+              "name": "Remo en sentadilla con toalla",
+              "exercise_id": "bodyweight_squatting_row_with_towel",
+              "muscles": "Espalda alta, bíceps, hombros",
               "sets": 4,
-              "reps": "8-10 por brazo",
+              "reps": "8-10",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pisa un extremo de la toalla, sujeta el otro con una mano e inclínate hacia adelante. Tira hacia el pecho juntando el omóplato."
+              "note": "Pasa la toalla por el marco de una puerta (o por un poste firme) y sujeta un extremo con cada mano. Baja en sentadilla, brazos estirados, y tira hasta el pecho juntando los omóplatos. Cuanto más te inclines hacia atrás y menos ayuden las piernas, más difícil."
             },
             {
               "sort_order": 7,
@@ -439,7 +428,7 @@
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Aprieta arriba, baja lento. No uses la espalda baja."
+              "note": "Aprieta arriba, baja lento. No uses la espalda baja. Trabajo ligero: el día fuerte de piernas fue el miércoles."
             },
             {
               "sort_order": 9,
@@ -525,6 +514,19 @@
             },
             {
               "sort_order": 2,
+              "name": "Movilidad de muñecas",
+              "exercise_id": "wrist_mobility",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Hoy hay oruga y plancha: 30 seg de muñecas antes de apoyarte en el suelo te ahorran la molestia más común del principiante."
+            },
+            {
+              "sort_order": 3,
               "name": "Rotación torácica",
               "exercise_id": "thoracic_rotation",
               "muscles": "Columna torácica, movilidad",
@@ -537,7 +539,7 @@
               "note": "En cuadrupedia, mano detrás de la cabeza, rota abriendo el pecho."
             },
             {
-              "sort_order": 3,
+              "sort_order": 4,
               "name": "Oruga",
               "exercise_id": "inchworm",
               "muscles": "Cadena posterior, hombros, core",
@@ -550,31 +552,31 @@
               "note": "Camina con las manos hasta plancha, vuelve caminando."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "name": "Flexiones estándar",
               "exercise_id": "pushup_std",
               "muscles": "Pecho, tríceps, hombros",
               "sets": 4,
               "reps": "8-12",
-              "rest_seconds": 75,
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Ya conoces la técnica. Busca reps completas, sin rodillas."
+              "note": "Ya llevas 4 semanas de flexiones desde rodillas: aquí van completas, sin rodillas. Mínimo 8-12; si en la fase 1 ya pasaste a las estándar y llegaste más arriba, sigue desde donde llegaste. El descanso se queda en 90 seg: lo que sube es el trabajo, no la prisa."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "name": "Flexiones anchas",
               "exercise_id": "wide_pushup",
               "muscles": "Pecho, hombros",
               "sets": 4,
               "reps": "8-10",
-              "rest_seconds": 75,
+              "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Manos más abiertas que los hombros. Más énfasis en pecho, más reps que fase 1."
+              "note": "Manos más abiertas que los hombros. Una serie y más repeticiones que la fase 1, con el mismo descanso. Si en las últimas series pierdes la línea del cuerpo, acábalas desde las rodillas."
             },
             {
-              "sort_order": 6,
+              "sort_order": 7,
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
               "muscles": "Espalda alta, bíceps, hombros",
@@ -583,10 +585,10 @@
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Sujétate al borde de una mesa firme o al marco de una puerta. Más reps y una serie más que fase 1."
+              "note": "Mesa firme o marco de puerta. Una serie y más repeticiones que la fase 1, y más inclinado hacia atrás que en la fase 1 si ya te sobra el rango."
             },
             {
-              "sort_order": 7,
+              "sort_order": 8,
               "name": "Apertura con toalla",
               "exercise_id": "pull_apart",
               "muscles": "Deltoides posterior, escápulas",
@@ -598,40 +600,30 @@
               "note": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Más reps que fase 1."
             },
             {
-              "sort_order": 8,
-              "name": "Plancha con toque de hombro",
-              "exercise_id": "plank_shoulder",
-              "muscles": "Core, hombros, estabilización",
-              "sets": 3,
-              "reps": "8 por lado",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "No gires la cadera al tocar. Core apretado todo el tiempo."
-            },
-            {
               "sort_order": 9,
-              "name": "Escaladores",
-              "exercise_id": "mountain_climbers",
-              "muscles": "Core, cardio, hombros",
+              "name": "Plancha frontal",
+              "exercise_id": "plank",
+              "muscles": "Core, abdominales, espalda baja",
               "sets": 3,
-              "reps": "10 por lado",
+              "reps": "40-50s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
-              "note": "Ritmo moderado y controlado. Lleva la rodilla al pecho."
+              "is_timer": true,
+              "note": "La misma plancha de la fase 1 con el doble de tiempo: 20-30 seg entonces, 40-50 seg ahora. Es tu metro de core, apunta los segundos.",
+              "timer_seconds": 50
             },
             {
               "sort_order": 10,
-              "name": "Abdominales en V",
-              "exercise_id": "v_ups",
-              "muscles": "Abdominales, core",
+              "name": "Hollow hold",
+              "exercise_id": "hollow_hold",
+              "muscles": "Core profundo, abdominales",
               "sets": 3,
-              "reps": "8-10",
+              "reps": "25-35s",
               "rest_seconds": 60,
               "priority": "secondary",
-              "is_timer": false,
-              "note": "Toca las puntas de los pies arriba. Baja con control, no te dejes caer."
+              "is_timer": true,
+              "note": "Espalda baja pegada al suelo TODO el tiempo. Subes de los 15-20 seg de la fase 1 a 25-35 seg; si la lumbar se despega, sube las piernas y recorta el tiempo.",
+              "timer_seconds": 35
             },
             {
               "sort_order": 11,
@@ -678,8 +670,8 @@
         {
           "day_id": "mie",
           "day_name": "Miércoles",
-          "day_focus": "Tren inferior + potencia",
-          "workout_title": "Piernas y potencia",
+          "day_focus": "Tren inferior + espalda",
+          "workout_title": "Piernas y remo",
           "exercises": [
             {
               "sort_order": 1,
@@ -725,12 +717,12 @@
               "name": "Sentadilla sin peso",
               "exercise_id": "bodyweight_squat",
               "muscles": "Cuádriceps, glúteos, core",
-              "sets": 3,
+              "sets": 4,
               "reps": "12-15",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Baja profundo, espalda recta, sin peso extra. Más reps que fase 1."
+              "note": "Baja profundo, espalda recta, sin peso extra. Una serie y más repeticiones que en la fase 1. Mínimo 12-15: si en la fase 1 ya pasabas de 15, sigue desde donde llegaste."
             },
             {
               "sort_order": 5,
@@ -758,15 +750,15 @@
             },
             {
               "sort_order": 7,
-              "name": "Skaters",
-              "exercise_id": "skaters",
-              "muscles": "Glúteos, cuádriceps, equilibrio",
+              "name": "Remo en sentadilla",
+              "exercise_id": "bodyweight_squatting_row",
+              "muscles": "Espalda alta, bíceps, hombros",
               "sets": 3,
-              "reps": "10 por lado",
+              "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Salto lateral controlado. Aterriza con la rodilla ligeramente flexionada."
+              "note": "El remo del día de piernas, dos repeticiones más que en la fase 1. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos."
             },
             {
               "sort_order": 8,
@@ -826,8 +818,8 @@
         {
           "day_id": "vie",
           "day_name": "Viernes",
-          "day_focus": "Full body + resistencia",
-          "workout_title": "Cuerpo completo intenso",
+          "day_focus": "Full body + hombros",
+          "workout_title": "Cuerpo completo · empuje vertical",
           "exercises": [
             {
               "sort_order": 1,
@@ -857,6 +849,19 @@
             },
             {
               "sort_order": 3,
+              "name": "Movilidad de muñecas",
+              "exercise_id": "wrist_mobility",
+              "muscles": "Muñecas, antebrazos",
+              "sets": 1,
+              "reps": "",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Antes de las flexiones pike la muñeca aguanta casi todo tu peso en extensión: 30 seg de movilidad no son opcionales."
+            },
+            {
+              "sort_order": 4,
               "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
               "muscles": "Full body, activación cardiovascular",
@@ -869,7 +874,7 @@
               "note": "Ritmo moderado para elevar la frecuencia cardíaca."
             },
             {
-              "sort_order": 4,
+              "sort_order": 5,
               "name": "Flexiones pike",
               "exercise_id": "pike_pushup",
               "muscles": "Hombros, tríceps",
@@ -878,10 +883,10 @@
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Cadera arriba formando V invertida. Baja la cabeza hacia el suelo. Una serie más que fase 1."
+              "note": "Nuevo en esta fase: es el primer paso hacia el pino. Cadera arriba formando una V invertida y baja la cabeza entre las manos, no hacia delante. Si la muñeca molesta, sube las manos a un escalón o a un libro grueso."
             },
             {
-              "sort_order": 5,
+              "sort_order": 6,
               "name": "Sentadilla con pausa",
               "exercise_id": "squat_pause",
               "muscles": "Cuádriceps, glúteos",
@@ -890,22 +895,22 @@
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pausa de 3 seg abajo. Más profundo que fase 1."
-            },
-            {
-              "sort_order": 6,
-              "name": "Remo a un brazo con toalla",
-              "exercise_id": "one_arm_towel_row",
-              "muscles": "Espalda alta, bíceps, antebrazos",
-              "sets": 5,
-              "reps": "10-12 por brazo",
-              "rest_seconds": 60,
-              "priority": "primary",
-              "is_timer": false,
-              "note": "Pisa un extremo de la toalla, tira hacia el pecho. Más reps y una serie más que fase 1."
+              "note": "Pausa de 3 seg abajo. Mínimo 12-15: si en la fase 1 ya pasabas de 12, sigue desde donde llegaste."
             },
             {
               "sort_order": 7,
+              "name": "Remo de pie con toalla",
+              "exercise_id": "bodyweight_standing_row_with_towel",
+              "muscles": "Espalda alta, bíceps, antebrazos",
+              "sets": 4,
+              "reps": "10-12",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Un escalón por encima del remo en sentadilla: toalla por el marco de la puerta, piernas casi rectas y cuerpo inclinado hacia atrás. Cuanto menos te ayuden las piernas, más difícil. Tira hasta el pecho juntando los omóplatos y baja en 2 seg."
+            },
+            {
+              "sort_order": 8,
               "name": "Plancha lateral",
               "exercise_id": "side_plank",
               "muscles": "Oblicuos, core lateral",
@@ -918,7 +923,7 @@
               "note": "Cadera arriba, cuerpo recto. Respira, no aguantes el aire."
             },
             {
-              "sort_order": 8,
+              "sort_order": 9,
               "name": "Superman",
               "exercise_id": "superman",
               "muscles": "Espalda baja, glúteos",
@@ -928,18 +933,6 @@
               "priority": "secondary",
               "is_timer": false,
               "note": "Más reps que fase 1. Mantén 2 seg arriba."
-            },
-            {
-              "sort_order": 9,
-              "name": "Elevación de cadera acostado",
-              "exercise_id": "hip_raise_lying",
-              "muscles": "Core, glúteos, cadera",
-              "sets": 3,
-              "reps": "10-12",
-              "rest_seconds": 60,
-              "priority": "secondary",
-              "is_timer": false,
-              "note": "Eleva la cadera con control desde acostado boca arriba."
             },
             {
               "sort_order": 10,
