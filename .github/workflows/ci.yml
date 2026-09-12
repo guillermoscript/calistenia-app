@@ -81,8 +81,18 @@ jobs:
       # resuelven contra el catálogo, slugs colados en `name`, material de
       # gimnasio, un patrón de movimiento entero a 0 series... nada de esto lo
       # ve un test de esquema. Falla el build ante un ERROR (avisos no cortan).
+      #
+      # `--strict` (cierre de #711): las reglas de LÓGICA de entrenamiento que
+      # #715 estrenó como AVISO —nivel del ejercicio contra el del programa,
+      # regresión por familia entre fases, contraindicaciones, descarga
+      # prometida y no codificada, cardio y nutrición en `fat_loss`, material
+      # de gimnasio— pasan a ERROR. Nacieron como aviso solo para no dejar la
+      # CI en rojo mientras las quince issues de contenido (#719-#733) corrían
+      # en paralelo; ya están las quince en `main` y los 15 programas pasan en
+      # verde, así que a partir de aquí una regresión de lógica corta el build
+      # en vez de quedarse en un aviso que nadie lee.
       - name: Contenido de los programas oficiales (programs/*.json)
-        run: pnpm programs:content:check
+        run: pnpm programs:content:check --strict
 
   # Smoke E2E del golden path (#145): signup → primera sesión de entrenamiento.
   # Corre contra un PocketBase efímero recién migrado (sin seeds — el flujo usa

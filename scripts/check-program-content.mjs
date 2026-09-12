@@ -15,10 +15,12 @@
  * LÓGICA: nivel del ejercicio frente al del programa, regresión por familia
  * entre fases, contraindicaciones derivadas del contenido, descarga prometida
  * y no codificada, cardio y nutrición en `fat_loss`, días pesados seguidos,
- * frecuencia por patrón y ejercicios prometidos en el texto (#715). Nacen como
- * AVISO para no bloquear las quince issues de contenido que corren en
- * paralelo; con `--strict` las de `STRICT_RULES` pasan a ERROR. Cuando #719-#733
- * estén mergeadas, `--strict` es el modo de CI (PR de cierre de #711).
+ * frecuencia por patrón y ejercicios prometidos en el texto (#715). Nacieron
+ * como AVISO para no bloquear las quince issues de contenido que corrían en
+ * paralelo; con `--strict` las de `STRICT_RULES` pasan a ERROR. Desde el cierre
+ * de #711 (#719-#733 mergeadas) `--strict` ES el modo de CI: sin el flag el
+ * script sigue siendo el modo «mirar sin cortar», pero lo que decide el merge
+ * es `pnpm programs:content:check --strict`.
  *
  * Descarga (#716, decidido e implementado): `deload_last_week: true` en la fase
  * es la ÚNICA codificación. El motor sirve la mitad de series en la última
@@ -166,8 +168,9 @@ const WORK = new Set(['primary', 'secondary', 'accessory', 'high', 'med', 'low']
 export const STRICT_RULES = new Set([
   // Material (#714): el catálogo dejó de mentir sobre goblet squat, remos de
   // polea/mancuerna y TRX, y los programas que los usan (#721, #722, #732) se
-  // corrigen en sus issues. Hasta el cierre de #711 estas dos reglas son AVISO
-  // para no dejar la CI en rojo entre medias; con `--strict` vuelven a ERROR.
+  // corrigieron en sus issues. Estas dos reglas fueron AVISO hasta el cierre
+  // de #711 para no dejar la CI en rojo entre medias; ahora la CI corre con
+  // `--strict`, así que vuelven a ser ERROR.
   'gym_equipment',
   'equipment',
   'level_cap',
