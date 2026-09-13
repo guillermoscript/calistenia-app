@@ -237,6 +237,13 @@ const FEATURE_SLUGS = [
 ]
 
 function generateSitemap(posts) {
+  const localizedMarketingPaths = ['', 'features', ...FEATURE_SLUGS.map((slug) => `features/${slug}`), 'download']
+  const localizedMarketingUrls = ['es', 'en'].flatMap((locale) =>
+    localizedMarketingPaths.map((route) => {
+      const suffix = route ? `/${route}` : '/'
+      return `  <url><loc>${SITE_URL}/${locale}${suffix}</loc><changefreq>monthly</changefreq><priority>${route ? '0.8' : '1.0'}</priority></url>`
+    }),
+  )
   const urls = [
     `  <url><loc>${SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
     `  <url><loc>${SITE_URL}/features</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>`,
@@ -245,6 +252,7 @@ function generateSitemap(posts) {
     ),
     `  <url><loc>${SITE_URL}/download</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `  <url><loc>${SITE_URL}/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    ...localizedMarketingUrls,
   ]
 
   for (const post of posts) {

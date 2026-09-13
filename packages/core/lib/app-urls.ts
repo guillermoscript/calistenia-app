@@ -14,3 +14,10 @@
  * y otras como `WEB_ORIGIN` (#468).
  */
 export const WEB_BASE_URL = 'https://gym.guille.tech'
+
+/** Builds a public web URL whose preview and copy can follow the sender's language. */
+export function localizedWebUrl(pathname: string, language?: string): string {
+  const locale = language?.toLowerCase().startsWith('en') ? 'en' : 'es'
+  const path = pathname.startsWith('/') ? pathname : `/${pathname}`
+  return `${WEB_BASE_URL}/${locale}${path}`
+}

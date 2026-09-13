@@ -6,9 +6,10 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import RaceMap from './RaceMap'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 export default function RaceLobby() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuthState()
   const {
     race, participants, me, isCreator, hasJoined, lastError, clearError, actions,
@@ -17,7 +18,7 @@ export default function RaceLobby() {
 
   if (!race) return null
 
-  const raceUrl = `${window.location.origin}/race/${race.id}`
+  const raceUrl = localizedWebUrl(`/race/${race.id}`, i18n.language)
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(raceUrl)}&color=a3e635&bgcolor=09090b&margin=10`
 
   const handleJoin = async () => {

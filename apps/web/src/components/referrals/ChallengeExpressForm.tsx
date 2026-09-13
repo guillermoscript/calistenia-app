@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { shareContent } from '../../lib/share'
 import { localize } from '@calistenia/core/lib/i18n-db'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 
 interface ChallengeExpressFormProps {
@@ -23,7 +23,7 @@ interface Exercise {
 }
 
 export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, onClose }: ChallengeExpressFormProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const DURATION_OPTIONS = [
     { value: 7, label: t('challenge.durationDays', { count: 7 }) },
@@ -68,7 +68,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
     setSubmitting(false)
 
     if (challengeId && referralCode) {
-      const inviteUrl = `${WEB_BASE_URL}/invite/${referralCode}/challenge/${challengeId}`
+      const inviteUrl = localizedWebUrl(`/invite/${referralCode}/challenge/${challengeId}`, i18n.language)
       await shareContent({
         title: t('share.challengeInviteTitle'),
         text: t('share.challengeInviteText'),

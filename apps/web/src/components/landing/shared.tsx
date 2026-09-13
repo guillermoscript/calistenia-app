@@ -7,6 +7,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, Check, ChevronRight, Menu, X } from 'lucide-react'
 import { op } from '@calistenia/core/lib/analytics'
+import { getMarketingLocale, localizedMarketingPath, preferredMarketingLocale } from '../../lib/marketing-locale'
 
 export function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false)
@@ -134,7 +135,7 @@ export function LandingStyles() {
  * desplegable. Antes se ocultaban sin más: en móvil no había navegación alguna.
  */
 export function PublicHeader({ onGetStarted }: { onGetStarted?: () => void }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -156,6 +157,14 @@ export function PublicHeader({ onGetStarted }: { onGetStarted?: () => void }) {
   }, [menuOpen])
 
   const linkClass = 'text-sm font-semibold text-white/65 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white'
+
+  const activeLocale = getMarketingLocale(window.location.pathname) ?? preferredMarketingLocale(i18n.language)
+  const switchLanguage = () => {
+    const nextLocale = activeLocale === 'en' ? 'es' : 'en'
+    void i18n.changeLanguage(nextLocale)
+    const nextPath = localizedMarketingPath(window.location.pathname, nextLocale)
+    window.location.assign(`${nextPath}${window.location.search}${window.location.hash}`)
+  }
 
   const webCta = (className: string) =>
     onGetStarted ? (
@@ -187,6 +196,9 @@ export function PublicHeader({ onGetStarted }: { onGetStarted?: () => void }) {
           {navLinks.map(link => (
             <Link key={link.to} to={link.to} className={linkClass}>{link.label}</Link>
           ))}
+          <button type="button" onClick={switchLanguage} className={linkClass} aria-label={t('profile.language')}>
+            {activeLocale === 'en' ? 'ES' : 'EN'}
+          </button>
           {webCta(`inline-flex items-center gap-1.5 ${linkClass}`)}
         </nav>
 
@@ -210,6 +222,9 @@ export function PublicHeader({ onGetStarted }: { onGetStarted?: () => void }) {
           {navLinks.map(link => (
             <Link key={link.to} to={link.to} className={`px-3 py-2.5 ${linkClass}`}>{link.label}</Link>
           ))}
+          <button type="button" onClick={switchLanguage} className={`px-3 py-2.5 text-left ${linkClass}`} aria-label={t('profile.language')}>
+            {activeLocale === 'en' ? 'ES' : 'EN'}
+          </button>
           {webCta(`inline-flex items-center gap-1.5 border-t border-white/10 px-3 py-2.5 text-left ${linkClass}`)}
         </nav>
       )}

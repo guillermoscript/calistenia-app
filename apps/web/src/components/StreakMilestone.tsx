@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 import { pickActiveMilestone } from '@calistenia/core/lib/streak-milestones'
 
 const MILESTONE_KEY_PREFIX = 'calistenia_streak_milestone'
@@ -35,7 +35,7 @@ interface StreakMilestoneProps {
 }
 
 export default function StreakMilestone({ streak, userId, userName, referralCode, onDismiss }: StreakMilestoneProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const subtitleKey = `streak.milestone.subtitle${streak}` as const
 
@@ -43,7 +43,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
     await shareContent({
       title: t('streak.milestone.title', { days: streak }),
       text: t('streak.milestone.shareText', { days: streak }),
-      url: referralCode ? `${WEB_BASE_URL}/invite/${referralCode}` : window.location.origin,
+      url: referralCode ? localizedWebUrl(`/invite/${referralCode}`, i18n.language) : localizedWebUrl('/', i18n.language),
     })
   }, [streak, t, referralCode])
 

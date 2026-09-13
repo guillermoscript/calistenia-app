@@ -6,29 +6,30 @@ import {
   trackCanonicalEvent,
   trackShareCardShared,
 } from '@calistenia/core/lib/analytics'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
+import i18n from '@/lib/i18n'
 
 // ── URL builders ──────────────────────────────────────────────────────────────
 
 export function profileUrl(userId: string): string {
-  return `${WEB_BASE_URL}/u/${userId}`
+  return localizedWebUrl(`/u/${userId}`, i18n.language)
 }
 
 export function sessionUrl(date: string, workoutKey: string): string {
-  return `${WEB_BASE_URL}/session/${date}/${workoutKey}`
+  return localizedWebUrl(`/session/${date}/${workoutKey}`, i18n.language)
 }
 
 export function raceUrl(id: string): string {
-  return `${WEB_BASE_URL}/race/${id}`
+  return localizedWebUrl(`/race/${id}`, i18n.language)
 }
 
 export function inviteUrl(code: string): string {
-  return `${WEB_BASE_URL}/invite/${code}`
+  return localizedWebUrl(`/invite/${code}`, i18n.language)
 }
 
 /** Deep link to a single saved cardio session's detail page (web, universally openable). */
 export function cardioUrl(id: string): string {
-  return `${WEB_BASE_URL}/cardio/session/${id}`
+  return localizedWebUrl(`/cardio/session/${id}`, i18n.language)
 }
 
 /**
@@ -42,7 +43,10 @@ export function cardioUrl(id: string): string {
  * `link` o `public`. Uno `private` enseña «programa no encontrado», y esa es la
  * respuesta correcta.
  */
-export { sharedProgramUrl as programUrl } from '@calistenia/core/lib/programShare'
+import { sharedProgramUrl } from '@calistenia/core/lib/programShare'
+export function programUrl(programId: string): string {
+  return sharedProgramUrl(programId, i18n.language)
+}
 
 // ── Primitive share helpers ───────────────────────────────────────────────────
 
@@ -244,7 +248,7 @@ export function sharePR(input: PRShareInput): PRShareResult {
     message += `\n${inviteUrl(referralCode)}`
   }
   // PR events don't have a canonical deep-link; point to WEB_BASE_URL
-  return { message, url: WEB_BASE_URL }
+  return { message, url: localizedWebUrl('/', i18n.language) }
 }
 
 export interface CardioShareInput {
@@ -263,7 +267,7 @@ export interface CardioShareResult {
 
 export function shareCardioSession(input: CardioShareInput): CardioShareResult {
   const { userName, activityLabel, distanceKm, durationLabel, sessionId, referralCode } = input
-  const url = sessionId ? cardioUrl(sessionId) : WEB_BASE_URL
+  const url = sessionId ? cardioUrl(sessionId) : localizedWebUrl('/', i18n.language)
   let message = `${userName ? `${userName}: ` : ''}${activityLabel} — ${distanceKm.toFixed(2)} km en ${durationLabel} 🏃`
   if (referralCode) {
     message += `\n${inviteUrl(referralCode)}`
@@ -336,7 +340,7 @@ export interface BattleResultShareResult {
  */
 export function shareBattleResult(input: BattleResultShareInput): BattleResultShareResult {
   const { userName, circuitName, rank, contenders, tied, referralCode } = input
-  const url = referralCode ? inviteUrl(referralCode) : WEB_BASE_URL
+  const url = referralCode ? inviteUrl(referralCode) : localizedWebUrl('/', i18n.language)
   const who = userName ? `${userName}: ` : ''
 
   // Terminar en solitario no es ganar a nadie, y decirle "1.º de 1" a quien se quedó
@@ -354,7 +358,7 @@ export function shareBattleResult(input: BattleResultShareInput): BattleResultSh
 
 /** Deep link to the web nutrition page for a specific date. */
 export function nutritionUrl(date: string): string {
-  return `${WEB_BASE_URL}/nutrition?date=${date}`
+  return localizedWebUrl(`/nutrition?date=${date}`, i18n.language)
 }
 
 export interface NutritionDayShareInput {

@@ -8,7 +8,7 @@
 import i18n from './i18n'
 import { describeFeedItem, feedItemTarget, type FeedItemTarget } from '@calistenia/core/lib/feed-item'
 import type { FeedItem } from '@calistenia/core/types'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 import { shareContent } from './share'
 
 /** Ruta interna de un destino del muro. */
@@ -42,10 +42,10 @@ export function feedItemHref(item: FeedItem, isOwnPost: boolean): string | null 
  */
 function publicUrlFor(item: FeedItem): string {
   switch (item.type) {
-    case 'workout': return `${WEB_BASE_URL}/s/${item.id}`
-    case 'cardio': return `${WEB_BASE_URL}/cardio/session/${item.id}`
-    case 'challenge': return item.challenge ? `${WEB_BASE_URL}/challenges/${item.challenge.challengeId}` : ''
-    case 'race': return item.race ? `${WEB_BASE_URL}/race/${item.race.raceId}` : ''
+    case 'workout': return localizedWebUrl(`/s/${item.id}`, i18n.language)
+    case 'cardio': return localizedWebUrl(`/cardio/session/${item.id}`, i18n.language)
+    case 'challenge': return item.challenge ? localizedWebUrl(`/challenges/${item.challenge.challengeId}`, i18n.language) : ''
+    case 'race': return item.race ? localizedWebUrl(`/race/${item.race.raceId}`, i18n.language) : ''
     // Circuito y batalla no tienen vista pública: se comparte solo el texto en
     // lugar de un enlace que al receptor le daría un error.
     default: return ''

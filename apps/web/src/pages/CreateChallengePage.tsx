@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import type { ChallengeMetric } from '@calistenia/core/types'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 interface MetricOption {
   id: ChallengeMetric
@@ -202,7 +203,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   }
 
   const shareWhatsApp = () => {
-    const msg = `${t('challenge.shareWhatsAppText', { title: title || t('challenge.shareFallbackTitle') })}\n${window.location.origin}/challenges`
+    const msg = `${t('challenge.shareWhatsAppText', { title: title || t('challenge.shareFallbackTitle') })}\n${localizedWebUrl('/challenges', i18n.language)}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 

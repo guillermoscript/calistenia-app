@@ -21,7 +21,7 @@ import { ReferralErrorState } from '../components/referrals/ReferralErrorState'
 import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
 import { Copy, Check, Share2 } from 'lucide-react'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 interface ReferralsPageProps {
   userId: string
@@ -177,9 +177,9 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
 }
 
 function ReferralLinkCard({ referralCode }: { referralCode: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [copied, setCopied] = useState(false)
-  const inviteUrl = `${WEB_BASE_URL}/invite/${referralCode}`
+  const inviteUrl = localizedWebUrl(`/invite/${referralCode}`, i18n.language)
 
   const copyLink = useCallback(async () => {
     try {

@@ -17,11 +17,11 @@
  * i18next inicializado devuelve `undefined`, y este módulo lo consumen la web,
  * el móvil y los tests, cada uno con su instancia.
  */
-import { WEB_BASE_URL } from './app-urls'
+import { localizedWebUrl, WEB_BASE_URL } from './app-urls'
 
 /** La URL pública de un programa. Es la que sirve `/shared/:id`. */
-export function sharedProgramUrl(programId: string): string {
-  return `${WEB_BASE_URL}/shared/${programId}`
+export function sharedProgramUrl(programId: string, language?: string): string {
+  return language ? localizedWebUrl(`/shared/${programId}`, language) : `${WEB_BASE_URL}/shared/${programId}`
 }
 
 export interface ProgramShareContent {
@@ -40,10 +40,11 @@ export function buildProgramShareContent(
   programName: string,
   programId: string,
   text: string,
+  language?: string,
 ): ProgramShareContent {
   return {
     title: programName,
     text,
-    url: sharedProgramUrl(programId),
+    url: sharedProgramUrl(programId, language),
   }
 }

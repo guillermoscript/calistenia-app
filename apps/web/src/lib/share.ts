@@ -1,10 +1,10 @@
 import i18n from './i18n'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 import { buildProgramShareContent } from '@calistenia/core/lib/programShare'
 
 /** Deep link to a single saved cardio session's detail page. */
 export function cardioUrl(id: string): string {
-  return `${WEB_BASE_URL}/cardio/session/${id}`
+  return localizedWebUrl(`/cardio/session/${id}`, i18n.language)
 }
 
 export type ShareMethod = 'native' | 'whatsapp' | 'copy'
@@ -52,7 +52,7 @@ export function shareProfile(displayName: string, userId: string, method?: Share
   return shareContent({
     title: i18n.t('share.profileTitle', { name: displayName }),
     text: i18n.t('share.profileText', { name: displayName }),
-    url: `${WEB_BASE_URL}/u/${userId}`,
+    url: localizedWebUrl(`/u/${userId}`, i18n.language),
   }, method)
 }
 
@@ -60,7 +60,7 @@ export function shareRoutine(userName: string, programName: string, userId: stri
   return shareContent({
     title: i18n.t('share.routineTitle', { user: userName, program: programName }),
     text: i18n.t('share.routineText', { user: userName, program: programName }),
-    url: `${WEB_BASE_URL}/u/${userId}/routine`,
+    url: localizedWebUrl(`/u/${userId}/routine`, i18n.language),
   }, method)
 }
 
@@ -77,6 +77,7 @@ export function shareProgram(programName: string, programId: string, method?: Sh
       programName,
       programId,
       i18n.t('share.programText', { name: programName }),
+      i18n.language,
     ),
     method,
   )
@@ -86,7 +87,7 @@ export function shareChallenge(challengeTitle: string, challengeId: string, meth
   return shareContent({
     title: challengeTitle,
     text: i18n.t('share.challengeText', { title: challengeTitle }),
-    url: `${WEB_BASE_URL}/challenges/${challengeId}`,
+    url: localizedWebUrl(`/challenges/${challengeId}`, i18n.language),
   }, method)
 }
 
@@ -94,7 +95,7 @@ export function shareWorkoutSession(userName: string, workoutTitle: string, date
   return shareContent({
     title: i18n.t('share.sessionTitle', { user: userName, workout: workoutTitle }),
     text: i18n.t('share.sessionText', { user: userName, workout: workoutTitle }),
-    url: `${WEB_BASE_URL}/session/${date}/${workoutKey}`,
+    url: localizedWebUrl(`/session/${date}/${workoutKey}`, i18n.language),
   }, method)
 }
 
@@ -102,7 +103,7 @@ export function shareReferralInvite(displayName: string, referralCode: string, m
   return shareContent({
     title: i18n.t('share.referralTitle', { name: displayName }),
     text: i18n.t('share.referralText', { name: displayName }),
-    url: `${WEB_BASE_URL}/invite/${referralCode}`,
+    url: localizedWebUrl(`/invite/${referralCode}`, i18n.language),
   }, method)
 }
 
@@ -110,7 +111,7 @@ export function shareRace(raceName: string, raceId: string, method?: ShareMethod
   return shareContent({
     title: raceName,
     text: `\u00a1\u00danete a la carrera "${raceName}"! \ud83c\udfc3`,
-    url: `${WEB_BASE_URL}/race/${raceId}`,
+    url: localizedWebUrl(`/race/${raceId}`, i18n.language),
   }, method)
 }
 
@@ -118,7 +119,7 @@ export function shareApp(method?: ShareMethod) {
   return shareContent({
     title: 'Calistenia App',
     text: i18n.t('share.appText'),
-    url: WEB_BASE_URL,
+    url: localizedWebUrl('/', i18n.language),
   }, method)
 }
 
