@@ -17,14 +17,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.49",
-    "@ai-sdk/google": "^4.0.64",
-    "@ai-sdk/openai": "^4.0.59",
-    "@ai-sdk/otel": "^1.0.93",
+    "@ai-sdk/anthropic": "^4.0.52",
+    "@ai-sdk/google": "^4.0.67",
+    "@ai-sdk/openai": "^4.0.65",
+    "@ai-sdk/otel": "^1.0.97",
     "@calistenia/core": "file:../packages/core",
     "@hono/node-server": "^2.1.1",
-    "@langfuse/core": "^5.10.1",
-    "@langfuse/otel": "^5.10.1",
+    "@langfuse/core": "^5.11.1",
+    "@langfuse/otel": "^5.11.1",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@opentelemetry/sdk-node": "^0.222.0",
     "ai": "^7.0.48",
@@ -38,16 +38,16 @@
     "mustache": "^4.2.0",
     "pocketbase": "^0.27.3",
     "web-push": "^3.6.7",
-    "zod": "^4.5.4"
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@types/mustache": "^4.2.6",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@types/react-dom": "^19.3.0",
     "@types/web-push": "^3.6.4",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "react-dom": "^19.3.0",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
