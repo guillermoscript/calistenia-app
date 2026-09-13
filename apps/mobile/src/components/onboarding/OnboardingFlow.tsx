@@ -35,6 +35,7 @@ import {
   trackDiscoverySourceAnswered,
   type DiscoverySourceId,
 } from '@calistenia/core/lib/discovery-source'
+import { rememberDiscoverySource } from '@calistenia/core/lib/discovery-survey'
 
 import { Sentry } from '@/lib/instrument'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -183,6 +184,8 @@ export function OnboardingFlow() {
     if (discoverySource && !discoveryTracked.current) {
       discoveryTracked.current = true
       trackDiscoverySourceAnswered(discoverySource, 'onboarding_mobile')
+      // La encuesta de descubrimiento no vuelve a preguntar lo que ya se contestó aquí.
+      if (userId) rememberDiscoverySource(userId, discoverySource)
     }
   }
 

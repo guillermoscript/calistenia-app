@@ -26,7 +26,7 @@ describe('canonical analytics contract', () => {
   it('defines the versioned growth-loop event set without duplicate names', () => {
     const events = Object.values(CANONICAL_ANALYTICS_EVENTS)
 
-    expect(events).toHaveLength(57)
+    expect(events).toHaveLength(60)
     // #636: el final de UN corredor y el cierre de LA carrera son dos eventos
     // distintos. Antes `race_finished` y `race_completed` se leían igual.
     expect(events).toContain('race_participant_finished')
@@ -61,6 +61,10 @@ describe('canonical analytics contract', () => {
       expect(events).toContain(name)
     }
     expect(events).toContain('battle_rematch_created')
+    // PR #771: la encuesta de descubrimiento tiene sus tres eventos propios.
+    for (const name of ['discovery_survey_viewed', 'discovery_survey_dismissed', 'discovery_survey_completed']) {
+      expect(events).toContain(name)
+    }
   })
 
   // #353: los programas de comunidad son OTRA cosa que el currículo de

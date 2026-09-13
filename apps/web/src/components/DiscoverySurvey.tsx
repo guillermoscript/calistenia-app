@@ -1,5 +1,20 @@
-import { useEffect, useState } from 'react'
-import { op } from '@calistenia/core/lib/analytics'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { DiscoverySourceId } from '@calistenia/core/lib/discovery-source'
+import {
+  DISCOVERY_SURVEY_DELAY_MS,
+  DISCOVERY_SURVEY_RETRY_MS,
+  DISCOVERY_SURVEY_SOURCES,
+  USER_GOALS,
+  canShowDiscoverySurvey,
+  getRememberedDiscoverySource,
+  markDiscoverySurvey,
+  trackDiscoverySurveyCompleted,
+  trackDiscoverySurveyDismissed,
+  trackDiscoverySurveyViewed,
+  type DiscoverySurveyStep,
+  type UserGoalId,
+} from '@calistenia/core/lib/discovery-survey'
 import { Button } from './ui/button'
 import {
   Dialog,
@@ -9,74 +24,105 @@ import {
   DialogTitle,
 } from './ui/dialog'
 
-const SOURCES = ['ChatGPT o IA', 'Google', 'Instagram, TikTok o YouTube', 'Recomendación de alguien', 'Otro'] as const
-const GOALS = ['Una rutina de calistenia', 'Aprender un ejercicio', 'Seguir mi progreso', 'Entrenar en casa', 'Otro'] as const
+/** driver.js pone esta clase en `<body>` mientras un tour está abierto. */
+const isTourRunning = () => document.body.classList.contains('driver-active')
 
-function storageKey(userId: string) {
-  return `calistenia_discovery_survey_v1_${userId}`
-}
-
-/** Encuesta local, opcional y de una sola vez. Solo manda respuestas estructuradas a OpenPanel. */
+/**
+ * Encuesta de descubrimiento: opcional y una sola vez por usuario. Las reglas
+ * de cuándo sale y qué se manda a analítica viven en `core/lib/discovery-survey`.
+ */
 export default function DiscoverySurvey({ userId }: { userId: string }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [source, setSource] = useState<string | null>(null)
-  const [goal, setGoal] = useState<string | null>(null)
+  const [rememberedSource, setRememberedSource] = useState<DiscoverySourceId | null>(null)
+  const [source, setSource] = useState<DiscoverySourceId | null>(null)
+  const [sourceConfirmed, setSourceConfirmed] = useState(false)
+  const [goal, setGoal] = useState<UserGoalId | null>(null)
+  const viewedSteps = useRef(new Set<DiscoverySurveyStep>())
+
+  const step: DiscoverySurveyStep = rememberedSource || sourceConfirmed ? 'goal' : 'source'
 
   useEffect(() => {
-    if (localStorage.getItem(storageKey(userId))) return
-    const timeout = window.setTimeout(() => {
+    if (!userId) return
+    let timer: number | undefined
+    const attempt = () => {
+      if (!canShowDiscoverySurvey(userId) || isTourRunning()) {
+        timer = window.setTimeout(attempt, DISCOVERY_SURVEY_RETRY_MS)
+        return
+      }
+      setRememberedSource(getRememberedDiscoverySource(userId))
       setOpen(true)
-      op.track('discovery_survey_viewed', { platform: 'web' })
-    }, 4_000)
-    return () => window.clearTimeout(timeout)
+    }
+    timer = window.setTimeout(attempt, DISCOVERY_SURVEY_DELAY_MS)
+    return () => window.clearTimeout(timer)
   }, [userId])
 
+  useEffect(() => {
+    if (!open || viewedSteps.current.has(step)) return
+    viewedSteps.current.add(step)
+    trackDiscoverySurveyViewed('survey_web', step)
+  }, [open, step])
+
+  const close = () => setOpen(false)
+
   const dismiss = () => {
-    localStorage.setItem(storageKey(userId), 'dismissed')
-    setOpen(false)
-    op.track('discovery_survey_dismissed', { platform: 'web', step: source ? 'goal' : 'source' })
+    markDiscoverySurvey(userId, 'dismissed')
+    trackDiscoverySurveyDismissed('survey_web', step, { discoverySource: sourceConfirmed ? source : null })
+    close()
   }
 
   const submit = () => {
-    if (!source || !goal) return
-    localStorage.setItem(storageKey(userId), 'answered')
-    setOpen(false)
-    op.track('discovery_survey_completed', {
-      platform: 'web',
-      discovery_source: source,
-      user_goal: goal,
+    if (!goal) return
+    markDiscoverySurvey(userId, 'answered')
+    trackDiscoverySurveyCompleted('survey_web', {
+      discoverySource: sourceConfirmed ? source : null,
+      rememberedSource,
+      goal,
     })
+    close()
   }
 
-  const options = source ? GOALS : SOURCES
-  const selected = source ? goal : source
-  const choose = (value: string) => source ? setGoal(value) : setSource(value)
+  const choose = (id: string) => {
+    if (step === 'goal') {
+      setGoal(id as UserGoalId)
+      return
+    }
+    setSource(id as DiscoverySourceId)
+    setSourceConfirmed(true)
+  }
+
+  const options = step === 'goal' ? USER_GOALS : DISCOVERY_SURVEY_SOURCES
+  const selected = step === 'goal' ? goal : source
+  const question = step === 'goal' ? t('discoverySurvey.goalQuestion') : t('onboarding.discoveryTitle')
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) dismiss() }}>
       <DialogContent hideClose className="max-w-md" data-testid="discovery-survey">
         <DialogHeader>
-          <DialogTitle>Ayúdanos a mejorar Calistenia</DialogTitle>
-          <DialogDescription>Es opcional y toma menos de un minuto.</DialogDescription>
+          <DialogTitle>{t('discoverySurvey.title')}</DialogTitle>
+          <DialogDescription>{t('discoverySurvey.subtitle')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="font-medium">{source ? '¿Qué estabas buscando cuando llegaste?' : '¿Cómo conociste Calistenia?'}</p>
-          <div className="grid gap-2">
+          <p className="font-medium">{question}</p>
+          <div className="grid gap-2" role="group" aria-label={question}>
             {options.map((option) => (
               <Button
-                key={option}
-                variant={selected === option ? 'limeSolid' : 'outline'}
+                key={option.id}
+                variant={selected === option.id ? 'limeSolid' : 'outline'}
+                aria-pressed={selected === option.id}
                 className="justify-start whitespace-normal text-left"
-                onClick={() => choose(option)}
+                onClick={() => choose(option.id)}
               >
-                {option}
+                {t(option.labelKey)}
               </Button>
             ))}
           </div>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" onClick={dismiss}>Ahora no</Button>
-          {source ? <Button variant="limeSolid" disabled={!goal} onClick={submit}>Enviar</Button> : null}
+          <Button variant="ghost" onClick={dismiss}>{t('discoverySurvey.notNow')}</Button>
+          {step === 'goal' ? (
+            <Button variant="limeSolid" disabled={!goal} onClick={submit}>{t('discoverySurvey.submit')}</Button>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

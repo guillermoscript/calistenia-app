@@ -4937,5 +4937,15 @@
   "pushPrompt.accept": "Turn on alerts",
   "pushPrompt.decline": "Not now",
   "pushPrompt.granted": "Alerts on",
-  "pushPrompt.denied": "You can turn them on in Settings any time."
+  "pushPrompt.denied": "You can turn them on in Settings any time.",
+  "discoverySurvey.title": "Help us improve Calistenia",
+  "discoverySurvey.subtitle": "It's optional and takes under a minute.",
+  "discoverySurvey.goalQuestion": "What were you looking for when you arrived?",
+  "discoverySurvey.goalRoutine": "A calisthenics routine",
+  "discoverySurvey.goalLearnSkill": "Learn an exercise",
+  "discoverySurvey.goalTrackProgress": "Track my progress",
+  "discoverySurvey.goalTrainAtHome": "Train at home",
+  "discoverySurvey.goalOther": "Something else",
+  "discoverySurvey.notNow": "Not now",
+  "discoverySurvey.submit": "Send"
 }
