@@ -2462,6 +2462,8 @@
   "liveSession.logSet": "SERIE HECHA",
   "liveSession.skipRest": "SALTAR DESCANSO",
   "liveSession.continue": "CONTINUAR",
+  "liveSession.stop": "DETENER",
+  "liveSession.inProgress": "Entrenamiento en curso",
   "session.swipeToSkip": "desliza → para saltar",
   "session.closeSetEditor": "Cerrar editor de serie",
   "session.editCustomSet": "Editar serie personalizada",

@@ -13,6 +13,38 @@ export interface LiveActivityState {
 
 export type ActivityCommand = { kind: 'update'; state: LiveActivityState } | { kind: 'end' }
 
+/** Textos localizados de los botones de la notificación Android. */
+export interface LiveNotificationLabels {
+  work: string
+  rest: string
+  transition: string
+  stop: string
+}
+
+export interface LiveNotificationAction {
+  id: 'live-next' | 'live-stop'
+  title: string
+}
+
+/**
+ * Botones de la notificación: «avanzar» según la fase y «detener» siempre al
+ * final. Play exige que el usuario pueda parar el foreground service sin abrir
+ * la app (rechazo de vc41), así que «detener» no depende de la fase.
+ */
+export function liveNotificationActions(
+  state: LiveActivityState,
+  labels: LiveNotificationLabels | null,
+): LiveNotificationAction[] {
+  if (!labels) return []
+  const next = state.phase === 'rest' ? labels.rest
+    : state.setTotal > 0 ? labels.work
+    : labels.transition
+  return [
+    { id: 'live-next', title: next },
+    { id: 'live-stop', title: labels.stop },
+  ]
+}
+
 export function mapPhaseToActivity(input: {
   phase: 'exercise' | 'rest' | 'note' | 'celebrate' | 'section-transition'
   exerciseName: string
