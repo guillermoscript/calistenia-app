@@ -7,7 +7,8 @@ import {
   trackShareCardShared,
 } from '@calistenia/core/lib/analytics'
 import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
-import i18n from '@/lib/i18n'
+// Relativo y no `@/lib/i18n`: el Vitest de móvil no resuelve el alias.
+import i18n from './i18n'
 
 // ── URL builders ──────────────────────────────────────────────────────────────
 

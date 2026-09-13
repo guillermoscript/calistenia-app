@@ -17,15 +17,8 @@ export function preferredMarketingLocale(language: string | undefined): Marketin
   return language?.toLowerCase().startsWith('en') ? 'en' : 'es'
 }
 
-/** Only marketing routes get locale-prefixed URLs; app routes remain unchanged. */
-export function isMarketingPath(pathname: string): boolean {
-  const path = stripMarketingLocale(pathname)
-  return path === '/'
-    || path === '/features'
-    || path.startsWith('/features/')
-    || path === '/download'
-    || path === '/descargar'
-}
+/** Only marketing routes get locale-prefixed URLs; app routes remain unchanged. Same list as the share links. */
+export { isMarketingPath } from '@calistenia/core/lib/app-urls'
 
 export function localizedMarketingPath(pathname: string, locale: MarketingLocale): string {
   return `/${locale}${stripMarketingLocale(pathname)}`

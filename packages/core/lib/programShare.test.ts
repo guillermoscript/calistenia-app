@@ -20,9 +20,9 @@ describe('sharedProgramUrl', () => {
     expect(sharedProgramUrl('abc123')).not.toContain('localhost')
   })
 
-  it('puede fijar el idioma del enlace compartido', () => {
-    expect(sharedProgramUrl('abc123', 'en-US')).toBe(`${WEB_BASE_URL}/en/shared/abc123`)
-    expect(sharedProgramUrl('abc123', 'es-ES')).toBe(`${WEB_BASE_URL}/es/shared/abc123`)
+  it('el idioma no cambia el enlace: `/shared/:id` es ruta de la app, no de marketing', () => {
+    expect(sharedProgramUrl('abc123', 'en-US')).toBe(`${WEB_BASE_URL}/shared/abc123`)
+    expect(sharedProgramUrl('abc123', 'es-ES')).toBe(`${WEB_BASE_URL}/shared/abc123`)
   })
 })
 
