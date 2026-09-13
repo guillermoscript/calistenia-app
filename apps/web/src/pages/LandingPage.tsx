@@ -87,8 +87,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <main>
         {/* Hero — full-bleed, type-led, real product UI above the fold */}
         <section className="relative isolate overflow-hidden bg-[radial-gradient(ellipse_at_75%_20%,hsl(74_90%_57%_/_0.14),transparent_40%),hsl(75_8%_3%)] px-6 pb-20 pt-28 md:px-10 lg:pt-32">
-          <LandingImage src="/landing/hero-v1.png" position="object-[72%_center] md:object-[68%_center]" className="opacity-30 sm:opacity-40" loading="eager" />
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.55)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.98)]" />
+          <LandingImage src="/landing/hero-v1.png" position="object-[72%_center] md:object-[68%_center]" className="opacity-[.45] sm:opacity-[.55] lg:opacity-[.8]" loading="eager" />
+          {/* El velo va en la dirección del hueco libre. En móvil el texto cubre
+              toda la foto, así que cae de arriba abajo; en pantalla ancha el
+              texto vive en la columna izquierda y el velo se vuelve horizontal,
+              dejando la foto a la vista por la derecha. */}
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.5)] via-[hsl(75_8%_3%_/_0.72)] to-[hsl(75_8%_3%_/_0.96)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.95)] lg:via-[hsl(75_8%_3%_/_0.68)] lg:to-[hsl(75_8%_3%_/_0.28)]" />
+          {/* Con el velo horizontal la sección ya no se funde con la siguiente. */}
+          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 hidden h-48 bg-gradient-to-b from-transparent to-[hsl(75_8%_3%)] lg:block" />
           <div aria-hidden="true" className="absolute inset-0 opacity-40 [background-image:linear-gradient(hsl(0_0%_100%_/_0.045)_1px,transparent_1px),linear-gradient(90deg,hsl(0_0%_100%_/_0.045)_1px,transparent_1px)] [background-size:52px_52px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
           <div aria-hidden="true" className="absolute -right-24 top-1/2 hidden h-[560px] w-[560px] -translate-y-1/2 rounded-full border border-lime/20 lg:block" />
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-16 lg:grid-cols-[1.05fr_.75fr]">
@@ -139,7 +145,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         {/* Training */}
         <section className="relative isolate overflow-hidden border-t border-white/10">
-          <LandingImage src="/landing/training-v1.png" position="object-[68%_center]" className="opacity-[.32] sm:opacity-[.32] lg:left-1/2 lg:w-1/2 lg:opacity-25" />
+          <LandingImage src="/landing/training-v1.png" position="object-[68%_center]" className="opacity-[.42] sm:opacity-[.42] lg:left-1/2 lg:w-1/2 lg:opacity-[.55] lg:[mask-image:linear-gradient(to_right,transparent,black_22%)]" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.68)] via-[hsl(75_8%_3%_/_0.76)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.86)] lg:to-transparent" />
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-32">
             <Reveal>
@@ -157,8 +163,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         {/* Nutrition + pantry */}
         <section className="relative isolate overflow-hidden border-y border-white/10 bg-white/[.025]">
-          <LandingImage src="/landing/nutrition-v1.png" position="object-[52%_center]" className="opacity-[.3] sm:opacity-[.3] lg:left-1/2 lg:w-1/2 lg:opacity-20" />
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.7)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.88)] lg:to-transparent" />
+          {/* Única sección con el texto a la derecha: la foto va a la mitad
+              izquierda y el velo se invierte, o la copia acaba sobre el plato. */}
+          <LandingImage src="/landing/nutrition-v1.png" position="object-[52%_center]" className="opacity-[.42] sm:opacity-[.42] lg:left-0 lg:w-1/2 lg:opacity-[.55] lg:[mask-image:linear-gradient(to_left,transparent,black_22%)]" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.7)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-l lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.88)] lg:to-transparent" />
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-32">
             <Reveal className="order-2 flex justify-center lg:order-1 lg:justify-start">
               <PantryPanel />
@@ -175,7 +183,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         {/* Progress */}
         <section className="relative isolate overflow-hidden">
-          <LandingImage src="/landing/progress-v1.png" position="object-[66%_center]" className="opacity-[.3] sm:opacity-[.3] lg:left-1/2 lg:w-1/2 lg:opacity-25" />
+          <LandingImage src="/landing/progress-v1.png" position="object-[66%_center]" className="opacity-[.42] sm:opacity-[.42] lg:left-1/2 lg:w-1/2 lg:opacity-[.55] lg:[mask-image:linear-gradient(to_right,transparent,black_22%)]" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.68)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.86)] lg:to-transparent" />
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-32">
             <Reveal>
