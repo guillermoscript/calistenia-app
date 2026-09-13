@@ -421,6 +421,8 @@
   "landing.kicker": "Tu primer paso, claro",
   "landing.androidCta": "Descargar para Android",
   "landing.webCta": "Usar en la web",
+  "download.metaTitle": "Descarga Calistenia para Android",
+  "download.metaDesc": "Instala Calistenia directamente en tu teléfono con entrenamientos guiados, nutrición y seguimiento del progreso, incluso sin conexión.",
   "landing.heroProof": "Empieza con tu nivel. Sigue con un plan que conecta entrenamiento, comida y progreso.",
   "landing.startEyebrow": "Así de simple",
   "landing.startTitle": "No necesitas saber qué rutina elegir.",
@@ -4937,5 +4939,15 @@
   "pushPrompt.accept": "Activar avisos",
   "pushPrompt.decline": "Ahora no",
   "pushPrompt.granted": "Avisos activados",
-  "pushPrompt.denied": "Puedes activarlos en Ajustes cuando quieras."
+  "pushPrompt.denied": "Puedes activarlos en Ajustes cuando quieras.",
+  "discoverySurvey.title": "Ayúdanos a mejorar Calistenia",
+  "discoverySurvey.subtitle": "Es opcional y toma menos de un minuto.",
+  "discoverySurvey.goalQuestion": "¿Qué buscabas cuando llegaste?",
+  "discoverySurvey.goalRoutine": "Una rutina de calistenia",
+  "discoverySurvey.goalLearnSkill": "Aprender un ejercicio",
+  "discoverySurvey.goalTrackProgress": "Seguir mi progreso",
+  "discoverySurvey.goalTrainAtHome": "Entrenar en casa",
+  "discoverySurvey.goalOther": "Otra cosa",
+  "discoverySurvey.notNow": "Ahora no",
+  "discoverySurvey.submit": "Enviar"
 }

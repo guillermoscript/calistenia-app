@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
 import { op } from '@calistenia/core/lib/analytics'
+import { useDocumentMeta } from '../hooks/useDocumentMeta'
 import { FEATURES } from '../data/features'
 import { HeroPhone, LibraryPanel, PantryPanel, ProgressPanel, BeyondVisual } from '../components/landing/panels'
 import {
@@ -49,8 +50,21 @@ function Ticker() {
   )
 }
 
+function LandingImage({ src, position = 'object-center', className = '', loading = 'lazy' }: { src: string; position?: string; className?: string; loading?: 'eager' | 'lazy' }) {
+  return (
+    <img
+      aria-hidden="true"
+      src={src}
+      alt=""
+      loading={loading}
+      className={`pointer-events-none absolute inset-0 h-full w-full object-cover ${position} ${className}`}
+    />
+  )
+}
+
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { t } = useTranslation()
+  useDocumentMeta(`${t('landing.heroTitle1')} ${t('landing.heroTitle2')}`, t('landing.heroDesc'))
   const reduced = usePrefersReducedMotion()
   const [active, setActive] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
@@ -73,6 +87,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <main>
         {/* Hero — full-bleed, type-led, real product UI above the fold */}
         <section className="relative isolate overflow-hidden bg-[radial-gradient(ellipse_at_75%_20%,hsl(74_90%_57%_/_0.14),transparent_40%),hsl(75_8%_3%)] px-6 pb-20 pt-28 md:px-10 lg:pt-32">
+          <LandingImage src="/landing/hero-v1.png" position="object-[72%_center] md:object-[68%_center]" className="opacity-30 sm:opacity-40" loading="eager" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.55)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.98)]" />
           <div aria-hidden="true" className="absolute inset-0 opacity-40 [background-image:linear-gradient(hsl(0_0%_100%_/_0.045)_1px,transparent_1px),linear-gradient(90deg,hsl(0_0%_100%_/_0.045)_1px,transparent_1px)] [background-size:52px_52px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
           <div aria-hidden="true" className="absolute -right-24 top-1/2 hidden h-[560px] w-[560px] -translate-y-1/2 rounded-full border border-lime/20 lg:block" />
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-16 lg:grid-cols-[1.05fr_.75fr]">
@@ -122,7 +138,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </section>
 
         {/* Training */}
-        <section className="border-t border-white/10">
+        <section className="relative isolate overflow-hidden border-t border-white/10">
+          <LandingImage src="/landing/training-v1.png" position="object-[68%_center]" className="opacity-[.32] sm:opacity-[.32] lg:left-1/2 lg:w-1/2 lg:opacity-25" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.68)] via-[hsl(75_8%_3%_/_0.76)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.86)] lg:to-transparent" />
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-32">
             <Reveal>
               <Eyebrow>{t('landing.trainingEyebrow')}</Eyebrow>
@@ -138,7 +156,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </section>
 
         {/* Nutrition + pantry */}
-        <section className="border-y border-white/10 bg-white/[.025]">
+        <section className="relative isolate overflow-hidden border-y border-white/10 bg-white/[.025]">
+          <LandingImage src="/landing/nutrition-v1.png" position="object-[52%_center]" className="opacity-[.3] sm:opacity-[.3] lg:left-1/2 lg:w-1/2 lg:opacity-20" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.7)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.88)] lg:to-transparent" />
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-32">
             <Reveal className="order-2 flex justify-center lg:order-1 lg:justify-start">
               <PantryPanel />
@@ -154,7 +174,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </section>
 
         {/* Progress */}
-        <section>
+        <section className="relative isolate overflow-hidden">
+          <LandingImage src="/landing/progress-v1.png" position="object-[66%_center]" className="opacity-[.3] sm:opacity-[.3] lg:left-1/2 lg:w-1/2 lg:opacity-25" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[hsl(75_8%_3%_/_0.68)] via-[hsl(75_8%_3%_/_0.78)] to-[hsl(75_8%_3%_/_0.92)] lg:bg-gradient-to-r lg:from-[hsl(75_8%_3%_/_0.98)] lg:via-[hsl(75_8%_3%_/_0.86)] lg:to-transparent" />
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-32">
             <Reveal>
               <Eyebrow>{t('landing.progressEyebrow')}</Eyebrow>

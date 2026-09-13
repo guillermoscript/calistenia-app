@@ -19,6 +19,11 @@ describe('sharedProgramUrl', () => {
     expect(sharedProgramUrl('abc123')).toMatch(/^https:\/\//)
     expect(sharedProgramUrl('abc123')).not.toContain('localhost')
   })
+
+  it('el idioma no cambia el enlace: `/shared/:id` es ruta de la app, no de marketing', () => {
+    expect(sharedProgramUrl('abc123', 'en-US')).toBe(`${WEB_BASE_URL}/shared/abc123`)
+    expect(sharedProgramUrl('abc123', 'es-ES')).toBe(`${WEB_BASE_URL}/shared/abc123`)
+  })
 })
 
 describe('buildProgramShareContent', () => {

@@ -28,6 +28,7 @@ import {
   SettingsRow, Field, UnitInput, Segmented, ChipToggle, DayToggle,
 } from '../components/profile/SettingsPanel'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 interface ProfilePageProps {
   user: AuthUser
@@ -109,7 +110,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     { value: 'avanzado', label: t('difficulty.advanced') },
   ]
 
-  const profileUrl = `${window.location.origin}/u/${user?.id}`
+  const profileUrl = localizedWebUrl(`/u/${user?.id}`, i18n.language)
 
   function shareWhatsApp() {
     const msg = `${t('profile.whatsappShare')}\n${profileUrl}`

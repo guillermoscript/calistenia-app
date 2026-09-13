@@ -49,7 +49,17 @@ export function isDiscoverySourceId(value: unknown): value is DiscoverySourceId 
   return typeof value === 'string' && DISCOVERY_SOURCES.some((o) => o.id === value)
 }
 
-export type DiscoverySourceOrigin = 'onboarding_web' | 'onboarding_mobile'
+export type DiscoverySourceOrigin =
+  | 'onboarding_web'
+  | 'onboarding_mobile'
+  /** La encuesta de descubrimiento (`discovery-survey.ts`) hace la misma pregunta a quien no pasó por el chip. */
+  | 'survey_web'
+  | 'survey_mobile'
+
+/** Superficie del evento según quién lo emite: el chip del onboarding o la encuesta. */
+export function discoverySourceSurface(origin: DiscoverySourceOrigin): 'onboarding' | 'discovery_survey' {
+  return origin.startsWith('survey_') ? 'discovery_survey' : 'onboarding'
+}
 
 /**
  * Emite `discovery_source_answered`. Se llama al SALIR de la bienvenida (con
@@ -62,7 +72,7 @@ export function trackDiscoverySourceAnswered(
   origin: DiscoverySourceOrigin,
 ): void {
   trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.discoverySourceAnswered, {
-    surface: 'onboarding',
+    surface: discoverySourceSurface(origin),
     source: origin,
     discovery_source: source,
   })

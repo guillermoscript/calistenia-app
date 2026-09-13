@@ -57,3 +57,12 @@ describe('trackDiscoverySourceAnswered', () => {
     })
   })
 })
+
+describe('discoverySourceSurface', () => {
+  beforeEach(() => track.mockClear())
+
+  it('la encuesta emite con su propia superficie y el onboarding con la suya', () => {
+    trackDiscoverySourceAnswered('search', 'survey_web')
+    expect(track.mock.calls[0][1]).toMatchObject({ surface: 'discovery_survey', source: 'survey_web', discovery_source: 'search' })
+  })
+})

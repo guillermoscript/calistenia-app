@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Download, Smartphone, ShieldCheck, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '../components/ui/button'
+import { useDocumentMeta } from '../hooks/useDocumentMeta'
 
 const GITHUB_REPO = 'guillermoscript/calistenia-app'
 const RELEASES_PAGE = `https://github.com/${GITHUB_REPO}/releases`
@@ -25,7 +27,9 @@ function formatDate(iso: string): string {
 }
 
 export default function DownloadPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
+  useDocumentMeta(t('download.metaTitle'), t('download.metaDesc'))
   const [release, setRelease] = useState<ApkRelease | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 

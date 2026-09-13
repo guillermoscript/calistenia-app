@@ -30,6 +30,8 @@ vi.mock('expo-sharing', () => ({
   shareAsync: mocks.shareAsync,
 }))
 
+vi.mock('../i18n', () => ({ default: { language: 'es' } }))
+
 vi.mock('expo-clipboard', () => ({
   setStringAsync: vi.fn(),
 }))
@@ -228,7 +230,8 @@ describe('battle result share', () => {
     const sinReferido = shareBattleResult({
       circuitName: 'Circuito básico', rank: 1, contenders: 3, tied: false, referralCode: null,
     })
-    expect(sinReferido.url).toBe('https://gym.guille.tech')
+    // La portada es ruta de marketing: lleva el idioma de quien comparte.
+    expect(sinReferido.url).toBe('https://gym.guille.tech/es/')
     expect(sinReferido.url).not.toMatch(/battle/)
   })
 

@@ -26,6 +26,7 @@ import {
   trackDiscoverySourceAnswered,
   type DiscoverySourceId,
 } from '@calistenia/core/lib/discovery-source'
+import { rememberDiscoverySource } from '@calistenia/core/lib/discovery-survey'
 import { StepBasics, type BasicsValues } from './StepBasics'
 import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth, type HealthValues } from './StepHealth'
@@ -165,6 +166,8 @@ export default function OnboardingFlow({
     if (discoverySource && !discoveryTracked.current) {
       discoveryTracked.current = true
       trackDiscoverySourceAnswered(discoverySource, 'onboarding_web')
+      // La encuesta de descubrimiento no vuelve a preguntar lo que ya se contestó aquí.
+      if (userId) rememberDiscoverySource(userId, discoverySource)
     }
   }
 

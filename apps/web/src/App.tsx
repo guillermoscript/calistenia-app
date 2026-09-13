@@ -14,6 +14,7 @@ import WorkoutPage from './pages/WorkoutPage'
 import AuthPage from './pages/AuthPage'
 import LandingPage from './pages/LandingPage'
 import { MarketingUnmask } from './components/MarketingUnmask'
+import DiscoverySurvey from './components/DiscoverySurvey'
 // Lazy loaded: secondary pages (split into separate chunks)
 const BattleInviteLandingPage = lazy(() => import('./pages/BattleInviteLandingPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
@@ -652,6 +653,7 @@ function AuthenticatedApp({
           </Routes>
           </Suspense>
           <AppTour pathname={location.pathname} userId={userId!} autoStart />
+          <DiscoverySurvey userId={userId!} />
         </AppShell>
       </div>
     </SidebarProvider>

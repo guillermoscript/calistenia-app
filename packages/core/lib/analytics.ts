@@ -187,6 +187,15 @@ export const CANONICAL_ANALYTICS_EVENTS = {
    * (#586). Lleva `discovery_source` con un id estable, nunca texto libre.
    */
   discoverySourceAnswered: 'discovery_source_answered',
+  /**
+   * Encuesta de descubrimiento (PR #771): modal opcional, una vez por usuario,
+   * con «¿cómo conociste la app?» y «¿qué buscabas cuando llegaste?». La
+   * fuente viaja por `discovery_source_answered` con `surface=discovery_survey`;
+   * `discovery_survey_completed` lleva además `user_goal` con un id estable.
+   */
+  discoverySurveyViewed: 'discovery_survey_viewed',
+  discoverySurveyDismissed: 'discovery_survey_dismissed',
+  discoverySurveyCompleted: 'discovery_survey_completed',
 } as const
 
 export type CanonicalAnalyticsEvent = typeof CANONICAL_ANALYTICS_EVENTS[keyof typeof CANONICAL_ANALYTICS_EVENTS]

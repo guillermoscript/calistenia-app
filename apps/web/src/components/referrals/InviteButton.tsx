@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareContent, type ShareMethod } from '../../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 
 interface InviteButtonProps {
@@ -14,7 +14,7 @@ interface InviteButtonProps {
 }
 
 export function InviteButton({ referralCode, onCreateChallenge, className }: InviteButtonProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -34,7 +34,7 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
 
   if (!referralCode) return null
 
-  const inviteUrl = `${WEB_BASE_URL}/invite/${referralCode}`
+  const inviteUrl = localizedWebUrl(`/invite/${referralCode}`, i18n.language)
 
   const handleQuickInvite = async (method: ShareMethod) => {
     const ok = await shareContent({

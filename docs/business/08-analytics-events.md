@@ -1,8 +1,18 @@
 # Analytics & Growth Events
 
-Version: **6**
+Version: **7**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
+
+> **Version 7 (2026-09-13, PR #771) — discovery survey.** Additive; no saved
+> report changes.
+>
+> - **`discovery_survey_viewed` / `_dismissed` / `_completed`.** An optional
+>   one-time modal after onboarding asks "how did you find the app?" (same ids
+>   as below) and "what were you looking for?" (`user_goal`). The source answer
+>   also fires `discovery_source_answered` with `surface=discovery_survey`, so
+>   one report covers both surfaces. Users who already answered the onboarding
+>   chip only see the goal question.
 
 > **Version 6 (2026-09-03, PR #586) — where users come from, in their own
 > words.** Additive; no saved report changes.
@@ -207,7 +217,10 @@ GPS coordinates, or unnecessary personal data.
 | `signup_started` | A registration attempt begins | `surface=auth`, `source`, `method` | Web + mobile core | One per attempt |
 | `signup_failed` | A registration attempt fails | `surface=auth`, `source`, `method`, `status` | Web + mobile core | Same message rule as `login_failed` |
 | `onboarding_started` | The onboarding flow mounts | `surface=onboarding`, `source`, `total_steps`, `needs_profile` | Web + mobile | Once per flow. `onboarding_step_viewed` only fires when *advancing*, so step 0 was never reported and `onboarding_completed` had no denominator |
-| `discovery_source_answered` | The user leaves the onboarding welcome step having picked "how did you find the app?" | `surface=onboarding`, `source`, `discovery_source` | Web + mobile | Once per flow, only if a chip was picked. `discovery_source` is one of `app_store`, `search`, `ai_chat`, `social`, `friend`, `github`, `other`; `onboarding_completed` carries the same value (or `not_answered`) |
+| `discovery_source_answered` | The user leaves the onboarding welcome step having picked "how did you find the app?", or answers the same question in the discovery survey | `surface=onboarding` or `discovery_survey`, `source` (`onboarding_web`, `onboarding_mobile`, `survey_web`, `survey_mobile`), `discovery_source` | Web + mobile | Once per flow, only if a chip was picked. `discovery_source` is one of `app_store`, `search`, `ai_chat`, `social`, `friend`, `github`, `other`; `onboarding_completed` carries the same value (or `not_answered`) |
+| `discovery_survey_viewed` | The discovery survey modal shows a step | `surface=discovery_survey`, `source` (`survey_web`/`survey_mobile`), `step` (`source`/`goal`) | Web + mobile | Once per step per mount. Only after onboarding, never during a live workout or a web tour; once per user per device |
+| `discovery_survey_dismissed` | The user closes the survey without sending | `surface=discovery_survey`, `source`, `step` | Web + mobile | If the source step was already answered, `discovery_source_answered` fires first so that answer is not lost |
+| `discovery_survey_completed` | The user sends the survey | `surface=discovery_survey`, `source`, `user_goal`, `discovery_source`, `discovery_source_origin` | Web + mobile | `user_goal` is one of `routine`, `learn_skill`, `track_progress`, `train_at_home`, `other`. If the source was already answered in onboarding the survey skips that question and reports it with `discovery_source_origin=onboarding`. Stable ids only, never labels |
 
 The training-funnel events (`session_started`, `workout_completed`,
 `session_exited`, `workout_abandoned`, `workout_day_viewed`, `set_logged`,

@@ -10,6 +10,7 @@ import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 
 type Tab = 'siguiendo' | 'seguidores'
 
@@ -55,7 +56,7 @@ function SkeletonRow() {
 
 export default function FriendsPage({ userId }: FriendsPageProps) {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { following, followers, followingIds, pendingOutgoingIds, loading, follow, unfollow } = useFollows(userId)
   const { blockedIds } = useBlocks(userId)
   const [tab, setTab] = useState<Tab>('siguiendo')
@@ -74,7 +75,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
   // Derive followerIds for mutual follow detection
   const followerIds = useMemo(() => new Set(followers.map(f => f.id)), [followers])
 
-  const profileUrl = `${window.location.origin}/u/${userId}`
+  const profileUrl = localizedWebUrl(`/u/${userId}`, i18n.language)
   const shareMessage = t('profile.whatsappShare', { url: profileUrl })
 
   // [L2 fix] noopener,noreferrer on window.open

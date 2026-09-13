@@ -9,6 +9,7 @@ import { I18nextProvider } from 'react-i18next'
 import { registerSW } from 'virtual:pwa-register'
 import { toast } from 'sonner'
 import i18n from './lib/i18n'
+import { getMarketingLocale, isMarketingPath, localizedMarketingPath, preferredMarketingLocale } from './lib/marketing-locale'
 import { hasActiveWorkout } from './lib/active-workout'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import App from './App'
@@ -98,6 +99,20 @@ const updateSW = registerSW({
   },
 })
 
+// Social previews need a stable locale in the URL. A crawler cannot see the
+// language stored in localStorage, so public marketing URLs are normalized
+// before BrowserRouter starts. Explicit /en or /es always wins over detection.
+const initialPath = window.location.pathname
+const explicitLocale = getMarketingLocale(initialPath)
+const initialLocale = explicitLocale ?? (isMarketingPath(initialPath) ? preferredMarketingLocale(i18n.language) : null)
+if (initialLocale && !explicitLocale) {
+  window.history.replaceState(null, '', `${localizedMarketingPath(initialPath, initialLocale)}${window.location.search}${window.location.hash}`)
+}
+if (explicitLocale && i18n.language !== explicitLocale) {
+  void i18n.changeLanguage(explicitLocale)
+}
+const routerBasename = initialLocale ? `/${initialLocale}` : undefined
+
 // Stale-chunk recovery after a deploy: users still on the old index.html request
 // chunk hashes that no longer exist on the server. Vite wraps every lazy() import
 // in __vitePreload and dispatches `vite:preloadError` on a failed fetch (Sentry
@@ -145,7 +160,7 @@ ReactDOM.createRoot(document.getElementById('root')!, {
 }).render(
   <React.StrictMode>
     <I18nextProvider i18n={i18n}>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <App />
       </BrowserRouter>
     </I18nextProvider>

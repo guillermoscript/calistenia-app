@@ -43,6 +43,7 @@ import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
 import { CircuitSessionProvider, useCircuitSession } from '@/contexts/CircuitSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 import UpdateGate from '@/components/UpdateGate'
+import DiscoverySurvey from '@/components/DiscoverySurvey'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -123,6 +124,7 @@ function BattleInviteRedeemer() {
 }
 
 function RootLayout() {
+  const user = useAuthUser()
   const { colorScheme } = useColorScheme()
   const [ready, setReady] = useState(false)
   // fontError: seguir sin fuentes custom antes que quedarse en blanco
@@ -305,6 +307,7 @@ function RootLayout() {
         {/* Fuera de <Providers> a propósito: el gate tiene que poder bloquear
             aunque los contexts de sesión fallen, y no depende de ninguno. */}
         <UpdateGate />
+        <DiscoverySurvey userId={user?.id ?? null} />
         <PortalHost />
         </ThemeProvider>
       </KeyboardProvider>

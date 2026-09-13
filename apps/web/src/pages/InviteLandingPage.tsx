@@ -7,7 +7,7 @@ import { Loader } from '../components/ui/loader'
 import { ShareButton } from '../components/ShareButton'
 import { shareContent, type ShareMethod } from '../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
-import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
+import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 import { useInviteLanding } from '@calistenia/core/hooks/useInviteLanding'
 import { REFERRAL_BONUS_POINTS, REFERRAL_SIGNUP_POINTS } from '@calistenia/core/hooks/useReferrals'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
@@ -15,7 +15,7 @@ import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
 
 export default function InviteLandingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { code, challengeId } = useParams<{ code: string; challengeId?: string }>()
   const navigate = useNavigate()
   const l = useLocalize()
@@ -66,8 +66,8 @@ export default function InviteLandingPage() {
   if (!inviter) return null
 
   const inviteUrl = challengeId
-    ? `${WEB_BASE_URL}/invite/${code}/challenge/${challengeId}`
-    : `${WEB_BASE_URL}/invite/${code}`
+    ? localizedWebUrl(`/invite/${code}/challenge/${challengeId}`, i18n.language)
+    : localizedWebUrl(`/invite/${code}`, i18n.language)
 
   const handleShare = (method: ShareMethod) =>
     shareContent({
