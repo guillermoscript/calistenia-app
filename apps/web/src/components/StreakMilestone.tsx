@@ -45,7 +45,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
       text: t('streak.milestone.shareText', { days: streak }),
       url: referralCode ? localizedWebUrl(`/invite/${referralCode}`, i18n.language) : localizedWebUrl('/', i18n.language),
     })
-  }, [streak, t, referralCode])
+  }, [streak, t, i18n.language, referralCode])
 
   const handleDismiss = useCallback(() => {
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
