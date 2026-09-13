@@ -13,6 +13,9 @@ dist/
 # PocketBase runtime data (database, uploads, logs)
 # Contains user data and auth tokens — never public
 pb_data/
+# Local AI-generated media staging and its PocketBase upload helper.
+# Assets in this directory are intentionally never part of Git history.
+/.local/calistenia-media/
 # Local docker-compose bind-mount data directory
 pb_data_local/
 
