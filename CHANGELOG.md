@@ -9,6 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.13.2] - 2026-09-13
+
+_The workout notification now has a button to stop it, and programs show what each day contains and progress week by week._
+
+### Added
+
+- **Stop the workout notification** — The workout-in-progress notification has a STOP button and shows your set progress during rest too. Your workout stays open in the app.
+- **Every program day, inside out** — On a program's page you can open each day and see its exercises before you start.
+- **Week-by-week progression** — Programs ramp up within each phase and lighten the last week so you recover.
+
 ## [1.13.1] - 2026-09-08
 
 _This one also brings everything from the previous version: your first workout right after sign-up, reminders at your time and notifications fixed. New here: your charts no longer duplicate exercises._
@@ -417,7 +427,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...HEAD
+[1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
 [1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
 [1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
 [1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3

@@ -1,6 +1,248 @@
 {
-  "generated": "2026-09-08T01:58:49.640Z",
+  "generated": "2026-09-13T00:39:29.322Z",
   "versions": [
+    {
+      "version": "1.13.2",
+      "date": "2026-09-13",
+      "summary": {
+        "es": "La notificación del entreno ahora tiene botón para detenerla, y los programas enseñan cada día por dentro y progresan semana a semana.",
+        "en": "The workout notification now has a button to stop it, and programs show what each day contains and progress week by week."
+      },
+      "highlights": [
+        {
+          "icon": "🔔",
+          "type": "feat",
+          "title": {
+            "es": "Detener la notificación del entreno",
+            "en": "Stop the workout notification"
+          },
+          "body": {
+            "es": "La notificación del entrenamiento en curso tiene un botón DETENER y muestra tu progreso de series también durante el descanso. El entreno sigue en la app.",
+            "en": "The workout-in-progress notification has a STOP button and shows your set progress during rest too. Your workout stays open in the app."
+          }
+        },
+        {
+          "icon": "🗓️",
+          "type": "feat",
+          "title": {
+            "es": "Cada día del programa, por dentro",
+            "en": "Every program day, inside out"
+          },
+          "body": {
+            "es": "En la ficha de un programa puedes abrir cada día y ver sus ejercicios antes de empezarlo.",
+            "en": "On a program's page you can open each day and see its exercises before you start."
+          }
+        },
+        {
+          "icon": "📈",
+          "type": "feat",
+          "title": {
+            "es": "Progresión semana a semana",
+            "en": "Week-by-week progression"
+          },
+          "body": {
+            "es": "Los programas suben la dificultad dentro de cada fase y aligeran la última semana para que descanses.",
+            "en": "Programs ramp up within each phase and lighten the last week so you recover."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Session Replay de Sentry (#768)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "58e4dd2"
+            },
+            {
+              "description": "Desglose de cada día en la ficha del programa (#767)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "2b88615"
+            },
+            {
+              "description": "Progresión semanal dentro de la fase (#755) (#756)",
+              "scope": "motor",
+              "breaking": false,
+              "hash": "d55b421"
+            },
+            {
+              "description": "Semana de descarga en el motor: flag por fase, mitad de series y badge (#716) (#742)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "8fb9ab9"
+            },
+            {
+              "description": "«PARA TI» prefiere los «Mujer ·» a las usuarias y desempata sin alfabeto (#717) (#739)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "7e244b1"
+            },
+            {
+              "description": "Reglas de lógica de entrenamiento en el validador, primero como aviso (#715) (#737)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "c1fedd0"
+            },
+            {
+              "description": "Reetiquetar goal_type, contraindicaciones y material de los 15 oficiales (#713) (#736)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "9d0535b"
+            },
+            {
+              "description": "Resiembra de contenido oficial que llega a las filas que ya existen en prod (#712) (#734)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "acb0f7c"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Botón «detener» en la notificación del entreno (rechazo de Play vc41) (#769)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "c90d998"
+            },
+            {
+              "description": "Hipertrofia se quedó sin títulos de día; el validador ahora los exige (#762) (#766)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "f7eddd6"
+            },
+            {
+              "description": "Fundamentos: regresiones en las notas y el descanso bien contado (#719) (#765)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "13e7c6a"
+            },
+            {
+              "description": "Hipertrofia: piernas 2x/semana, entrada realista y pico de una variable (#723) (#762)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "7560240"
+            },
+            {
+              "description": "Glúteo + Tonificación: escalera por fases y semana 1 de 24 series (#731) (#760)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "a883517"
+            },
+            {
+              "description": "Fundamentos: rodillas como ejercicio propio, remo de verdad y descarga real (#719) (#763)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "7a25049"
+            },
+            {
+              "description": "Handstand Roadmap: intentos libres desde fase 1 (#728) (#759)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "3f71fba"
+            },
+            {
+              "description": "Planche Roadmap: fuera straddle/full, descarga real y muñeca sin agrupar (#730) (#758)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "25fd703"
+            },
+            {
+              "description": "Muscle-up Roadmap: recorta tirón colgado, false grip real y calendario de intentos (#729) (#757)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "00c7880"
+            },
+            {
+              "description": "Pull-up Roadmap: dead hang real, negativas dosificadas y fase 3 con estímulo (#727) (#754)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "3e1dbfc"
+            },
+            {
+              "description": "Ganar Músculo: entrena el fondo que promete y escalona el volumen (#721) (#753)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "39cfdeb"
+            },
+            {
+              "description": "Fuerza Total: mantener de verdad, con descarga y sin regresiones (#726) (#751)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "5d4918e"
+            },
+            {
+              "description": "Fuerza Funcional: potencia real, ruta de entrada al dip y descarga (#733) (#752)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "12edc2a"
+            },
+            {
+              "description": "Volumen Máximo: planche que progresa, pico hipertrófico y descarga real (#725) (#750)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "79ffff9"
+            },
+            {
+              "description": "La tabla de 1788881000 vuelve a ser espejo de SKELETONS (intensity de Quema Grasa) (#749)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "d04d422"
+            },
+            {
+              "description": "Quema Grasa: cardio y nutrición de verdad, remo beginner y descarga real (#720) (#748)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "532d191"
+            },
+            {
+              "description": "Normalizar el install referrer de Play para OpenPanel (#746) (#747)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "27fda71"
+            },
+            {
+              "description": "Mujer · Full Body Toning: tirón en puerta, glúteo e isquio y progresión por variante (#732) (#745)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "75d121f"
+            },
+            {
+              "description": "Cutting Élite: periodización de cutting, tirón realista, cardio y nutrición (#724) (#744)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "71835b9"
+            },
+            {
+              "description": "Intermedio · Definición: nutrición, cardio y bajo impacto (#722) (#743)",
+              "scope": "programas",
+              "breaking": false,
+              "hash": "6be3f63"
+            },
+            {
+              "description": "Chinup, nordic, material y false grip en el catálogo de ejercicios (#714) (#741)",
+              "scope": "catalogo",
+              "breaking": false,
+              "hash": "ca767cc"
+            },
+            {
+              "description": "Las imágenes llegaban corruptas al servidor de IA (#709)",
+              "scope": "mcp-server",
+              "breaking": false,
+              "hash": "0fdb159"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.13.1",
       "date": "2026-09-08",

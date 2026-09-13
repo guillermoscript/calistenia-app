@@ -9,6 +9,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.13.2] - 2026-09-13
+
+_La notificación del entreno ahora tiene botón para detenerla, y los programas enseñan cada día por dentro y progresan semana a semana._
+
+### Añadido
+
+- **Detener la notificación del entreno** — La notificación del entrenamiento en curso tiene un botón DETENER y muestra tu progreso de series también durante el descanso. El entreno sigue en la app.
+- **Cada día del programa, por dentro** — En la ficha de un programa puedes abrir cada día y ver sus ejercicios antes de empezarlo.
+- **Progresión semana a semana** — Los programas suben la dificultad dentro de cada fase y aligeran la última semana para que descanses.
+
 ## [1.13.1] - 2026-09-08
 
 _Llega también todo lo de la versión anterior: tu primer entreno nada más entrar, recordatorios a tu hora y las notificaciones arregladas. Y como novedad, tus gráficas dejan de duplicar ejercicios._
@@ -417,7 +427,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...HEAD
+[1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
 [1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
 [1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0
 [1.12.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.2...mobile-v1.12.3
