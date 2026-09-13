@@ -55,6 +55,8 @@ export function useLiveSession(args: {
         work: t('liveSession.logSet'),
         rest: t('liveSession.skipRest'),
         transition: t('liveSession.continue'),
+        stop: t('liveSession.stop'),
+        inProgress: t('liveSession.inProgress'),
       })
     } else {
       void updateLiveSession(cmd.state)

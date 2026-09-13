@@ -2462,6 +2462,8 @@
   "liveSession.logSet": "SET DONE",
   "liveSession.skipRest": "SKIP REST",
   "liveSession.continue": "CONTINUE",
+  "liveSession.stop": "STOP",
+  "liveSession.inProgress": "Workout in progress",
   "session.swipeToSkip": "swipe → to skip",
   "session.closeSetEditor": "Close set editor",
   "session.editCustomSet": "Edit custom set",

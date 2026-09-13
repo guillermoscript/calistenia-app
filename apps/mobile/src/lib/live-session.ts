@@ -1,12 +1,14 @@
 /**
  * Timer de sesión en vivo fuera de la app.
  * iOS: Live Activity (ActivityKit vía widget-bridge). Android: notificación
- * persistente de foreground service con cronómetro (notifee).
+ * persistente de foreground service con cronómetro (notifee), con botón de
+ * «avanzar» y botón de «detener» (Play exige que el usuario pueda parar el
+ * servicio desde la propia notificación).
  * Todas las funciones son best-effort: nunca lanzan.
  */
 import { Platform } from 'react-native'
 import * as Sentry from '@sentry/react-native'
-import type { LiveActivityState } from './live-activity-state'
+import { liveNotificationActions, type LiveActivityState, type LiveNotificationLabels } from './live-activity-state'
 import { getWidgetBridge } from '../../modules/widget-bridge'
 
 const NOTIF_ID = 'live-session'
@@ -19,11 +21,10 @@ let active = false
 let workoutTitle = ''
 let lastState: LiveActivityState | null = null
 
-/** Etiquetas localizadas para el botón de acción de la notificación Android. */
-export interface LiveSessionLabels {
-  work: string
-  rest: string
-  transition: string
+/** Etiquetas localizadas de la notificación Android. */
+export interface LiveSessionLabels extends LiveNotificationLabels {
+  /** Línea pequeña de cabecera: deja claro qué hace el servicio mientras corre. */
+  inProgress: string
 }
 let labels: LiveSessionLabels | null = null
 
@@ -37,6 +38,7 @@ export function setLiveSessionActionHandler(handler: (() => void) | null): void 
 /** Llamado desde los listeners de notifee en index.js al pulsar un botón. */
 export function dispatchLiveSessionAction(pressId: string): void {
   if (pressId === 'live-next' && active) actionHandler?.()
+  else if (pressId === 'live-stop') void stopFromNotification()
 }
 
 /** true si el timer en vivo gestiona el aviso de fin de descanso (Android). */
@@ -73,11 +75,7 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
     visibility: AndroidVisibility.PUBLIC,
   })
   const resting = state.phase === 'rest' && !!state.restEndsAt
-  const actionTitle = !labels
-    ? null
-    : state.phase === 'rest' ? labels.rest
-    : state.setTotal > 0 ? labels.work
-    : labels.transition
+  const actions = liveNotificationActions(state, labels)
   await notifee.displayNotification({
     id: NOTIF_ID,
     title: workoutTitle,
@@ -95,21 +93,24 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
       foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_HEALTH],
       ongoing: true,
       onlyAlertOnce: true,
+      ...(labels ? { subText: labels.inProgress } : {}),
       // Silueta de marca (status bar) en vez del círculo genérico; logo a color como large icon
       smallIcon: 'notification_icon',
       largeIcon: 'ic_launcher',
-      // Mostrar contenido + acción "saltar" en la pantalla de bloqueo
+      // Mostrar contenido + acciones en la pantalla de bloqueo
       visibility: AndroidVisibility.PUBLIC,
       // Lime de marca: tinta icono/acentos; colorized pinta el fondo (estilo
       // notificación de música) en los launchers que lo soportan
       color: '#a3e635',
       colorized: true,
-      ...(state.phase === 'work' && state.setTotal > 0
+      // El progreso de series se ve también durante el descanso: es lo que el
+      // usuario mira con el móvil bloqueado
+      ...(state.setTotal > 0
         ? { progress: { max: state.setTotal, current: state.setIndex } }
         : {}),
       pressAction: { id: 'default', launchActivity: 'default' },
-      ...(actionTitle
-        ? { actions: [{ title: actionTitle, pressAction: { id: 'live-next' } }] }
+      ...(actions.length
+        ? { actions: actions.map((a) => ({ title: a.title, pressAction: { id: a.id } })) }
         : {}),
       ...(resting
         ? { showChronometer: true, chronometerDirection: 'down' as const, timestamp: state.restEndsAt! }
@@ -157,6 +158,12 @@ export async function updateLiveRest(restEndsAt: number): Promise<void> {
   await updateLiveSession({ ...lastState, phase: 'rest', restEndsAt })
 }
 
+async function removeAndroidNotification(): Promise<void> {
+  const notifee = await getNotifee()
+  await notifee?.stopForegroundService()
+  await notifee?.cancelNotification(NOTIF_ID)
+}
+
 export async function endLiveSession(): Promise<void> {
   try {
     if (!active) return
@@ -166,10 +173,26 @@ export async function endLiveSession(): Promise<void> {
     if (Platform.OS === 'ios') {
       getWidgetBridge()?.endActivity()
     } else if (Platform.OS === 'android') {
-      const notifee = await getNotifee()
-      await notifee?.stopForegroundService()
-      await notifee?.cancelNotification(NOTIF_ID)
+      await removeAndroidNotification()
     }
+  } catch (e) {
+    Sentry.captureException(e)
+  }
+}
+
+/**
+ * Botón «detener»: para el foreground service y quita la notificación. El
+ * entreno sigue abierto en la app; con `active` a false los updates siguientes
+ * no la vuelven a pintar y RestScreen recupera su aviso puntual de fin de
+ * descanso. Limpia aunque `active` ya sea false (proceso recreado en segundo
+ * plano), que es justo cuando endLiveSession no haría nada.
+ */
+async function stopFromNotification(): Promise<void> {
+  try {
+    active = false
+    lastState = null
+    labels = null
+    if (Platform.OS === 'android') await removeAndroidNotification()
   } catch (e) {
     Sentry.captureException(e)
   }
