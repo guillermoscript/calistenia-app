@@ -108,7 +108,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, followersCount, onSele
       {/* Cover image */}
       {program.cover_image_url && (
         <div className="-mx-5 -mt-5 mb-4 h-36 rounded-t-xl overflow-hidden bg-muted">
-          <img src={program.cover_image_url} alt={program.name} className="w-full h-full object-cover" />
+          <img src={program.cover_image_url} alt={program.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         </div>
       )}
 

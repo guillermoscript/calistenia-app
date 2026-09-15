@@ -18,6 +18,7 @@ import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import ProgramProgressBar from '../components/programs/ProgramProgressBar'
+import { ProgramCover } from '../components/programs/ProgramCover'
 import AutoProgressToggle from '../components/programs/AutoProgressToggle'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
@@ -232,6 +233,9 @@ export default function ProgramDetailPage({
         // porque el campo es un `json` `{ es, en }` y pintarlo tal cual daría
         // «[object Object]».
         instructions: localize(progRecord.instructions, locale),
+        // Solo el nombre del fichero: la URL la monta `ProgramCover` con el
+        // tamaño que necesita cada sitio (banner o visor).
+        cover_image: progRecord.cover_image || undefined,
       }
       setProgram(meta)
 
@@ -539,6 +543,8 @@ export default function ProgramDetailPage({
         <ArrowLeftIcon className="size-4" />
         <span className="font-mono text-[11px] tracking-widest uppercase">{t('programDetail.backToPrograms')}</span>
       </button>
+
+      <ProgramCover program={program} />
 
       {/* Hero section */}
       <div className="mb-10">

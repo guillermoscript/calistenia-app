@@ -16,6 +16,7 @@ import { Button } from '../components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
 import { ArrowLeftIcon } from '../components/icons/nav-icons'
+import ImageLightbox from '../components/ImageLightbox'
 import type { Priority } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
@@ -202,6 +203,7 @@ export default function ExerciseDetailPage() {
   const [loading, setLoading] = useState(true)
   const [imageIndex, setImageIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('descripcion')
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
   const { getChainForExercise, loading: progressionsLoading } = useProgressions()
 
   // #636 §4: la ficha de ejercicio no emitía nada, así que no se sabía qué
@@ -461,13 +463,18 @@ export default function ExerciseDetailPage() {
         {/* Media - shown on right on desktop */}
         <div className="md:w-[320px] shrink-0">
           {sequenceUrl ? (
-            <div className="rounded-xl overflow-hidden bg-muted/30 border border-border/40">
+            <button
+              type="button"
+              onClick={() => setLightbox({ src: sequenceUrl, alt: `${l(exercise.name)} — secuencia` })}
+              aria-label={t('common.viewFullscreen')}
+              className="block w-full cursor-zoom-in rounded-xl overflow-hidden bg-muted/30 border border-border/40 transition-colors hover:border-lime-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60"
+            >
               <img
                 src={sequenceUrl}
                 alt={`${l(exercise.name)} — secuencia`}
                 className="w-full object-contain"
               />
-            </div>
+            </button>
           ) : hasImages ? (
             <div className="relative rounded-xl overflow-hidden bg-muted">
               <img
@@ -538,6 +545,8 @@ export default function ExerciseDetailPage() {
         </div>
       </div>
 
+      <ImageLightbox src={lightbox?.src ?? null} alt={lightbox?.alt ?? ''} onClose={() => setLightbox(null)} />
+
       {/* ── Tabs section ─────────────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="bg-muted/80 border border-border p-1 gap-1 mb-6">
@@ -578,13 +587,18 @@ export default function ExerciseDetailPage() {
         {/* Muscles tab */}
         <TabsContent value="musculos">
           {musclesUrl && (
-            <div className="rounded-xl overflow-hidden bg-muted/30 border border-border/40 mb-4">
+            <button
+              type="button"
+              onClick={() => setLightbox({ src: musclesUrl, alt: `${l(exercise.name)} — músculos trabajados` })}
+              aria-label={t('common.viewFullscreen')}
+              className="block w-full cursor-zoom-in rounded-xl overflow-hidden bg-muted/30 border border-border/40 mb-4 transition-colors hover:border-lime-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60"
+            >
               <img
                 src={musclesUrl}
                 alt={`${l(exercise.name)} — músculos trabajados`}
                 className="w-full max-h-[420px] object-contain mx-auto"
               />
-            </div>
+            </button>
           )}
           <div className="rounded-xl bg-muted/60 p-6">
             <div className="flex flex-wrap gap-3">
