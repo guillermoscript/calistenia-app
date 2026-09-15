@@ -353,3 +353,52 @@ Apelar adjuntando el vídeo de la sección 5 y la correspondencia
 permiso → función → pantalla de las secciones 2 y 4. Los 5 permisos de salud
 restantes tienen todos una pantalla que los muestra; los dos tipos de FGS son
 los dos únicos servicios que la app arranca.
+
+---
+
+## 9. Sexto rechazo (envío 16, 2026-09-15, vc41): fuera el FGS `health`
+
+Mismos dos problemas que el envío 14 (2026-09-12), contra el mismo vc41:
+
+- «Tu experiencia o vídeo en la aplicación no coinciden con Health - Health
+  Data Sync» (uso declarado de forma incorrecta).
+- «Los usuarios no perciben la utilización de servicios en primer plano cuando
+  realizan Health - Health Data Sync» (el usuario no inicia ni percibe la
+  función).
+
+La propia página del problema pide «retira el uso de FOREGROUND_SERVICE en los
+casos en que no sea necesario». Y aquí no lo es: el cronómetro de la
+notificación lo pinta el sistema, la sesión va por timestamps y el fin de
+descanso se avisa con una notificación programada que salta con el proceso
+congelado. **Decisión: la notificación del entreno deja de ser foreground
+service** (plan B de la memoria del quinto rechazo).
+
+Cambios en vc42:
+
+- `live-session.ts`: sin `asForegroundService` ni `foregroundServiceTypes`; sin
+  `stopForegroundService` (el service de notifee es compartido con cardio).
+- `RestScreen.tsx`: programa SIEMPRE el aviso de fin de descanso (antes lo
+  saltaba en Android porque el FGS mantenía vivo el JS).
+- `app.json`: fuera `FOREGROUND_SERVICE_HEALTH` (y además bloqueado) y
+  `HIGH_SAMPLING_RATE_SENSORS`, que solo existía como prerrequisito del tipo
+  `health`.
+- Plugin de notifee: el service declara solo `location`.
+- `build:aab` falla si algún service lleva `health` (bit `0x100`) o `dataSync`.
+
+Qué se pierde: con el móvil bloqueado durante un ejercicio por tiempo, los
+pitidos pueden no sonar si Android congela la app (el descanso sí avisa). En
+Android 14+ la notificación se puede deslizar; vuelve con el siguiente cambio
+de serie.
+
+### Runbook vc42
+
+1. Subir vc42 a los **cuatro** tracks (internal, alpha, beta, production): el
+   formulario de FGS se construye con la unión de los bundles activos, y
+   vc39/vc40/vc41 siguen pidiendo `FOREGROUND_SERVICE_HEALTH`.
+2. App content → Permisos de servicios en primer plano: **desmarcar todas las
+   tareas de HEALTH** (la sección desaparece y Guardar se habilita). Queda solo
+   LOCATION. Si HEALTH sigue listado en «usa sin declarar», algún track sigue
+   con un bundle viejo.
+3. Revisar la ficha: el bloque «Entrena con el móvil en el bolsillo» sigue
+   siendo cierto (no promete nada del servicio).
+4. Resumen de publicación → Enviar a revisión.

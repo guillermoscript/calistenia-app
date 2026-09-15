@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
 import { scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
-import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
+import { updateLiveRest } from '@/lib/live-session'
 import { restCues } from '@/lib/training-cues'
 import { RestPanel } from '@/components/training/RestPanel'
 import type { Step } from '@/components/session/types'
@@ -70,9 +70,9 @@ export function RestScreen({
   }, [])
 
   const scheduleEnd = useCallback((endAt: number) => {
-    // En Android nativo el cronómetro de la notificación persistente ya avisa del fin
-    // del descanso — la puntual sería redundante.
-    if (liveSessionHandlesRest()) return
+    // También en Android: la notificación en vivo ya no es foreground service, así que
+    // con la app en segundo plano el sistema puede congelar el JS y los avisos sonoros
+    // no llegarían. La programada salta aunque el proceso esté parado.
     void scheduleRestEnd(
       Math.ceil((endAt - Date.now()) / 1000),
       t('notify.letsGo'),
