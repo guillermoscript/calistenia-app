@@ -3,6 +3,7 @@ import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from
 import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
+import { NAVIGATION_DENYLIST } from './lib/sw-navigation'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -23,28 +24,10 @@ cleanupOutdatedCaches()
 // nueva después. Quien decide cuándo ocurre ese relevo es `main.tsx`.
 //
 // Va DESPUÉS de `precacheAndRoute` a propósito (workbox resuelve en orden de
-// registro): las URLs que sí están precacheadas —`/privacy.html`,
-// `/delete-account.html`, `/oauth-bridge.html`— las sigue atendiendo el
-// precache con su contenido real, no con el shell.
-const NAVIGATION_DENYLIST = [
-  // PocketBase: API y panel de admin.
-  /^\/api\//,
-  /^\/_\//,
-  // Servidor de IA (chat MCP).
-  /^\/mcp(\/|$)/,
-  // Blog pre-renderizado. `scripts/prerender-blog.mjs` corre DESPUÉS de
-  // `vite build`, así que su HTML no entra en el manifiesto del precache:
-  // servir el shell aquí se cargaría el prerender.
-  /^\/blog(\/|$)/,
-  // Generados por ese mismo script, y por tanto tampoco precacheados.
-  /^\/sitemap\.xml$/,
-  /^\/robots\.txt$/,
-  // Assets con hash del build.
-  /^\/assets\//,
-  // Cualquier cosa con extensión (iconos, media de ejercicios, las páginas
-  // sueltas de `public/`): nunca es una ruta de la SPA.
-  /\/[^/?]+\.[^/?]+$/,
-]
+// registro): `/privacy.html` o `/oauth-bridge.html` SIN query los atiende el
+// precache con su contenido real. CON query (`/oauth-bridge.html?code=…`) el
+// precache ya no casa y la navegación llega aquí: por eso la denylist
+// (`lib/sw-navigation.ts`) tiene que excluir los ficheros lleven query o no.
 
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL('index.html'), {
