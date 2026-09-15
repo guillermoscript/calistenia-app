@@ -77,8 +77,6 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "android.permission.FOREGROUND_SERVICE_HEALTH",
-        "android.permission.HIGH_SAMPLING_RATE_SENSORS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
@@ -87,7 +85,8 @@
         "android.permission.health.READ_BODY_FAT"
       ],
       "blockedPermissions": [
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.FOREGROUND_SERVICE_HEALTH"
       ]
     },
     "web": {

@@ -136,12 +136,17 @@ function verify(aabPath) {
     if (fgsExtra.length) fail(`el AAB declara FGS que NO están en app.json: ${fgsExtra.join(', ')}`)
     if (fgsMissing.length) fail(`faltan en el AAB permisos FGS de app.json: ${fgsMissing.join(', ')}`)
   }
-  // bundletool vuelca el atributo como máscara hex (0x00000108 = health|location);
-  // dataSync es el bit 0x1.
+  // bundletool vuelca el atributo como máscara hex (0x00000008 = location).
+  // Tipos que Play ya rechazó para el entreno: dataSync (bit 0x1, vc35) y
+  // health (bit 0x100, envíos 14 y 16 con vc41).
   const fgsTypes = [...manifest.matchAll(/android:foregroundServiceType="([^"]+)"/g)].map((m) => m[1])
-  const usesDataSync = (t) => (/^0x[0-9a-f]+$/i.test(t) ? (parseInt(t, 16) & 0x1) !== 0 : t.split('|').includes('dataSync'))
-  if (fgsTypes.some(usesDataSync)) {
-    fail(`algún <service> sigue con foregroundServiceType dataSync (${fgsTypes.join(' / ')}) — Play lo rechazó en vc35`)
+  const REJECTED_FGS = [['dataSync', 0x1], ['health', 0x100]]
+  const rejectedIn = (t) => REJECTED_FGS
+    .filter(([name, bit]) => (/^0x[0-9a-f]+$/i.test(t) ? (parseInt(t, 16) & bit) !== 0 : t.split('|').includes(name)))
+    .map(([name]) => name)
+  const rejectedFgs = [...new Set(fgsTypes.flatMap(rejectedIn))]
+  if (rejectedFgs.length) {
+    fail(`algún <service> sigue con foregroundServiceType ${rejectedFgs.join(' + ')} (${fgsTypes.join(' / ')}) — Play ya lo rechazó`)
   } else {
     ok(`foregroundServiceType de los services: ${fgsTypes.join(' / ') || '(ninguno)'}`)
   }

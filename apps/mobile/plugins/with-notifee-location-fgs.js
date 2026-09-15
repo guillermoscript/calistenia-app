@@ -1,21 +1,15 @@
 /**
  * El service de notifee (app.notifee.core.ForegroundService) es ÚNICO y
- * compartido por todas las notificaciones FGS (entreno y cardio). Declaramos
- * en el manifest el SUPERCONJUNTO de tipos que usamos en runtime:
- *   - "health"    → notificación del entreno en curso (live-session): cronómetro
- *                   de series/descansos que sigue vivo con la app en segundo
- *                   plano. Es el tipo que Android reserva a "exercise trackers"
- *                   (categoría fitness). Exige FOREGROUND_SERVICE_HEALTH y, como
- *                   prerrequisito de runtime, declarar HIGH_SAMPLING_RATE_SENSORS
- *                   (permiso normal, sin diálogo) — ambos en app.json. Antes era
- *                   "dataSync", que Play rechazó (vc35): ese tipo es para subir/
- *                   bajar datos y no casa con un cronómetro de entreno.
+ * compartido por todas las notificaciones FGS. Hoy solo lo usa cardio:
  *   - "location"  → notificación de cardio (GPS en background; Android 14+ lo exige).
- * Cada notificación elige su tipo concreto con `foregroundServiceTypes`
- * (ver live-session.ts y cardio-live.ts); ese tipo DEBE ser subconjunto de lo
- * declarado acá. Antes era "shortService|location": como live-session NO
- * especificaba tipo, notifee arrancaba el FGS con el superconjunto (incl.
- * location) y en targetSDK 36 eso crasheaba sin permiso de ubicación.
+ * La notificación del entreno (live-session.ts) ya NO es foreground service:
+ * fue "dataSync" hasta vc36 (Play lo rechazó en vc35) y "health" de vc37 a
+ * vc41 (rechazado en los envíos 14 y 16: «Health Data Sync» no perceptible).
+ * No vuelvas a añadir "health" sin leer antes
+ * docs/health-connect-declaracion-play.md §9.
+ * El tipo que pide cada notificación con `foregroundServiceTypes` (ver
+ * cardio-live.ts) DEBE ser subconjunto de lo declarado acá: si una notificación
+ * no especifica tipo, notifee arranca con el superconjunto del manifest.
  */
 const { withAndroidManifest, withProjectBuildGradle } = require('expo/config-plugins')
 
@@ -66,7 +60,7 @@ function withNotifeeFgsManifest(config) {
       service = { $: { 'android:name': SERVICE_NAME, 'android:exported': 'false' } }
       application.service.push(service)
     }
-    service.$['android:foregroundServiceType'] = 'health|location'
+    service.$['android:foregroundServiceType'] = 'location'
     service.$['tools:replace'] = 'android:foregroundServiceType'
     return cfg
   })
