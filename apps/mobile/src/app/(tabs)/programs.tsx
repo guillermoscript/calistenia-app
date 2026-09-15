@@ -265,6 +265,8 @@ const ProgramRow = memo(function ProgramRow({ program, isActive, onOpen }: {
             source={{ uri: programCoverUrl(program, '800x0') ?? program.cover_image_url }}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
+            // Tercio superior, como la web: el recorte centrado cortaba cabezas.
+            contentPosition={{ top: '25%', left: '50%' }}
             transition={150}
             cachePolicy="memory-disk"
             recyclingKey={program.id}
