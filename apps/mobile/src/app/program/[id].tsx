@@ -248,6 +248,7 @@ export default function ProgramDetailScreen() {
                   source={{ uri: programCoverUrl(program, '800x0') ?? program.cover_image_url }}
                   style={{ width: '100%', aspectRatio: 16 / 9 }}
                   contentFit="cover"
+                  contentPosition={{ top: '25%', left: '50%' }}
                   transition={150}
                   cachePolicy="memory-disk"
                   recyclingKey={program.id}

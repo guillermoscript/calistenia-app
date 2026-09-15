@@ -16,7 +16,7 @@ import { Button } from '../components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
 import { ArrowLeftIcon } from '../components/icons/nav-icons'
-import ImageLightbox from '../components/ImageLightbox'
+import ImageLightbox, { ZoomHint } from '../components/ImageLightbox'
 import type { Priority } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
@@ -467,13 +467,14 @@ export default function ExerciseDetailPage() {
               type="button"
               onClick={() => setLightbox({ src: sequenceUrl, alt: `${l(exercise.name)} — secuencia` })}
               aria-label={t('common.viewFullscreen')}
-              className="block w-full cursor-zoom-in rounded-xl overflow-hidden bg-muted/30 border border-border/40 transition-colors hover:border-lime-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60"
+              className="relative block w-full cursor-zoom-in rounded-xl overflow-hidden bg-muted/30 border border-border/40 transition-colors hover:border-lime-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60"
             >
               <img
                 src={sequenceUrl}
                 alt={`${l(exercise.name)} — secuencia`}
                 className="w-full object-contain"
               />
+              <ZoomHint />
             </button>
           ) : hasImages ? (
             <div className="relative rounded-xl overflow-hidden bg-muted">
@@ -591,13 +592,14 @@ export default function ExerciseDetailPage() {
               type="button"
               onClick={() => setLightbox({ src: musclesUrl, alt: `${l(exercise.name)} — músculos trabajados` })}
               aria-label={t('common.viewFullscreen')}
-              className="block w-full cursor-zoom-in rounded-xl overflow-hidden bg-muted/30 border border-border/40 mb-4 transition-colors hover:border-lime-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60"
+              className="relative block w-full cursor-zoom-in rounded-xl overflow-hidden bg-muted/30 border border-border/40 mb-4 transition-colors hover:border-lime-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60"
             >
               <img
                 src={musclesUrl}
                 alt={`${l(exercise.name)} — músculos trabajados`}
                 className="w-full max-h-[420px] object-contain mx-auto"
               />
+              <ZoomHint />
             </button>
           )}
           <div className="rounded-xl bg-muted/60 p-6">

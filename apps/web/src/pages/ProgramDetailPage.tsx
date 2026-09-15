@@ -564,7 +564,8 @@ export default function ProgramDetailPage({
         {/* Crédito del remix y prueba social (#620). Las dos piezas se callan
             solas cuando no hay dato, así que el bloque desaparece entero en un
             programa original que nadie sigue todavía. */}
-        {(program.forked_from_name || followersCount) && (
+        {/* `!!`: con 0 seguidores `a || 0` vale 0 y React pinta un «0» suelto. */}
+        {(!!program.forked_from_name || !!followersCount) && (
           <div
             className="flex flex-wrap items-center gap-x-4 gap-y-1.5 max-w-2xl mb-6 motion-safe:animate-fade-in"
             style={{ animationDelay: '110ms', animationFillMode: 'both' }}
