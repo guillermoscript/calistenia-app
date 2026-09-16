@@ -56,6 +56,12 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Sin esto la acción instala su lista por defecto, que incluye el paquete
+          # obsoleto `tools`: Google lo retiró del repositorio y sdkmanager sale con
+          # «Failed to find package 'tools'» → exit 1. Rompió el build del tag
+          # mobile-v1.13.2 (run 34996719568) sin tocar nada del proyecto.
+          packages: 'platform-tools'
 
       - name: Cache Gradle dependencies & build cache
         uses: actions/cache@v4
