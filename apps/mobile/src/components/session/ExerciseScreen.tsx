@@ -239,7 +239,9 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
       )}
 
       {/* Timer para ejercicios de tiempo */}
-      {exercise.isTimer && <ExerciseTimer initialSeconds={exercise.timerSeconds || 30} />}
+      {exercise.isTimer && (
+        <ExerciseTimer initialSeconds={exercise.timerSeconds || 30} exerciseName={exercise.name} />
+      )}
 
       <View className="flex-1" />
 

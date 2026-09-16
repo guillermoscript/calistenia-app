@@ -8,22 +8,22 @@
  *
  * El aviso de fin de descanso tiene DOS vías y solo puede sonar una: con la app
  * delante lo toca `restCues` y con la app detrás lo da la alarma del sistema
- * (`rest-alarm`), que es la única que sigue viva cuando Android congela el proceso.
- * Quién manda en cada momento lo decide `rest-alarm-policy`.
+ * (`training-alarm`), que es la única que sigue viva cuando Android congela el
+ * proceso. De elegir cuál manda se encarga `useTrainingAlarm` / `useTrainingCues`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { View, AppState, type AppStateStatus } from 'react-native'
+import { View, AppState } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
-import { cancelRestAlarm, scheduleRestAlarm } from '@/lib/rest-alarm'
-import { restAlarmAction, shouldCancelOnLeave } from '@/lib/rest-alarm-policy'
+import { cancelTrainingAlarm } from '@/lib/training-alarm'
+import { useTrainingAlarm, useTrainingCues } from '@/lib/use-training-alarm'
 import { updateLiveRest } from '@/lib/live-session'
 import { restCues } from '@/lib/training-cues'
 import { RestPanel } from '@/components/training/RestPanel'
 import type { Step } from '@/components/session/types'
 import { useCountdown } from '@calistenia/core/hooks/useCountdown'
-import { adjustCountdown, type CountdownWindow, type TrainingCue } from '@calistenia/core/lib/countdown'
+import { adjustCountdown, type CountdownWindow } from '@calistenia/core/lib/countdown'
 
 /** Los mismos ajustes de siempre. */
 const ADJUST_DELTAS = [-15, 15, 30] as const
@@ -62,66 +62,28 @@ export function RestScreen({
   }))
   const nextStepRef = useRef(nextStep)
   nextStepRef.current = nextStep
-  /** Fin del descanso en curso, legible desde callbacks estables. */
-  const endAtRef = useRef(restWindow.endAt)
-  endAtRef.current = restWindow.endAt
-  /** ¿Hay alarma del sistema programada ahora mismo? */
-  const armedRef = useRef(false)
 
-  /** Texto de la notificación de fin de descanso. */
-  const notifBody = useCallback(() => {
+  /** Texto de la alarma de fin de descanso, leído en el momento de armarla. */
+  const alarmText = useCallback(() => {
     const step = nextStepRef.current
-    return step
-      ? `${step.exercise.name} — ${t('notify.setOf', { set: step.setNumber, total: step.totalSets })}`
-      : t('notify.prepareForNext')
+    return {
+      title: t('notify.letsGo'),
+      body: step
+        ? `${step.exercise.name} — ${t('notify.setOf', { set: step.setNumber, total: step.totalSets })}`
+        : t('notify.prepareForNext'),
+    }
     // `t` cambia de identidad al cambiar de idioma; no queremos reprogramar por eso.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /**
-   * Arma o desarma la alarma del sistema según dónde esté la app: delante suena el
-   * «vamos» de `restCues`, detrás (o con el proceso ya congelado) solo puede sonar
-   * el sistema. Nunca las dos — la política vive en `rest-alarm-policy`.
-   */
-  const syncAlarm = useCallback((state: AppStateStatus = AppState.currentState) => {
-    const action = restAlarmAction(
-      state === 'active',
-      endAtRef.current - Date.now(),
-      armedRef.current,
-    )
-    if (action === 'arm') {
-      armedRef.current = true
-      void scheduleRestAlarm(endAtRef.current, t('notify.letsGo'), notifBody())
-    } else if (action === 'disarm') {
-      armedRef.current = false
-      void cancelRestAlarm()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifBody])
+  const cues = useTrainingCues(restCues)
+  useTrainingAlarm({ kind: 'rest', endAt: restWindow.endAt, text: alarmText })
 
   useEffect(() => {
     restCues('start')
-    syncAlarm()
     updateLiveRest(restWindow.endAt)
-    return () => {
-      // Al salir solo se cancela si de verdad queda descanso (salto manual, cerrar la
-      // sesión). La que está venciendo se deja sonar: con la app detrás es el único
-      // aviso que hay, y cancelarla aquí era justo lo que lo silenciaba.
-      if (armedRef.current && shouldCancelOnLeave(endAtRef.current - Date.now())) {
-        void cancelRestAlarm()
-      }
-    }
     // Solo al montar: SessionView remonta esta pantalla en cada descanso (`key`).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  /**
-   * El «vamos» de la app solo si está delante. Detrás lo da la alarma del sistema
-   * y sonarían los dos (o, con el proceso congelado, ninguno de los dos aquí).
-   */
-  const handleCue = useCallback((cue: TrainingCue) => {
-    if (cue === 'complete' && AppState.currentState !== 'active') return
-    restCues(cue)
   }, [])
 
   // El contador se declara más abajo, así que el segundero viaja por una ref:
@@ -132,23 +94,22 @@ export function RestScreen({
 
   /** Saltar a mano desarma la alarma: ya no hay nada que anunciar. */
   const handleSkip = useCallback(() => {
-    armedRef.current = false
-    void cancelRestAlarm()
+    void cancelTrainingAlarm('rest')
     onManualSkipRef.current?.(secondsLeftRef.current)
     onSkip()
   }, [onSkip])
 
   /**
    * Terminar de forma natural NO la desarma: la alarma vence en ese mismo instante
-   * y cancelarla sería una carrera con el sistema. De ella se encarga la limpieza
-   * al desmontar, que es lo que ocurre justo después.
+   * y cancelarla sería una carrera con el sistema — con la app detrás es justo la
+   * que tiene que sonar. De eso se encarga `useTrainingAlarm`.
    */
   const handleComplete = useCallback(() => { onSkip() }, [onSkip])
 
   const { secondsLeft, progress, resync } = useCountdown({
     endAt: restWindow.endAt,
     totalSeconds: restWindow.totalSeconds,
-    onCue: handleCue,
+    onCue: cues,
     onComplete: handleComplete,
     // Estable a propósito: ajustar el descanso alarga la cuenta, no la rearma, así que
     // el aviso de los 10 s sigue sonando una sola vez como hasta ahora.
@@ -156,15 +117,14 @@ export function RestScreen({
   })
   secondsLeftRef.current = secondsLeft
 
-  // Irse a segundo plano arma la alarma del sistema; volver la desarma y mira el
-  // reloj ya, sin esperar al siguiente intervalo.
+  // Volver de segundo plano: mirar el reloj ya, sin esperar al siguiente intervalo.
+  // (De armar y desarmar la alarma se encarga `useTrainingAlarm`.)
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') resync()
-      syncAlarm(state)
     })
     return () => { sub.remove() }
-  }, [resync, syncAlarm])
+  }, [resync])
 
   const windowRef = useRef(restWindow)
   windowRef.current = restWindow
@@ -174,18 +134,10 @@ export function RestScreen({
     // updater se ejecuta dos veces en modo estricto.
     const next = adjustCountdown(windowRef.current, delta, Date.now())
     setRestWindow(next)
-    // La ref antes de `syncAlarm`: ajustar es una acción de la app en primer plano,
-    // así que lo normal es que no haya alarma que rearmar, pero el nuevo `endAt`
-    // manda igual.
-    endAtRef.current = next.endAt
-    if (armedRef.current) {
-      armedRef.current = false
-      void cancelRestAlarm()
-    }
-    syncAlarm()
+    // La alarma la rearma `useTrainingAlarm` al ver el `endAt` nuevo.
     updateLiveRest(next.endAt)
     if (exerciseId && onAdjust) onAdjust(exerciseId, next.totalSeconds)
-  }, [exerciseId, onAdjust, syncAlarm])
+  }, [exerciseId, onAdjust])
 
   return (
     <View className="flex-1 items-center justify-center">
