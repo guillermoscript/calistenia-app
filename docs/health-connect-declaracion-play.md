@@ -379,14 +379,25 @@ Cambios en vc42:
   `stopForegroundService` (el service de notifee es compartido con cardio).
 - `RestScreen.tsx`: programa SIEMPRE el aviso de fin de descanso (antes lo
   saltaba en Android porque el FGS mantenía vivo el JS).
+  **Corregido antes de subir vc42**: aquella notificación no sonaba. Iba por
+  `expo-notifications`, que sin `SCHEDULE_EXACT_ALARM` concedida —y desde
+  Android 14 no se concede sola— cae en `setAndAllowWhileIdle`: inexacta y
+  limitada a una cada ~9 min en Doze, o sea minutos tarde para un descanso de
+  90 s. Además la limpieza al desmontar la cancelaba justo cuando vencía. Ahora
+  la programa notifee con `AlarmType.SET_ALARM_CLOCK` (exacta, exenta de Doze y
+  sin permiso que pedir) en su propio canal con sonido, y solo se arma mientras
+  la app NO está en primer plano — ver `src/lib/training-alarm.ts`. El ejercicio
+  **por tiempo** usa la misma alarma (`ExerciseTimer`), así que también avisa con
+  la pantalla bloqueada.
 - `app.json`: fuera `FOREGROUND_SERVICE_HEALTH` (y además bloqueado) y
   `HIGH_SAMPLING_RATE_SENSORS`, que solo existía como prerrequisito del tipo
   `health`.
 - Plugin de notifee: el service declara solo `location`.
 - `build:aab` falla si algún service lleva `health` (bit `0x100`) o `dataSync`.
 
-Qué se pierde: con el móvil bloqueado durante un ejercicio por tiempo, los
-pitidos pueden no sonar si Android congela la app (el descanso sí avisa). En
+Qué se pierde: con el móvil bloqueado, los pitidos intermedios (ticks, aviso de
+los 10 s) no suenan si Android congela la app; el aviso FINAL sí, que es el que
+importa, porque lo da la alarma del sistema (descanso y ejercicio por tiempo). En
 Android 14+ la notificación se puede deslizar; vuelve con el siguiente cambio
 de serie.
 
