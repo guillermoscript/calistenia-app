@@ -25,6 +25,18 @@ const SOUNDS = {
     [660, 0.12, 0.18, 0.95, 'square'],
     [880, 0.24, 0.3, 1.0, 'square'],
   ],
+  // Sonido del CANAL Android de fin de descanso (res/raw, vía el plugin de
+  // expo-notifications en app.json). Es el "get-ready" repetido: con la app
+  // detrás compite con la calle y una sola pasada de medio segundo se pierde.
+  // Nombre con guion BAJO — el plugin rechaza los guiones al copiar a res/raw.
+  rest_end: [
+    [440, 0, 0.18, 0.9, 'square'],
+    [660, 0.12, 0.18, 0.95, 'square'],
+    [880, 0.24, 0.3, 1.0, 'square'],
+    [440, 0.62, 0.18, 0.9, 'square'],
+    [660, 0.74, 0.18, 0.95, 'square'],
+    [880, 0.86, 0.4, 1.0, 'square'],
+  ],
   'countdown-tick': [[1000, 0, 0.1, 0.8, 'square']],
   'warning': [
     [600, 0, 0.15, 0.75, 'triangle'],

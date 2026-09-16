@@ -2,23 +2,28 @@
  * Descanso de la sesión de fuerza.
  *
  * Ya no cuenta ni dibuja: la cuenta la lleva `useCountdown` y los píxeles `RestPanel`.
- * Lo que queda aquí es lo que de verdad es de la sesión — la notificación local de fin
- * de descanso, la notificación persistente en vivo, el ejercicio siguiente y el
- * descanso guardado por ejercicio. La batalla usa el mismo `RestPanel` sin heredar
- * nada de esto.
+ * Lo que queda aquí es lo que de verdad es de la sesión — el aviso de fin de descanso,
+ * la notificación persistente en vivo, el ejercicio siguiente y el descanso guardado
+ * por ejercicio. La batalla usa el mismo `RestPanel` sin heredar nada de esto.
+ *
+ * El aviso de fin de descanso tiene DOS vías y solo puede sonar una: con la app
+ * delante lo toca `restCues` y con la app detrás lo da la alarma del sistema
+ * (`rest-alarm`), que es la única que sigue viva cuando Android congela el proceso.
+ * Quién manda en cada momento lo decide `rest-alarm-policy`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { View, AppState } from 'react-native'
+import { View, AppState, type AppStateStatus } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
-import { scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
+import { cancelRestAlarm, scheduleRestAlarm } from '@/lib/rest-alarm'
+import { restAlarmAction, shouldCancelOnLeave } from '@/lib/rest-alarm-policy'
 import { updateLiveRest } from '@/lib/live-session'
 import { restCues } from '@/lib/training-cues'
 import { RestPanel } from '@/components/training/RestPanel'
 import type { Step } from '@/components/session/types'
 import { useCountdown } from '@calistenia/core/hooks/useCountdown'
-import { adjustCountdown, type CountdownWindow } from '@calistenia/core/lib/countdown'
+import { adjustCountdown, type CountdownWindow, type TrainingCue } from '@calistenia/core/lib/countdown'
 
 /** Los mismos ajustes de siempre. */
 const ADJUST_DELTAS = [-15, 15, 30] as const
@@ -55,9 +60,13 @@ export function RestScreen({
     endAt: Date.now() + initialSeconds * 1000,
     totalSeconds: initialSeconds,
   }))
-  const notifIdRef = useRef<string | null>(null)
   const nextStepRef = useRef(nextStep)
   nextStepRef.current = nextStep
+  /** Fin del descanso en curso, legible desde callbacks estables. */
+  const endAtRef = useRef(restWindow.endAt)
+  endAtRef.current = restWindow.endAt
+  /** ¿Hay alarma del sistema programada ahora mismo? */
+  const armedRef = useRef(false)
 
   /** Texto de la notificación de fin de descanso. */
   const notifBody = useCallback(() => {
@@ -69,25 +78,50 @@ export function RestScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const scheduleEnd = useCallback((endAt: number) => {
-    // También en Android: la notificación en vivo ya no es foreground service, así que
-    // con la app en segundo plano el sistema puede congelar el JS y los avisos sonoros
-    // no llegarían. La programada salta aunque el proceso esté parado.
-    void scheduleRestEnd(
-      Math.ceil((endAt - Date.now()) / 1000),
-      t('notify.letsGo'),
-      notifBody(),
-    ).then((id) => { notifIdRef.current = id })
+  /**
+   * Arma o desarma la alarma del sistema según dónde esté la app: delante suena el
+   * «vamos» de `restCues`, detrás (o con el proceso ya congelado) solo puede sonar
+   * el sistema. Nunca las dos — la política vive en `rest-alarm-policy`.
+   */
+  const syncAlarm = useCallback((state: AppStateStatus = AppState.currentState) => {
+    const action = restAlarmAction(
+      state === 'active',
+      endAtRef.current - Date.now(),
+      armedRef.current,
+    )
+    if (action === 'arm') {
+      armedRef.current = true
+      void scheduleRestAlarm(endAtRef.current, t('notify.letsGo'), notifBody())
+    } else if (action === 'disarm') {
+      armedRef.current = false
+      void cancelRestAlarm()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifBody])
 
   useEffect(() => {
     restCues('start')
-    scheduleEnd(restWindow.endAt)
+    syncAlarm()
     updateLiveRest(restWindow.endAt)
-    return () => { cancelScheduled(notifIdRef.current) }
+    return () => {
+      // Al salir solo se cancela si de verdad queda descanso (salto manual, cerrar la
+      // sesión). La que está venciendo se deja sonar: con la app detrás es el único
+      // aviso que hay, y cancelarla aquí era justo lo que lo silenciaba.
+      if (armedRef.current && shouldCancelOnLeave(endAtRef.current - Date.now())) {
+        void cancelRestAlarm()
+      }
+    }
     // Solo al montar: SessionView remonta esta pantalla en cada descanso (`key`).
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /**
+   * El «vamos» de la app solo si está delante. Detrás lo da la alarma del sistema
+   * y sonarían los dos (o, con el proceso congelado, ninguno de los dos aquí).
+   */
+  const handleCue = useCallback((cue: TrainingCue) => {
+    if (cue === 'complete' && AppState.currentState !== 'active') return
+    restCues(cue)
   }, [])
 
   // El contador se declara más abajo, así que el segundero viaja por una ref:
@@ -96,24 +130,25 @@ export function RestScreen({
   const onManualSkipRef = useRef(onManualSkip)
   onManualSkipRef.current = onManualSkip
 
-  /** Saltar a mano cancela la notificación programada; ya no hay nada que anunciar. */
+  /** Saltar a mano desarma la alarma: ya no hay nada que anunciar. */
   const handleSkip = useCallback(() => {
-    cancelScheduled(notifIdRef.current)
+    armedRef.current = false
+    void cancelRestAlarm()
     onManualSkipRef.current?.(secondsLeftRef.current)
     onSkip()
   }, [onSkip])
 
   /**
-   * Terminar de forma natural NO la cancela: la notificación vence en ese mismo
-   * instante y cancelarla sería una carrera con el sistema. De ella se encarga la
-   * limpieza al desmontar, que es lo que ocurre justo después.
+   * Terminar de forma natural NO la desarma: la alarma vence en ese mismo instante
+   * y cancelarla sería una carrera con el sistema. De ella se encarga la limpieza
+   * al desmontar, que es lo que ocurre justo después.
    */
   const handleComplete = useCallback(() => { onSkip() }, [onSkip])
 
   const { secondsLeft, progress, resync } = useCountdown({
     endAt: restWindow.endAt,
     totalSeconds: restWindow.totalSeconds,
-    onCue: restCues,
+    onCue: handleCue,
     onComplete: handleComplete,
     // Estable a propósito: ajustar el descanso alarga la cuenta, no la rearma, así que
     // el aviso de los 10 s sigue sonando una sola vez como hasta ahora.
@@ -121,13 +156,15 @@ export function RestScreen({
   })
   secondsLeftRef.current = secondsLeft
 
-  // Volver de segundo plano: mirar el reloj ya, sin esperar al siguiente intervalo.
+  // Irse a segundo plano arma la alarma del sistema; volver la desarma y mira el
+  // reloj ya, sin esperar al siguiente intervalo.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') resync()
+      syncAlarm(state)
     })
     return () => { sub.remove() }
-  }, [resync])
+  }, [resync, syncAlarm])
 
   const windowRef = useRef(restWindow)
   windowRef.current = restWindow
@@ -137,11 +174,18 @@ export function RestScreen({
     // updater se ejecuta dos veces en modo estricto.
     const next = adjustCountdown(windowRef.current, delta, Date.now())
     setRestWindow(next)
-    cancelScheduled(notifIdRef.current)
-    scheduleEnd(next.endAt)
+    // La ref antes de `syncAlarm`: ajustar es una acción de la app en primer plano,
+    // así que lo normal es que no haya alarma que rearmar, pero el nuevo `endAt`
+    // manda igual.
+    endAtRef.current = next.endAt
+    if (armedRef.current) {
+      armedRef.current = false
+      void cancelRestAlarm()
+    }
+    syncAlarm()
     updateLiveRest(next.endAt)
     if (exerciseId && onAdjust) onAdjust(exerciseId, next.totalSeconds)
-  }, [exerciseId, onAdjust, scheduleEnd])
+  }, [exerciseId, onAdjust, syncAlarm])
 
   return (
     <View className="flex-1 items-center justify-center">

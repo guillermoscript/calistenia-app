@@ -151,6 +151,20 @@ function verify(aabPath) {
     ok(`foregroundServiceType de los services: ${fgsTypes.join(' / ') || '(ninguno)'}`)
   }
 
+  // 1e. Sonido del canal de fin de descanso. Si `rest_end.wav` no llega a
+  //     res/raw, Android crea el canal MUDO y el aviso del descanso con la app
+  //     en segundo plano no suena — y no da ningún error. Lo copia el plugin de
+  //     expo-notifications (`sounds` en app.json) durante el prebuild, así que un
+  //     android/ generado antes de declararlo se queda sin él en silencio.
+  const rawFiles = execSync(
+    `unzip -l ${JSON.stringify(aabPath)} 'base/res/raw/*' 2>/dev/null || true`,
+    { encoding: 'utf-8', shell: '/bin/bash' },
+  )
+  const hasRestSound = rawFiles.includes('rest_end.wav')
+  hasRestSound
+    ? ok('res/raw/rest_end.wav (sonido del fin de descanso)')
+    : fail('falta res/raw/rest_end.wav → el canal del descanso saldría mudo; ejecuta expo prebuild')
+
   // 2. Firma: tiene que ser la upload key registrada en Play.
   try {
     const cert = execSync(
