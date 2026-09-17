@@ -14,6 +14,7 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '@calistenia/core/types'
+import { programCoverUrl } from '@calistenia/core/lib/programCover'
 import { ShareIcon, PlusIcon, EditIcon, SearchIcon } from '../components/icons/nav-icons'
 import i18n from '../lib/i18n'
 import { shareProgram } from '../lib/share'
@@ -108,7 +109,17 @@ function ProgramCard({ program, isOwn, canEdit, isActive, followersCount, onSele
       {/* Cover image */}
       {program.cover_image_url && (
         <div className="-mx-5 -mt-5 mb-4 h-36 rounded-t-xl overflow-hidden bg-muted">
-          <img src={program.cover_image_url} alt={program.name} className="w-full h-full object-cover" />
+          {/* `srcSet`: la de 400 px basta a densidad 1, pero la tarjeta mide
+              ~360 px y a densidad 2-3 se veía blanda; el navegador elige. */}
+          <img
+            src={program.cover_image_url}
+            srcSet={`${program.cover_image_url} 400w, ${programCoverUrl(program, '800x0') ?? program.cover_image_url} 800w`}
+            sizes="(min-width: 768px) 360px, 100vw"
+            alt={program.name}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover object-[50%_25%]"
+          />
         </div>
       )}
 

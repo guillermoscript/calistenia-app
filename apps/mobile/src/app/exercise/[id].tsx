@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { View, ScrollView, Pressable, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ChevronRight, ExternalLink } from 'lucide-react-native'
@@ -8,7 +9,11 @@ import { ArrowLeft, ChevronRight, ExternalLink } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Kicker } from '@/components/ui/kicker'
+import { ImageViewer } from '@/components/ui/image-viewer'
 import { getCatalogExercise } from '@/lib/catalog'
+import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
+import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
 import { localize, type TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { getExerciseEquipment, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { getVariantsByLevel, getRelatedExercises, type VariantEntry } from '@calistenia/core/lib/variants'
@@ -51,6 +56,21 @@ export default function ExerciseDetailScreen() {
   const related = ex ? getRelatedExercises(ex.id, 6) : []
   const description = ex ? localize(ex.description as TranslatableField, locale) : ''
 
+  // Demo del movimiento y mapa de músculos del catálogo, con la misma
+  // resolución que la sesión (`components/session/ExerciseScreen.tsx`): las
+  // rutas del catálogo son relativas al origen y en el dispositivo hay que
+  // prefijarlas con el host.
+  const media = ex
+    ? getExerciseMedia(
+        {},
+        {
+          mediaBaseUrl: process.env.EXPO_PUBLIC_PB_URL || 'https://gym.guille.tech',
+          catalogRecord: { staticMedia: getCatalogStaticMedia(ex.id) },
+        },
+      )
+    : null
+  const [viewer, setViewer] = useState<{ uri: string; label: string } | null>(null)
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-row items-center gap-2 px-2 py-1">
@@ -67,6 +87,50 @@ export default function ExerciseDetailScreen() {
           <Text className="py-10 text-center text-muted-foreground">{t('common.noResults')}</Text>
         ) : (
           <>
+            {!!media?.sequence && (
+              <Pressable
+                onPress={() => setViewer({ uri: media.sequence!, label: localize(ex.name, locale) })}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={localize(ex.name, locale)}
+                accessibilityHint={t('common.viewFullscreen')}
+                className="overflow-hidden rounded-xl border border-border bg-card active:opacity-80"
+              >
+                <Image
+                  source={{ uri: media.sequence }}
+                  style={{ width: '100%', aspectRatio: 16 / 9 }}
+                  contentFit="contain"
+                  transition={150}
+                  cachePolicy="memory-disk"
+                  recyclingKey={`${ex.id}:sequence`}
+                />
+              </Pressable>
+            )}
+
+            {/* El mapa es vertical (≈1:2): a todo el ancho con su proporción
+                ocuparía más de una pantalla, así que va en una caja de alto fijo
+                con `contain` y se ve entero en el visor. */}
+            {!!media?.muscles && (
+              <View className="gap-2">
+                <Kicker>{t('exerciseDetail.tab.muscles')}</Kicker>
+                <Pressable
+                  onPress={() => setViewer({ uri: media.muscles!, label: t('exerciseDetail.tab.muscles') })}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={t('exerciseDetail.tab.muscles')}
+                  accessibilityHint={t('common.viewFullscreen')}
+                  className="h-64 overflow-hidden rounded-xl border border-border bg-card py-2 active:opacity-80"
+                >
+                  <Image
+                    source={{ uri: media.muscles }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="contain"
+                    transition={150}
+                    cachePolicy="memory-disk"
+                    recyclingKey={`${ex.id}:muscles`}
+                  />
+                </Pressable>
+              </View>
+            )}
+
             <Card>
               <CardContent className="gap-3 py-4">
                 <Text className="font-bebas text-3xl leading-none text-foreground">{localize(ex.name, locale)}</Text>
@@ -188,6 +252,8 @@ export default function ExerciseDetailScreen() {
           </>
         )}
       </ScrollView>
+
+      <ImageViewer uri={viewer?.uri ?? null} label={viewer?.label} onClose={() => setViewer(null)} />
     </SafeAreaView>
   )
 }
