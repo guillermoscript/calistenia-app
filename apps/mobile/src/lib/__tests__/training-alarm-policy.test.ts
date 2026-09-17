@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  ALARM_VIBRATION_PATTERN,
   CANCEL_GRACE_MS,
   MIN_ARM_MS,
   shouldCancelOnLeave,
@@ -73,5 +74,12 @@ describe('shouldCancelOnLeave', () => {
     expect(shouldCancelOnLeave(0)).toBe(false)
     expect(shouldCancelOnLeave(CANCEL_GRACE_MS)).toBe(false)
     expect(shouldCancelOnLeave(-1_000)).toBe(false)
+  })
+})
+
+describe('ALARM_VIBRATION_PATTERN', () => {
+  it('cumple lo que valida notifee: longitud par y todo positivo (CALISTENIA-APP-16)', () => {
+    expect(ALARM_VIBRATION_PATTERN.length % 2).toBe(0)
+    expect(ALARM_VIBRATION_PATTERN.every((ms) => Number.isInteger(ms) && ms > 0)).toBe(true)
   })
 })

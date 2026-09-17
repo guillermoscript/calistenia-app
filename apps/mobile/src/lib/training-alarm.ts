@@ -23,6 +23,7 @@ import { Platform } from 'react-native'
 
 import { Sentry } from '@/lib/instrument'
 import { cancelScheduled, scheduleRestEnd } from '@/lib/notifications'
+import { ALARM_VIBRATION_PATTERN } from '@/lib/training-alarm-policy'
 
 /** Qué cuenta atrás avisa. Cada una con su id: nunca corren a la vez, pero una
  *  alarma huérfana de la otra no debe sonar encima. */
@@ -81,7 +82,7 @@ export async function scheduleTrainingAlarm(
           importance: AndroidImportance.HIGH,
           sound: CHANNEL_SOUND,
           vibration: true,
-          vibrationPattern: [0, 300, 150, 300],
+          vibrationPattern: ALARM_VIBRATION_PATTERN,
           visibility: AndroidVisibility.PUBLIC,
         })
         await notifee.createTriggerNotification(

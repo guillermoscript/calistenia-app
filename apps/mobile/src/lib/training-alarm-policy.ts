@@ -21,6 +21,16 @@ export const MIN_ARM_MS = 1_000
  */
 export const CANCEL_GRACE_MS = 2_000
 
+/**
+ * Vibración del canal de la alarma: [pausa, vibra, pausa, vibra] en ms.
+ *
+ * notifee exige un número PAR de valores y todos POSITIVOS. El `0` inicial que
+ * acepta Android le vale a notifee como error: `createChannel` lanza, la alarma no
+ * se programa y el aviso no suena nunca (CALISTENIA-APP-16). Por eso empieza en 1
+ * y hay un test que lo vigila.
+ */
+export const ALARM_VIBRATION_PATTERN = [1, 300, 150, 300]
+
 export type TrainingAlarmAction = 'arm' | 'disarm' | 'none'
 
 /**
