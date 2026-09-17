@@ -62,8 +62,14 @@ export function useTrainingAlarm({ kind, endAt, text }: UseTrainingAlarmOptions)
     )
     if (action === 'arm') {
       const { title, body } = textRef.current()
-      armedForRef.current = endAtRef.current
-      void scheduleTrainingAlarm(kind, endAtRef.current!, title, body)
+      const target = endAtRef.current!
+      // Optimista: así dos `sync` seguidos no programan dos veces. Si al final
+      // no quedó nada programado se deshace — salvo que entre medias ya se haya
+      // armado (o desarmado) para otro fin, que entonces manda el último.
+      armedForRef.current = target
+      void scheduleTrainingAlarm(kind, target, title, body).then((scheduled) => {
+        if (!scheduled && armedForRef.current === target) armedForRef.current = null
+      })
     } else if (action === 'disarm') {
       armedForRef.current = null
       void cancelTrainingAlarm(kind)

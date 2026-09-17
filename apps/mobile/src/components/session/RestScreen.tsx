@@ -16,6 +16,7 @@ import { View, AppState } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import AlarmPermissionCard from '@/components/session/AlarmPermissionCard'
 import { cancelTrainingAlarm } from '@/lib/training-alarm'
 import { useTrainingAlarm, useTrainingCues } from '@/lib/use-training-alarm'
 import { updateLiveRest } from '@/lib/live-session'
@@ -151,6 +152,7 @@ export function RestScreen({
         adjustDeltas={ADJUST_DELTAS}
         onAdjust={handleAdjust}
       >
+        <View className="w-full items-center gap-3">
         {nextStep ? (
           <View className="w-full max-w-[340px] rounded-xl border border-border bg-card px-4 py-3.5">
             <Text className="mb-2 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">
@@ -170,6 +172,10 @@ export function RestScreen({
             </Text>
           </View>
         ) : null}
+        {/* Android sin permiso de alarma exacta: el aviso con la pantalla apagada
+            llegaría tarde. Se pide aquí, justo antes de bloquear el móvil. */}
+        <AlarmPermissionCard />
+        </View>
       </RestPanel>
     </View>
   )

@@ -156,6 +156,9 @@ function verify(aabPath) {
   //     en segundo plano no suena — y no da ningún error. Lo copia el plugin de
   //     expo-notifications (`sounds` en app.json) durante el prebuild, así que un
   //     android/ generado antes de declararlo se queda sin él en silencio.
+  //     Se busca por nombre a propósito: el AAB conserva `base/res/raw/rest_end.wav`
+  //     (comprobado con unzip -l el 2026-09-17); es el APK de `assembleRelease`
+  //     el que acorta las rutas (`res/0r.wav`), y ese no pasa por aquí.
   const rawFiles = execSync(
     `unzip -l ${JSON.stringify(aabPath)} 'base/res/raw/*' 2>/dev/null || true`,
     { encoding: 'utf-8', shell: '/bin/bash' },

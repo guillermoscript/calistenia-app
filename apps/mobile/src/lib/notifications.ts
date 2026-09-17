@@ -47,8 +47,19 @@ export async function requestNotifPermission(): Promise<boolean> {
   }
 }
 
-/** Programa una notificación para el fin del descanso. Retorna id o null. */
-export async function scheduleRestEnd(secondsFromNow: number, title: string, body: string): Promise<string | null> {
+/**
+ * Programa una notificación para el fin del descanso. Retorna id o null.
+ *
+ * En Android es INEXACTA si falta `SCHEDULE_EXACT_ALARM` (expo cae a
+ * `setAndAllowWhileIdle`): sirve de respaldo, no de aviso puntual — ver
+ * `training-alarm.ts`. `channelId` permite usar el canal de alarma de ahí.
+ */
+export async function scheduleRestEnd(
+  secondsFromNow: number,
+  title: string,
+  body: string,
+  channelId = 'rest-timer',
+): Promise<string | null> {
   if (secondsFromNow < 1) return null
   try {
     return await Notifications.scheduleNotificationAsync({
@@ -56,7 +67,7 @@ export async function scheduleRestEnd(secondsFromNow: number, title: string, bod
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: Math.round(secondsFromNow),
-        channelId: Platform.OS === 'android' ? 'rest-timer' : undefined,
+        channelId: Platform.OS === 'android' ? channelId : undefined,
       },
     })
   } catch (e) {

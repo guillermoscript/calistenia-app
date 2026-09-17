@@ -385,10 +385,16 @@ Cambios en vc42:
   limitada a una cada ~9 min en Doze, o sea minutos tarde para un descanso de
   90 s. Además la limpieza al desmontar la cancelaba justo cuando vencía. Ahora
   la programa notifee con `AlarmType.SET_ALARM_CLOCK` (exacta, exenta de Doze y
-  sin permiso que pedir) en su propio canal con sonido, y solo se arma mientras
-  la app NO está en primer plano — ver `src/lib/training-alarm.ts`. El ejercicio
-  **por tiempo** usa la misma alarma (`ExerciseTimer`), así que también avisa con
-  la pantalla bloqueada.
+  sin el límite de una cada ~9 min en reposo) en su propio canal con sonido por
+  el stream de ALARMA, y solo se arma mientras la app NO está en primer plano —
+  ver `src/lib/training-alarm.ts`. **`SET_ALARM_CLOCK` SÍ exige
+  `SCHEDULE_EXACT_ALARM`** (una versión anterior de este párrafo decía lo
+  contrario): en Android 14+ no se concede al instalar, así que la pantalla de
+  descanso lo pide (`AlarmPermissionCard` → Ajustes) y mientras falte se
+  programa un aviso de respaldo inexacto con expo-notifications. NO se usa
+  `USE_EXACT_ALARM` (Play lo restringe a despertadores y calendarios). El
+  ejercicio **por tiempo** usa la misma alarma (`ExerciseTimer`), así que
+  también avisa con la pantalla bloqueada.
 - `app.json`: fuera `FOREGROUND_SERVICE_HEALTH` (y además bloqueado) y
   `HIGH_SAMPLING_RATE_SENSORS`, que solo existía como prerrequisito del tipo
   `health`.
