@@ -31,6 +31,11 @@ interface CardioLiveState {
 }
 
 let active = false
+
+/** Para live-session: el service de notifee es compartido y no debe pararlo si cardio corre. */
+export function isCardioLiveActive(): boolean {
+  return active
+}
 let state: CardioLiveState | null = null
 let lastDisplayAt = 0
 

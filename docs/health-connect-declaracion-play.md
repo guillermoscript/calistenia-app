@@ -402,3 +402,60 @@ de serie.
 3. Revisar la ficha: el bloque «Entrena con el móvil en el bolsillo» sigue
    siendo cierto (no promete nada del servicio).
 4. Resumen de publicación → Enviar a revisión.
+
+## 10. vc43: el entreno vuelve a ser foreground service, de tipo `specialUse`
+
+**Qué pasó con vc42 (sin FGS):** con la pantalla apagada Android congela el
+proceso a los pocos segundos y el «vamos» del fin de descanso (expo-audio) no lo
+toca nadie. La notificación programada de respaldo no llega a tiempo sin
+`SCHEDULE_EXACT_ALARM`, que Android 14+ no concede al instalar. El PR #778
+probó una alarma exacta de notifee (`SET_ALARM_CLOCK`): funciona, pero exige
+pedir el permiso «Alarmas y recordatorios» al usuario y pinta un icono de alarma
+en la barra. Guillermo lo descartó (2026-09-17): «ninguna app seria de
+ejercicios hace eso».
+
+**Qué hacen las apps publicadas:** Calisteniapp (`me.inakitajes.calisteniapp`,
+v26.8.0, targetSdk 36, instalada en el POCO) declara un
+`WorkoutTrackerService` con `foregroundServiceType="specialUse"`
+(`0x40000000`), la `<property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE">`
+con esta justificación:
+
+> The app uses this service to track workouts, showing a persistent
+> notification with relevant information about the session, such as the
+> current exercise, session duration, or remaining rest time.
+
+y los permisos `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`,
+`WAKE_LOCK`. Ni `health`, ni `mediaPlayback`, ni alarma exacta concedida
+(`SCHEDULE_EXACT_ALARM` declarada por flutter_local_notifications pero en
+`default`). Está publicada en Play con eso.
+
+**Cambios en vc43** (rama `fix/workout-fgs-special-use`):
+
+- `live-session.ts`: `asForegroundService: true` +
+  `foregroundServiceTypes: [SPECIAL_USE]`; vuelve `liveSessionHandlesRest()`
+  para que `RestScreen` NO programe además la notificación puntual (sonarían
+  las dos). Al terminar solo se llama a `stopForegroundService` si cardio no
+  está corriendo (el service de notifee es único y compartido).
+- `plugins/with-notifee-location-fgs.js`: `specialUse|location` y la
+  `<property>` de subtipo con nuestra justificación.
+- `app.json`: `FOREGROUND_SERVICE_SPECIAL_USE`. `FOREGROUND_SERVICE_HEALTH` y
+  `_MEDIA_PLAYBACK` siguen BLOQUEADOS.
+- `build:aab`: sigue fallando con `health`/`dataSync`; exige la property si hay
+  `specialUse`.
+
+### Runbook vc43 (formulario de FGS en Play Console)
+
+1. Subir vc43 a los **cuatro** tracks (el formulario usa la unión de bundles
+   activos).
+2. App content → Permisos de servicios en primer plano: aparece **Special
+   use**. Descripción (misma idea que la property, en inglés):
+   *Keeps the workout session alive while the user trains with the screen off:
+   shows a persistent notification with the current exercise, set and rest
+   countdown, and plays the audio cue when a rest or timed exercise ends. The
+   user starts it by starting a workout and can stop it from the notification.*
+3. Vídeo: arrancar un entreno → notificación «Sesión en curso» con el
+   cronómetro → apagar pantalla → suena el fin del descanso → botón «detener»
+   en la notificación la quita. Reutilizar el guion de §5.
+4. Enviar. Si rechazan, **apelar** con el vídeo y la comparativa de §10 (apps
+   de la misma categoría publicadas con `specialUse`), en vez de cambiar de
+   tipo otra vez.

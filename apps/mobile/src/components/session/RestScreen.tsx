@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
 import { scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
-import { updateLiveRest } from '@/lib/live-session'
+import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
 import { restCues } from '@/lib/training-cues'
 import { RestPanel } from '@/components/training/RestPanel'
 import type { Step } from '@/components/session/types'
@@ -70,9 +70,11 @@ export function RestScreen({
   }, [])
 
   const scheduleEnd = useCallback((endAt: number) => {
-    // También en Android: la notificación en vivo ya no es foreground service, así que
-    // con la app en segundo plano el sistema puede congelar el JS y los avisos sonoros
-    // no llegarían. La programada salta aunque el proceso esté parado.
+    // En Android con el foreground service activo el JS sigue vivo con la pantalla
+    // apagada y el «vamos» lo toca la app (`restCues`): la puntual sonaría encima.
+    // Sin el service (el usuario pulsó «detener» en la notificación, o iOS) queda
+    // la notificación programada, que salta aunque el proceso esté parado.
+    if (liveSessionHandlesRest()) return
     void scheduleRestEnd(
       Math.ceil((endAt - Date.now()) / 1000),
       t('notify.letsGo'),

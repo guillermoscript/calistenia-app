@@ -1,19 +1,38 @@
 /**
  * El service de notifee (app.notifee.core.ForegroundService) es ÚNICO y
- * compartido por todas las notificaciones FGS. Hoy solo lo usa cardio:
- *   - "location"  → notificación de cardio (GPS en background; Android 14+ lo exige).
- * La notificación del entreno (live-session.ts) ya NO es foreground service:
- * fue "dataSync" hasta vc36 (Play lo rechazó en vc35) y "health" de vc37 a
- * vc41 (rechazado en los envíos 14 y 16: «Health Data Sync» no perceptible).
- * No vuelvas a añadir "health" sin leer antes
- * docs/health-connect-declaracion-play.md §9.
+ * compartido por todas las notificaciones FGS. Declaramos en el manifest el
+ * SUPERCONJUNTO de tipos que usamos en runtime:
+ *   - "specialUse" → notificación del entreno en curso (live-session.ts): mantiene
+ *                    vivo el proceso para que el cronómetro y los avisos sonoros
+ *                    (fin de descanso, ejercicio por tiempo) sigan con la pantalla
+ *                    apagada. Es el tipo que usan las apps de entreno publicadas
+ *                    (p. ej. Calisteniapp declara exactamente este servicio y
+ *                    esta propiedad, verificado en su APK el 2026-09-17). Exige
+ *                    FOREGROUND_SERVICE_SPECIAL_USE (app.json) y la <property>
+ *                    PROPERTY_SPECIAL_USE_FGS_SUBTYPE con la justificación, que
+ *                    es lo que Play lee en el formulario de FGS.
+ *   - "location"   → notificación de cardio (GPS en background; Android 14+ lo exige).
+ *
+ * Historia: el entreno fue "dataSync" hasta vc36 (Play lo rechazó en vc35),
+ * "health" de vc37 a vc41 (rechazado en los envíos 14 y 16: «Health Data Sync»
+ * no perceptible) y SIN foreground service en vc42 (#775), que dejó el fin del
+ * descanso mudo con la pantalla apagada. No vuelvas a "health" ni "dataSync"
+ * sin leer antes docs/health-connect-declaracion-play.md §9 y §10.
+ *
  * El tipo que pide cada notificación con `foregroundServiceTypes` (ver
- * cardio-live.ts) DEBE ser subconjunto de lo declarado acá: si una notificación
- * no especifica tipo, notifee arranca con el superconjunto del manifest.
+ * live-session.ts y cardio-live.ts) DEBE ser subconjunto de lo declarado acá: si
+ * una notificación no especifica tipo, notifee arranca con el superconjunto del
+ * manifest, y con location sin permiso de ubicación eso crashea en targetSDK 36.
  */
 const { withAndroidManifest, withProjectBuildGradle } = require('expo/config-plugins')
 
 const SERVICE_NAME = 'app.notifee.core.ForegroundService'
+const SPECIAL_USE_PROPERTY = 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE'
+/** Justificación que lee Play. En inglés a propósito: es para el revisor. */
+const SPECIAL_USE_SUBTYPE =
+  'Keeps the workout session alive while the user trains with the screen off: ' +
+  'shows a persistent notification with the current exercise, set and rest countdown, ' +
+  'and plays the audio cue when a rest or timed exercise ends. Started and stopped by the user.'
 
 // Marca para no duplicar la inyección del repo maven de notifee.
 const NOTIFEE_MAVEN_MARKER = '// notifee local AAR repo (pnpm-safe)'
@@ -60,8 +79,16 @@ function withNotifeeFgsManifest(config) {
       service = { $: { 'android:name': SERVICE_NAME, 'android:exported': 'false' } }
       application.service.push(service)
     }
-    service.$['android:foregroundServiceType'] = 'location'
+    service.$['android:foregroundServiceType'] = 'specialUse|location'
     service.$['tools:replace'] = 'android:foregroundServiceType'
+    // Android 14+ exige esta propiedad en todo service con specialUse; Play la
+    // muestra en la declaración de FGS. El texto es la justificación.
+    service.property = (service.property || []).filter(
+      (p) => p.$?.['android:name'] !== SPECIAL_USE_PROPERTY,
+    )
+    service.property.push({
+      $: { 'android:name': SPECIAL_USE_PROPERTY, 'android:value': SPECIAL_USE_SUBTYPE },
+    })
     return cfg
   })
 }
