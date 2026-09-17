@@ -1,15 +1,24 @@
 /**
  * Timer de sesión en vivo fuera de la app.
  * iOS: Live Activity (ActivityKit vía widget-bridge). Android: notificación
- * persistente con cronómetro (notifee), con botón de «avanzar» y botón de
- * «detener». NO es un foreground service: Play rechazó dos veces (envíos 14 y
- * 16, vc41) el tipo `health` para esto. El cronómetro lo pinta el sistema, el
- * estado de la sesión va por timestamps y el fin de descanso lo avisa la
- * notificación programada de RestScreen, así que nada necesita el proceso vivo.
+ * persistente de foreground service con cronómetro (notifee), con botón de
+ * «avanzar» y botón de «detener» (Play exige que el usuario pueda parar el
+ * servicio desde la propia notificación).
+ *
+ * El foreground service es lo que mantiene vivo el JS con la pantalla apagada:
+ * sin él Android congela el proceso a los pocos segundos y el «vamos» del fin
+ * del descanso (expo-audio, `training-cues`) no lo toca nadie. El tipo es
+ * `specialUse`, el mismo que declaran las apps de entreno publicadas
+ * (Calisteniapp, verificado en su APK): `health` lo rechazó Play dos veces y
+ * `dataSync` una. La justificación va en el manifest
+ * (plugins/with-notifee-location-fgs.js) y en el formulario de FGS de Play
+ * (docs/health-connect-declaracion-play.md §10).
+ *
  * Todas las funciones son best-effort: nunca lanzan.
  */
 import { Platform } from 'react-native'
 import * as Sentry from '@sentry/react-native'
+import { isCardioLiveActive } from './cardio-live'
 import { liveNotificationActions, type LiveActivityState, type LiveNotificationLabels } from './live-activity-state'
 import { getWidgetBridge } from '../../modules/widget-bridge'
 
@@ -31,6 +40,15 @@ export interface LiveSessionLabels extends LiveNotificationLabels {
 let labels: LiveSessionLabels | null = null
 
 let actionHandler: (() => void) | null = null
+
+/**
+ * true si el timer en vivo gestiona el aviso de fin de descanso (Android con el
+ * FGS activo): el JS sigue vivo y suena el cue de la app, así que RestScreen no
+ * debe programar además la notificación puntual (sonarían las dos).
+ */
+export function liveSessionHandlesRest(): boolean {
+  return active && Platform.OS === 'android'
+}
 
 /** SessionView (vía useLiveSession) registra aquí cómo avanzar la sesión. */
 export function setLiveSessionActionHandler(handler: (() => void) | null): void {
@@ -61,7 +79,7 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
     Sentry.captureMessage('live-session: notifee no disponible en Android')
     return
   }
-  const { AndroidImportance, AndroidVisibility } = await import('@notifee/react-native')
+  const { AndroidImportance, AndroidForegroundServiceType, AndroidVisibility } = await import('@notifee/react-native')
   await notifee.createChannel({
     id: CHANNEL_ID,
     name: 'Sesión en curso',
@@ -81,9 +99,12 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
       : state.exerciseName,
     android: {
       channelId: CHANNEL_ID,
-      // Sin asForegroundService (ver cabecera). ongoing la deja fija en
-      // Android ≤13; desde el 14 el usuario puede deslizarla y el siguiente
-      // update la vuelve a pintar.
+      asForegroundService: true,
+      // specialUse (ver cabecera y el plugin). Solo ese tipo: el service de
+      // notifee es compartido y su manifest incluye location; sin especificar
+      // tipo aquí notifee arrancaría con location y crashea sin permiso de
+      // ubicación.
+      foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_SPECIAL_USE],
       ongoing: true,
       onlyAlertOnce: true,
       ...(labels ? { subText: labels.inProgress } : {}),
@@ -153,8 +174,10 @@ export async function updateLiveRest(restEndsAt: number): Promise<void> {
 
 async function removeAndroidNotification(): Promise<void> {
   const notifee = await getNotifee()
-  // Nada de stopForegroundService: el service de notifee es compartido y
-  // pararía el de cardio si estuviera corriendo.
+  // notifee solo admite UN foreground service a la vez (el de cardio es el
+  // mismo service): si cardio está corriendo, esta notificación ya no es la del
+  // service y pararlo mataría el GPS. Solo entonces basta con cancelarla.
+  if (!isCardioLiveActive()) await notifee?.stopForegroundService()
   await notifee?.cancelNotification(NOTIF_ID)
 }
 

@@ -136,9 +136,10 @@ function verify(aabPath) {
     if (fgsExtra.length) fail(`el AAB declara FGS que NO están en app.json: ${fgsExtra.join(', ')}`)
     if (fgsMissing.length) fail(`faltan en el AAB permisos FGS de app.json: ${fgsMissing.join(', ')}`)
   }
-  // bundletool vuelca el atributo como máscara hex (0x00000008 = location).
+  // bundletool vuelca el atributo como máscara hex (0x40000008 = specialUse|location).
   // Tipos que Play ya rechazó para el entreno: dataSync (bit 0x1, vc35) y
-  // health (bit 0x100, envíos 14 y 16 con vc41).
+  // health (bit 0x100, envíos 14 y 16 con vc41). El entreno va con specialUse
+  // (bit 0x40000000, vc43), que es lo que declaran las apps de entreno publicadas.
   const fgsTypes = [...manifest.matchAll(/android:foregroundServiceType="([^"]+)"/g)].map((m) => m[1])
   const REJECTED_FGS = [['dataSync', 0x1], ['health', 0x100]]
   const rejectedIn = (t) => REJECTED_FGS
@@ -149,6 +150,16 @@ function verify(aabPath) {
     fail(`algún <service> sigue con foregroundServiceType ${rejectedFgs.join(' + ')} (${fgsTypes.join(' / ')}) — Play ya lo rechazó`)
   } else {
     ok(`foregroundServiceType de los services: ${fgsTypes.join(' / ') || '(ninguno)'}`)
+  }
+  // 1d. specialUse sin la <property> de subtipo: Android 14+ lanza al arrancar el
+  //     service y Play no tiene justificación que leer. El plugin la inyecta;
+  //     aquí se comprueba que llegó al manifest del AAB.
+  const usesSpecialUse = fgsTypes.some((t) =>
+    /^0x[0-9a-f]+$/i.test(t) ? (parseInt(t, 16) & 0x40000000) !== 0 : t.split('|').includes('specialUse'))
+  if (usesSpecialUse) {
+    manifest.includes('android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE')
+      ? ok('specialUse con PROPERTY_SPECIAL_USE_FGS_SUBTYPE en el manifest')
+      : fail('specialUse sin PROPERTY_SPECIAL_USE_FGS_SUBTYPE → ejecuta expo prebuild (plugin with-notifee-location-fgs)')
   }
 
   // 2. Firma: tiene que ser la upload key registrada en Play.
