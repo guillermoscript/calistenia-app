@@ -46,7 +46,7 @@
     "expo-audio": "~57.0.4",
     "expo-build-properties": "~57.0.15",
     "expo-clipboard": "~57.0.1",
-    "expo-constants": "~57.0.15",
+    "expo-constants": "~58.0.3",
     "expo-device": "~57.0.1",
     "expo-font": "~57.0.1",
     "expo-haptics": "~57.0.2",
