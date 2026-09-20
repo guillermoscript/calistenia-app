@@ -12,6 +12,7 @@ import i18n from './lib/i18n'
 import { getMarketingLocale, isMarketingPath, localizedMarketingPath, preferredMarketingLocale } from './lib/marketing-locale'
 import { hasActiveWorkout } from './lib/active-workout'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { installTranslateSafeDom } from './lib/translate-safe-dom'
 import App from './App'
 import './index.css'
 
@@ -152,6 +153,10 @@ const trackAndHandleError = (type: string) => {
     })
   }
 }
+
+// Antes de montar: el traductor del navegador reparenta los nodos de texto y
+// React revienta al desmontarlos, tirando toda la app (GYM-GUILLE-27).
+installTranslateSafeDom()
 
 ReactDOM.createRoot(document.getElementById('root')!, {
   onUncaughtError: trackAndHandleError('uncaught'),
