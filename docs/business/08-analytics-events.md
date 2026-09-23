@@ -1,8 +1,18 @@
 # Analytics & Growth Events
 
-Version: **7**
+Version: **8**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
+
+> **Version 8 (2026-09-23, issue #823) — where in the workout people
+> abandon.** Additive; no saved report changes.
+>
+> - **`workout_abandoned` gains `current_exercise_index`, `current_exercise_id`,
+>   `current_section`, `current_phase` and `is_first_workout`.** The retention
+>   investigation (#792) needed more than *that* 83% of first workouts get
+>   abandoned — it needed *where*. See "`workout_abandoned` context" under
+>   "Training session funnel" for the full shape, the `reason=expired` caveat
+>   and why `current_phase` can never read `celebrate`.
 
 > **Version 7 (2026-09-13, PR #771) — discovery survey.** Additive; no saved
 > report changes.
@@ -311,6 +321,26 @@ was *logged*, not what was *planned*: it carries `sets_logged` but not
 but the session context that would have to subscribe to it wraps the whole app
 and re-renders on every logged set — the #475 regression. Consequence for
 tests: the register has to be reset between them.
+
+### `workout_abandoned` context (v8)
+
+`workout_abandoned` alone — not the other three outcomes, not the six steps —
+also carries `reason` (`page_closed` / `expired` / `replaced`, see the outcomes
+table above) plus, since v8, where the user was when they left:
+
+| Property | Notes |
+|---|---|
+| `current_exercise_index` | 0-based `stepIdx` of the exercise being trained or rested on. `0` is a real value (the first exercise), not "no data" — it is checked with `!= null`, never with truthiness. Present whenever it is a valid number, even out of range (see next row) |
+| `current_exercise_id` | The `Exercise.id` at that index — a catalog slug or the program editor's `custom_<ts>` key, never free text (checked against custom exercises and AI-built free sessions: both resolve against the catalog before a workout can start, so an unresolvable id never reaches a running session). Omitted, together with `current_section`, when there is no exercise at `current_exercise_index` — e.g. a section transition can leave the index one past the last exercise, and fabricating an id there would be worse than omitting it |
+| `current_section` | `warmup` / `main` / `cooldown` of that exercise. Same omission rule as `current_exercise_id` |
+| `current_phase` | The session phase at the moment of abandonment: `exercise`, `rest`, `note` or `section-transition`. Never `celebrate` — that phase means the workout already finished, and the outcome latch (`claimOutcome` in `useActiveSessionState`) counts it as `workout_completed` before an abandon event can even be built |
+| `is_first_workout` | Whether `workout_key` is the curated day-0 session (`isFirstWorkoutKey`, `free_first_<ts>` prefix, #694). The 18→3 funnel that motivated this addition (#792) is exactly that flow, so this is enough without a join against session history |
+
+On the `reason=expired` path all five come from the persisted snapshot
+(`expired.progress` / `expired.workout`), never the live session refs: the app
+may be reopened long after the abandonment, so by the time the effect runs the
+refs describe whatever session is active now (or none), not the one that
+expired.
 
 ## Share confirmation
 

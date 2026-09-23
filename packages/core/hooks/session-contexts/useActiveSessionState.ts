@@ -31,8 +31,9 @@ import type { Exercise, Workout } from '../../types'
 import { op } from '../../lib/analytics'
 import {
   TRAINING_FUNNEL_EVENTS, plannedSetCount, sessionFunnelProperties,
-  type SessionAbandonReason, type TrainingFunnelEvent,
+  type SessionAbandonPhase, type SessionAbandonReason, type TrainingFunnelEvent,
 } from '../../lib/session-funnel'
+import { isFirstWorkoutKey } from '../../lib/first-workout'
 import type { ExerciseTimingState } from '../../lib/exerciseTiming'
 import { pb } from '../../lib/pocketbase'
 import { STRENGTH_ACTIVE_KEY as STORAGE_KEY } from '../../lib/storage-keys'
@@ -166,6 +167,75 @@ export interface UseActiveSessionStateResult {
 export function getCurrentSection(exercises: Exercise[], stepIdx: number): 'warmup' | 'main' | 'cooldown' {
   if (!exercises[stepIdx]) return 'main'
   return exercises[stepIdx].section || 'main'
+}
+
+/**
+ * Contexto del ejercicio en curso, para `workout_abandoned` (#823).
+ *
+ * A diferencia de `getCurrentSection` (que rellena `'main'` porque la UI
+ * siempre necesita pintar algo), aquí NO hay fallback: `stepIdx` puede
+ * apuntar fuera del array —una transición de sección deja el índice un paso
+ * por delante del último ejercicio— y fabricar un `currentSection`/
+ * `currentExerciseId` ahí mandaría un dato falso a analytics. `stepIdx` en sí
+ * SÍ viaja siempre que sea un número válido, aunque esté fuera de rango:
+ * "iba por el 8 de un entreno de 6" es información real.
+ */
+export function currentExerciseAnalytics(exercises: Exercise[], stepIdx: number): {
+  currentExerciseIndex?: number
+  currentExerciseId?: string
+  currentSection?: 'warmup' | 'main' | 'cooldown'
+} {
+  if (!Number.isFinite(stepIdx) || stepIdx < 0) return {}
+  const exercise = exercises[stepIdx]
+  if (!exercise) return { currentExerciseIndex: stepIdx }
+  return { currentExerciseIndex: stepIdx, currentExerciseId: exercise.id, currentSection: exercise.section || 'main' }
+}
+
+/**
+ * `SessionPhase` → `SessionAbandonPhase`. `celebrate` nunca debería llegar
+ * (el pestillo `claimOutcome` lo intercepta antes de que exista un abandono),
+ * pero si lo hiciera, esto lo omite en vez de forzar un tipo que no lo admite
+ * o mandarlo como si fuese una fase real de abandono.
+ */
+export function abandonPhase(phase: SessionPhase): SessionAbandonPhase | undefined {
+  return phase === 'celebrate' ? undefined : phase
+}
+
+/**
+ * Propiedades completas de `workout_abandoned`, en vivo o expirado (#823).
+ *
+ * Es la única pieza que hay que probar para saber qué manda `abandon()`: el
+ * hook no se puede montar en los tests de core (sin DOM/testing-library,
+ * igual que `loadFromStorage` más abajo), así que esta función pura es lo que
+ * se afirma en su lugar. Vive fuera del hook también para que el camino en
+ * vivo (`abandon()`) y el camino expirado (el `useEffect` de `expired`) NUNCA
+ * puedan divergir en qué cuentan como "el ejercicio en curso".
+ */
+export function abandonedWorkoutProperties({
+  workoutKey, source, startedAt, endedAt, exercises, progress, setsLogged, reason,
+}: {
+  workoutKey: string
+  source: SessionSource
+  startedAt: number
+  endedAt: number
+  exercises: Exercise[]
+  progress: SessionProgress
+  setsLogged: number
+  reason: SessionAbandonReason
+}): Record<string, unknown> {
+  return sessionFunnelProperties({
+    workoutKey,
+    source,
+    startedAt,
+    endedAt,
+    exerciseCount: exercises.length,
+    plannedSets: plannedSetCount(exercises),
+    setsLogged,
+    reason,
+    isFirstWorkout: isFirstWorkoutKey(workoutKey),
+    currentPhase: abandonPhase(progress.phase),
+    ...currentExerciseAnalytics(exercises, progress.stepIdx),
+  })
 }
 
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
@@ -411,8 +481,17 @@ export function useActiveSessionState({
 
   const abandon = useCallback((reason: SessionAbandonReason) => {
     if (!claimOutcome('abandoned')) return
-    track(TRAINING_FUNNEL_EVENTS.workoutAbandoned, funnelProps({ reason }))
-  }, [claimOutcome, funnelProps, track])
+    track(TRAINING_FUNNEL_EVENTS.workoutAbandoned, abandonedWorkoutProperties({
+      workoutKey: workoutKeyRef.current,
+      source: sourceRef.current,
+      startedAt: startedAtRef.current,
+      endedAt: Date.now(),
+      exercises: workoutRef.current?.exercises ?? [],
+      progress: progressRef.current,
+      setsLogged: progressRef.current.setsCount,
+      reason,
+    }))
+  }, [claimOutcome, track])
 
   // Sin argumentos a propósito: la web lo pasa DIRECTAMENTE a
   // `addEventListener`, así que un parámetro opcional aquí recibiría el objeto
@@ -432,13 +511,16 @@ export function useActiveSessionState({
     // Misma regla que en vivo: si quedó en `celebrate`, el entreno se terminó y
     // ya lo contó `workout_completed`; lo que caducó es la basura del storage.
     if (expired.progress?.phase === 'celebrate') return
-    track(TRAINING_FUNNEL_EVENTS.workoutAbandoned, sessionFunnelProperties({
+    // El snapshot expirado, NUNCA los refs en vivo: para cuando esto corre, el
+    // usuario reabrió la app —quizá días después— y los refs ya describen la
+    // sesión NUEVA (o ninguna), no la que caducó (#823).
+    track(TRAINING_FUNNEL_EVENTS.workoutAbandoned, abandonedWorkoutProperties({
       workoutKey: expired.workoutKey,
       source: expired.source,
       startedAt: expired.startedAt,
       endedAt: expired.savedAt ?? expired.startedAt,
-      exerciseCount: expired.workout?.exercises?.length ?? 0,
-      plannedSets: plannedSetCount(expired.workout?.exercises ?? []),
+      exercises: expired.workout?.exercises ?? [],
+      progress: expired.progress,
       setsLogged: expired.progress?.setsCount ?? 0,
       reason: 'expired',
     }))

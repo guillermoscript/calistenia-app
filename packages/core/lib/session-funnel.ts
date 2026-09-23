@@ -65,6 +65,17 @@ export type TrainingFunnelEvent = typeof TRAINING_FUNNEL_EVENTS[keyof typeof TRA
  */
 export type SessionAbandonReason = 'page_closed' | 'expired' | 'replaced'
 
+/**
+ * Subconjunto de `SessionPhase` (`useActiveSessionState.ts`) que puede llegar
+ * a `workout_abandoned` (#823). Se declara aquí, estructural y sin importar
+ * del hook, porque este módulo sigue siendo puro a propósito (ver cabecera).
+ * `celebrate` queda fuera adrede: ese desenlace lo cuenta `workout_completed`
+ * — el pestillo de `useActiveSessionState` (`claimOutcome`) nunca deja que un
+ * progreso en `celebrate` dispare un abandono, así que esta unión no necesita
+ * cubrirlo.
+ */
+export type SessionAbandonPhase = 'exercise' | 'rest' | 'note' | 'section-transition'
+
 export interface SessionFunnelInput {
   workoutKey: string
   /** `program` | `free`, tal y como lo declara quien arrancó la sesión. */
@@ -83,6 +94,34 @@ export interface SessionFunnelInput {
   plannedSets?: number
   setsLogged?: number
   reason?: SessionAbandonReason
+  /**
+   * En qué ejercicio iba quien abandonó (#823, investigación de retención
+   * #792): `stepIdx` en el momento del desenlace. `0` es un valor real (el
+   * primer ejercicio), no "sin dato" — se distingue de "sin dato" con
+   * `!= null`, nunca con veracidad. Va emparejado con `currentExerciseId` y
+   * `currentSection`: los tres describen el MISMO ejercicio, así que los tres
+   * se omiten juntos cuando no hay un `Exercise` real en ese índice (p.ej. un
+   * `stepIdx` que ya cruzó al final del array en una transición de sección).
+   */
+  currentExerciseIndex?: number
+  /**
+   * `Exercise.id` del ejercicio en curso — un slug de catálogo o la clave
+   * `custom_<ts>` del editor de programas, nunca texto libre (ver #823: se
+   * comprobaron sesiones IA y ejercicios personalizados, y los dos resuelven
+   * contra el catálogo antes de llegar aquí; un id desconocido se descarta
+   * antes de que exista la sesión).
+   */
+  currentExerciseId?: string
+  /** Sección del ejercicio en curso. */
+  currentSection?: 'warmup' | 'main' | 'cooldown'
+  /** Fase de la sesión en el momento del abandono. Ver `SessionAbandonPhase`. */
+  currentPhase?: SessionAbandonPhase
+  /**
+   * Si `workoutKey` es la sesión curada del día 0 (`isFirstWorkoutKey`). El
+   * embudo 18→3 que motiva el #792 es justo ese flujo, así que esto basta sin
+   * consultar el historial de sesiones.
+   */
+  isFirstWorkout?: boolean
 }
 
 /**
@@ -110,6 +149,11 @@ export function sessionFunnelProperties({
   plannedSets,
   setsLogged,
   reason,
+  currentExerciseIndex,
+  currentExerciseId,
+  currentSection,
+  currentPhase,
+  isFirstWorkout,
 }: SessionFunnelInput): Record<string, unknown> {
   const { phase, day, isFree } = sessionKeyParts(workoutKey)
 
@@ -143,6 +187,14 @@ export function sessionFunnelProperties({
     props.completion_pct = Math.min(100, Math.round((setsLogged / plannedSets) * 100))
   }
   if (reason) props.reason = reason
+
+  // `!= null`, no veracidad: `currentExerciseIndex: 0` es el primer ejercicio,
+  // no "sin dato" — un `if (currentExerciseIndex)` lo tiraría en silencio.
+  if (currentExerciseIndex != null) props.current_exercise_index = currentExerciseIndex
+  if (currentExerciseId) props.current_exercise_id = currentExerciseId
+  if (currentSection) props.current_section = currentSection
+  if (currentPhase) props.current_phase = currentPhase
+  if (isFirstWorkout != null) props.is_first_workout = isFirstWorkout
 
   return props
 }
