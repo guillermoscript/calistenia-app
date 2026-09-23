@@ -13,6 +13,7 @@ import { getMarketingLocale, isMarketingPath, localizedMarketingPath, preferredM
 import { hasActiveWorkout } from './lib/active-workout'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { installTranslateSafeDom } from './lib/translate-safe-dom'
+import { readNotificationClickMarker } from './lib/push-click-marker'
 import App from './App'
 import './index.css'
 
@@ -113,6 +114,24 @@ if (explicitLocale && i18n.language !== explicitLocale) {
   void i18n.changeLanguage(explicitLocale)
 }
 const routerBasename = initialLocale ? `/${initialLocale}` : undefined
+
+// Click de push SIN pestaña abierta (#822, menor): `sw.ts` navega aquí con un
+// marcador en la URL en vez de `postMessage` (esa promesa de `openWindow`
+// puede resolver antes de que este script llegue a registrar el listener de
+// abajo, así que se perdía el evento). Se consume UNA sola vez al arrancar y
+// se limpia del historial — así un refresh no vuelve a contar el mismo click,
+// y BrowserRouter (más abajo) ya enruta sobre la URL limpia.
+const notifClickMarker = readNotificationClickMarker(window.location.href)
+if (notifClickMarker) {
+  trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.notificationClicked, {
+    surface: 'notification',
+    source: 'service_worker',
+    url: notifClickMarker.cleanUrl,
+    title: notifClickMarker.title,
+    campaign: notifClickMarker.campaign,
+  })
+  window.history.replaceState(null, '', notifClickMarker.cleanUrl)
+}
 
 // Stale-chunk recovery after a deploy: users still on the old index.html request
 // chunk hashes that no longer exist on the server. Vite wraps every lazy() import

@@ -4,6 +4,7 @@ import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { NAVIGATION_DENYLIST } from './lib/sw-navigation'
+import { withNotificationClickMarker } from './lib/push-click-marker'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -135,8 +136,14 @@ self.addEventListener('notificationclick', (event) => {
           return (client as WindowClient).navigate(targetUrl).then(c => c?.focus())
         }
       }
-      // Otherwise open a new tab
-      return self.clients.openWindow(targetUrl)
+      // Otherwise open a new tab. No `postMessage` here (#822, menor): esta
+      // promesa puede resolver antes de que `main.tsx` de la pestaña nueva
+      // registre su listener de mensajes, y ese click se perdía siempre (no
+      // se trackeaba ningún `notification_clicked`). El marcador en la URL
+      // llega garantizado con la navegación; `main.tsx` lo consume al arrancar.
+      return self.clients.openWindow(
+        withNotificationClickMarker(targetUrl, { title: notifTitle, campaign: event.notification.data?.campaign })
+      )
     })
   )
 })
