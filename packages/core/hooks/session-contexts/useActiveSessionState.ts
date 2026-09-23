@@ -34,6 +34,7 @@ import {
   type SessionAbandonPhase, type SessionAbandonReason, type TrainingFunnelEvent,
 } from '../../lib/session-funnel'
 import { isFirstWorkoutKey } from '../../lib/first-workout'
+import { buildSteps, computeExerciseBoundaries, findCurrentExerciseIndex } from '../../lib/session-machine'
 import type { ExerciseTimingState } from '../../lib/exerciseTiming'
 import { pb } from '../../lib/pocketbase'
 import { STRENGTH_ACTIVE_KEY as STORAGE_KEY } from '../../lib/storage-keys'
@@ -172,13 +173,31 @@ export function getCurrentSection(exercises: Exercise[], stepIdx: number): 'warm
 /**
  * Contexto del ejercicio en curso, para `workout_abandoned` (#823).
  *
+ * `progress.stepIdx` NO indexa `exercises`: es el estado que lleva el
+ * reductor de la sesión (`session-machine.ts`) sobre `buildSteps(exercises)`,
+ * una lista aplanada POR SERIE — un ejercicio con 2 series ocupa 2 posiciones
+ * consecutivas de `stepIdx`, y avanza una por serie registrada, no una por
+ * ejercicio. Leer `exercises[stepIdx]` directamente daba el ejercicio
+ * equivocado desde la 2.ª serie del entreno en adelante (revisión externa
+ * tras el merge, #823 ronda 1 de arreglos): con dos series por ejercicio
+ * —el primer entreno curado del #694, por ejemplo— "abandonar en el 2.º
+ * ejercicio" ya manda `stepIdx: 2`, y `exercises[2]` es el 3.er ejercicio.
+ *
+ * Por eso aquí se reconstruyen los mismos `steps`/límites que usa
+ * `SessionView` para su propia navegación prev/next (`buildSteps` +
+ * `computeExerciseBoundaries` + `findCurrentExerciseIndex`, las tres de
+ * `session-machine.ts`) y se traduce `stepIdx` al índice de EJERCICIO real
+ * antes de leer nada. `currentExerciseIndex` cuenta solo los ejercicios con
+ * alguna serie (`sets > 0`) — el mismo índice que ya manda `set_logged` como
+ * `exercise_index` en `SessionView`, así que las dos propiedades quedan
+ * comparables entre sí.
+ *
  * A diferencia de `getCurrentSection` (que rellena `'main'` porque la UI
- * siempre necesita pintar algo), aquí NO hay fallback: `stepIdx` puede
- * apuntar fuera del array —una transición de sección deja el índice un paso
- * por delante del último ejercicio— y fabricar un `currentSection`/
- * `currentExerciseId` ahí mandaría un dato falso a analytics. `stepIdx` en sí
- * SÍ viaja siempre que sea un número válido, aunque esté fuera de rango:
- * "iba por el 8 de un entreno de 6" es información real.
+ * siempre necesita pintar algo), aquí NO hay fallback para el índice: sin un
+ * `Exercise` real en ese `stepIdx` —entreno vacío, o una sesión restaurada
+ * cuyo progreso ya no encaja con el snapshot actual— fabricar cualquiera de
+ * los tres campos mandaría un dato falso a analytics, así que se omiten
+ * juntos.
  */
 export function currentExerciseAnalytics(exercises: Exercise[], stepIdx: number): {
   currentExerciseIndex?: number
@@ -186,9 +205,12 @@ export function currentExerciseAnalytics(exercises: Exercise[], stepIdx: number)
   currentSection?: 'warmup' | 'main' | 'cooldown'
 } {
   if (!Number.isFinite(stepIdx) || stepIdx < 0) return {}
-  const exercise = exercises[stepIdx]
-  if (!exercise) return { currentExerciseIndex: stepIdx }
-  return { currentExerciseIndex: stepIdx, currentExerciseId: exercise.id, currentSection: exercise.section || 'main' }
+  const steps = buildSteps(exercises)
+  const boundaries = computeExerciseBoundaries(steps)
+  const exerciseIdx = findCurrentExerciseIndex(boundaries, stepIdx, steps.length)
+  if (exerciseIdx < 0) return {}
+  const exercise = steps[stepIdx].exercise
+  return { currentExerciseIndex: exerciseIdx, currentExerciseId: exercise.id, currentSection: exercise.section || 'main' }
 }
 
 /**

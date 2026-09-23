@@ -12,6 +12,7 @@ import { STRENGTH_ACTIVE_KEY } from '../../lib/storage-keys'
 import { getOrLoadCatalogIndex } from '../../lib/catalogIndex'
 import { localize } from '../../lib/i18n-db'
 import { firstWorkoutKey } from '../../lib/first-workout'
+import { buildSteps, createSessionReducer, initSessionState } from '../../lib/session-machine'
 import type { Exercise } from '../../types'
 
 // El módulo importa `pb` al evaluarse; nada de lo que se prueba aquí sale a red.
@@ -150,15 +151,20 @@ describe('normalizeRemoteSession — la adopción entre dispositivos repasa igua
 // funciones puras que `abandon()` y el `useEffect` de expirado comparten, que
 // es la única forma de probar esto sin DOM/testing-library en core.
 describe('currentExerciseAnalytics — contexto del ejercicio en curso (#823)', () => {
+  // Series DISTINTAS a propósito (2, 2, 1): con todos los ejercicios a la
+  // misma cuenta de series, un `stepIdx` que indexase `exercises` en vez de
+  // `buildSteps(exercises)` habría colado sin que ningún test lo notara —
+  // exactamente el bug de la revisión externa (#823 ronda 1). `steps` queda:
+  // [squat×2 (0,1), knee_push_up×2 (2,3), glute_bridge×1 (4)].
   const exercises: Exercise[] = [
-    { ...base, id: 'bodyweight_squat', section: 'warmup' },
-    { ...base, id: 'knee_push_up', section: 'main' },
-    { ...base, id: 'glute_bridge' }, // sin `section` — ejercicio antiguo
+    { ...base, id: 'bodyweight_squat', sets: 2, section: 'warmup' },
+    { ...base, id: 'knee_push_up', sets: 2, section: 'main' },
+    { ...base, id: 'glute_bridge', sets: 1 }, // sin `section` — ejercicio antiguo
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any
 
   it('un índice dentro de rango da índice, id y sección', () => {
-    expect(currentExerciseAnalytics(exercises, 1)).toEqual({
+    expect(currentExerciseAnalytics(exercises, 2)).toEqual({
       currentExerciseIndex: 1, currentExerciseId: 'knee_push_up', currentSection: 'main',
     })
   })
@@ -170,15 +176,27 @@ describe('currentExerciseAnalytics — contexto del ejercicio en curso (#823)', 
     })
   })
 
-  it('sin `section` en el ejercicio, cae a "main" (igual que `getCurrentSection`)', () => {
-    expect(currentExerciseAnalytics(exercises, 2)).toMatchObject({ currentSection: 'main' })
+  // La 2.ª serie de un ejercicio (`stepIdx: 1`) sigue siendo el MISMO
+  // ejercicio (índice 0), no el siguiente: esto es justo lo que el bug de la
+  // ronda 1 rompía (`exercises[1]` daba `knee_push_up` en vez de la 2.ª serie
+  // de `bodyweight_squat`).
+  it('la 2.ª serie de un ejercicio no lo confunde con el siguiente', () => {
+    expect(currentExerciseAnalytics(exercises, 1)).toEqual({
+      currentExerciseIndex: 0, currentExerciseId: 'bodyweight_squat', currentSection: 'warmup',
+    })
   })
 
-  // Una transición de sección puede dejar `stepIdx` un paso por delante del
-  // último ejercicio: el índice viaja (es real), pero id/sección NO se
-  // fabrican.
-  it('un índice fuera de rango manda el índice pero no inventa id ni sección', () => {
-    expect(currentExerciseAnalytics(exercises, 3)).toEqual({ currentExerciseIndex: 3 })
+  it('sin `section` en el ejercicio, cae a "main" (igual que `getCurrentSection`)', () => {
+    expect(currentExerciseAnalytics(exercises, 4)).toEqual({
+      currentExerciseIndex: 2, currentExerciseId: 'glute_bridge', currentSection: 'main',
+    })
+  })
+
+  // `stepIdx === steps.length` (todas las series ya registradas, p.ej. en
+  // `note`/`section-transition`): no hay `Exercise` real ahí, así que no se
+  // fabrica ningún campo.
+  it('un índice fuera del total de series no manda nada', () => {
+    expect(currentExerciseAnalytics(exercises, 5)).toEqual({})
   })
 
   it('un índice negativo o no numérico no manda nada', () => {
@@ -186,8 +204,35 @@ describe('currentExerciseAnalytics — contexto del ejercicio en curso (#823)', 
     expect(currentExerciseAnalytics(exercises, NaN)).toEqual({})
   })
 
-  it('un entreno vacío no revienta', () => {
-    expect(currentExerciseAnalytics([], 0)).toEqual({ currentExerciseIndex: 0 })
+  it('un entreno vacío no revienta y no manda nada', () => {
+    expect(currentExerciseAnalytics([], 0)).toEqual({})
+  })
+
+  // Deriva `stepIdx` con el reductor REAL en vez de construirlo a mano: así
+  // el test reproduce el escenario exacto del QA manual del issue —abandonar
+  // en el 2.º ejercicio del primer entreno curado (2 series por ejercicio,
+  // #694)— y habría atrapado el bug de la ronda 1 sin depender de que el test
+  // adivine el `stepIdx` correcto.
+  it('con el reductor real: tras terminar el 1.er ejercicio y empezar el 2.º, el índice es el del 2.º ejercicio', () => {
+    const workoutExercises: Exercise[] = [
+      { ...base, id: 'bodyweight_squat', sets: 2, section: 'main' },
+      { ...base, id: 'knee_push_up', sets: 2, section: 'main' },
+      { ...base, id: 'glute_bridge', sets: 2, section: 'main' },
+      { ...base, id: 'plank', sets: 2, section: 'main' },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any
+    const steps = buildSteps(workoutExercises)
+    const reducer = createSessionReducer(steps)
+    let state = initSessionState()
+    // 1.er ejercicio: sus 2 series + los dos descansos que las separan.
+    state = reducer(state, { type: 'log-set' }) // squat serie 1 → rest
+    state = reducer(state, { type: 'rest-done' }) // squat serie 2
+    state = reducer(state, { type: 'log-set' }) // squat serie 2 → rest
+    state = reducer(state, { type: 'rest-done' }) // knee_push_up serie 1 — abandona aquí, a medio ejercicio 2
+
+    expect(currentExerciseAnalytics(workoutExercises, state.stepIdx)).toEqual({
+      currentExerciseIndex: 1, currentExerciseId: 'knee_push_up', currentSection: 'main',
+    })
   })
 })
 
@@ -207,21 +252,36 @@ describe('abandonPhase — fase de abandono (#823)', () => {
 })
 
 describe('abandonedWorkoutProperties — lo que manda `workout_abandoned` (#823)', () => {
+  // `sets: 2`, como el primer entreno curado del #694: el test de más abajo
+  // deriva `stepIdx` con el reductor real y necesita que 2 series completas
+  // agoten el 1.er ejercicio.
   const exercises: Exercise[] = [
-    { ...base, id: 'bodyweight_squat', section: 'main' },
-    { ...base, id: 'knee_push_up', section: 'main' },
-    { ...base, id: 'glute_bridge', section: 'main' },
+    { ...base, id: 'bodyweight_squat', sets: 2, section: 'main' },
+    { ...base, id: 'knee_push_up', sets: 2, section: 'main' },
+    { ...base, id: 'glute_bridge', sets: 2, section: 'main' },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any
 
   // QA manual del issue: abandonar en el 2.º ejercicio (índice 1) de la
-  // sesión curada del primer entreno.
+  // sesión curada del primer entreno. `stepIdx` sale del reductor REAL sobre
+  // un entreno de 2 series por ejercicio (como el del #694), no a mano: con
+  // `sets: 3` y `stepIdx: 1` a mano este test pasaba con el bug de la ronda 1
+  // (`exercises[1]` colaba como si fuese el ejercicio en curso) sin haberlo
+  // detectado nunca.
   it('primer entreno curado, abandonado en el 2.º ejercicio: is_first_workout true e índice 1', () => {
     const key = firstWorkoutKey(1_700_000_000_000)
+    const steps = buildSteps(exercises)
+    const reducer = createSessionReducer(steps)
+    let state = initSessionState()
+    state = reducer(state, { type: 'log-set' }) // 1.er ejercicio, serie 1 → rest
+    state = reducer(state, { type: 'rest-done' }) // 1.er ejercicio, serie 2
+    state = reducer(state, { type: 'log-set' }) // 1.er ejercicio, serie 2 → rest
+    state = reducer(state, { type: 'rest-done' }) // 2.º ejercicio, serie 1 — abandona aquí
+
     const props = abandonedWorkoutProperties({
       workoutKey: key, source: 'free', startedAt: 1_700_000_000_000, endedAt: 1_700_000_090_000,
-      exercises, progress: { stepIdx: 1, phase: 'exercise', setsCount: 1 },
-      setsLogged: 1, reason: 'page_closed',
+      exercises, progress: { stepIdx: state.stepIdx, phase: state.phase, setsCount: state.setsCount },
+      setsLogged: state.setsCount, reason: 'page_closed',
     })
     expect(props).toMatchObject({
       is_first_workout: true,
