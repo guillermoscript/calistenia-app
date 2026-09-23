@@ -418,6 +418,12 @@ export function computeFirstWorkoutAbandonment(
  * bajos — fácil de leer como una caída real de retención cuando es solo un
  * corte del fetch. `LOOKAHEAD_DAYS` cubre el caso más ancho de los dos
  * (D7 y la ventana de 7 días de la métrica norte).
+ *
+ * IMPORTANTE: esta ventana extendida es SOLO para D1/D7 y la métrica norte.
+ * El embudo (`computeFunnel`) NO debe recibir los arrays tal cual —
+ * `buildFunnelEventsByStep` los recorta de vuelta al rango declarado antes
+ * de calcularlo, para que "Sesión iniciada" y "Entreno completado" nunca
+ * cuenten un perfil cuyo único evento cae después del `--to` pedido.
  */
 export const LOOKAHEAD_DAYS = 7
 
@@ -447,6 +453,45 @@ export function buildEventFetchWindows(eventNames, { from, to }) {
     from,
     to: LOOKAHEAD_EVENT_NAMES.has(event) ? addDaysToDateString(to, LOOKAHEAD_DAYS) : to,
   }))
+}
+
+/**
+ * Recorta `events` al rango [from, to] DECLARADO (inclusive en ambos
+ * extremos, mismo corte que `toInclusiveEndOfDay` usa para `to`).
+ *
+ * Existe porque `buildEventFetchWindows` pide `session_started` y
+ * `workout_completed` hasta `to + LOOKAHEAD_DAYS` (ver el bloque de arriba),
+ * así que esos dos arrays de `eventsByStep` traen eventos posteriores al
+ * `to` que el informe imprime. Eso es correcto para D1/D7 y la métrica
+ * norte — necesitan esa ventana — pero NO para el embudo: `computeFunnel`
+ * cuenta perfiles distintos por paso, y un perfil cuyo ÚNICO evento cae en
+ * la ventana de mirada-adelante no debe aparecer en un informe cuya propia
+ * cabecera dice "Rango: … → to". Ver `buildFunnelEventsByStep`.
+ */
+export function filterEventsInDeclaredRange(events, { from, to }) {
+  const fromMs = new Date(from).getTime()
+  const toMs = new Date(toInclusiveEndOfDay(to)).getTime()
+  return events.filter(e => e.createdAt >= fromMs && e.createdAt <= toMs)
+}
+
+/**
+ * El `eventsByStep` que debe VERSE en el embudo, a partir del que ya se
+ * fetcheó con las ventanas extendidas de `buildEventFetchWindows`. Recorta
+ * únicamente los pasos de `LOOKAHEAD_EVENT_NAMES` (`session_started`,
+ * `workout_completed`) al rango declarado; el resto de pasos ya se pidieron
+ * con el `to` exacto y se dejan tal cual. Separado de `runPlatform` (que sí
+ * hace I/O) para poder testear "qué ve el embudo" sin mockear `fetch` — ver
+ * el test de regresión del embudo en `openpanel-retention-report.test.mjs`.
+ */
+export function buildFunnelEventsByStep(eventsByStep, { from, to }) {
+  return Object.fromEntries(
+    FUNNEL_STEPS.map(({ key }) => [
+      key,
+      LOOKAHEAD_EVENT_NAMES.has(key)
+        ? filterEventsInDeclaredRange(eventsByStep[key] ?? [], { from, to })
+        : (eventsByStep[key] ?? []),
+    ]),
+  )
 }
 
 // ── Normalización de la respuesta de OpenPanel ──────────────────────────────
@@ -677,14 +722,24 @@ async function runPlatform(platform, { from, to, excludedIds }) {
   // del rango pedido tengan su D7 y su ventana de métrica norte completos —
   // el `from`/`to` que se usa para RENDERIZAR el informe (línea de "Rango: …"
   // y el propio corte de qué cuenta como cohorte) sigue siendo el pedido por
-  // el usuario sin tocar.
+  // el usuario sin tocar. `eventsByStep` de aquí en adelante SIGUE llevando
+  // esos dos arrays extendidos — se usan tal cual para D1/D7 y la métrica
+  // norte más abajo, y recortados al rango declarado (`funnelEventsByStep`)
+  // para el embudo.
   for (const { event: eventName, from: eventFrom, to: eventTo } of buildEventFetchWindows(REQUIRED_EVENT_NAMES, { from, to })) {
     const raw = await fetchAllEvents({ baseUrl, clientId, clientSecret, projectId, event: eventName, from: eventFrom, to: eventTo })
     eventsByStep[eventName] = excludeProfiles(raw, excludedIds)
   }
 
+  // Recortado al rango DECLARADO — no al rango extendido del fetch — para que
+  // el embudo (y todo lo que hable de él, como el aviso de perfiles anónimos
+  // de abajo) nunca cuente un perfil cuyo único evento cae en la ventana de
+  // mirada-adelante de `session_started`/`workout_completed` (ver
+  // `buildFunnelEventsByStep`).
+  const funnelEventsByStep = buildFunnelEventsByStep(eventsByStep, { from, to })
+
   const webAnonCount = platform === 'web'
-    ? eventsByStep.session_started.filter(e => isLikelyAnonymousProfileId(e.profileId)).length
+    ? funnelEventsByStep.session_started.filter(e => isLikelyAnonymousProfileId(e.profileId)).length
     : 0
   if (webAnonCount > 0) {
     caveats.push(
@@ -701,7 +756,7 @@ async function runPlatform(platform, { from, to, excludedIds }) {
     )
   }
 
-  const funnel = computeFunnel(eventsByStep)
+  const funnel = computeFunnel(funnelEventsByStep)
   const cohortRetention = computeCohortRetention(eventsByStep.signup_completed, eventsByStep.session_started)
   const northStar = computeNorthStar(eventsByStep.signup_completed, eventsByStep.workout_completed)
   const abandonment = computeFirstWorkoutAbandonment(

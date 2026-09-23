@@ -211,6 +211,18 @@ per step** (not raw event counts — `workout_completed` and the automatic
 events can repeat per profile, and counting events would have inflated the
 middle of the funnel relative to the edges).
 
+**The funnel is scoped to the requested `--from`/`--to`, never to the wider
+lookahead fetch window described below.** `session_started` and
+`workout_completed` are fetched past `--to` so D1/D7 and the north star have
+the activity they need (see the next section) — but the funnel's first and
+last steps use those same two event names, so passing the raw fetched arrays
+straight to `computeFunnel()` would let a profile whose *only* event falls in
+that lookahead window inflate the funnel count, past what the report's own
+"Rango: …" header says it covers. `buildFunnelEventsByStep()` re-clips
+`session_started`/`workout_completed` back to `[--from, --to]` before the
+funnel is computed; `runPlatform()` never calls `computeFunnel()` on the raw
+`eventsByStep`.
+
 ### D1 / D7: weekly cohorts anchored on `signup_completed`
 
 Cohort = profiles whose earliest `signup_completed` falls in a given ISO

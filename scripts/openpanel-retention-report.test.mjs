@@ -32,6 +32,8 @@ import {
   computeFirstWorkoutAbandonment,
   addDaysToDateString,
   buildEventFetchWindows,
+  filterEventsInDeclaredRange,
+  buildFunnelEventsByStep,
   toInclusiveEndOfDay,
   normalizeOpenPanelEvent,
   parseDotEnv,
@@ -338,6 +340,67 @@ describe('buildEventFetchWindows', () => {
   it('never changes `from` for any event', () => {
     const windows = buildEventFetchWindows(REQUIRED_EVENT_NAMES, { from: '2026-08-20', to: '2026-09-22' })
     expect(windows.every(w => w.from === '2026-08-20')).toBe(true)
+  })
+})
+
+describe('filterEventsInDeclaredRange', () => {
+  it('keeps only events within [from, to] inclusive, using the end-of-day cutoff for `to`', () => {
+    const events = [
+      ev('e', 'before', Date.UTC(2026, 7, 1) - 1), // just before `from`
+      ev('e', 'start', Date.UTC(2026, 7, 1)), // exactly `from`
+      ev('e', 'mid', Date.UTC(2026, 7, 3)),
+      ev('e', 'end', Date.UTC(2026, 7, 7, 23, 59, 59, 999)), // last instant of `to`
+      ev('e', 'after', Date.UTC(2026, 7, 8)), // just past `to`
+    ]
+    const kept = filterEventsInDeclaredRange(events, { from: '2026-08-01', to: '2026-08-07' })
+    expect(kept.map(e => e.profileId)).toEqual(['start', 'mid', 'end'])
+  })
+})
+
+describe('buildFunnelEventsByStep (regression: funnel must not see the lookahead-extended fetch window)', () => {
+  it('excludes a profile whose only session_started/workout_completed falls in the lookahead window', () => {
+    const from = '2026-08-01'
+    const to = '2026-08-07'
+    // Shaped exactly like what runPlatform actually passes: session_started
+    // and workout_completed were fetched through buildEventFetchWindows,
+    // i.e. up to `to + LOOKAHEAD_DAYS` (2026-08-14), so the raw arrays
+    // already contain events dated after the declared `to`.
+    const eventsByStep = {
+      session_started: [
+        ev('session_started', 'in-range', Date.UTC(2026, 7, 3)),
+        ev('session_started', 'lookahead-only', Date.UTC(2026, 7, 10)), // inside +7d lookahead, outside declared range
+      ],
+      signup_completed: [ev('signup_completed', 'in-range', Date.UTC(2026, 7, 2))],
+      onboarding_completed: [],
+      first_workout_started: [],
+      workout_completed: [
+        ev('workout_completed', 'in-range', Date.UTC(2026, 7, 3)),
+        ev('workout_completed', 'lookahead-only', Date.UTC(2026, 7, 12)),
+      ],
+    }
+
+    const scoped = buildFunnelEventsByStep(eventsByStep, { from, to })
+    const funnel = computeFunnel(scoped)
+
+    expect(funnel.find(r => r.key === 'session_started').profiles).toBe(1)
+    expect(funnel.find(r => r.key === 'workout_completed').profiles).toBe(1)
+  })
+
+  it('leaves steps outside LOOKAHEAD_EVENT_NAMES untouched, even with a lookahead-window event', () => {
+    // signup_completed/onboarding_completed/first_workout_started are always
+    // fetched with the exact declared `to` (see buildEventFetchWindows), so
+    // this only guards that buildFunnelEventsByStep does not over-filter them.
+    const eventsByStep = {
+      session_started: [],
+      signup_completed: [ev('signup_completed', 'a', Date.UTC(2026, 7, 3))],
+      onboarding_completed: [ev('onboarding_completed', 'a', Date.UTC(2026, 7, 3))],
+      first_workout_started: [ev('first_workout_started', 'a', Date.UTC(2026, 7, 3))],
+      workout_completed: [],
+    }
+    const scoped = buildFunnelEventsByStep(eventsByStep, { from: '2026-08-01', to: '2026-08-07' })
+    expect(scoped.signup_completed).toEqual(eventsByStep.signup_completed)
+    expect(scoped.onboarding_completed).toEqual(eventsByStep.onboarding_completed)
+    expect(scoped.first_workout_started).toEqual(eventsByStep.first_workout_started)
   })
 })
 
