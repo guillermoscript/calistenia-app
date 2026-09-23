@@ -40,10 +40,20 @@
  * lectura):
  *   - Límite de tasa: 100 peticiones / 10 s por client id.
  *   - `limit` máximo 1000 por página; paginar con `page`.
- *   - Ha habido reportes de que `properties` no siempre viaja en el evento
- *     aunque `includes=profile,meta` lo pida (openpanel-dev/openpanel#281).
- *     Este script asume que puede faltar y lo trata como ausente, nunca como
- *     un error — ver `computeFirstWorkoutAbandonment()`.
+ *   - `properties` solo viaja en el evento si `includes` lo pide EXPLÍCITAMENTE
+ *     (verificado contra el código real del servidor: `export.controller.ts`
+ *     solo activa `select.properties` cuando `includes` contiene el string
+ *     literal `"properties"` — `profile,meta` no lo arrastra). Este script
+ *     pide `includes=profile,meta,properties` (ver `fetchEventsPage()`).
+ *     Además ha habido reportes de que puede faltar igualmente
+ *     (openpanel-dev/openpanel#281); este script lo trata como ausente,
+ *     nunca como un error — ver `computeFirstWorkoutAbandonment()`.
+ *   - `end=<fecha>` es un corte EXCLUSIVO: el servidor hace
+ *     `new Date(end)` y filtra con `created_at <= ese instante` — una fecha
+ *     suelta tipo `2026-09-22` cae en la MEDIANOCHE de inicio de ese día, así
+ *     que un `--to` así perdería todo el último día pedido. Este script
+ *     normaliza `end` al último instante de ese día antes de mandarlo (ver
+ *     `toInclusiveEndOfDay()`).
  *
  * ## Qué NO hace
  *
@@ -395,6 +405,50 @@ export function computeFirstWorkoutAbandonment(
   }
 }
 
+// ── Ventana de fetch por evento ─────────────────────────────────────────────
+
+/**
+ * `computeCohortRetention` necesita un `session_started` hasta
+ * `signup + 7 días` (el mayor de `days`) y `computeNorthStar` un
+ * `workout_completed` hasta `signup + windowDays` (7 por defecto) — ambos
+ * MAYOR que el `--to` pedido para cualquier cohorte que se registró cerca
+ * del final del rango. Sin esto, esos eventos no están "mal contados": están
+ * AUSENTES del array de entrada porque nunca se pidieron, y las cohortes de
+ * la última semana del rango salen con D1/D7 y métrica norte artificialmente
+ * bajos — fácil de leer como una caída real de retención cuando es solo un
+ * corte del fetch. `LOOKAHEAD_DAYS` cubre el caso más ancho de los dos
+ * (D7 y la ventana de 7 días de la métrica norte).
+ */
+export const LOOKAHEAD_DAYS = 7
+
+/** Eventos cuya AUSENCIA hasta `--to + LOOKAHEAD_DAYS` (no solo `--to`) importa. */
+export const LOOKAHEAD_EVENT_NAMES = new Set(['session_started', 'workout_completed'])
+
+/** `to` (fecha `YYYY-MM-DD` o cualquier valor parseable por `Date`) + N días,
+ * devuelto como `YYYY-MM-DD`. Si `to` no es una fecha válida, se devuelve tal
+ * cual — el fetch se lo pasará a la API, que es quien debe rechazarlo con un
+ * error claro; este helper no es el sitio para validar la entrada del CLI. */
+export function addDaysToDateString(to, days) {
+  const base = new Date(to)
+  if (Number.isNaN(base.getTime())) return to
+  return new Date(base.getTime() + days * 86_400_000).toISOString().slice(0, 10)
+}
+
+/**
+ * La ventana `{from, to}` que hay que pedirle a la API por cada nombre de
+ * evento: la misma para casi todos, extendida `LOOKAHEAD_DAYS` más allá del
+ * `to` pedido para los eventos de `LOOKAHEAD_EVENT_NAMES`. Función pura —
+ * testeable sin red — que separa esta decisión de `runPlatform()` (que sí
+ * hace I/O) para poder testear el "qué se pide" sin mockear `fetch`.
+ */
+export function buildEventFetchWindows(eventNames, { from, to }) {
+  return eventNames.map(event => ({
+    event,
+    from,
+    to: LOOKAHEAD_EVENT_NAMES.has(event) ? addDaysToDateString(to, LOOKAHEAD_DAYS) : to,
+  }))
+}
+
 // ── Normalización de la respuesta de OpenPanel ──────────────────────────────
 
 /**
@@ -516,15 +570,33 @@ export function renderPlatformReport(platform, { from, to, funnel, cohortRetenti
 
 // ── Cliente HTTP de la API de exportación ───────────────────────────────────
 
-async function fetchEventsPage({ baseUrl, clientId, clientSecret, projectId, event, from, to, page, limit }) {
+/**
+ * El servidor de OpenPanel hace `new Date(end)` y filtra con
+ * `created_at <= ese instante` (verificado contra
+ * `packages/db/src/services/event.service.ts` del proyecto real). Una fecha
+ * suelta `YYYY-MM-DD` parsea a la MEDIANOCHE de inicio de ese día en UTC, así
+ * que pasarla tal cual perdería todo el último día pedido. Esto normaliza
+ * ese caso al último instante del día; un valor que ya trae hora (por
+ * ejemplo, uno ya extendido por `addDaysToDateString`+hora, o un `--to` con
+ * timestamp completo) se deja tal cual.
+ */
+export function toInclusiveEndOfDay(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T23:59:59.999Z` : value
+}
+
+export async function fetchEventsPage({ baseUrl, clientId, clientSecret, projectId, event, from, to, page, limit }) {
   const url = new URL(`${baseUrl.replace(/\/$/, '')}/export/events`)
   url.searchParams.set('projectId', projectId)
   url.searchParams.set('event', event)
   url.searchParams.set('start', from)
-  url.searchParams.set('end', to)
+  url.searchParams.set('end', toInclusiveEndOfDay(to))
   url.searchParams.set('page', String(page))
   url.searchParams.set('limit', String(limit))
-  url.searchParams.set('includes', 'profile,meta')
+  // `properties` solo viaja si `includes` lo pide EXPLÍCITAMENTE — verificado
+  // contra `export.controller.ts` real: `profile,meta` no lo arrastra (ver
+  // cabecera del fichero). Sin este string literal, `is_first_workout` de la
+  // #823 nunca sería legible pase lo que pase con esa issue.
+  url.searchParams.set('includes', 'profile,meta,properties')
 
   const res = await fetch(url, {
     headers: {
@@ -600,8 +672,14 @@ async function runPlatform(platform, { from, to, excludedIds }) {
 
   const eventsByStep = {}
   const caveats = []
-  for (const eventName of REQUIRED_EVENT_NAMES) {
-    const raw = await fetchAllEvents({ baseUrl, clientId, clientSecret, projectId, event: eventName, from, to })
+  // `session_started`/`workout_completed` se piden hasta `to + LOOKAHEAD_DAYS`
+  // (ver `buildEventFetchWindows`) para que las cohortes cercanas al final
+  // del rango pedido tengan su D7 y su ventana de métrica norte completos —
+  // el `from`/`to` que se usa para RENDERIZAR el informe (línea de "Rango: …"
+  // y el propio corte de qué cuenta como cohorte) sigue siendo el pedido por
+  // el usuario sin tocar.
+  for (const { event: eventName, from: eventFrom, to: eventTo } of buildEventFetchWindows(REQUIRED_EVENT_NAMES, { from, to })) {
+    const raw = await fetchAllEvents({ baseUrl, clientId, clientSecret, projectId, event: eventName, from: eventFrom, to: eventTo })
     eventsByStep[eventName] = excludeProfiles(raw, excludedIds)
   }
 

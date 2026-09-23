@@ -71,6 +71,36 @@ in any dashboard update without notice. The Export API is the supported
 path, and it demonstrably works against this instance once a client has
 export rights.
 
+### `includes` must say `properties` explicitly — verified against the real server source
+
+`fetchEventsPage()` sends `includes=profile,meta,properties`, not just
+`profile,meta`. This was **verified by reading OpenPanel's own server code**
+(`apps/api/src/controllers/export.controller.ts` and
+`packages/db/src/services/event.service.ts` in `Openpanel-dev/openpanel`,
+2026-09-23), not assumed from the docs: the controller builds
+`select: { profile: false, meta: false, ...includes.reduce(...) }`, and
+`getEventList()` only adds `properties` to the SQL `SELECT` when
+`select.properties` is truthy (`if (select.properties) { sb.select.properties
+= 'properties' }`). `profile,meta` alone never sets that key — the earlier
+version of this script requested `includes=profile,meta` and would **never**
+have received `properties` back, for any event, regardless of date range or
+whether issue #823 (`is_first_workout`) had shipped. Fixed; see the fetch
+layer test in `openpanel-retention-report.test.mjs` (`'requests properties
+explicitly...'`) that would catch a regression.
+
+### `end` is an exclusive midnight-UTC cutoff — also verified against the real server source
+
+`toInclusiveEndOfDay()` turns a bare `--to 2026-09-22` into
+`2026-09-22T23:59:59.999Z` before it reaches the API. Also verified against
+the real server code: the controller does `endDate: end ? new Date(end) :
+undefined`, and `getEventList()` filters with `created_at <= endDate`. A
+bare date string parses to **midnight at the start** of that day
+(`new Date('2026-09-22')` → `2026-09-22T00:00:00.000Z`), so an unmodified
+`--to` would have silently dropped every event from the entire last day of
+any requested range — including the AC-3 validation range's own last day.
+Fixed at the single point where the URL is built, so every caller benefits
+without needing to know about it.
+
 ### Known fragility of the Export API itself
 
 Not verified against this instance (no read credentials yet), but reported
@@ -78,10 +108,12 @@ against OpenPanel upstream and worth knowing before trusting a surprising
 number:
 
 - **`properties` has been reported missing from exported events even when
-  requested** (openpanel-dev/openpanel#281). The script does not assume
-  `properties` is present — see "First-workout abandonment" below, where its
-  absence silently switches to the fallback approximation instead of
-  crashing or silently under-counting.
+  requested** (openpanel-dev/openpanel#281), independent of the `includes`
+  bug above (which meant it was never *requested* at all). The script does
+  not assume `properties` is present even now that it's correctly requested
+  — see "First-workout abandonment" below, where its absence silently
+  switches to the fallback approximation instead of crashing or silently
+  under-counting.
 - **Event counts have been reported to vary with the `limit` parameter**
   (openpanel-dev/openpanel#296) on some versions. If a re-run of the same
   range produces a different total than a previous run, this is the first
@@ -192,6 +224,20 @@ end up in different "day 1" windows relative to each other. See the test
 `scripts/openpanel-retention-report.test.mjs` for the exact edge case this
 guards against.
 
+**The `session_started` events used as the "returned" signal are fetched
+past `--to`, not truncated at it.** D7 for a profile who signed up close to
+the end of the requested range needs activity up to `signup + 7 days`, which
+can fall *after* `--to` — if the fetch itself stopped at `--to`, that later
+`session_started` would not be wrongly bucketed, it would simply never be
+fetched at all, and the most recent cohorts in the report would read as
+having near-zero D1/D7 purely as an artifact of the fetch window, easy to
+mistake for a real retention drop. `buildEventFetchWindows()` requests
+`session_started` (and `workout_completed`, for the north star below) up to
+`--to + LOOKAHEAD_DAYS` (7, matching the widest window either metric needs)
+while every cohort is still bucketed strictly by the requested
+`--from`/`--to` — only the *lookahead* events get the wider fetch, not the
+`signup_completed` events that define cohort membership.
+
 ### North star: 3 `workout_completed` in the first 7 days *of the account*
 
 Anchored on `signup_completed`, not on `session_started` or
@@ -202,6 +248,9 @@ when someone happened to first open the app relative to signing up, and
 different cohorts would no longer be measured against the same yardstick.
 The window is a half-open `[signup, signup + 7d)` — a completion landing
 exactly 7 days later does not count, matching "within their first 7 days."
+Same fetch-window caveat as D1/D7 above applies here: `workout_completed` is
+also fetched up to `--to + LOOKAHEAD_DAYS` so a signup near the end of the
+range still has its full 7-day completion window available.
 
 ### First-workout abandonment: primary + fallback, and the report says which one ran
 
@@ -282,6 +331,15 @@ Exact steps to close this out:
    is not a bug, see "Funnel anchor" above. A large discrepancy in
    `signup_completed` onward (where naming isn't ambiguous) would be the
    real signal something is off.
+5. If `--to` is close to *today* when this runs (as it would be for
+   `--to 2026-09-22` run on or right after that date), the D7/north-star
+   numbers for the most recent week or so of cohorts will still look thin
+   **even with the fetch-window fix above** — not because the fetch was
+   truncated (that's fixed), but because those users genuinely have not had
+   7 real days pass yet. That's an honest "not enough time has elapsed"
+   result, not a bug; don't read it as a retention drop. A future
+   improvement would be to mark such cohorts as "immature" in the rendered
+   table instead of leaving the reader to notice this themselves.
 
 ## Extending this report
 

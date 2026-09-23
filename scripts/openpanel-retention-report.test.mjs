@@ -11,11 +11,13 @@
  * Or:       pnpm --filter @calistenia/core exec vitest run ../../scripts/openpanel-retention-report.test.mjs --root ../../scripts
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   FUNNEL_STEPS,
   REQUIRED_EVENT_NAMES,
   DEMO_PLAY_EXCLUDED_PROFILE_IDS,
+  LOOKAHEAD_DAYS,
+  LOOKAHEAD_EVENT_NAMES,
   parseCoreExcludedProfileIds,
   extractAnalyticsExcludedIds,
   isLikelyAnonymousProfileId,
@@ -28,10 +30,14 @@ import {
   computeCohortRetention,
   computeNorthStar,
   computeFirstWorkoutAbandonment,
+  addDaysToDateString,
+  buildEventFetchWindows,
+  toInclusiveEndOfDay,
   normalizeOpenPanelEvent,
   parseDotEnv,
   parseArgs,
   renderPlatformReport,
+  fetchEventsPage,
 } from './openpanel-retention-report.mjs'
 
 const DAY = 86_400_000
@@ -291,6 +297,91 @@ describe('computeFirstWorkoutAbandonment', () => {
   it('an empty cohort has a defined zero rate instead of NaN', () => {
     const result = computeFirstWorkoutAbandonment([], [], [])
     expect(result.rate).toBe(0)
+  })
+})
+
+describe('addDaysToDateString', () => {
+  it('adds days to a bare YYYY-MM-DD date', () => {
+    expect(addDaysToDateString('2026-09-22', 7)).toBe('2026-09-29')
+  })
+
+  it('rolls over month and year boundaries', () => {
+    expect(addDaysToDateString('2026-12-28', 7)).toBe('2027-01-04')
+  })
+
+  it('returns the input unchanged when it is not a parseable date', () => {
+    expect(addDaysToDateString('not-a-date', 7)).toBe('not-a-date')
+  })
+})
+
+describe('buildEventFetchWindows', () => {
+  it('extends `to` by LOOKAHEAD_DAYS only for session_started and workout_completed', () => {
+    const windows = buildEventFetchWindows(REQUIRED_EVENT_NAMES, { from: '2026-08-20', to: '2026-09-22' })
+    const byEvent = Object.fromEntries(windows.map(w => [w.event, w]))
+
+    expect(LOOKAHEAD_EVENT_NAMES.has('session_started')).toBe(true)
+    expect(LOOKAHEAD_EVENT_NAMES.has('workout_completed')).toBe(true)
+    expect(byEvent.session_started.to).toBe(addDaysToDateString('2026-09-22', LOOKAHEAD_DAYS))
+    expect(byEvent.workout_completed.to).toBe(addDaysToDateString('2026-09-22', LOOKAHEAD_DAYS))
+  })
+
+  it('leaves `to` untouched for events that are not a lookahead signal', () => {
+    const windows = buildEventFetchWindows(REQUIRED_EVENT_NAMES, { from: '2026-08-20', to: '2026-09-22' })
+    const byEvent = Object.fromEntries(windows.map(w => [w.event, w]))
+
+    expect(byEvent.signup_completed.to).toBe('2026-09-22')
+    expect(byEvent.onboarding_completed.to).toBe('2026-09-22')
+    expect(byEvent.first_workout_started.to).toBe('2026-09-22')
+    expect(byEvent.workout_abandoned.to).toBe('2026-09-22')
+  })
+
+  it('never changes `from` for any event', () => {
+    const windows = buildEventFetchWindows(REQUIRED_EVENT_NAMES, { from: '2026-08-20', to: '2026-09-22' })
+    expect(windows.every(w => w.from === '2026-08-20')).toBe(true)
+  })
+})
+
+describe('toInclusiveEndOfDay', () => {
+  it('normalizes a bare YYYY-MM-DD date to the last instant of that UTC day', () => {
+    expect(toInclusiveEndOfDay('2026-09-22')).toBe('2026-09-22T23:59:59.999Z')
+  })
+
+  it('leaves a value that already carries a time component untouched', () => {
+    expect(toInclusiveEndOfDay('2026-09-22T10:00:00.000Z')).toBe('2026-09-22T10:00:00.000Z')
+  })
+})
+
+describe('fetchEventsPage (HTTP layer)', () => {
+  const originalFetch = global.fetch
+
+  afterEach(() => {
+    global.fetch = originalFetch
+  })
+
+  it('requests `properties` explicitly and sends an inclusive end-of-day cutoff', async () => {
+    let requestedUrl
+    global.fetch = vi.fn(async url => {
+      requestedUrl = url
+      return { ok: true, status: 200, json: async () => ({ data: [], meta: { pages: 1 } }) }
+    })
+
+    await fetchEventsPage({
+      baseUrl: 'https://openpanel.example/api',
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      projectId: 'p1',
+      event: 'session_started',
+      from: '2026-08-20',
+      to: '2026-09-22',
+      page: 1,
+      limit: 1000,
+    })
+
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+    const url = new URL(requestedUrl)
+    expect(url.searchParams.get('includes')).toBe('profile,meta,properties')
+    expect(url.searchParams.get('start')).toBe('2026-08-20')
+    expect(url.searchParams.get('end')).toBe('2026-09-22T23:59:59.999Z')
   })
 })
 
