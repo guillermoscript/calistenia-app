@@ -188,9 +188,11 @@ export function getCurrentSection(exercises: Exercise[], stepIdx: number): 'warm
  * `computeExerciseBoundaries` + `findCurrentExerciseIndex`, las tres de
  * `session-machine.ts`) y se traduce `stepIdx` al índice de EJERCICIO real
  * antes de leer nada. `currentExerciseIndex` cuenta solo los ejercicios con
- * alguna serie (`sets > 0`) — el mismo índice que ya manda `set_logged` como
- * `exercise_index` en `SessionView`, así que las dos propiedades quedan
- * comparables entre sí.
+ * alguna serie (`sets > 0`) y es 0-based. OJO: no es el mismo número que manda
+ * `exercise_completed` como `exercise_index` (`set_logged` no lleva
+ * `exercise_index`) — ese va en base 1 (`SessionView` manda
+ * `currentExerciseIndex + 1`), así que para comparar ambas propiedades hay que
+ * sumarle 1 a esta.
  *
  * A diferencia de `getCurrentSection` (que rellena `'main'` porque la UI
  * siempre necesita pintar algo), aquí NO hay fallback para el índice: sin un
