@@ -9,6 +9,7 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { getLocales } from 'expo-localization'
 import { storage } from '@calistenia/core/platform'
+import { resolveInitialLanguage } from './language-resolver'
 
 import es from '@calistenia/core/locales/es/translation.json'
 import en from '@calistenia/core/locales/en/translation.json'
@@ -20,7 +21,11 @@ export function initI18n(): void {
 
   const saved = storage.getItem(LANG_KEY)
   const deviceLang = getLocales()[0]?.languageCode
-  const lng = saved ?? (deviceLang === 'en' ? 'en' : 'es')
+  // #821: español SOLO si el dispositivo es realmente español; inglés para
+  // todo lo demás (India, Alemania, Brasil, Indonesia… ven hoy la app en
+  // español sin hablarlo). El guardado sigue ganando siempre — ver
+  // `resolveInitialLanguage`.
+  const lng = resolveInitialLanguage(deviceLang, saved)
 
   i18n.use(initReactI18next).init({
     resources: {
@@ -28,7 +33,7 @@ export function initI18n(): void {
       en: { translation: en },
     },
     lng,
-    fallbackLng: 'es',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
