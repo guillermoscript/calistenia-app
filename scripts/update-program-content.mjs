@@ -17,6 +17,13 @@
  *
  * Aborta si algún `day_id` no es `lun..dom` (#575): buildWeekDays descarta en
  * silencio los ids desconocidos. Corre antes `node scripts/normalize-program-days.mjs`.
+ *
+ * Campos bilingües (#797): `day_name`, `day_focus`, `workout_title`,
+ * `muscles`, `note` y el `name` de cada fase pasan por el mismo `i18n()` de
+ * abajo que `program.instructions` — ya aceptan `{es, en}` del JSON de
+ * origen sin tocar este script. Hoy los 15 `programs/*.json` los traen en
+ * español plano; `scripts/check-program-content.mjs` (regla `bilingual_field`)
+ * avisa de qué campos siguen sin `en`, sin bloquear `--strict` todavía.
  */
 
 import { readFileSync, readdirSync } from "fs"

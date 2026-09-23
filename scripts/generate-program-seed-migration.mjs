@@ -97,6 +97,19 @@
  * quince veces en la misma constante); `programs.content_hash` queda expuesto
  * para que un follow-up invalide detalle y snapshot cuando cambie; y una sesión
  * ya empezada arrastra el contenido viejo hasta que termine — aceptado.
+ *
+ * ## Campos bilingües (#797)
+ *
+ * No solo `program.instructions` viaja como `{es, en}`: `day_name`,
+ * `day_focus`, `workout_title`, `muscles`, `note` (por ejercicio) y el `name`
+ * de cada fase pasan por el mismo `i18n()` de más abajo, así que ya aceptan
+ * un objeto `{es, en}` sin que este generador cambie ni una línea. Hoy los 15
+ * `programs/*.json` los traen en español plano — `i18n()` los envuelve como
+ * `{es: valor}` y la app cae a español también en `en` (fallback genérico de
+ * `localize()`, `packages/core/lib/i18n-db.ts`). Es contenido pendiente de
+ * traducir (lote #792-#796), no una limitación de este script.
+ * `scripts/check-program-content.mjs` avisa (regla `bilingual_field`, nunca
+ * bloquea con `--strict` todavía) de qué campos siguen sin `en`.
  */
 
 import { createHash } from 'crypto'
