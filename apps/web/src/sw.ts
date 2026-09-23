@@ -141,8 +141,11 @@ self.addEventListener('notificationclick', (event) => {
       // registre su listener de mensajes, y ese click se perdía siempre (no
       // se trackeaba ningún `notification_clicked`). El marcador en la URL
       // llega garantizado con la navegación; `main.tsx` lo consume al arrancar.
+      // Sin `title`: es texto libre que puede llevar el nombre real de OTRO
+      // usuario (push social) y esta URL pasa por la barra de direcciones del
+      // navegador — el campaign (slug controlado) basta para el evento.
       return self.clients.openWindow(
-        withNotificationClickMarker(targetUrl, { title: notifTitle, campaign: event.notification.data?.campaign })
+        withNotificationClickMarker(targetUrl, { campaign: event.notification.data?.campaign })
       )
     })
   )

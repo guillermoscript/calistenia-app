@@ -121,13 +121,15 @@ const routerBasename = initialLocale ? `/${initialLocale}` : undefined
 // abajo, así que se perdía el evento). Se consume UNA sola vez al arrancar y
 // se limpia del historial — así un refresh no vuelve a contar el mismo click,
 // y BrowserRouter (más abajo) ya enruta sobre la URL limpia.
+// Sin `title`: el marcador viaja por la URL (barra de direcciones + historial
+// local), y el título de un push social puede ser el nombre real de OTRO
+// usuario — solo lleva el `campaign` (slug controlado por el servidor).
 const notifClickMarker = readNotificationClickMarker(window.location.href)
 if (notifClickMarker) {
   trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.notificationClicked, {
     surface: 'notification',
     source: 'service_worker',
     url: notifClickMarker.cleanUrl,
-    title: notifClickMarker.title,
     campaign: notifClickMarker.campaign,
   })
   window.history.replaceState(null, '', notifClickMarker.cleanUrl)

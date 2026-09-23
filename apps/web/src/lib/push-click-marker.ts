@@ -12,19 +12,26 @@
  * llega garantizada con la navegación — por eso el marcador viaja en el query
  * string en vez de por `postMessage`.
  *
+ * Solo lleva `campaign` (un slug controlado por el servidor, p.ej.
+ * `inactivity_24h`) — nunca el título del push. El título de un push social
+ * puede ser el nombre real de OTRO usuario (`pb_hooks/utils/notifications.js`:
+ * "<nombre> empezó a entrenar", "<nombre> lleva N días seguidos"), y este
+ * marcador viaja por `self.clients.openWindow(url)`: ese nombre asomaría en
+ * la barra de direcciones y en el historial local del navegador de quien NO
+ * tiene ninguna pestaña abierta. El camino de pestaña ya abierta sigue
+ * mandando el título por `postMessage` (nunca toca la URL) — eso no cambia.
+ *
  * Vive fuera de `sw.ts` y de `main.tsx` para poder testearse (mismo motivo
  * que `sw-navigation.ts`): ninguna de las dos funciones toca `self`/`window`.
  */
 
 const MARKER_PARAM = 'notif_click'
-const TITLE_PARAM = 'notif_title'
 const CAMPAIGN_PARAM = 'notif_campaign'
 
 // Base falsa: solo nos interesan pathname/search/hash, nunca el origin.
 const FAKE_BASE = 'https://push-click-marker.invalid'
 
 export interface NotificationClickMeta {
-  title?: string
   campaign?: string
 }
 
@@ -32,13 +39,11 @@ export interface NotificationClickMeta {
 export function withNotificationClickMarker(targetUrl: string, meta: NotificationClickMeta): string {
   const url = new URL(targetUrl, FAKE_BASE)
   url.searchParams.set(MARKER_PARAM, '1')
-  if (meta.title) url.searchParams.set(TITLE_PARAM, meta.title)
   if (meta.campaign) url.searchParams.set(CAMPAIGN_PARAM, meta.campaign)
   return `${url.pathname}${url.search}${url.hash}`
 }
 
 export interface NotificationClickMarker {
-  title?: string
   campaign?: string
   /** URL sin los parámetros del marcador — lo que queda en el historial. */
   cleanUrl: string
@@ -52,12 +57,10 @@ export function readNotificationClickMarker(href: string): NotificationClickMark
   const url = new URL(href)
   if (url.searchParams.get(MARKER_PARAM) !== '1') return null
 
-  const title = url.searchParams.get(TITLE_PARAM) ?? undefined
   const campaign = url.searchParams.get(CAMPAIGN_PARAM) ?? undefined
 
   url.searchParams.delete(MARKER_PARAM)
-  url.searchParams.delete(TITLE_PARAM)
   url.searchParams.delete(CAMPAIGN_PARAM)
 
-  return { title, campaign, cleanUrl: `${url.pathname}${url.search}${url.hash}` }
+  return { campaign, cleanUrl: `${url.pathname}${url.search}${url.hash}` }
 }
