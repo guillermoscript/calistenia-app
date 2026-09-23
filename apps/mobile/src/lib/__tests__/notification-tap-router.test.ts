@@ -21,7 +21,7 @@ function response(over: Partial<{ identifier: string; url: string }> = {}): Noti
 
 /** Deps con fakes; captura llamadas para asercionar sobre ellas. */
 function makeDeps(overrides: Partial<NotificationTapRouterDeps<NotificationResponseLike>> = {}) {
-  const listeners: Array<(response: NotificationResponseLike) => void> = []
+  const listeners: ((response: NotificationResponseLike) => void)[] = []
   const remove = vi.fn()
 
   const deps: NotificationTapRouterDeps<NotificationResponseLike> = {
