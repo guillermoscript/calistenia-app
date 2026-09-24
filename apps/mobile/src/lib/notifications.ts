@@ -26,15 +26,32 @@ Notifications.setNotificationHandler({
 
 let permissionAsked = false
 
+/**
+ * Crea el canal Android 'rest-timer' sin pedir permiso (#815 hallazgo #4).
+ * Antes solo se creaba dentro de `requestNotifPermission`, que
+ * `SessionView.tsx` llamaba al arrancar CADA sesión. Al quitar esa llamada
+ * (el permiso ya no se pide al arrancar la sesión, solo en la celebración del
+ * primer entreno), el canal dejaba de crearse y `scheduleRestEnd` programaba
+ * en un canal inexistente — Android descarta la notificación en silencio
+ * (API 26+). Crear un canal no dispara ningún diálogo al usuario, así que se
+ * llama una vez al arrancar la app (`app/_layout.tsx`).
+ */
+export async function ensureRestTimerChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return
+  try {
+    await Notifications.setNotificationChannelAsync('rest-timer', {
+      name: 'Rest timer',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 200, 100, 200],
+    })
+  } catch (e) {
+    Sentry.captureException(e, { tags: { feature: 'notifications', op: 'ensure_rest_timer_channel' } })
+  }
+}
+
 export async function requestNotifPermission(): Promise<boolean> {
   try {
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('rest-timer', {
-        name: 'Rest timer',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 200, 100, 200],
-      })
-    }
+    await ensureRestTimerChannel()
     const current = await Notifications.getPermissionsAsync()
     if (current.granted) return true
     if (permissionAsked) return false
