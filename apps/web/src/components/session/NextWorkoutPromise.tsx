@@ -40,7 +40,10 @@ export default function NextWorkoutPromise({ userId }: Props) {
 
   if (!promise) return null
 
-  const dayLabel = t(`day.${promise.dayId}`)
+  // `day.inSentence.<id>` y no `day.<id>`: en español el día va en minúscula
+  // dentro de la frase («vuelve el jueves»), no como etiqueta suelta
+  // («Jueves»); en inglés es el mismo texto capitalizado en los dos casos.
+  const dayLabel = t(`day.inSentence.${promise.dayId}`)
 
   return (
     <div
