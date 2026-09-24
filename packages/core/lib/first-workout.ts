@@ -79,11 +79,11 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
       muscles: { es: 'Piernas, glúteos', en: 'Legs, glutes' },
       note: {
         es: 'Pies a la anchura de los hombros. Baja como si te sentaras en una silla, las rodillas no se meten hacia dentro.',
-        en: 'Feet shoulder-width apart. Lower like sitting in a chair, knees don’t cave in.',
+        en: 'Feet shoulder-width apart. Sit back as if into a chair and don’t let your knees cave in.',
       },
       regression: {
         es: 'siéntate y levántate de una silla, o baja solo hasta la mitad',
-        en: 'sit and stand up from a chair, or just go halfway down',
+        en: 'sitting down onto a chair and standing back up, or only going halfway down',
       },
       sets: 2, reps: '10',
     },
@@ -97,7 +97,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
       },
       regression: {
         es: 'flexión inclinada apoyando las manos en una mesa o el sofá',
-        en: 'incline push-up with your hands on a table or the couch',
+        en: 'an incline push-up with your hands on a table or the couch',
       },
       sets: 2, reps: '8',
     },
@@ -111,7 +111,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
       },
       regression: {
         es: 'plancha apoyando las rodillas en el suelo',
-        en: 'plank with your knees on the floor',
+        en: 'a plank with your knees on the floor',
       },
       sets: 2, reps: '20s', isTimer: true, timerSeconds: 20,
     },
@@ -127,7 +127,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
       },
       regression: {
         es: 'siéntate y levántate de una silla, o baja solo hasta la mitad',
-        en: 'sit and stand up from a chair, or just go halfway down',
+        en: 'sitting down onto a chair and standing back up, or only going halfway down',
       },
       sets: 2, reps: '15',
     },
@@ -139,7 +139,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
         es: 'Cuerpo rígido como una tabla. Baja el pecho hasta rozar el suelo, codos a 45°.',
         en: 'Body rigid like a plank. Lower your chest until it grazes the floor, elbows at 45°.',
       },
-      regression: { es: 'flexión con las rodillas apoyadas', en: 'knee push-up' },
+      regression: { es: 'flexión con las rodillas apoyadas', en: 'knee push-ups' },
       regressionId: 'knee_push_up',
       sets: 2, reps: '10',
     },
@@ -153,7 +153,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
       },
       regression: {
         es: 'plancha apoyando las rodillas en el suelo',
-        en: 'plank with your knees on the floor',
+        en: 'a plank with your knees on the floor',
       },
       sets: 2, reps: '30s', isTimer: true, timerSeconds: 30,
     },
@@ -167,7 +167,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
         es: 'Baja en sentadilla y salta explosivo. Aterriza suave con las rodillas dobladas. Solo si no hay dolor.',
         en: 'Squat down and jump explosively. Land softly with your knees bent. Only if there’s no pain.',
       },
-      regression: { es: 'sentadilla sin salto', en: 'bodyweight squat, no jump' },
+      regression: { es: 'sentadilla sin salto', en: 'a regular squat, no jump' },
       regressionId: 'bodyweight_squat',
       sets: 2, reps: '10',
     },
@@ -179,7 +179,7 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
         es: 'Manos juntas en diamante bajo el pecho. Codos pegados al cuerpo al bajar.',
         en: 'Hands together in a diamond under your chest. Elbows close to your body as you lower.',
       },
-      regression: { es: 'flexión estándar', en: 'standard push-up' },
+      regression: { es: 'flexión estándar', en: 'regular push-ups' },
       regressionId: 'pushup_std',
       sets: 2, reps: '10',
     },
@@ -192,8 +192,8 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
         en: 'Lower back pressed to the floor. Arms and legs extended as far as possible without your back lifting.',
       },
       regression: {
-        es: 'dead bug: alterna brazo y pierna contraria, despacio',
-        en: 'dead bug: alternate opposite arm and leg, slow',
+        es: 'dead bug (alterna brazo y pierna contraria, despacio)',
+        en: 'a dead bug (alternate opposite arm and leg, slowly)',
       },
       regressionId: 'dead_bug',
       sets: 2, reps: '25s', isTimer: true, timerSeconds: 25,
@@ -245,8 +245,8 @@ export function estimateFirstWorkoutMinutes(level: FirstWorkoutLevel = 'principi
  * el nombre pelado del catálogo. Antes, con `regressionId` y catálogo
  * cargado, ganaba `index.byId.get(id).name` — un nombre propio («Dead Bug»,
  * «Push-up Rodillas») sin ninguna instrucción de cómo hacer la variante, al
- * contrario que el texto curado («dead bug: alterna brazo y pierna
- * contraria, despacio»). El catálogo está cargado en la práctica SIEMPRE que
+ * contrario que el texto curado («dead bug (alterna brazo y pierna
+ * contraria, despacio)»). El catálogo está cargado en la práctica SIEMPRE que
  * `buildFirstWorkout` corre en producción (móvil primea el índice al
  * arrancar, `apps/mobile/src/lib/init-core.ts`; web espera
  * `loadCatalogIndex()` antes de llamar, `apps/web/src/pages/ActiveSessionPage.tsx`),

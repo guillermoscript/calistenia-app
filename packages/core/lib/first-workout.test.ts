@@ -109,7 +109,7 @@ describe('nota de técnica + regresión (#812)', () => {
     const es = buildFirstWorkout('principiante', 'es').exercises.find(e => e.id === 'bodyweight_squat')!
     const en = buildFirstWorkout('principiante', 'en').exercises.find(e => e.id === 'bodyweight_squat')!
     expect(es.note).toContain('siéntate y levántate de una silla')
-    expect(en.note).toContain('sit and stand up from a chair')
+    expect(en.note).toContain('sitting down onto a chair and standing back up')
   })
 
   it('knee_push_up (sin regressionId, sin material: incline_push_up del catálogo pide banco)', () => {
@@ -129,7 +129,7 @@ describe('nota de técnica + regresión (#812)', () => {
     const es = buildFirstWorkout('intermedio', 'es').exercises.find(e => e.id === 'pushup_std')!
     const en = buildFirstWorkout('intermedio', 'en').exercises.find(e => e.id === 'pushup_std')!
     expect(es.note).toContain('flexión con las rodillas apoyadas')
-    expect(en.note).toContain('knee push-up')
+    expect(en.note).toContain('Too hard? Try knee push-ups.')
     expect(es.note).not.toContain(localize(catalogName, 'es'))
     expect(en.note).not.toContain(localize(catalogName, 'en'))
   })
@@ -152,7 +152,7 @@ describe('nota de técnica + regresión (#812)', () => {
     const deadBug = index.byId.get('dead_bug')!
     expect(deadBug.equipment ?? ['ninguno']).toEqual(['ninguno'])
     const es = buildFirstWorkout('avanzado', 'es').exercises.find(e => e.id === 'hollow_hold')!
-    expect(es.note).toContain('dead bug: alterna brazo y pierna contraria, despacio')
+    expect(es.note).toContain('dead bug (alterna brazo y pierna contraria, despacio)')
     expect(es.note).not.toContain(localize(deadBug.name, 'es'))
   })
 
