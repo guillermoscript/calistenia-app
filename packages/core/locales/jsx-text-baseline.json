@@ -29,7 +29,6 @@
     "apps/web/src/components/ExerciseCatalogPicker.tsx": 2,
     "apps/web/src/components/free-session/SessionForm.tsx": 4,
     "apps/web/src/components/free-session/SessionPreview.tsx": 7,
-    "apps/web/src/components/MediaViewer.tsx": 2,
     "apps/web/src/components/nutrition/FoodNameInput.tsx": 1,
     "apps/web/src/components/nutrition/PortionInput.tsx": 1,
     "apps/web/src/components/nutrition/QualityScoreBadge.tsx": 1,
@@ -43,7 +42,6 @@
     "apps/web/src/pages/ChallengeDetailPage.tsx": 2,
     "apps/web/src/pages/DownloadPage.tsx": 17,
     "apps/web/src/pages/MealLoggerPage.tsx": 4,
-    "apps/web/src/pages/ProfilePage.tsx": 0,
     "apps/web/src/pages/ReferralsPage.tsx": 1,
     "apps/web/src/pages/RemindersPage.tsx": 21,
     "apps/web/src/pages/RoutineViewPage.tsx": 4
