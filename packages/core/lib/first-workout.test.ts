@@ -119,28 +119,53 @@ describe('nota de técnica + regresión (#812)', () => {
     expect(en.note).toContain('table or the couch')
   })
 
-  it('pushup_std (intermedio, regressionId: knee_push_up) resuelve la regresión contra el nombre del catálogo', () => {
+  it('pushup_std (intermedio, regressionId: knee_push_up): la regresión SIEMPRE es el texto curado, nunca el nombre pelado del catálogo', () => {
+    // Revisión #812 ronda 2: con regressionId y catálogo cargado (el caso normal en
+    // producción) el nombre pelado del catálogo («Push-up Rodillas») ganaba al texto
+    // curado que sí explica el «cómo» — código muerto en la práctica. Ver
+    // `regressionPhrase()`.
     const index = getCatalogIndexSync()!
     const catalogName = index.byId.get('knee_push_up')!.name
     const es = buildFirstWorkout('intermedio', 'es').exercises.find(e => e.id === 'pushup_std')!
     const en = buildFirstWorkout('intermedio', 'en').exercises.find(e => e.id === 'pushup_std')!
-    expect(es.note).toContain(localize(catalogName, 'es'))
-    expect(en.note).toContain(localize(catalogName, 'en'))
+    expect(es.note).toContain('flexión con las rodillas apoyadas')
+    expect(en.note).toContain('knee push-up')
+    expect(es.note).not.toContain(localize(catalogName, 'es'))
+    expect(en.note).not.toContain(localize(catalogName, 'en'))
   })
 
-  it('jump_squat (avanzado, regressionId: bodyweight_squat) y diamond_pushup (regressionId: pushup_std) resuelven contra el catálogo', () => {
+  it('jump_squat (avanzado, regressionId: bodyweight_squat) y diamond_pushup (regressionId: pushup_std): regresión con el texto curado', () => {
     const index = getCatalogIndexSync()!
     const es = buildFirstWorkout('avanzado', 'es').exercises
-    expect(es.find(e => e.id === 'jump_squat')!.note).toContain(localize(index.byId.get('bodyweight_squat')!.name, 'es'))
-    expect(es.find(e => e.id === 'diamond_pushup')!.note).toContain(localize(index.byId.get('pushup_std')!.name, 'es'))
+    const jumpSquat = es.find(e => e.id === 'jump_squat')!
+    const diamond = es.find(e => e.id === 'diamond_pushup')!
+    expect(jumpSquat.note).toContain('sentadilla sin salto')
+    expect(jumpSquat.note).not.toContain(localize(index.byId.get('bodyweight_squat')!.name, 'es'))
+    expect(diamond.note).toContain('flexión estándar')
+    expect(diamond.note).not.toContain(localize(index.byId.get('pushup_std')!.name, 'es'))
   })
 
-  it('hollow_hold (avanzado, regressionId: dead_bug) es un ejercicio del catálogo sin material', () => {
+  it('hollow_hold (avanzado, regressionId: dead_bug): dead_bug existe en el catálogo sin material y la nota trae el texto curado', () => {
+    // regressionId sigue validando contra el catálogo (FIRST_WORKOUT_EXERCISE_IDS),
+    // pero ya no decide el texto que se muestra.
     const index = getCatalogIndexSync()!
     const deadBug = index.byId.get('dead_bug')!
     expect(deadBug.equipment ?? ['ninguno']).toEqual(['ninguno'])
     const es = buildFirstWorkout('avanzado', 'es').exercises.find(e => e.id === 'hollow_hold')!
-    expect(es.note).toContain(localize(deadBug.name, 'es'))
+    expect(es.note).toContain('dead bug: alterna brazo y pierna contraria, despacio')
+    expect(es.note).not.toContain(localize(deadBug.name, 'es'))
+  })
+
+  it('jump_squat: la nota curada incluye la advertencia de dolor que trae el catálogo para el mismo ejercicio', () => {
+    // La nota curada gana siempre a la del catálogo, así que si el catálogo marca una
+    // condición de seguridad para este ejercicio, la nota curada tiene que llevarla
+    // también — no puede perderse.
+    const index = getCatalogIndexSync()!
+    expect(localize(index.byId.get('jump_squat')!.note, 'es')).toContain('Solo si no hay dolor')
+    const es = buildFirstWorkout('avanzado', 'es').exercises.find(e => e.id === 'jump_squat')!
+    const en = buildFirstWorkout('avanzado', 'en').exercises.find(e => e.id === 'jump_squat')!
+    expect(es.note).toContain('Solo si no hay dolor')
+    expect(en.note).toContain('no pain')
   })
 
   it('la nota curada GANA a la del catálogo, aunque el catálogo tenga note vacío ({es:"",en:""}) o no', () => {

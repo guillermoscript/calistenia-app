@@ -27,7 +27,7 @@
 import { storage } from '../platform'
 import type { Exercise, Workout } from '../types'
 import { op } from './analytics'
-import { getCatalogIndexSync, type CatalogIndex } from './catalogIndex'
+import { getCatalogIndexSync } from './catalogIndex'
 import { localize, type TranslatableField } from './i18n-db'
 
 /** Nivel tal y como lo guarda el onboarding (`users.level`). */
@@ -47,13 +47,16 @@ interface FirstWorkoutEntry {
   /** Frase de técnica, pensada para alguien que hace este ejercicio por primera vez. */
   note: TranslatableField
   /**
-   * La variante más fácil, en texto corto (p. ej. «flexión con las rodillas
-   * apoyadas»). Cuando `regressionId` apunta a un ejercicio del catálogo,
-   * este texto es solo el fallback para cuando el índice no está cargado —
-   * `buildFirstWorkout` prefiere el nombre localizado del catálogo.
+   * La variante más fácil, en texto corto y con instrucción de cómo hacerla
+   * (p. ej. «flexión con las rodillas apoyadas»). Es SIEMPRE lo que se
+   * muestra, tenga o no `regressionId` — ver `regressionPhrase()`.
    */
   regression: TranslatableField
-  /** Solo cuando la regresión es un ejercicio del catálogo que no pide material. */
+  /**
+   * Solo cuando la regresión es un ejercicio del catálogo que no pide
+   * material: sirve para validar su existencia en `FIRST_WORKOUT_EXERCISE_IDS`,
+   * no decide el texto que se muestra (`regressionPhrase()` no lo consulta).
+   */
   regressionId?: string
   sets: number
   reps: string
@@ -161,8 +164,8 @@ const FIRST_WORKOUTS: Record<FirstWorkoutLevel, FirstWorkoutEntry[]> = {
       name: { es: 'Sentadilla con salto', en: 'Jump squat' },
       muscles: { es: 'Piernas, glúteos', en: 'Legs, glutes' },
       note: {
-        es: 'Baja en sentadilla y salta explosivo. Aterriza suave con las rodillas dobladas.',
-        en: 'Squat down and jump explosively. Land softly with your knees bent.',
+        es: 'Baja en sentadilla y salta explosivo. Aterriza suave con las rodillas dobladas. Solo si no hay dolor.',
+        en: 'Squat down and jump explosively. Land softly with your knees bent. Only if there’s no pain.',
       },
       regression: { es: 'sentadilla sin salto', en: 'bodyweight squat, no jump' },
       regressionId: 'bodyweight_squat',
@@ -238,13 +241,23 @@ export function estimateFirstWorkoutMinutes(level: FirstWorkoutLevel = 'principi
 }
 
 /**
- * Frase de regresión, resuelta con el mismo criterio que `name`/`muscles`:
- * con `regressionId` y catálogo cargado gana el nombre localizado del
- * catálogo; si no, el texto embebido en la entrada.
+ * Frase de regresión: siempre el texto curado de `entry.regression`, nunca
+ * el nombre pelado del catálogo. Antes, con `regressionId` y catálogo
+ * cargado, ganaba `index.byId.get(id).name` — un nombre propio («Dead Bug»,
+ * «Push-up Rodillas») sin ninguna instrucción de cómo hacer la variante, al
+ * contrario que el texto curado («dead bug: alterna brazo y pierna
+ * contraria, despacio»). El catálogo está cargado en la práctica SIEMPRE que
+ * `buildFirstWorkout` corre en producción (móvil primea el índice al
+ * arrancar, `apps/mobile/src/lib/init-core.ts`; web espera
+ * `loadCatalogIndex()` antes de llamar, `apps/web/src/pages/ActiveSessionPage.tsx`),
+ * así que el nombre pelado dejaba el texto curado como código muerto en 4 de
+ * los 9 ejercicios (pushup_std, jump_squat, diamond_pushup, hollow_hold —
+ * hallazgo de revisión, #812 ronda 2). `regressionId` sigue existiendo para
+ * validar en `FIRST_WORKOUT_EXERCISE_IDS` que la variante existe en el
+ * catálogo y no pide material; ya no decide qué texto se muestra.
  */
-function regressionPhrase(entry: FirstWorkoutEntry, index: CatalogIndex | null, locale: string): string {
-  const catalogName = entry.regressionId ? index?.byId.get(entry.regressionId)?.name : undefined
-  return localize(catalogName ?? entry.regression, locale)
+function regressionPhrase(entry: FirstWorkoutEntry, locale: string): string {
+  return localize(entry.regression, locale)
 }
 
 /**
@@ -282,7 +295,7 @@ export function buildFirstWorkout(level: string | null | undefined, locale: stri
   const exercises: Exercise[] = FIRST_WORKOUTS[lv].map(entry => {
     const cat = index?.byId.get(entry.id)
     const technique = localize(entry.note, locale)
-    const regression = regressionPhrase(entry, index, locale)
+    const regression = regressionPhrase(entry, locale)
     return {
       id: entry.id,
       name: localize(cat?.name ?? entry.name, locale),
