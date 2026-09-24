@@ -33,9 +33,13 @@ const DAY_NAME = {
   lun: 'Lunes', mar: 'Martes', mie: 'Miércoles', jue: 'Jueves', vie: 'Viernes', sab: 'Sábado', dom: 'Domingo',
 }
 
-/** Deduce el DayType a partir del foco del día (texto libre es/en). */
+// `day_focus` puede llegar como string plano o como `{es, en}` bilingüe
+// (#798): mismo criterio que `textOf` en check-program-content.mjs.
+const textOf = v => (v && typeof v === 'object' ? v.es ?? v.en ?? '' : v ?? '')
+
+/** Deduce el DayType a partir del foco del día (texto libre es/en, plano o bilingüe). */
 export function inferDayType(focus = '') {
-  const f = focus.toLowerCase()
+  const f = textOf(focus).toLowerCase()
   const has = (...ws) => ws.some(w => f.includes(w))
   if (has('descanso', 'rest', 'recuperación activa')) return 'rest'
   if (has('cardio') && !has('piernas', 'glúteo', 'full', 'cuerpo completo')) return 'cardio'
