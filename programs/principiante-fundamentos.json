@@ -12,501 +12,753 @@
   "phases": [
     {
       "phase_number": 1,
-      "name": "Fase 1 – Aprende los básicos",
+      "name": {
+        "es": "Fase 1 – Aprende los básicos",
+        "en": "Phase 1 – Learn the Basics"
+      },
       "weeks": "1-4",
       "color": "#10B981",
       "deload_last_week": true,
       "days": [
         {
           "day_id": "lun",
-          "day_name": "Lunes",
-          "day_focus": "Tren superior + core",
-          "workout_title": "Empuje y remo",
+          "day_name": {
+            "es": "Lunes",
+            "en": "Monday"
+          },
+          "day_focus": {
+            "es": "Tren superior + core",
+            "en": "Upper body + core"
+          },
+          "workout_title": {
+            "es": "Empuje y remo",
+            "en": "Push and Row"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "name": "Círculos de brazos",
               "exercise_id": "arm_circles",
-              "muscles": "Hombros, movilidad articular",
+              "muscles": {
+                "es": "Hombros, movilidad articular",
+                "en": "Shoulders, joint mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos amplios, cambia de dirección a mitad de tiempo."
+              "note": {
+                "es": "Círculos amplios, cambia de dirección a mitad de tiempo.",
+                "en": "Big circles, switch direction halfway through."
+              }
             },
             {
               "sort_order": 2,
               "name": "Movilidad de muñecas",
               "exercise_id": "wrist_mobility",
-              "muscles": "Muñecas, antebrazos",
+              "muscles": {
+                "es": "Muñecas, antebrazos",
+                "en": "Wrists, forearms"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Gira las muñecas en ambas direcciones con las manos entrelazadas."
+              "note": {
+                "es": "Gira las muñecas en ambas direcciones con las manos entrelazadas.",
+                "en": "Rotate your wrists in both directions with your fingers interlaced."
+              }
             },
             {
               "sort_order": 3,
               "name": "Activación escapular",
               "exercise_id": "scapular_activation",
-              "muscles": "Escápulas, trapecios",
+              "muscles": {
+                "es": "Escápulas, trapecios",
+                "en": "Shoulder blades, traps"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Junta y separa las escápulas con los brazos estirados. Es el interruptor del empuje y del remo que vienen ahora."
+              "note": {
+                "es": "Junta y separa las escápulas con los brazos estirados. Es el interruptor del empuje y del remo que vienen ahora.",
+                "en": "Squeeze and release your shoulder blades with your arms straight. It's the switch for the push and pull work that comes next."
+              }
             },
             {
               "sort_order": 4,
               "name": "Flexiones desde rodillas",
               "exercise_id": "knee_push_up",
-              "muscles": "Pecho, tríceps, hombros",
+              "muscles": {
+                "es": "Pecho, tríceps, hombros",
+                "en": "Chest, triceps, shoulders"
+              },
               "sets": 4,
               "reps": "5-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Rodillas apoyadas, cuerpo recto de rodillas a hombros (no saques el culo). Baja controlado: 2 seg abajo, 2 seg arriba. Si no llegas a 5 limpias, apoya las manos en un escalón, en el borde del sofá o en la pared y quédate en 3-5: cuanto más alto apoyas, más fácil. Cuando completes 4x8 limpias en el suelo dos sesiones seguidas, pasa a las flexiones estándar: son las de la fase 2 y la app las registra aparte."
+              "note": {
+                "es": "Rodillas apoyadas, cuerpo recto de rodillas a hombros (no saques el culo). Baja controlado: 2 seg abajo, 2 seg arriba. Si no llegas a 5 limpias, apoya las manos en un escalón, en el borde del sofá o en la pared y quédate en 3-5: cuanto más alto apoyas, más fácil. Cuando completes 4x8 limpias en el suelo dos sesiones seguidas, pasa a las flexiones estándar: son las de la fase 2 y la app las registra aparte.",
+                "en": "Knees down, body in a straight line from knees to shoulders (don't pike your hips up). Lower under control: 2s down, 2s up. If you can't get 5 clean reps, put your hands on a step, the edge of the sofa or the wall and stay in the 3-5 range: the higher your hands, the easier it gets. Once you complete 4x8 clean reps on the floor for two sessions in a row, move on to standard push-ups — those belong to phase 2 and the app tracks them separately."
+              }
             },
             {
               "sort_order": 5,
               "name": "Flexiones anchas",
               "exercise_id": "wide_pushup",
-              "muscles": "Pecho, hombros",
+              "muscles": {
+                "es": "Pecho, hombros",
+                "en": "Chest, shoulders"
+              },
               "sets": 3,
               "reps": "6-8",
               "rest_seconds": 75,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Manos más abiertas que los hombros. Desde rodillas si te falta fuerza todavía."
+              "note": {
+                "es": "Manos más abiertas que los hombros. Desde rodillas si te falta fuerza todavía.",
+                "en": "Hands wider than shoulder-width. From your knees if you still lack the strength."
+              }
             },
             {
               "sort_order": 6,
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
-              "muscles": "Espalda alta, bíceps, hombros",
+              "muscles": {
+                "es": "Espalda alta, bíceps, hombros",
+                "en": "Upper back, biceps, shoulders"
+              },
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Sujétate al borde de una mesa firme o al marco de una puerta; comprueba antes que la mesa no vuelca ni se desliza. Baja el cuerpo en sentadilla y tira juntando los omóplatos. Cuanto más te inclines hacia atrás, más difícil: ahí regulas la carga."
+              "note": {
+                "es": "Sujétate al borde de una mesa firme o al marco de una puerta; comprueba antes que la mesa no vuelca ni se desliza. Baja el cuerpo en sentadilla y tira juntando los omóplatos. Cuanto más te inclines hacia atrás, más difícil: ahí regulas la carga.",
+                "en": "Hold the edge of a sturdy table or a door frame; check first that the table won't tip or slide. Lower your body into a squat and pull, squeezing your shoulder blades together. The further back you lean, the harder it gets — that's how you adjust the load."
+              }
             },
             {
               "sort_order": 7,
               "name": "Apertura con toalla",
               "exercise_id": "pull_apart",
-              "muscles": "Deltoides posterior, escápulas",
+              "muscles": {
+                "es": "Deltoides posterior, escápulas",
+                "en": "Rear delts, shoulder blades"
+              },
               "sets": 3,
               "reps": "15-20",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Codos casi rectos."
+              "note": {
+                "es": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Codos casi rectos.",
+                "en": "Towel held taut in front of your chest, pull it apart as if trying to tear it. Elbows almost straight."
+              }
             },
             {
               "sort_order": 8,
               "name": "Plancha frontal",
               "exercise_id": "plank",
-              "muscles": "Core, abdominales, espalda baja",
+              "muscles": {
+                "es": "Core, abdominales, espalda baja",
+                "en": "Core, abs, lower back"
+              },
               "sets": 3,
               "reps": "20-30s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Aprieta abdomen y glúteos. No dejes caer la cadera. Si no aguantas 20 seg, hazla con las rodillas apoyadas y ve subiendo."
+              "note": {
+                "es": "Aprieta abdomen y glúteos. No dejes caer la cadera. Si no aguantas 20 seg, hazla con las rodillas apoyadas y ve subiendo.",
+                "en": "Brace your abs and glutes. Don't let your hips sag. If you can't hold 20s, do it with your knees down and build up from there."
+              }
             },
             {
               "sort_order": 9,
               "name": "Superman",
               "exercise_id": "superman",
-              "muscles": "Espalda baja, glúteos, dorsales",
+              "muscles": {
+                "es": "Espalda baja, glúteos, dorsales",
+                "en": "Lower back, glutes, lats"
+              },
               "sets": 3,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Eleva brazos y piernas a la vez. Mantén 2 seg arriba, baja con control. Es el contrapeso de tantas horas sentada: si te molesta la lumbar, sube solo los brazos."
+              "note": {
+                "es": "Eleva brazos y piernas a la vez. Mantén 2 seg arriba, baja con control. Es el contrapeso de tantas horas sentada: si te molesta la lumbar, sube solo los brazos.",
+                "en": "Lift your arms and legs at the same time. Hold 2s at the top, lower with control. It's the counterweight to so many hours sitting: if your lower back bothers you, lift only your arms."
+              }
             },
             {
               "sort_order": 10,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
-              "muscles": "Pectorales, hombros",
+              "muscles": {
+                "es": "Pectorales, hombros",
+                "en": "Pectorals, shoulders"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo contra la pared, gira el torso suavemente. 15 seg por lado."
+              "note": {
+                "es": "Brazo contra la pared, gira el torso suavemente. 15 seg por lado.",
+                "en": "Arm against the wall, gently rotate your torso. 15s per side."
+              }
             },
             {
               "sort_order": 11,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
-              "muscles": "Tríceps",
+              "muscles": {
+                "es": "Tríceps",
+                "en": "Triceps"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Lleva la mano detrás de la cabeza, empuja el codo con la otra mano."
+              "note": {
+                "es": "Lleva la mano detrás de la cabeza, empuja el codo con la otra mano.",
+                "en": "Bring your hand behind your head, push your elbow with your other hand."
+              }
             },
             {
               "sort_order": 12,
               "name": "Postura del niño",
               "exercise_id": "childs_pose",
-              "muscles": "Espalda, hombros, relajación",
+              "muscles": {
+                "es": "Espalda, hombros, relajación",
+                "en": "Back, shoulders, relaxation"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Respira profundo. Deja que la espalda se relaje completamente."
+              "note": {
+                "es": "Respira profundo. Deja que la espalda se relaje completamente.",
+                "en": "Breathe deeply. Let your back relax completely."
+              }
             }
           ],
           "day_type": "full"
         },
         {
           "day_id": "mie",
-          "day_name": "Miércoles",
-          "day_focus": "Tren inferior + espalda",
-          "workout_title": "Piernas y remo",
+          "day_name": {
+            "es": "Miércoles",
+            "en": "Wednesday"
+          },
+          "day_focus": {
+            "es": "Tren inferior + espalda",
+            "en": "Lower body + back"
+          },
+          "workout_title": {
+            "es": "Piernas y remo",
+            "en": "Legs and row"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "name": "Círculos de cadera",
               "exercise_id": "hip_circles",
-              "muscles": "Caderas, movilidad articular",
+              "muscles": {
+                "es": "Caderas, movilidad articular",
+                "en": "Hips, joint mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos amplios con la cadera, ambas direcciones."
+              "note": {
+                "es": "Círculos amplios con la cadera, ambas direcciones.",
+                "en": "Big hip circles, both directions."
+              }
             },
             {
               "sort_order": 2,
               "name": "Balanceos de pierna",
               "exercise_id": "leg_swings",
-              "muscles": "Cadera, isquiotibiales, cuádriceps",
+              "muscles": {
+                "es": "Cadera, isquiotibiales, cuádriceps",
+                "en": "Hip, hamstrings, quads"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Adelante y atrás, luego lateral. 10 por lado, sin forzar."
+              "note": {
+                "es": "Adelante y atrás, luego lateral. 10 por lado, sin forzar.",
+                "en": "Forward and back, then side to side. 10 per side, without forcing it."
+              }
             },
             {
               "sort_order": 3,
               "name": "Movilidad de tobillo",
               "exercise_id": "ankle_mobility",
-              "muscles": "Tobillos, gemelos",
+              "muscles": {
+                "es": "Tobillos, gemelos",
+                "en": "Ankles, calves"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Rodilla al frente por encima del pie. Alterna ambos lados."
+              "note": {
+                "es": "Rodilla al frente por encima del pie. Alterna ambos lados.",
+                "en": "Front knee stacked over your foot. Alternate sides."
+              }
             },
             {
               "sort_order": 4,
               "name": "Puente de glúteos (calentamiento)",
               "exercise_id": "glute_bridge_warmup",
-              "muscles": "Glúteos, cadena posterior",
+              "muscles": {
+                "es": "Glúteos, cadena posterior",
+                "en": "Glutes, posterior chain"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Activa los glúteos antes de las sentadillas. Aprieta arriba 2 segundos."
+              "note": {
+                "es": "Activa los glúteos antes de las sentadillas. Aprieta arriba 2 segundos.",
+                "en": "Activate the glutes before squats. Squeeze at the top for 2 seconds."
+              }
             },
             {
               "sort_order": 5,
               "name": "Sentadilla con pausa",
               "exercise_id": "squat_pause",
-              "muscles": "Cuádriceps, glúteos, core",
+              "muscles": {
+                "es": "Cuádriceps, glúteos, core",
+                "en": "Quads, glutes, core"
+              },
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pecho arriba, rodillas hacia fuera. Pausa de 2 seg abajo. Es el ejercicio ancla del día: cuatro series, y la semana 1 quédate en 10 repeticiones, no en 12 — las agujetas de la primera semana son la razón número uno de abandono. Si la última serie se te va de técnica, párala ahí."
+              "note": {
+                "es": "Pecho arriba, rodillas hacia fuera. Pausa de 2 seg abajo. Es el ejercicio ancla del día: cuatro series, y la semana 1 quédate en 10 repeticiones, no en 12 — las agujetas de la primera semana son la razón número uno de abandono. Si la última serie se te va de técnica, párala ahí.",
+                "en": "Chest up, knees out. 2s pause at the bottom. This is the anchor exercise of the day: four sets, and in week 1 stop at 10 reps, not 12 — first-week soreness is the number-one reason people quit. If your last set starts breaking down in form, stop it there."
+              }
             },
             {
               "sort_order": 6,
               "name": "Puente de glúteos con pausa",
               "exercise_id": "glute_bridge_pause",
-              "muscles": "Glúteos, isquiotibiales",
+              "muscles": {
+                "es": "Glúteos, isquiotibiales",
+                "en": "Glutes, hamstrings"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Aprieta glúteos arriba 3 seg. No arquees la espalda baja."
+              "note": {
+                "es": "Aprieta glúteos arriba 3 seg. No arquees la espalda baja.",
+                "en": "Squeeze the glutes at the top for 3s. Don't arch your lower back."
+              }
             },
             {
               "sort_order": 7,
               "name": "Zancada reversa",
               "exercise_id": "reverse_lunge",
-              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "muscles": {
+                "es": "Cuádriceps, glúteos, equilibrio",
+                "en": "Quads, glutes, balance"
+              },
               "sets": 3,
               "reps": "6 por lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Paso atrás controlado, el tronco vertical y la rodilla de atrás baja suave sin tocar el suelo. Si pierdes el equilibrio, apoya una mano en la pared o en una silla: es un ejercicio de control, no de aguantar el tirón."
+              "note": {
+                "es": "Paso atrás controlado, el tronco vertical y la rodilla de atrás baja suave sin tocar el suelo. Si pierdes el equilibrio, apoya una mano en la pared o en una silla: es un ejercicio de control, no de aguantar el tirón.",
+                "en": "Controlled step back, torso upright, back knee lowering smoothly without touching the floor. If you lose your balance, rest a hand on a wall or a chair: this is a control exercise, not about forcing through the strain."
+              }
             },
             {
               "sort_order": 8,
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
-              "muscles": "Espalda alta, bíceps, hombros",
+              "muscles": {
+                "es": "Espalda alta, bíceps, hombros",
+                "en": "Upper back, biceps, shoulders"
+              },
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Sí, remo en el día de piernas: es el patrón que más tarda en construirse y así entrenas la espalda los tres días. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos."
+              "note": {
+                "es": "Sí, remo en el día de piernas: es el patrón que más tarda en construirse y así entrenas la espalda los tres días. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos.",
+                "en": "Yes, a row on leg day: it's the pattern that takes longest to build, so this way you train your back all three days. Sturdy table or door frame, squat down and pull, squeezing your shoulder blades together."
+              }
             },
             {
               "sort_order": 9,
               "name": "Sentada en pared",
               "exercise_id": "wall_sit",
-              "muscles": "Cuádriceps, resistencia isométrica",
+              "muscles": {
+                "es": "Cuádriceps, resistencia isométrica",
+                "en": "Quads, isometric endurance"
+              },
               "sets": 2,
               "reps": "20-30s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Espalda pegada a la pared, muslos paralelos al suelo. Respira. Dos series aquí y tres en la fase 2."
+              "note": {
+                "es": "Espalda pegada a la pared, muslos paralelos al suelo. Respira. Dos series aquí y tres en la fase 2.",
+                "en": "Back against the wall, thighs parallel to the floor. Breathe. Two sets here, three in phase 2."
+              }
             },
             {
               "sort_order": 10,
               "name": "Estiramiento de cuádriceps",
               "exercise_id": "quad_stretch",
-              "muscles": "Cuádriceps",
+              "muscles": {
+                "es": "Cuádriceps",
+                "en": "Quads"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "De pie, lleva el talón al glúteo. 15 seg por lado."
+              "note": {
+                "es": "De pie, lleva el talón al glúteo. 15 seg por lado.",
+                "en": "Standing, bring your heel to your glute. 15s per side."
+              }
             },
             {
               "sort_order": 11,
               "name": "Estiramiento de isquiotibiales",
               "exercise_id": "hamstring_stretch",
-              "muscles": "Isquiotibiales",
+              "muscles": {
+                "es": "Isquiotibiales",
+                "en": "Hamstrings"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pierna estirada al frente, inclínate desde la cadera. No redondees la espalda."
+              "note": {
+                "es": "Pierna estirada al frente, inclínate desde la cadera. No redondees la espalda.",
+                "en": "Leg extended in front, hinge from the hip. Don't round your back."
+              }
             },
             {
               "sort_order": 12,
               "name": "Estiramiento de gemelos",
               "exercise_id": "calf_stretch",
-              "muscles": "Gemelos, sóleo",
+              "muscles": {
+                "es": "Gemelos, sóleo",
+                "en": "Calves, soleus"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Apoya las manos en la pared, talón trasero en el suelo."
+              "note": {
+                "es": "Apoya las manos en la pared, talón trasero en el suelo.",
+                "en": "Place your hands on the wall, back heel on the floor."
+              }
             }
           ],
           "day_type": "legs"
         },
         {
           "day_id": "vie",
-          "day_name": "Viernes",
-          "day_focus": "Full body + core",
-          "workout_title": "Cuerpo completo",
+          "day_name": {
+            "es": "Viernes",
+            "en": "Friday"
+          },
+          "day_focus": {
+            "es": "Full body + core",
+            "en": "Full body + core"
+          },
+          "workout_title": {
+            "es": "Cuerpo completo",
+            "en": "Full body"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "name": "Gato-vaca",
               "exercise_id": "cat_cow",
-              "muscles": "Columna, movilidad espinal",
+              "muscles": {
+                "es": "Columna, movilidad espinal",
+                "en": "Spine, spinal mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Alterna entre arquear y redondear la espalda. Respira con cada movimiento."
+              "note": {
+                "es": "Alterna entre arquear y redondear la espalda. Respira con cada movimiento.",
+                "en": "Alternate between arching and rounding the back. Breathe with each movement."
+              }
             },
             {
               "sort_order": 2,
               "name": "Activación escapular",
               "exercise_id": "scapular_activation",
-              "muscles": "Escápulas, trapecios",
+              "muscles": {
+                "es": "Escápulas, trapecios",
+                "en": "Shoulder blades, traps"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Junta y separa las escápulas. Movimiento controlado."
+              "note": {
+                "es": "Junta y separa las escápulas. Movimiento controlado.",
+                "en": "Squeeze and release your shoulder blades. Controlled movement."
+              }
             },
             {
               "sort_order": 3,
               "name": "Movilidad de muñecas",
               "exercise_id": "wrist_mobility",
-              "muscles": "Muñecas, antebrazos",
+              "muscles": {
+                "es": "Muñecas, antebrazos",
+                "en": "Wrists, forearms"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Hoy hay oruga, flexiones y bird dog: 30 seg de muñecas antes de apoyarte en el suelo te ahorran la molestia más común del principiante."
+              "note": {
+                "es": "Hoy hay oruga, flexiones y bird dog: 30 seg de muñecas antes de apoyarte en el suelo te ahorran la molestia más común del principiante.",
+                "en": "Today's session has inchworms, push-ups and bird dogs: 30s of wrist prep before loading your hands saves you the most common beginner discomfort."
+              }
             },
             {
               "sort_order": 4,
               "name": "Oruga",
               "exercise_id": "inchworm",
-              "muscles": "Cadena posterior, hombros, core",
+              "muscles": {
+                "es": "Cadena posterior, hombros, core",
+                "en": "Posterior chain, shoulders, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Camina con las manos hasta plancha, vuelve caminando. Sin prisa."
+              "note": {
+                "es": "Camina con las manos hasta plancha, vuelve caminando. Sin prisa.",
+                "en": "Walk your hands out to plank, walk them back. No rush."
+              }
             },
             {
               "sort_order": 5,
               "name": "Flexiones desde rodillas",
               "exercise_id": "knee_push_up",
-              "muscles": "Pecho, tríceps, hombros",
+              "muscles": {
+                "es": "Pecho, tríceps, hombros",
+                "en": "Chest, triceps, shoulders"
+              },
               "sets": 4,
               "reps": "5-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Codos a 45°, cuerpo recto desde las rodillas. Si no llegas a 5 limpias, sube las manos a un escalón o al borde del sofá. Si ya completas 4x8 en el suelo, pásate a las flexiones estándar de la fase 2."
+              "note": {
+                "es": "Codos a 45°, cuerpo recto desde las rodillas. Si no llegas a 5 limpias, sube las manos a un escalón o al borde del sofá. Si ya completas 4x8 en el suelo, pásate a las flexiones estándar de la fase 2.",
+                "en": "Elbows at 45°, body straight from the knees. If you can't get 5 clean reps, raise your hands onto a step or the edge of the sofa. Once you complete 4x8 on the floor, move on to the standard push-ups of phase 2."
+              }
             },
             {
               "sort_order": 6,
               "name": "Sentadilla sin peso",
               "exercise_id": "bodyweight_squat",
-              "muscles": "Cuádriceps, glúteos, core",
+              "muscles": {
+                "es": "Cuádriceps, glúteos, core",
+                "en": "Quads, glutes, core"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Baja hasta que los muslos queden paralelos al suelo, espalda recta. El miércoles fue el día fuerte de piernas: aquí quédate 2-3 repeticiones lejos del fallo, es trabajo ligero a propósito."
+              "note": {
+                "es": "Baja hasta que los muslos queden paralelos al suelo, espalda recta. El miércoles fue el día fuerte de piernas: aquí quédate 2-3 repeticiones lejos del fallo, es trabajo ligero a propósito.",
+                "en": "Lower until your thighs are parallel to the floor, back straight. Wednesday was the heavy leg day: here, stay 2-3 reps short of failure — this is deliberately light work."
+              }
             },
             {
               "sort_order": 7,
               "name": "Remo en sentadilla con toalla",
               "exercise_id": "bodyweight_squatting_row_with_towel",
-              "muscles": "Espalda alta, bíceps, hombros",
+              "muscles": {
+                "es": "Espalda alta, bíceps, hombros",
+                "en": "Upper back, biceps, shoulders"
+              },
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pasa la toalla por el marco de una puerta (o por un poste firme) y sujeta un extremo con cada mano. Baja en sentadilla, brazos estirados, y tira hasta el pecho juntando los omóplatos. Cuanto más te inclines hacia atrás y menos ayuden las piernas, más difícil."
+              "note": {
+                "es": "Pasa la toalla por el marco de una puerta (o por un poste firme) y sujeta un extremo con cada mano. Baja en sentadilla, brazos estirados, y tira hasta el pecho juntando los omóplatos. Cuanto más te inclines hacia atrás y menos ayuden las piernas, más difícil.",
+                "en": "Loop the towel around a door frame (or a sturdy post) and hold one end in each hand. Sit back into a squat with your arms extended, then pull to your chest, squeezing your shoulder blades together. The further back you lean and the less your legs help, the harder it gets."
+              }
             },
             {
               "sort_order": 8,
               "name": "Bird dog",
               "exercise_id": "bird_dog",
-              "muscles": "Core, espalda baja, equilibrio",
+              "muscles": {
+                "es": "Core, espalda baja, equilibrio",
+                "en": "Core, lower back, balance"
+              },
               "sets": 3,
               "reps": "8 por lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Extiende brazo y pierna opuestos. No gires la cadera."
+              "note": {
+                "es": "Extiende brazo y pierna opuestos. No gires la cadera.",
+                "en": "Extend opposite arm and leg. Don't rotate your hips."
+              }
             },
             {
               "sort_order": 9,
               "name": "Puente de glúteos",
               "exercise_id": "glute_bridge",
-              "muscles": "Glúteos, isquiotibiales",
+              "muscles": {
+                "es": "Glúteos, isquiotibiales",
+                "en": "Glutes, hamstrings"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Aprieta arriba, baja lento. No uses la espalda baja. Trabajo ligero: el día fuerte de piernas fue el miércoles."
+              "note": {
+                "es": "Aprieta arriba, baja lento. No uses la espalda baja. Trabajo ligero: el día fuerte de piernas fue el miércoles.",
+                "en": "Squeeze at the top, lower slowly. Don't use your lower back. Light work: Wednesday was the heavy leg day."
+              }
             },
             {
               "sort_order": 10,
               "name": "Hollow hold",
               "exercise_id": "hollow_hold",
-              "muscles": "Core profundo, recto abdominal",
+              "muscles": {
+                "es": "Core profundo, recto abdominal",
+                "en": "Deep core, rectus abdominis"
+              },
               "sets": 3,
               "reps": "15-20s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "Espalda baja pegada al suelo. Piernas más altas si es muy difícil."
+              "note": {
+                "es": "Espalda baja pegada al suelo. Piernas más altas si es muy difícil.",
+                "en": "Lower back pressed into the floor. Legs higher if it's too hard."
+              }
             },
             {
               "sort_order": 11,
               "name": "Estiramiento flexor de cadera",
               "exercise_id": "hip_flexor_stretch",
-              "muscles": "Flexores de cadera",
+              "muscles": {
+                "es": "Flexores de cadera",
+                "en": "Hip flexors"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Rodilla en el suelo, empuja la cadera hacia adelante. 15 seg por lado."
+              "note": {
+                "es": "Rodilla en el suelo, empuja la cadera hacia adelante. 15 seg por lado.",
+                "en": "Knee on the ground, push your hip forward. 15s per side."
+              }
             },
             {
               "sort_order": 12,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
-              "muscles": "Dorsales, costados",
+              "muscles": {
+                "es": "Dorsales, costados",
+                "en": "Lats, sides"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo arriba, inclínate al lado contrario. Respira profundo."
+              "note": {
+                "es": "Brazo arriba, inclínate al lado contrario. Respira profundo.",
+                "en": "Arm overhead, lean to the opposite side. Breathe deeply."
+              }
             },
             {
               "sort_order": 13,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
-              "muscles": "Relajación, sistema nervioso",
+              "muscles": {
+                "es": "Relajación, sistema nervioso",
+                "en": "Relaxation, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Inhala 4 seg, mantén 4 seg, exhala 6 seg. Relaja todo el cuerpo."
+              "note": {
+                "es": "Inhala 4 seg, mantén 4 seg, exhala 6 seg. Relaja todo el cuerpo.",
+                "en": "Inhale 4s, hold 4s, exhale 6s. Relax your whole body."
+              }
             }
           ],
           "day_type": "full"
@@ -515,489 +767,735 @@
     },
     {
       "phase_number": 2,
-      "name": "Fase 2 – Más volumen y control",
+      "name": {
+        "es": "Fase 2 – Más volumen y control",
+        "en": "Phase 2 – More Volume and Control"
+      },
       "weeks": "5-8",
       "color": "#F59E0B",
       "days": [
         {
           "day_id": "lun",
-          "day_name": "Lunes",
-          "day_focus": "Empuje + tracción + core sostenido",
-          "workout_title": "Empuje y fuerza central",
+          "day_name": {
+            "es": "Lunes",
+            "en": "Monday"
+          },
+          "day_focus": {
+            "es": "Empuje + tracción + core sostenido",
+            "en": "Push + Pull + Sustained Core"
+          },
+          "workout_title": {
+            "es": "Empuje y fuerza central",
+            "en": "Push and Core Strength"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "name": "Círculos de brazos",
               "exercise_id": "arm_circles",
-              "muscles": "Hombros, movilidad articular",
+              "muscles": {
+                "es": "Hombros, movilidad articular",
+                "en": "Shoulders, joint mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pequeños a grandes, cambia dirección a mitad."
+              "note": {
+                "es": "Pequeños a grandes, cambia dirección a mitad.",
+                "en": "Small to large circles, switch direction halfway."
+              }
             },
             {
               "sort_order": 2,
               "name": "Movilidad de muñecas",
               "exercise_id": "wrist_mobility",
-              "muscles": "Muñecas, antebrazos",
+              "muscles": {
+                "es": "Muñecas, antebrazos",
+                "en": "Wrists, forearms"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Hoy hay oruga y plancha: 30 seg de muñecas antes de apoyarte en el suelo te ahorran la molestia más común del principiante."
+              "note": {
+                "es": "Hoy hay oruga y plancha: 30 seg de muñecas antes de apoyarte en el suelo te ahorran la molestia más común del principiante.",
+                "en": "Today's session has inchworms and plank: 30s of wrist prep before loading your hands saves you the most common beginner discomfort."
+              }
             },
             {
               "sort_order": 3,
               "name": "Rotación torácica",
               "exercise_id": "thoracic_rotation",
-              "muscles": "Columna torácica, movilidad",
+              "muscles": {
+                "es": "Columna torácica, movilidad",
+                "en": "Thoracic spine, mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "En cuadrupedia, mano detrás de la cabeza, rota abriendo el pecho."
+              "note": {
+                "es": "En cuadrupedia, mano detrás de la cabeza, rota abriendo el pecho.",
+                "en": "On all fours, hand behind your head, rotate opening the chest."
+              }
             },
             {
               "sort_order": 4,
               "name": "Oruga",
               "exercise_id": "inchworm",
-              "muscles": "Cadena posterior, hombros, core",
+              "muscles": {
+                "es": "Cadena posterior, hombros, core",
+                "en": "Posterior chain, shoulders, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Camina con las manos hasta plancha, vuelve caminando."
+              "note": {
+                "es": "Camina con las manos hasta plancha, vuelve caminando.",
+                "en": "Walk your hands out to plank, walk them back."
+              }
             },
             {
               "sort_order": 5,
               "name": "Flexiones estándar",
               "exercise_id": "pushup_std",
-              "muscles": "Pecho, tríceps, hombros",
+              "muscles": {
+                "es": "Pecho, tríceps, hombros",
+                "en": "Chest, triceps, shoulders"
+              },
               "sets": 4,
               "reps": "8-12",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
-              "note": "Ya llevas 4 semanas de flexiones desde rodillas: aquí van completas. Haz con el cuerpo recto todas las que puedas y termina la serie desde las rodillas o con las manos elevadas — completar la serie cuenta, no hace falta que sean todas en el suelo. Suelo de 8 por serie; si en la fase 1 ya pasaste a las estándar y llegaste más arriba, sigue desde donde llegaste. El descanso se queda en 90 seg: lo que sube es el trabajo, no la prisa."
+              "note": {
+                "es": "Ya llevas 4 semanas de flexiones desde rodillas: aquí van completas. Haz con el cuerpo recto todas las que puedas y termina la serie desde las rodillas o con las manos elevadas — completar la serie cuenta, no hace falta que sean todas en el suelo. Suelo de 8 por serie; si en la fase 1 ya pasaste a las estándar y llegaste más arriba, sigue desde donde llegaste. El descanso se queda en 90 seg: lo que sube es el trabajo, no la prisa.",
+                "en": "You've done 4 weeks of knee push-ups: now full ones. Do as many as you can with a straight body and finish the set from your knees or with your hands elevated — completing the set counts, they don't all need to be on the floor. Floor of 8 per set; if you already moved to standard push-ups in phase 1 and got further, carry on from there. Rest stays at 90s: what goes up is the work, not the pace."
+              }
             },
             {
               "sort_order": 6,
               "name": "Flexiones anchas",
               "exercise_id": "wide_pushup",
-              "muscles": "Pecho, hombros",
+              "muscles": {
+                "es": "Pecho, hombros",
+                "en": "Chest, shoulders"
+              },
               "sets": 3,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Manos más abiertas que los hombros. Tres series como en la fase 1, más repeticiones y 15 seg más de descanso: el salto de esta fase ya lo pone la flexión estándar, esto no tiene que sumarle prisa. Si pierdes la línea del cuerpo, acaba desde las rodillas o sube las manos a un escalón."
+              "note": {
+                "es": "Manos más abiertas que los hombros. Tres series como en la fase 1, más repeticiones y 15 seg más de descanso: el salto de esta fase ya lo pone la flexión estándar, esto no tiene que sumarle prisa. Si pierdes la línea del cuerpo, acaba desde las rodillas o sube las manos a un escalón.",
+                "en": "Hands wider than shoulder-width. Three sets like phase 1, more reps and 15s more rest: this phase's jump in difficulty already comes from the standard push-up, this exercise doesn't need to rush it too. If you lose your body line, finish from your knees or put your hands up on a step."
+              }
             },
             {
               "sort_order": 7,
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
-              "muscles": "Espalda alta, bíceps, hombros",
+              "muscles": {
+                "es": "Espalda alta, bíceps, hombros",
+                "en": "Upper back, biceps, shoulders"
+              },
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
-              "note": "Mesa firme o marco de puerta. Mismas cuatro series que en la fase 1 pero con más repeticiones, y más inclinado hacia atrás si ya te sobra el rango."
+              "note": {
+                "es": "Mesa firme o marco de puerta. Mismas cuatro series que en la fase 1 pero con más repeticiones, y más inclinado hacia atrás si ya te sobra el rango.",
+                "en": "Sturdy table or door frame. Same four sets as phase 1 but with more reps, and lean back further if you already have range to spare."
+              }
             },
             {
               "sort_order": 8,
               "name": "Apertura con toalla",
               "exercise_id": "pull_apart",
-              "muscles": "Deltoides posterior, escápulas",
+              "muscles": {
+                "es": "Deltoides posterior, escápulas",
+                "en": "Rear delts, shoulder blades"
+              },
               "sets": 3,
               "reps": "20-25",
               "rest_seconds": 45,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Codos casi rectos. Más repeticiones que en la fase 1 (eran 15-20)."
+              "note": {
+                "es": "Toalla tensa frente al pecho, sepárala como si quisieras romperla. Codos casi rectos. Más repeticiones que en la fase 1 (eran 15-20).",
+                "en": "Towel held taut in front of your chest, pull it apart as if trying to tear it. Elbows almost straight. More reps than phase 1 (which was 15-20)."
+              }
             },
             {
               "sort_order": 9,
               "name": "Plancha frontal",
               "exercise_id": "plank",
-              "muscles": "Core, abdominales, espalda baja",
+              "muscles": {
+                "es": "Core, abdominales, espalda baja",
+                "en": "Core, abs, lower back"
+              },
               "sets": 3,
               "reps": "40-50s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
-              "note": "La misma plancha de la fase 1 con el doble de tiempo: 20-30 seg entonces, 40-50 seg ahora. Es tu metro de core, apunta los segundos. Si no aguantas 40, hazla con las rodillas apoyadas o parte la serie en dos mitades seguidas.",
+              "note": {
+                "es": "La misma plancha de la fase 1 con el doble de tiempo: 20-30 seg entonces, 40-50 seg ahora. Es tu metro de core, apunta los segundos. Si no aguantas 40, hazla con las rodillas apoyadas o parte la serie en dos mitades seguidas.",
+                "en": "The same plank from phase 1 with double the time: 20-30s back then, 40-50s now. It's your core yardstick, so log the seconds. If you can't hold 40, do it with your knees down or split the set into two back-to-back halves."
+              },
               "timer_seconds": 50
             },
             {
               "sort_order": 10,
               "name": "Hollow hold",
               "exercise_id": "hollow_hold",
-              "muscles": "Core profundo, abdominales",
+              "muscles": {
+                "es": "Core profundo, abdominales",
+                "en": "Deep core, abs"
+              },
               "sets": 3,
               "reps": "25-35s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
-              "note": "Espalda baja pegada al suelo TODO el tiempo. Subes de los 15-20 seg de la fase 1 a 25-35 seg; si la lumbar se despega, sube las piernas y recorta el tiempo.",
+              "note": {
+                "es": "Espalda baja pegada al suelo TODO el tiempo. Subes de los 15-20 seg de la fase 1 a 25-35 seg; si la lumbar se despega, sube las piernas y recorta el tiempo.",
+                "en": "Lower back pressed into the floor the WHOLE time. You go from phase 1's 15-20s to 25-35s; if your lower back lifts off, raise your legs and cut the time short."
+              },
               "timer_seconds": 35
             },
             {
               "sort_order": 11,
               "name": "Estiramiento pectoral",
               "exercise_id": "pectoral_stretch",
-              "muscles": "Pectorales, hombros",
+              "muscles": {
+                "es": "Pectorales, hombros",
+                "en": "Pectorals, shoulders"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo contra la pared, gira suave. 15 seg por lado."
+              "note": {
+                "es": "Brazo contra la pared, gira suave. 15 seg por lado.",
+                "en": "Arm against the wall, rotate gently. 15s per side."
+              }
             },
             {
               "sort_order": 12,
               "name": "Estiramiento de tríceps",
               "exercise_id": "triceps_stretch",
-              "muscles": "Tríceps",
+              "muscles": {
+                "es": "Tríceps",
+                "en": "Triceps"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Mano detrás de la cabeza, empuja el codo suavemente."
+              "note": {
+                "es": "Mano detrás de la cabeza, empuja el codo suavemente.",
+                "en": "Hand behind your head, gently push your elbow."
+              }
             },
             {
               "sort_order": 13,
               "name": "Postura del niño",
               "exercise_id": "childs_pose",
-              "muscles": "Espalda, hombros, relajación",
+              "muscles": {
+                "es": "Espalda, hombros, relajación",
+                "en": "Back, shoulders, relaxation"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Relaja todo. Respira profundo por la nariz."
+              "note": {
+                "es": "Relaja todo. Respira profundo por la nariz.",
+                "en": "Relax everything. Breathe deeply through your nose."
+              }
             }
           ],
           "day_type": "full"
         },
         {
           "day_id": "mie",
-          "day_name": "Miércoles",
-          "day_focus": "Tren inferior + espalda",
-          "workout_title": "Piernas y remo",
+          "day_name": {
+            "es": "Miércoles",
+            "en": "Wednesday"
+          },
+          "day_focus": {
+            "es": "Tren inferior + espalda",
+            "en": "Lower body + back"
+          },
+          "workout_title": {
+            "es": "Piernas y remo",
+            "en": "Legs and row"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "name": "Círculos de cadera",
               "exercise_id": "hip_circles",
-              "muscles": "Caderas, movilidad articular",
+              "muscles": {
+                "es": "Caderas, movilidad articular",
+                "en": "Hips, joint mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos amplios, ambas direcciones."
+              "note": {
+                "es": "Círculos amplios, ambas direcciones.",
+                "en": "Big circles, both directions."
+              }
             },
             {
               "sort_order": 2,
               "name": "Balanceos de pierna",
               "exercise_id": "leg_swings",
-              "muscles": "Cadera, isquiotibiales",
+              "muscles": {
+                "es": "Cadera, isquiotibiales",
+                "en": "Hip, hamstrings"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Frontal y lateral. Rango progresivo, sin forzar."
+              "note": {
+                "es": "Frontal y lateral. Rango progresivo, sin forzar.",
+                "en": "Front and lateral. Progressive range, don't force it."
+              }
             },
             {
               "sort_order": 3,
               "name": "Puente de glúteos (calentamiento)",
               "exercise_id": "glute_bridge_warmup",
-              "muscles": "Glúteos, activación",
+              "muscles": {
+                "es": "Glúteos, activación",
+                "en": "Glutes, activation"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Activa los glúteos antes de las sentadillas."
+              "note": {
+                "es": "Activa los glúteos antes de las sentadillas.",
+                "en": "Activate the glutes before squats."
+              }
             },
             {
               "sort_order": 4,
               "name": "Sentadilla sin peso",
               "exercise_id": "bodyweight_squat",
-              "muscles": "Cuádriceps, glúteos, core",
+              "muscles": {
+                "es": "Cuádriceps, glúteos, core",
+                "en": "Quads, glutes, core"
+              },
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Baja profundo, espalda recta, sin peso extra. Una serie y más repeticiones que en la fase 1. Mínimo 12-15: si en la fase 1 ya pasabas de 15, sigue desde donde llegaste."
+              "note": {
+                "es": "Baja profundo, espalda recta, sin peso extra. Una serie y más repeticiones que en la fase 1. Mínimo 12-15: si en la fase 1 ya pasabas de 15, sigue desde donde llegaste.",
+                "en": "Go deep, back straight, no extra weight. One set, more reps than in phase 1. Minimum 12-15: if you were already past 15 in phase 1, carry on from there."
+              }
             },
             {
               "sort_order": 5,
               "name": "Zancada reversa",
               "exercise_id": "reverse_lunge",
-              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "muscles": {
+                "es": "Cuádriceps, glúteos, equilibrio",
+                "en": "Quads, glutes, balance"
+              },
               "sets": 3,
               "reps": "8 por lado",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Paso atrás largo, tronco vertical, rodilla casi al suelo. Dos repeticiones más por lado que en la fase 1."
+              "note": {
+                "es": "Paso atrás largo, tronco vertical, rodilla casi al suelo. Dos repeticiones más por lado que en la fase 1.",
+                "en": "Long step back, torso upright, knee almost touching the floor. Two more reps per side than phase 1."
+              }
             },
             {
               "sort_order": 6,
               "name": "Puente de glúteos unilateral",
               "exercise_id": "glute_bridge_uni",
-              "muscles": "Glúteos, estabilización",
+              "muscles": {
+                "es": "Glúteos, estabilización",
+                "en": "Glutes, stabilization"
+              },
               "sets": 3,
               "reps": "8 por lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Una pierna a la vez. Cadera estable, no dejes que caiga."
+              "note": {
+                "es": "Una pierna a la vez. Cadera estable, no dejes que caiga.",
+                "en": "One leg at a time. Keep your hips stable — don't let them drop."
+              }
             },
             {
               "sort_order": 7,
               "name": "Remo en sentadilla",
               "exercise_id": "bodyweight_squatting_row",
-              "muscles": "Espalda alta, bíceps, hombros",
+              "muscles": {
+                "es": "Espalda alta, bíceps, hombros",
+                "en": "Upper back, biceps, shoulders"
+              },
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "El remo del día de piernas, dos repeticiones más que en la fase 1. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos."
+              "note": {
+                "es": "El remo del día de piernas, dos repeticiones más que en la fase 1. Mesa firme o marco de puerta, sentadilla abajo y tira juntando los omóplatos.",
+                "en": "Leg day's row, two more reps than in phase 1. Sturdy table or door frame, squat down and pull, squeezing your shoulder blades together."
+              }
             },
             {
               "sort_order": 8,
               "name": "Sentada en pared",
               "exercise_id": "wall_sit",
-              "muscles": "Cuádriceps, resistencia",
+              "muscles": {
+                "es": "Cuádriceps, resistencia",
+                "en": "Quads, endurance"
+              },
               "sets": 3,
               "reps": "30-45s",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Más tiempo que fase 1. Respira, no aguantes la respiración."
+              "note": {
+                "es": "Más tiempo que fase 1. Respira, no aguantes la respiración.",
+                "en": "More time than phase 1. Breathe, don't hold your breath."
+              }
             },
             {
               "sort_order": 9,
               "name": "Estiramiento de cuádriceps",
               "exercise_id": "quad_stretch",
-              "muscles": "Cuádriceps",
+              "muscles": {
+                "es": "Cuádriceps",
+                "en": "Quads"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Talón al glúteo, mantén el equilibrio. 15 seg por lado."
+              "note": {
+                "es": "Talón al glúteo, mantén el equilibrio. 15 seg por lado.",
+                "en": "Heel to glute, hold your balance. 15s per side."
+              }
             },
             {
               "sort_order": 10,
               "name": "Estiramiento de isquiotibiales",
               "exercise_id": "hamstring_stretch",
-              "muscles": "Isquiotibiales",
+              "muscles": {
+                "es": "Isquiotibiales",
+                "en": "Hamstrings"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pierna estirada, inclínate desde la cadera."
+              "note": {
+                "es": "Pierna estirada, inclínate desde la cadera.",
+                "en": "Leg extended, hinge from the hip."
+              }
             },
             {
               "sort_order": 11,
               "name": "Estiramiento flexor de cadera",
               "exercise_id": "hip_flexor_stretch",
-              "muscles": "Flexores de cadera, psoas",
+              "muscles": {
+                "es": "Flexores de cadera, psoas",
+                "en": "Hip flexors, psoas"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Rodilla al suelo, empuja cadera al frente. 15 seg por lado."
+              "note": {
+                "es": "Rodilla al suelo, empuja cadera al frente. 15 seg por lado.",
+                "en": "Rear knee on the ground, push your hip forward. 15s per side."
+              }
             }
           ],
           "day_type": "legs"
         },
         {
           "day_id": "vie",
-          "day_name": "Viernes",
-          "day_focus": "Full body + hombros",
-          "workout_title": "Cuerpo completo · empuje vertical",
+          "day_name": {
+            "es": "Viernes",
+            "en": "Friday"
+          },
+          "day_focus": {
+            "es": "Full body + hombros",
+            "en": "Full body + shoulders"
+          },
+          "workout_title": {
+            "es": "Cuerpo completo · empuje vertical",
+            "en": "Full Body · Vertical Push"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "name": "Gato-vaca",
               "exercise_id": "cat_cow",
-              "muscles": "Columna, movilidad espinal",
+              "muscles": {
+                "es": "Columna, movilidad espinal",
+                "en": "Spine, spinal mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Fluye entre posiciones. Sincroniza con la respiración."
+              "note": {
+                "es": "Fluye entre posiciones. Sincroniza con la respiración.",
+                "en": "Flow between positions. Sync with your breathing."
+              }
             },
             {
               "sort_order": 2,
               "name": "Activación escapular",
               "exercise_id": "scapular_activation",
-              "muscles": "Escápulas, postura",
+              "muscles": {
+                "es": "Escápulas, postura",
+                "en": "Shoulder blades, posture"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Retrae y protraje las escápulas. Movimiento consciente."
+              "note": {
+                "es": "Retrae y protraje las escápulas. Movimiento consciente.",
+                "en": "Retract and protract your shoulder blades. Deliberate, controlled movement."
+              }
             },
             {
               "sort_order": 3,
               "name": "Movilidad de muñecas",
               "exercise_id": "wrist_mobility",
-              "muscles": "Muñecas, antebrazos",
+              "muscles": {
+                "es": "Muñecas, antebrazos",
+                "en": "Wrists, forearms"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Antes de las flexiones pike la muñeca aguanta casi todo tu peso en extensión: 30 seg de movilidad no son opcionales."
+              "note": {
+                "es": "Antes de las flexiones pike la muñeca aguanta casi todo tu peso en extensión: 30 seg de movilidad no son opcionales.",
+                "en": "Before pike push-ups, your wrist carries almost all your weight in extension: 30s of mobility work is not optional."
+              }
             },
             {
               "sort_order": 4,
               "name": "Saltos de Tijera",
               "exercise_id": "jumping_jacks",
-              "muscles": "Full body, activación cardiovascular",
+              "muscles": {
+                "es": "Full body, activación cardiovascular",
+                "en": "Full body, cardiovascular activation"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Ritmo moderado para elevar la frecuencia cardíaca. Si te molestan las rodillas o los tobillos, marcha en el sitio elevando rodillas: vale igual."
+              "note": {
+                "es": "Ritmo moderado para elevar la frecuencia cardíaca. Si te molestan las rodillas o los tobillos, marcha en el sitio elevando rodillas: vale igual.",
+                "en": "Moderate pace to raise your heart rate. If your knees or ankles bother you, march in place lifting your knees — works just as well."
+              }
             },
             {
               "sort_order": 5,
               "name": "Flexiones pike",
               "exercise_id": "pike_pushup",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 4,
               "reps": "6-8",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Nuevo en esta fase: es el primer paso hacia el pino. Cadera arriba formando una V invertida y baja la cabeza entre las manos, no hacia delante. Cuanto más altos tengas los pies, más peso cargan los hombros: si no llegas a 6 limpias o la muñeca molesta, apoya las manos en un escalón o en un libro grueso — es más fácil, no es hacer trampa."
+              "note": {
+                "es": "Nuevo en esta fase: es el primer paso hacia el pino. Cadera arriba formando una V invertida y baja la cabeza entre las manos, no hacia delante. Cuanto más altos tengas los pies, más peso cargan los hombros: si no llegas a 6 limpias o la muñeca molesta, apoya las manos en un escalón o en un libro grueso — es más fácil, no es hacer trampa.",
+                "en": "New in this phase: the first step toward the handstand. Hips up forming an inverted V, lower your head between your hands, not forward. The higher your feet, the more weight your shoulders carry: if you can't get 6 clean reps or your wrist bothers you, rest your hands on a step or a thick book — that's easier, not cheating."
+              }
             },
             {
               "sort_order": 6,
               "name": "Sentadilla con pausa",
               "exercise_id": "squat_pause",
-              "muscles": "Cuádriceps, glúteos",
+              "muscles": {
+                "es": "Cuádriceps, glúteos",
+                "en": "Quads, glutes"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Pausa de 3 seg abajo, un segundo más que en la fase 1, y tres series en vez de cuatro: el día fuerte de pierna fue el miércoles y aquí es trabajo de mantenimiento. Suelo de 12 repeticiones; si en la fase 1 ya pasabas de 12, sigue desde donde llegaste, y quédate 2-3 lejos del fallo."
+              "note": {
+                "es": "Pausa de 3 seg abajo, un segundo más que en la fase 1, y tres series en vez de cuatro: el día fuerte de pierna fue el miércoles y aquí es trabajo de mantenimiento. Suelo de 12 repeticiones; si en la fase 1 ya pasabas de 12, sigue desde donde llegaste, y quédate 2-3 lejos del fallo.",
+                "en": "3s pause at the bottom, one second more than phase 1, and three sets instead of four: Wednesday was the heavy leg day, this is maintenance work. Floor of 12 reps; if you were already past 12 in phase 1, carry on from there, and stay 2-3 reps short of failure."
+              }
             },
             {
               "sort_order": 7,
               "name": "Remo de pie con toalla",
               "exercise_id": "bodyweight_standing_row_with_towel",
-              "muscles": "Espalda alta, bíceps, antebrazos",
+              "muscles": {
+                "es": "Espalda alta, bíceps, antebrazos",
+                "en": "Upper back, biceps, forearms"
+              },
               "sets": 4,
               "reps": "10-12",
               "rest_seconds": 75,
               "priority": "primary",
               "is_timer": false,
-              "note": "Un escalón por encima del remo en sentadilla: piernas casi rectas y cuerpo inclinado hacia atrás; cuanto menos te ayuden las piernas, más difícil. Monta bien el anclaje: puerta CERRADA con el pestillo echado, toalla doblada por la mitad y con un nudo al otro lado de la hoja, y comprueba tirando poco antes de tumbarte hacia atrás. Tira hasta el pecho juntando los omóplatos y baja en 2 seg."
+              "note": {
+                "es": "Un escalón por encima del remo en sentadilla: piernas casi rectas y cuerpo inclinado hacia atrás; cuanto menos te ayuden las piernas, más difícil. Monta bien el anclaje: puerta CERRADA con el pestillo echado, toalla doblada por la mitad y con un nudo al otro lado de la hoja, y comprueba tirando poco antes de tumbarte hacia atrás. Tira hasta el pecho juntando los omóplatos y baja en 2 seg.",
+                "en": "One step up from the squatting row: legs almost straight and body leaning back; the less your legs help, the harder it gets. Set the anchor up properly: door CLOSED and latched, towel folded in half with a knot on the other side of the door, and test it by pulling gently before leaning back into it. Pull to your chest, squeezing your shoulder blades together, and lower in 2s."
+              }
             },
             {
               "sort_order": 8,
               "name": "Plancha lateral",
               "exercise_id": "side_plank",
-              "muscles": "Oblicuos, core lateral",
+              "muscles": {
+                "es": "Oblicuos, core lateral",
+                "en": "Obliques, lateral core"
+              },
               "sets": 3,
               "reps": "20-30s por lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cadera arriba, cuerpo recto. Respira, no aguantes el aire."
+              "note": {
+                "es": "Cadera arriba, cuerpo recto. Respira, no aguantes el aire.",
+                "en": "Hips up, body straight. Breathe, don't hold your breath."
+              }
             },
             {
               "sort_order": 9,
               "name": "Superman",
               "exercise_id": "superman",
-              "muscles": "Espalda baja, glúteos",
+              "muscles": {
+                "es": "Espalda baja, glúteos",
+                "en": "Lower back, glutes"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
-              "note": "Dos repeticiones más que en la fase 1 (eran 8-10). Mantén 2 seg arriba y baja con control."
+              "note": {
+                "es": "Dos repeticiones más que en la fase 1 (eran 8-10). Mantén 2 seg arriba y baja con control.",
+                "en": "Two more reps than in phase 1 (it was 8-10). Hold 2s at the top and lower with control."
+              }
             },
             {
               "sort_order": 10,
               "name": "Estiramiento dorsal",
               "exercise_id": "lat_stretch",
-              "muscles": "Dorsales, costados",
+              "muscles": {
+                "es": "Dorsales, costados",
+                "en": "Lats, sides"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo arriba, inclínate al lado contrario."
+              "note": {
+                "es": "Brazo arriba, inclínate al lado contrario.",
+                "en": "Arm overhead, lean to the opposite side."
+              }
             },
             {
               "sort_order": 11,
               "name": "Estiramiento pike",
               "exercise_id": "pike_stretch",
-              "muscles": "Isquiotibiales, espalda",
+              "muscles": {
+                "es": "Isquiotibiales, espalda",
+                "en": "Hamstrings, back"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Piernas estiradas, inclínate hacia los pies. Sin rebotar."
+              "note": {
+                "es": "Piernas estiradas, inclínate hacia los pies. Sin rebotar.",
+                "en": "Legs straight, reach toward your feet. No bouncing."
+              }
             },
             {
               "sort_order": 12,
               "name": "Respiración profunda",
               "exercise_id": "deep_breathing",
-              "muscles": "Relajación, recuperación",
+              "muscles": {
+                "es": "Relajación, recuperación",
+                "en": "Relaxation, recovery"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Inhala 4 seg, mantén 4 seg, exhala 6 seg. Sesión completada."
+              "note": {
+                "es": "Inhala 4 seg, mantén 4 seg, exhala 6 seg. Sesión completada.",
+                "en": "Inhale 4s, hold 4s, exhale 6s. Session complete."
+              }
             }
           ],
           "day_type": "full"
