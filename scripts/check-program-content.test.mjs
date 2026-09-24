@@ -209,6 +209,96 @@ describe('checkProgram — día sin título (#762)', () => {
   })
 })
 
+// ── Campos bilingües sin 'en' (#797) ─────────────────────────────────────────
+//
+// `baseProgram()` trae `day_name`/`day_focus`/`workout_title`/`muscles`/`note`
+// y el `name` de fase en español plano a propósito (así los 15 programas de
+// hoy): son los mismos que el resto de la suite, así que estas pruebas
+// mutan uno solo cada vez, como el resto del fichero.
+describe("checkProgram — campos bilingües sin 'en' (#797)", () => {
+  it("un day_name en string plano dispara 'bilingual_field', nunca 'day_title'", () => {
+    const doc = baseProgram()
+    // El día YA tiene day_name no vacío ('Lunes'); solo falta traducirlo — no
+    // es el caso que cubre 'day_title' (campo ausente o en blanco).
+    const result = checkProgram(SLUG, doc)
+    const found = findingsFor(result, 'bilingual_field')
+    expect(found.some(f => f.message.startsWith("'day_name'"))).toBe(true)
+    expect(findingsFor(result, 'day_title')).toEqual([])
+  })
+
+  it('un objeto {es} sin "en" también dispara la regla', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].workout_title = { es: 'Empuje, tirón y piernas' }
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'bilingual_field').some(f => f.message.startsWith("'workout_title'"))).toBe(true)
+  })
+
+  it('"en" en blanco (solo espacios) cuenta igual que ausente', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises[0].note = { es: 'Cuerpo recto, baja controlado.', en: '   ' }
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'bilingual_field').some(f => f.message.startsWith("'note'"))).toBe(true)
+  })
+
+  it('{en} sin "es" ya es "en blanco" (required_field) y no duplica el aviso de #797', () => {
+    const doc = baseProgram()
+    // Un solo ejercicio: si dejara los otros dos, su 'muscles' en español
+    // plano dispararía 'bilingual_field' igualmente y el aserto de "false" de
+    // más abajo no probaría nada sobre el campo mutado.
+    doc.phases[0].days[0].exercises = [doc.phases[0].days[0].exercises[0]]
+    doc.phases[0].days[0].exercises[0].muscles = { en: 'chest, triceps' }
+    const result = checkProgram(SLUG, doc)
+    expect(result.errors.some(e => e.includes('muscles') && e.includes('ausente o en blanco'))).toBe(true)
+    expect(findingsFor(result, 'bilingual_field').some(f => f.message.startsWith("'muscles'"))).toBe(false)
+  })
+
+  it('{es, en} completo no dispara nada para ese campo', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].day_focus = { es: 'Cuerpo completo', en: 'Full body' }
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'bilingual_field').some(f => f.message.startsWith("'day_focus'"))).toBe(false)
+  })
+
+  it('el name de ejercicio queda FUERA de la regla, aunque ya sea {es, en} (mujer-*)', () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises[0].name = { es: 'Círculos de Brazos', en: 'Arm Circles' }
+    const result = checkProgram(SLUG, doc)
+    expect(result.errors).toEqual([])
+    expect(result.findings.some(f => f.rule === 'bilingual_field' && f.message.includes("'name'"))).toBe(false)
+  })
+
+  it("agrega por (programa, campo): tres ejercicios sin traducir dan UN solo aviso de 'muscles' con el recuento", () => {
+    // baseProgram() trae 3 ejercicios, los tres con 'muscles' en español plano.
+    const result = checkProgram(SLUG, baseProgram())
+    const musclesFindings = findingsFor(result, 'bilingual_field').filter(f => f.message.startsWith("'muscles'"))
+    expect(musclesFindings).toHaveLength(1)
+    expect(musclesFindings[0].message).toContain('3 sitio(s)')
+  })
+
+  it("'bilingual_field' es aviso siempre — ni con --strict, porque no está en STRICT_RULES", () => {
+    expect(STRICT_RULES.has('bilingual_field')).toBe(false)
+    const result = checkProgram(SLUG, baseProgram(), { strict: true })
+    const found = findingsFor(result, 'bilingual_field')
+    expect(found.length).toBeGreaterThan(0)
+    expect(found.every(f => f.level === 'warning')).toBe(true)
+    expect(result.errors.some(e => e.includes("sin 'en'"))).toBe(false)
+  })
+
+  it('los tres programas con exercise.name ya bilingüe (#711/#731/#733) siguen en 0 errores', () => {
+    const REAL_BILINGUAL_NAME_SLUGS = ['mujer-fuerza-funcional', 'mujer-full-body-toning', 'mujer-gluteo-tonificacion']
+    const programsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'programs')
+    for (const slug of REAL_BILINGUAL_NAME_SLUGS) {
+      const doc = JSON.parse(readFileSync(join(programsDir, `${slug}.json`), 'utf8'))
+      const result = checkProgram(slug, doc, { strict: true })
+      expect(result.errors, slug).toEqual([])
+      expect(
+        result.findings.some(f => f.rule === 'bilingual_field' && f.message.includes("'name'")),
+        slug,
+      ).toBe(false)
+    }
+  })
+})
+
 describe('checkProgram — exercise_id que no resuelve', () => {
   it('un id ausente del catálogo es un error', () => {
     const doc = baseProgram()

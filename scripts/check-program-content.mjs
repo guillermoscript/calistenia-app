@@ -29,6 +29,19 @@
  * Una issue de contenido (#719-#733) que prometa descarga en `instructions`
  * debe (a) poner el flag en las fases donde la promete o (b) quitar la promesa.
  *
+ * Campos bilingües de contenido (#797): `day_name`, `day_focus`,
+ * `workout_title`, `muscles`, `note` (por ejercicio, solo si no está vacío) y
+ * el `name` de cada fase se pintan con `localize()`
+ * (`packages/core/lib/i18n-db.ts`) igual que `program.instructions`, y el
+ * generador de la siembra (`generate-program-seed-migration.mjs::i18n()`) ya
+ * los trata como `{es, en}` sin tocar código: es un problema de CONTENIDO, no
+ * de infraestructura. Los 15 `programs/*.json` de hoy los traen en español
+ * plano — la regla `bilingual_field` lo avisa (nunca corta, ni con `--strict`)
+ * hasta que el lote de traducción (#792-#796) migre el contenido. Promoverla
+ * a ERROR es añadir `'bilingual_field'` a `STRICT_RULES` más abajo, un cambio
+ * de una línea. El `name` de ejercicio queda FUERA de esta regla a propósito:
+ * ver el comentario de `trackBilingual` más abajo.
+ *
  * Cada hallazgo lleva un `rule` estable (ver `STRICT_RULES` y los ids de cada
  * llamada) para que `--json` se pueda filtrar por programa y regla.
  *
@@ -158,12 +171,27 @@ const SLUG_LIKE = /^[a-z0-9]+(_[a-z0-9]+)+$/
 
 const WORK = new Set(['primary', 'secondary', 'accessory', 'high', 'med', 'low'])
 
+/**
+ * Rutas de ejemplo que un aviso `bilingual_field` enseña por campo (#797).
+ * Con 2.208 ejercicios en 15 programas sin traducir, imprimir una línea por
+ * sitio ahogaría el resto de `--strict` en CI; ver `trackBilingual` más abajo.
+ */
+const BILINGUAL_EXAMPLES = 5
+
 // ── Lógica de entrenamiento (#715) ───────────────────────────────────────────
 
 /**
  * Reglas que `--strict` convierte en ERROR. Las demás reglas nuevas
  * (`heavy_consecutive_days`, `pattern_frequency`, `promised_exercise`) son
  * decisiones de programación discutibles y se quedan en AVISO siempre.
+ *
+ * `bilingual_field` (#797) es distinta de esas: no es una decisión de
+ * programación discutible, es contenido que TODAVÍA no está traducido. Se
+ * queda fuera de este Set a propósito — con los 15 programas en español
+ * plano, meterla aquí tiraría `pnpm programs:content:check --strict` (el modo
+ * de CI desde #711) en rojo hoy mismo. Cuando el lote de traducción
+ * (#792-#796) migre el contenido, promoverla es añadir `'bilingual_field'` a
+ * este Set: una línea, sin tocar la regla.
  */
 export const STRICT_RULES = new Set([
   // Material (#714): el catálogo dejó de mentir sobre goblet squat, remos de
@@ -495,6 +523,43 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
     if (blank(value)) err(`${path} ausente o en blanco`, 'required_field')
   }
 
+  /**
+   * Campos bilingües de contenido (#797): `day_name`, `day_focus`,
+   * `workout_title`, `muscles`, `note` y el `name` de cada fase se pintan con
+   * `localize()` igual que `program.instructions` (línea de arriba), pero hoy
+   * los 15 programas los traen en español plano. `trackBilingual` no marca
+   * nada por sí solo — solo AGREGA la ruta bajo su campo; el aviso real se
+   * emite una vez por (programa, campo) después del bucle de fases, con
+   * `BILINGUAL_EXAMPLES` rutas de muestra, para no imprimir una línea por
+   * cada uno de los ~2.200 ejercicios sin traducir.
+   *
+   * Un valor vacío (`blank`) no se registra aquí: `required`/`day_title` ya lo
+   * marcan como ERROR más arriba (o, si el campo es opcional como `note`,
+   * simplemente no hay nada que traducir todavía) — avisar dos veces del
+   * mismo hueco sería ruido.
+   *
+   * El `name` de EJERCICIO queda fuera a propósito, aunque el título de la
+   * #797 lo mencione: ni la lista «Qué hacer» ni los «Criterios de
+   * aceptación» de la issue lo incluyen, y las tres cifras hablan solas —
+   * 2.208 ejercicios en 15 programas duplicarían de un plumazo el volumen de
+   * avisos que ya generan `muscles`+`note`. `exercise-resolver.ts` además ya
+   * resuelve el caso que de verdad importa: un `name` que es una clave de
+   * máquina (`sphinx_pushup`) cae al `{es,en}` del catálogo en tiempo de
+   * lectura sin que el JSON de contenido necesite tocarse, y un nombre
+   * humano en español plano es justo el trabajo pendiente del lote de
+   * traducción, no un hueco de infraestructura que este validador deba
+   * señalar campo a campo. Los tres programas `mujer-*` que YA traen `name`
+   * bilingüe (#711/#731/#733) no se tocan ni se rozan por no estar cubiertos.
+   */
+  const isBilingual = v =>
+    typeof v === 'object' && v !== null && !!String(v.es ?? '').trim() && !!String(v.en ?? '').trim()
+  const bilingualGaps = new Map() // campo → [ruta, ruta, ...]
+  const trackBilingual = (field, value, path) => {
+    if (blank(value) || isBilingual(value)) return
+    if (!bilingualGaps.has(field)) bilingualGaps.set(field, [])
+    bilingualGaps.get(field).push(path)
+  }
+
   required(program.name, 'program.name')
   required(program.description, 'program.description')
   required(program.difficulty, 'program.difficulty')
@@ -528,6 +593,7 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
     if (lp.deload) anyDeloadEncoded = true
 
     required(phase.name, `fase ${pn} · name`)
+    trackBilingual('phase.name', phase.name, `fase ${pn}`)
     // Sin `weeks` no hay rango de semanas: ni la cabecera sabe decir «semana 3
     // de 4» ni la descarga (#716) sabe cuál es la última semana de la fase.
     required(phase.weeks, `fase ${pn} · weeks`)
@@ -556,6 +622,9 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
         err(`fase ${pn} · ${day.day_id}: sin 'day_name'`, 'day_title')
       }
       required(day.day_focus, `fase ${pn} · ${day.day_id} · day_focus`)
+      trackBilingual('day_name', day.day_name, `fase ${pn} · ${day.day_id}`)
+      trackBilingual('day_focus', day.day_focus, `fase ${pn} · ${day.day_id}`)
+      trackBilingual('workout_title', day.workout_title, `fase ${pn} · ${day.day_id}`)
 
       // `day_type` no se puede exigir todavía: 12 de los 193 días no lo
       // declaran. Pero tampoco es inocuo omitirlo — se infiere de `day_focus` y
@@ -579,6 +648,8 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
         required(ex.muscles, `${where} · muscles`)
         required(ex.note, `${where} · note`)
         required(ex.rest_seconds, `${where} · rest_seconds`, { allowZero: true })
+        trackBilingual('muscles', ex.muscles, where)
+        trackBilingual('note', ex.note, where)
 
         // 1 — Esquema único. `catalog_id` y el campo ausente eran los otros dos
         //     dialectos que convivían en `programs/`.
@@ -709,6 +780,23 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
     setsByPattern.set(pn, perPattern)
     idsByPhase.set(pn, ids)
     phaseLogic.push(lp)
+  }
+
+  // 5b — Campos bilingües sin 'en' (#797), agregados por campo.
+  //
+  // Un aviso por sitio serían hasta ~2.200 líneas (una por ejercicio, en los
+  // 15 programas de hoy); esto agrega TODOS los huecos de un mismo campo en
+  // un único aviso, con `BILINGUAL_EXAMPLES` rutas de muestra. AVISO siempre
+  // — `bilingual_field` no está en `STRICT_RULES` (ver el comentario de
+  // arriba) hasta que el lote de traducción migre el contenido.
+  for (const [field, paths] of bilingualGaps) {
+    const shown = paths.slice(0, BILINGUAL_EXAMPLES)
+    const rest = paths.length - shown.length
+    logic(
+      'bilingual_field',
+      `'${field}': ${paths.length} sitio(s) sin 'en' (string plano, o "{es}" sin "en") — ` +
+      `${shown.join(', ')}${rest > 0 ? ` … y ${rest} más` : ''}`,
+    )
   }
 
   // 6 — Material declarado ⊇ material usado.
