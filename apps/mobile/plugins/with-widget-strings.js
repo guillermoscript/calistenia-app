@@ -6,109 +6,103 @@
  * Investigado en el plugin instalado
  * (node_modules/react-native-android-widget/app.plugin.js):
  *
- *   - `description` → SÍ pasa por un recurso: `withWidgetDescriptions` mete
- *     `widget.description` en `res/values/strings.xml` (el locale POR
- *     DEFECTO) bajo el nombre `widget_<name lowercase>_description`, y el
+ *   - `label` → NO pasa por recurso: `withWidgetReceiver` escribe
+ *     `android:label="${widget.label}"` a pelo en el `<receiver>` del manifest.
+ *   - `description` → `withWidgetDescriptions` la mete en `res/values/strings.xml`
+ *     como `widget_<name>_description` con `translatable="false"`, y el
  *     `<appwidget-provider>` apunta a `@string/widget_<name>_description`.
- *     Pero solo escribe ESE fichero — no hay parámetro de locale, así que solo
- *     puede haber un idioma sin ayuda externa.
- *   - `label` → NO pasa por recurso. `withWidgetReceiver` hace
- *     `'android:label': `${widget.label ?? widget.name}`` — un literal
- *     interpolado a pelo en el `<receiver>` del manifest, no una referencia.
- *     Como no valida el contenido, pasarle NOSOTROS la cadena
- *     `@string/widget_<name>_label` cuela igual: aapt2 solo exige que el
- *     recurso EXISTA al enlazar, no que la propia librería lo haya creado.
+ *     Solo escribe ese fichero y no hay parámetro de idioma.
  *
- * Solución: `app.json` lleva `label` como `@string/widget_<name>_label` y
- * `description` en INGLÉS (el idioma por defecto — así el recurso que
- * autogenera `react-native-android-widget` en `values/strings.xml` ya sale en
- * inglés sin tocar su código). Este plugin añade lo que el oficial no sabe
- * hacer:
- *   1. `widget_<name>_label` en INGLÉS a `res/values/strings.xml` (el label no
- *      lo escribe nadie más).
- *   2. `widget_<name>_label` + `widget_<name>_description` en ESPAÑOL a
- *      `res/values-es/strings.xml`. Android resuelve el recurso por CARPETA
- *      según el idioma del sistema: un móvil en español lee esto, cualquier
- *      otro idioma cae al inglés de `values/`.
+ * Ninguno de los dos valida el contenido, así que `app.json` les pasa
+ * REFERENCIAS en vez de texto: `label` = `@string/widget_<name>_label` y
+ * `description` = `@string/widget_<name>_desc`. La description queda como un
+ * alias (`<string name="widget_x_description">@string/widget_x_desc</string>`)
+ * que Android resuelve al recurso localizado. Este plugin crea esos recursos
+ * en `values/` (inglés, el idioma por defecto) y `values-es/` (español):
+ * Android elige la carpeta según el idioma del sistema.
  *
- * No hay mod de Expo para un `values-<locale>/strings.xml` que no sea el por
- * defecto (`withStringsXml` siempre apunta a `values/`), así que el paso 2 usa
- * `withDangerousMod` + las mismas utilidades de bajo nivel que usa
- * `AndroidConfig.Strings` por dentro (`getProjectStringsXMLPathAsync` acepta
- * `kind: 'values-es'`).
+ * Dos trampas que obligan a NO marcar estos recursos `translatable="false"`:
+ *   - El `format()` de Expo NO escapa los strings `translatable="false"`, y un
+ *     apóstrofo sin escapar («Today's workout») rompe aapt2 al compilar.
+ *   - Un recurso `translatable="false"` con traducción en `values-es/` es el
+ *     aviso `ExtraTranslation` de lint, de severidad Fatal: `lintVitalRelease`
+ *     tumba el `bundleRelease`. Por eso la description no se traduce sobre el
+ *     `widget_<name>_description` de la librería (que sí es `translatable="false"`),
+ *     sino con el alias a un recurso propio.
  *
- * VERIFICADO con `expo prebuild --platform android --no-install` (2026-09-24):
- * los 8 `<receiver>` del AndroidManifest.xml generado quedan con
- * `android:label="@string/widget_todaywidget_label"` (etc.), y tanto
- * `res/values/strings.xml` como `res/values-es/strings.xml` traen las 8
- * entradas de label (+ 8 de description en `values-es`) esperadas.
+ * `withStringsXml` solo escribe en `values/`, así que `values-es/` usa
+ * `withDangerousMod` con las mismas utilidades que `AndroidConfig.Strings`
+ * (`getProjectStringsXMLPathAsync` acepta `kind: 'values-es'`).
  */
 const { withStringsXml, withDangerousMod, AndroidConfig, XML } = require('expo/config-plugins')
 
 const { Resources, Strings } = AndroidConfig
 
-// Nombre del widget (tal cual en app.json) → texto de su label, es/en.
-const WIDGET_LABELS = {
-  TodayWidget: { en: "Today's workout", es: 'Entrenamiento de hoy' },
-  CardioWidget: { en: 'Cardio', es: 'Cardio' },
-  NutritionWidget: { en: 'Nutrition', es: 'Nutrición' },
-  NutritionRingWidget: { en: 'Calories', es: 'Calorías' },
-  StreakWidget: { en: 'Streak', es: 'Racha' },
-  MealStreakWidget: { en: 'Meal streak', es: 'Racha de comidas' },
-  WaterWidget: { en: 'Water', es: 'Agua' },
-  NextSessionWidget: { en: 'Next session', es: 'Próxima sesión' },
+// Nombre del widget (tal cual en app.json) → label y description, en/es.
+const WIDGET_STRINGS = {
+  TodayWidget: {
+    label: { en: "Today's workout", es: 'Entrenamiento de hoy' },
+    desc: { en: "Today's workout, week and streak", es: 'Qué toca hoy, semana y racha' },
+  },
+  CardioWidget: {
+    label: { en: 'Cardio', es: 'Cardio' },
+    desc: { en: "This week's km and last session", es: 'Km de la semana y última sesión' },
+  },
+  NutritionWidget: {
+    label: { en: 'Nutrition', es: 'Nutrición' },
+    desc: { en: "Today's calories and macros + quick log", es: 'Calorías y macros de hoy + registro rápido' },
+  },
+  NutritionRingWidget: {
+    label: { en: 'Calories', es: 'Calorías' },
+    desc: { en: "Today's calorie ring", es: 'Anillo de calorías de hoy' },
+  },
+  StreakWidget: {
+    label: { en: 'Streak', es: 'Racha' },
+    desc: { en: 'Consecutive training days and the week', es: 'Días seguidos entrenando y la semana' },
+  },
+  MealStreakWidget: {
+    label: { en: 'Meal streak', es: 'Racha de comidas' },
+    desc: { en: 'Consecutive days with an A/B food score', es: 'Días seguidos con score de comida A/B' },
+  },
+  WaterWidget: {
+    label: { en: 'Water', es: 'Agua' },
+    desc: { en: "Today's water glasses vs. your goal", es: 'Vasos de agua de hoy vs. tu meta' },
+  },
+  NextSessionWidget: {
+    label: { en: 'Next session', es: 'Próxima sesión' },
+    desc: { en: "Tomorrow's workout, in a thin strip", es: 'Qué toca mañana, en una franja fina' },
+  },
 }
 
-// Traducción española de la `description` que `app.json` ya trae en inglés
-// (react-native-android-widget escribe ESE inglés en `values/`; aquí solo se
-// aporta el `values-es/` que él no sabe generar). Debe leerse igual que el
-// `description` de cada widget en app.json, solo que en español.
-const WIDGET_DESCRIPTIONS_ES = {
-  TodayWidget: 'Qué toca hoy, semana y racha',
-  CardioWidget: 'Km de la semana y última sesión',
-  NutritionWidget: 'Calorías y macros de hoy + registro rápido',
-  NutritionRingWidget: 'Anillo de calorías de hoy',
-  StreakWidget: 'Días seguidos entrenando y la semana',
-  MealStreakWidget: 'Días seguidos con score de comida A/B',
-  WaterWidget: 'Vasos de agua de hoy vs. tu meta',
-  NextSessionWidget: 'Qué toca mañana, en una franja fina',
+/** Recursos de un idioma: `widget_<name>_label` y `widget_<name>_desc`. */
+function buildItems(lang) {
+  return Object.entries(WIDGET_STRINGS).flatMap(([name, { label, desc }]) => [
+    Resources.buildResourceItem({ name: `widget_${name.toLowerCase()}_label`, value: label[lang] }),
+    Resources.buildResourceItem({ name: `widget_${name.toLowerCase()}_desc`, value: desc[lang] }),
+  ])
 }
 
-const labelResourceName = (widgetName) => `widget_${widgetName.toLowerCase()}_label`
-const descriptionResourceName = (widgetName) => `widget_${widgetName.toLowerCase()}_description`
-
-/** `values/strings.xml` (inglés, el locale por defecto): solo los labels — la
- * description en inglés ya la escribe `react-native-android-widget` a partir
- * del texto que trae `app.json`. */
-function withWidgetLabelsEn(config) {
+/** `values/strings.xml`: inglés, el idioma por defecto. */
+function withWidgetStringsEn(config) {
   return withStringsXml(config, (cfg) => {
-    const items = Object.entries(WIDGET_LABELS).map(([name, { en }]) =>
-      Resources.buildResourceItem({ name: labelResourceName(name), value: en, translatable: false }),
-    )
-    cfg.modResults = Strings.setStringItem(items, cfg.modResults)
+    cfg.modResults = Strings.setStringItem(buildItems('en'), cfg.modResults)
     return cfg
   })
 }
 
-/** `values-es/strings.xml`: label + description en español. Sin mod nativo
- * para un locale que no sea el por defecto, así que se lee/escribe a mano. */
+/**
+ * `values-es/strings.xml`: no hay mod nativo para otro idioma, se lee y escribe
+ * a mano. Lleva también `app_name`: en cuanto existe `values-es/`, el
+ * `app_name` de `values/` (traducible) sin su versión española es el aviso
+ * `MissingTranslation` de lint. El nombre de la app no se traduce.
+ */
 function withWidgetStringsEs(config) {
   return withDangerousMod(config, [
     'android',
     async (cfg) => {
-      const projectRoot = cfg.modRequest.projectRoot
-      const filePath = await Strings.getProjectStringsXMLPathAsync(projectRoot, { kind: 'values-es' })
+      const filePath = await Strings.getProjectStringsXMLPathAsync(cfg.modRequest.projectRoot, { kind: 'values-es' })
       const xml = await Resources.readResourcesXMLAsync({ path: filePath })
-
-      const items = [
-        ...Object.entries(WIDGET_LABELS).map(([name, { es }]) =>
-          Resources.buildResourceItem({ name: labelResourceName(name), value: es, translatable: false }),
-        ),
-        ...Object.entries(WIDGET_DESCRIPTIONS_ES).map(([name, es]) =>
-          Resources.buildResourceItem({ name: descriptionResourceName(name), value: es, translatable: false }),
-        ),
-      ]
-
+      const items = [Resources.buildResourceItem({ name: 'app_name', value: cfg.name }), ...buildItems('es')]
       await XML.writeXMLAsync({ path: filePath, xml: Strings.setStringItem(items, xml) })
       return cfg
     },
@@ -116,5 +110,5 @@ function withWidgetStringsEs(config) {
 }
 
 module.exports = function withWidgetStrings(config) {
-  return withWidgetStringsEs(withWidgetLabelsEn(config))
+  return withWidgetStringsEs(withWidgetStringsEn(config))
 }

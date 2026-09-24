@@ -161,7 +161,7 @@
             {
               "name": "TodayWidget",
               "label": "@string/widget_todaywidget_label",
-              "description": "Today's workout, week and streak",
+              "description": "@string/widget_todaywidget_desc",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -171,7 +171,7 @@
             {
               "name": "CardioWidget",
               "label": "@string/widget_cardiowidget_label",
-              "description": "This week's km and last session",
+              "description": "@string/widget_cardiowidget_desc",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -181,7 +181,7 @@
             {
               "name": "NutritionWidget",
               "label": "@string/widget_nutritionwidget_label",
-              "description": "Today's calories and macros + quick log",
+              "description": "@string/widget_nutritionwidget_desc",
               "minWidth": "250dp",
               "minHeight": "210dp",
               "targetCellWidth": 4,
@@ -191,7 +191,7 @@
             {
               "name": "NutritionRingWidget",
               "label": "@string/widget_nutritionringwidget_label",
-              "description": "Today's calorie ring",
+              "description": "@string/widget_nutritionringwidget_desc",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -201,7 +201,7 @@
             {
               "name": "StreakWidget",
               "label": "@string/widget_streakwidget_label",
-              "description": "Consecutive training days and the week",
+              "description": "@string/widget_streakwidget_desc",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -211,7 +211,7 @@
             {
               "name": "MealStreakWidget",
               "label": "@string/widget_mealstreakwidget_label",
-              "description": "Consecutive days with an A/B food score",
+              "description": "@string/widget_mealstreakwidget_desc",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -221,7 +221,7 @@
             {
               "name": "WaterWidget",
               "label": "@string/widget_waterwidget_label",
-              "description": "Today's water glasses vs. your goal",
+              "description": "@string/widget_waterwidget_desc",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -231,7 +231,7 @@
             {
               "name": "NextSessionWidget",
               "label": "@string/widget_nextsessionwidget_label",
-              "description": "Tomorrow's workout, in a thin strip",
+              "description": "@string/widget_nextsessionwidget_desc",
               "minWidth": "250dp",
               "minHeight": "40dp",
               "targetCellWidth": 4,
