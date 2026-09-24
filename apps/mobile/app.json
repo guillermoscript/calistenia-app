@@ -160,8 +160,8 @@
           "widgets": [
             {
               "name": "TodayWidget",
-              "label": "Entrenamiento de hoy",
-              "description": "Qué toca hoy, semana y racha",
+              "label": "@string/widget_todaywidget_label",
+              "description": "Today's workout, week and streak",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -170,8 +170,8 @@
             },
             {
               "name": "CardioWidget",
-              "label": "Cardio",
-              "description": "Km de la semana y última sesión",
+              "label": "@string/widget_cardiowidget_label",
+              "description": "This week's km and last session",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -180,8 +180,8 @@
             },
             {
               "name": "NutritionWidget",
-              "label": "Nutrición",
-              "description": "Calorías y macros de hoy + registro rápido",
+              "label": "@string/widget_nutritionwidget_label",
+              "description": "Today's calories and macros + quick log",
               "minWidth": "250dp",
               "minHeight": "210dp",
               "targetCellWidth": 4,
@@ -190,8 +190,8 @@
             },
             {
               "name": "NutritionRingWidget",
-              "label": "Calorías",
-              "description": "Anillo de calorías de hoy",
+              "label": "@string/widget_nutritionringwidget_label",
+              "description": "Today's calorie ring",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -200,8 +200,8 @@
             },
             {
               "name": "StreakWidget",
-              "label": "Racha",
-              "description": "Días seguidos entrenando y la semana",
+              "label": "@string/widget_streakwidget_label",
+              "description": "Consecutive training days and the week",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -210,8 +210,8 @@
             },
             {
               "name": "MealStreakWidget",
-              "label": "Racha de comidas",
-              "description": "Días seguidos con score de comida A/B",
+              "label": "@string/widget_mealstreakwidget_label",
+              "description": "Consecutive days with an A/B food score",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -220,8 +220,8 @@
             },
             {
               "name": "WaterWidget",
-              "label": "Agua",
-              "description": "Vasos de agua de hoy vs. tu meta",
+              "label": "@string/widget_waterwidget_label",
+              "description": "Today's water glasses vs. your goal",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -230,8 +230,8 @@
             },
             {
               "name": "NextSessionWidget",
-              "label": "Próxima sesión",
-              "description": "Qué toca mañana, en una franja fina",
+              "label": "@string/widget_nextsessionwidget_label",
+              "description": "Tomorrow's workout, in a thin strip",
               "minWidth": "250dp",
               "minHeight": "40dp",
               "targetCellWidth": 4,
@@ -241,6 +241,7 @@
           ]
         }
       ],
+      "./plugins/with-widget-strings.js",
       "expo-sharing",
       "react-native-health-connect",
       "./plugins/with-health-connect-permission-delegate.js",
