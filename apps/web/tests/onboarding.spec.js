@@ -190,8 +190,9 @@ test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async
 })
 
 /**
- * Día 0 (#694): el CTA primario del último paso arranca directamente una
- * sesión corta (4 ejercicios, 8 series) en /session, sin pasar por el home ni
+ * Día 0 (#694, recortado a 3 ejercicios en #812): el CTA primario del último
+ * paso arranca directamente una sesión corta (3 ejercicios, 6 series) en
+ * /session, sin pasar por el home ni
  * por el prompt de calentamiento. Se recorre el wizard saltando lo opcional.
  */
 test('el último paso del onboarding arranca el primer entreno en /session', async ({ page }) => {
@@ -226,7 +227,7 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   // Aterriza en la sesión activa: primer ejercicio del nivel principiante y
   // contador de series del entreno corto.
   await expect(page).toHaveURL(/\/session$/, { timeout: 15000 })
-  await expect(page.getByText(/1\/8 series/i).first()).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText(/1\/6 series/i).first()).toBeVisible({ timeout: 15000 })
   await expect(page.getByRole('button', { name: /serie completada|set completed/i }).first()).toBeVisible({ timeout: 5000 })
 
   // El onboarding queda marcado y la intención pendiente se consumió.
