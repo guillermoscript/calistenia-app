@@ -14,6 +14,7 @@ import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import { PostWorkoutActions } from '@/components/session/PostWorkoutActions'
 import PushPermissionCard from '@/components/session/PushPermissionCard'
+import NextWorkoutPromise from '@/components/session/NextWorkoutPromise'
 import TimingBar from '@/components/session/TimingBar'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
@@ -189,6 +190,8 @@ export default function CelebrateScreen({
 
     {/* Fuera del Pressable de arriba: sus pulsaciones no deben cerrar la
         celebración. */}
+    <PushPermissionCard userId={user?.id} workoutKey={workoutKey} totalSessions={totalSessions} />
+
     <PostWorkoutActions
       workoutKey={workoutKey}
       userId={user?.id}
@@ -202,7 +205,7 @@ export default function CelebrateScreen({
       onNavigateAway={onNavigateAway}
     />
 
-    <PushPermissionCard userId={user?.id} workoutKey={workoutKey} totalSessions={totalSessions} />
+    <NextWorkoutPromise userId={user?.id} />
 
     <Pressable onPress={onDone} className="items-center gap-2.5 pt-7">
       <Animated.View entering={reduced ? undefined : FadeInDown.delay(720).duration(450)} className="w-full max-w-[280px]">

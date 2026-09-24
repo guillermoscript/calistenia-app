@@ -8,6 +8,7 @@ import Confetti from '../ui/Confetti'
 import { Button } from '../ui/button'
 import PostWorkoutActions from '../PostWorkoutActions'
 import PushPermissionCard from './PushPermissionCard'
+import NextWorkoutPromise from './NextWorkoutPromise'
 import { useSessionIdentity } from '../../hooks/useSessionIdentity'
 import { cn } from '../../lib/utils'
 
@@ -136,6 +137,8 @@ export default function CelebrateScreen({
         </div>
       )}
 
+      <PushPermissionCard userId={userId} workoutKey={workoutKey} totalSessions={totalSessions} />
+
       <PostWorkoutActions
         workoutKey={workoutKey}
         workoutTitle={workoutTitle}
@@ -147,7 +150,7 @@ export default function CelebrateScreen({
         onNavigateAway={onNavigateAway}
       />
 
-      <PushPermissionCard userId={userId} workoutKey={workoutKey} totalSessions={totalSessions} />
+      <NextWorkoutPromise userId={userId} />
 
       <div style={{ animation: 'fadeUp 0.5s 0.7s ease-out both' }} className="flex flex-col items-center gap-3">
         <Button

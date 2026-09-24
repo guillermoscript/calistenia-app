@@ -190,6 +190,14 @@
   "day.sab": "Sábado",
   "day.dom": "Domingo",
 
+  "day.inSentence.lun": "lunes",
+  "day.inSentence.mar": "martes",
+  "day.inSentence.mie": "miércoles",
+  "day.inSentence.jue": "jueves",
+  "day.inSentence.vie": "viernes",
+  "day.inSentence.sab": "sábado",
+  "day.inSentence.dom": "domingo",
+
   "dayFocus.lun": "Empuje + Core",
   "dayFocus.mar": "Tirón + Movilidad",
   "dayFocus.mie": "Lumbar + Stretching",
@@ -2840,6 +2848,8 @@
   "session.prevExercise": "Ejercicio anterior",
   "session.nextExercise": "Siguiente ejercicio",
   "session.shareTitle": "Compartir sesión",
+  "session.nextWorkoutDay": "Vuelve el {{day}}: tu próximo entreno te espera.",
+  "session.nextWorkoutDayWithTime": "Vuelve el {{day}} a las {{time}}: tu próximo entreno te espera.",
 
   "day.saturday": "Sábado",
   "day.sunday": "Domingo",
