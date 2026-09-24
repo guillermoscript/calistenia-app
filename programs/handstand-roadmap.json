@@ -26,514 +26,766 @@
   "phases": [
     {
       "phase_number": 1,
-      "name": "Fase 1 – Cimientos: muñecas, hombros y pared",
+      "name": {
+        "es": "Fase 1 – Cimientos: muñecas, hombros y pared",
+        "en": "Phase 1 – Foundations: wrists, shoulders and wall"
+      },
       "weeks": "1-4",
       "color": "#10B981",
       "days": [
         {
           "day_id": "lun",
-          "day_name": "Lunes",
-          "day_focus": "Fuerza de empuje + wall holds",
-          "workout_title": "Empuje vertical y pared",
+          "day_name": {
+            "es": "Lunes",
+            "en": "Monday"
+          },
+          "day_focus": {
+            "es": "Fuerza de empuje + wall holds",
+            "en": "Push strength + wall holds"
+          },
+          "workout_title": {
+            "es": "Empuje vertical y pared",
+            "en": "Vertical push and wall work"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Círculos, flexión/extensión, presión contra el suelo con dedos adelante y atrás. Fundamental para proteger las muñecas en el pino."
+              "note": {
+                "es": "Círculos, flexión/extensión, presión contra el suelo con dedos adelante y atrás. Fundamental para proteger las muñecas en el pino.",
+                "en": "Circles, flexion/extension, pressing against the floor with fingers forward and back. Essential to protect the wrists in the handstand."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "arm_circles",
               "name": "Círculos de brazos",
-              "muscles": "Hombros, manguito rotador",
+              "muscles": {
+                "es": "Hombros, manguito rotador",
+                "en": "Shoulders, rotator cuff"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Círculos pequeños → grandes, adelante y atrás. Activa la cápsula del hombro."
+              "note": {
+                "es": "Círculos pequeños → grandes, adelante y atrás. Activa la cápsula del hombro.",
+                "en": "Small → large circles, forward and backward. Activates the shoulder capsule."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "scapular_activation",
               "name": "Activación escapular",
-              "muscles": "Serrato anterior, trapecio",
+              "muscles": {
+                "es": "Serrato anterior, trapecio",
+                "en": "Serratus anterior, trapezius"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En cuadrupedia, protrae y retrae las escápulas lentamente. Clave para estabilidad invertida."
+              "note": {
+                "es": "En cuadrupedia, protrae y retrae las escápulas lentamente. Clave para estabilidad invertida.",
+                "en": "On all fours, slowly protract and retract the shoulder blades. Key for inverted stability."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "wall_handstand_back_to_wall",
               "name": "Handstand en pared (espalda a la pared)",
-              "muscles": "Hombros, core",
+              "muscles": {
+                "es": "Hombros, core",
+                "en": "Shoulders, core"
+              },
               "sets": 5,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 25,
-              "note": "Patada corta con la espalda hacia la pared. Es la variante más fácil de las dos: empieza aquí. Busca la línea recta: orejas entre los brazos, costillas adentro, glúteos apretados. Salida de emergencia si se te escapa: gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas — practícala un par de veces antes de tu primera serie."
+              "note": {
+                "es": "Patada corta con la espalda hacia la pared. Es la variante más fácil de las dos: empieza aquí. Busca la línea recta: orejas entre los brazos, costillas adentro, glúteos apretados. Salida de emergencia si se te escapa: gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas — practícala un par de veces antes de tu primera serie.",
+                "en": "Short kick-up with your back to the wall. This is the easier of the two variants: start here. Look for the straight line: ears between the arms, ribs in, glutes squeezed. Emergency exit if you lose it: roll out sideways through the shoulder, never brake with the wrist or fall on your back — practice it a couple of times before your first set."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — primer contacto",
-              "muscles": "Equilibrio, hombros, core",
+              "muscles": {
+                "es": "Equilibrio, hombros, core",
+                "en": "Balance, shoulders, core"
+              },
               "sets": 2,
               "reps": "3 s libres",
               "rest_seconds": 90,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 3,
-              "note": "Solo después de una serie sólida de hold en pared: suelta un instante lejos de la pared y busca el punto de equilibrio 2-3s antes de volver a apoyar. No busques mantenerlo — busca SENTIRLO. La pared sigue a tu lado como red de seguridad. Usa los dedos para frenar si te vas hacia adelante (over-balance) y los talones de la mano si te vas hacia atrás (under-balance)."
+              "note": {
+                "es": "Solo después de una serie sólida de hold en pared: suelta un instante lejos de la pared y busca el punto de equilibrio 2-3s antes de volver a apoyar. No busques mantenerlo — busca SENTIRLO. La pared sigue a tu lado como red de seguridad. Usa los dedos para frenar si te vas hacia adelante (over-balance) y los talones de la mano si te vas hacia atrás (under-balance).",
+                "en": "Only after a solid set of wall holds: let go for a moment away from the wall and look for the balance point for 2-3 s before touching back down. Don't try to hold it — try to FEEL it. The wall stays right there as your safety net. Use your fingers to brake if you tip forward (over-balance) and the heels of your hands if you tip back (under-balance)."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "pike_pushup",
               "name": "Flexiones Pike",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 4,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Caderas lo más alto posible formando V invertida. Baja la cabeza hacia el suelo entre las manos. Simula el empuje vertical del handstand."
+              "note": {
+                "es": "Caderas lo más alto posible formando V invertida. Baja la cabeza hacia el suelo entre las manos. Simula el empuje vertical del handstand.",
+                "en": "Hips as high as possible forming an inverted V. Lower your head toward the floor between your hands. Simulates the vertical push of the handstand."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "plank_shoulder",
               "name": "Plancha con toque de hombro",
-              "muscles": "Core, hombros, estabilizadores",
+              "muscles": {
+                "es": "Core, hombros, estabilizadores",
+                "en": "Core, shoulders, stabilizers"
+              },
               "sets": 3,
               "reps": "10 c/lado",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Desde plancha alta, toca el hombro contrario sin rotar la cadera. Entrena el anti-rotación necesaria para el equilibrio en pino."
+              "note": {
+                "es": "Desde plancha alta, toca el hombro contrario sin rotar la cadera. Entrena el anti-rotación necesaria para el equilibrio en pino.",
+                "en": "From a high plank, touch the opposite shoulder without rotating the hips. Trains the anti-rotation needed for handstand balance."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "hollow_hold",
               "name": "Hollow hold",
-              "muscles": "Core profundo, recto abdominal",
+              "muscles": {
+                "es": "Core profundo, recto abdominal",
+                "en": "Deep core, rectus abdominis"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "Espalda baja pegada al suelo, brazos y piernas extendidos. Aprieta como si estuvieras invertido: esta es la posición exacta del pino."
+              "note": {
+                "es": "Espalda baja pegada al suelo, brazos y piernas extendidos. Aprieta como si estuvieras invertido: esta es la posición exacta del pino.",
+                "en": "Lower back pressed to the floor, arms and legs extended. Squeeze as if you were inverted: this is the exact handstand position."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
-              "muscles": "Deltoides posterior, manguito rotador",
+              "muscles": {
+                "es": "Deltoides posterior, manguito rotador",
+                "en": "Rear delts, rotator cuff"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Liga anclada a la altura de la cara. Jala hacia la frente, abre codos, retrae escápulas. Antagonista de todo el empuje vertical del día — protege el hombro que va a cargar el pino."
+              "note": {
+                "es": "Liga anclada a la altura de la cara. Jala hacia la frente, abre codos, retrae escápulas. Antagonista de todo el empuje vertical del día — protege el hombro que va a cargar el pino.",
+                "en": "Band anchored at face height. Pull toward the forehead, flare the elbows, retract the scapulae. Antagonist to all of today's vertical pressing — it protects the shoulder that's about to load the handstand."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "pike_stretch",
               "name": "Estiramiento de pike",
-              "muscles": "Isquiotibiales, espalda baja",
+              "muscles": {
+                "es": "Isquiotibiales, espalda baja",
+                "en": "Hamstrings, lower back"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Sentado con piernas juntas, lleva el pecho hacia las rodillas. Flexibilidad de pike mejora la entrada al handstand."
+              "note": {
+                "es": "Sentado con piernas juntas, lleva el pecho hacia las rodillas. Flexibilidad de pike mejora la entrada al handstand.",
+                "en": "Seated with legs together, bring the chest toward the knees. Pike flexibility improves the entry into the handstand."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral en pared",
-              "muscles": "Pectoral, deltoides anterior",
+              "muscles": {
+                "es": "Pectoral, deltoides anterior",
+                "en": "Pectorals, anterior deltoid"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo en la pared a 90°, gira el torso alejándote. Alterna lados."
+              "note": {
+                "es": "Brazo en la pared a 90°, gira el torso alejándote. Alterna lados.",
+                "en": "Arm on the wall at 90°, rotate your torso away from it. Alternate sides."
+              }
             },
             {
               "sort_order": 12,
               "exercise_id": "triceps_stretch",
               "name": "Estiramiento de tríceps",
-              "muscles": "Tríceps, hombro",
+              "muscles": {
+                "es": "Tríceps, hombro",
+                "en": "Triceps, shoulder"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Lleva el codo detrás de la cabeza con la mano contraria. Mantén la posición sin forzar."
+              "note": {
+                "es": "Lleva el codo detrás de la cabeza con la mano contraria. Mantén la posición sin forzar.",
+                "en": "Bring the elbow behind the head with the opposite hand. Hold the position without forcing it."
+              }
             }
           ],
           "day_type": "push"
         },
         {
           "day_id": "mie",
-          "day_name": "Miércoles",
-          "day_focus": "Pared, kick-up y core invertido",
-          "workout_title": "Wall hold, kick-up y core",
+          "day_name": {
+            "es": "Miércoles",
+            "en": "Wednesday"
+          },
+          "day_focus": {
+            "es": "Pared, kick-up y core invertido",
+            "en": "Wall, kick-up and inverted core"
+          },
+          "workout_title": {
+            "es": "Wall hold, kick-up y core",
+            "en": "Wall hold, kick-up and core"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Círculos, flexión/extensión, presión contra el suelo. Nunca saltes este calentamiento."
+              "note": {
+                "es": "Círculos, flexión/extensión, presión contra el suelo. Nunca saltes este calentamiento.",
+                "en": "Circles, flexion/extension, pressing against the floor. Never skip this warm-up."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "cat_cow",
               "name": "Gato-Vaca",
-              "muscles": "Columna, core",
+              "muscles": {
+                "es": "Columna, core",
+                "en": "Spine, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Fluye lentamente entre flexión y extensión de la columna. Coordina con la respiración."
+              "note": {
+                "es": "Fluye lentamente entre flexión y extensión de la columna. Coordina con la respiración.",
+                "en": "Flow slowly between spinal flexion and extension. Coordinate with your breathing."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "inchworm",
               "name": "Oruga",
-              "muscles": "Hombros, isquiotibiales, core",
+              "muscles": {
+                "es": "Hombros, isquiotibiales, core",
+                "en": "Shoulders, hamstrings, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Camina con las manos hasta plancha y vuelve. Siente el peso en los hombros al final del recorrido."
+              "note": {
+                "es": "Camina con las manos hasta plancha y vuelve. Siente el peso en los hombros al final del recorrido.",
+                "en": "Walk with your hands out to a plank and back. Feel the weight on the shoulders at the end of the range."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "wall_handstand_back_to_wall",
               "name": "Handstand en pared (espalda a la pared)",
-              "muscles": "Hombros, core",
+              "muscles": {
+                "es": "Hombros, core",
+                "en": "Shoulders, core"
+              },
               "sets": 4,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "Segunda exposición semanal a la pared, con la espalda apoyada. Acumula tiempo invertido: esta serie existe porque el miércoles de esta fase no puede pasar sin un solo segundo boca abajo."
+              "note": {
+                "es": "Segunda exposición semanal a la pared, con la espalda apoyada. Acumula tiempo invertido: esta serie existe porque el miércoles de esta fase no puede pasar sin un solo segundo boca abajo.",
+                "en": "Second weekly exposure to the wall, back supported. Accumulate inverted time: this set exists because this phase's Wednesday can't go by without a single second upside down."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "handstand_kick_ups",
               "name": "Kick-up a la pared",
-              "muscles": "Hombros, coordinación",
+              "muscles": {
+                "es": "Hombros, coordinación",
+                "en": "Shoulders, coordination"
+              },
               "sets": 3,
               "reps": "3-5",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Practica la patada controlada hacia la pared que ya conoces del hold de arriba. El objetivo es la coordinación de la patada, no llegar arriba con fuerza — ve tan despacio como necesites, no hay prisa por completar el rango. Salida de emergencia si te pasas: gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas."
+              "note": {
+                "es": "Practica la patada controlada hacia la pared que ya conoces del hold de arriba. El objetivo es la coordinación de la patada, no llegar arriba con fuerza — ve tan despacio como necesites, no hay prisa por completar el rango. Salida de emergencia si te pasas: gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas.",
+                "en": "Practice the controlled kick-up to the wall you already know from the hold above. The goal is kick coordination, not forcing your way up — go as slowly as you need, there's no rush to complete the range. Emergency exit if you overshoot: roll out sideways through the shoulder, never brake with the wrist or fall onto your back."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "hollow_hold",
               "name": "Hollow hold",
-              "muscles": "Core profundo, recto abdominal",
+              "muscles": {
+                "es": "Core profundo, recto abdominal",
+                "en": "Deep core, rectus abdominis"
+              },
               "sets": 4,
               "reps": "",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 25,
-              "note": "Posición de banana: espalda baja al suelo, brazos y piernas flotan. Imagina que estás boca abajo en el pino — esta es la forma que necesitas mantener."
+              "note": {
+                "es": "Posición de banana: espalda baja al suelo, brazos y piernas flotan. Imagina que estás boca abajo en el pino — esta es la forma que necesitas mantener.",
+                "en": "Banana position: lower back to the floor, arms and legs floating. Imagine you're upside down in a handstand — this is the shape you need to maintain."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "dead_bug",
               "name": "Dead bug",
-              "muscles": "Core profundo, estabilizadores",
+              "muscles": {
+                "es": "Core profundo, estabilizadores",
+                "en": "Deep core, stabilizers"
+              },
               "sets": 2,
               "reps": "8 c/lado",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Espalda baja pegada al suelo. Extiende brazo y pierna opuestos lentamente. Enseña al core a estabilizar movimientos asimétricos, clave para correcciones de equilibrio."
+              "note": {
+                "es": "Espalda baja pegada al suelo. Extiende brazo y pierna opuestos lentamente. Enseña al core a estabilizar movimientos asimétricos, clave para correcciones de equilibrio.",
+                "en": "Lower back pressed to the floor. Slowly extend opposite arm and leg. Teaches the core to stabilize asymmetric movements, key for balance corrections."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "plank",
               "name": "Plancha alta",
-              "muscles": "Core, hombros, glúteos",
+              "muscles": {
+                "es": "Core, hombros, glúteos",
+                "en": "Core, shoulders, glutes"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Empuja activamente el suelo con las manos (protracción). Glúteos apretados. Esta protracción es la misma que usarás en el handstand."
+              "note": {
+                "es": "Empuja activamente el suelo con las manos (protracción). Glúteos apretados. Esta protracción es la misma que usarás en el handstand.",
+                "en": "Actively push the floor away with your hands (protraction). Glutes squeezed. This protraction is the same one you'll use in the handstand."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "crow_pose",
               "name": "Crow pose (primer contacto)",
-              "muscles": "Hombros, core, muñecas, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, muñecas, equilibrio",
+                "en": "Shoulders, core, wrists, balance"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 90,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 10,
-              "note": "Rodillas sobre los tríceps, inclínate hasta que los pies pierdan peso. No hace falta despegarlos del todo todavía: es otra forma de acostumbrar muñecas y hombros a soportar tu peso, en paralelo al trabajo de pared de hoy — no lo sustituye, lo complementa desde un ángulo distinto."
+              "note": {
+                "es": "Rodillas sobre los tríceps, inclínate hasta que los pies pierdan peso. No hace falta despegarlos del todo todavía: es otra forma de acostumbrar muñecas y hombros a soportar tu peso, en paralelo al trabajo de pared de hoy — no lo sustituye, lo complementa desde un ángulo distinto.",
+                "en": "Knees over the triceps, lean forward until the feet lose weight. No need to lift them off fully yet: it's another way of getting the wrists and shoulders used to bearing your weight, alongside today's wall work — it doesn't replace it, it complements it from a different angle."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "lat_stretch",
               "name": "Estiramiento de dorsales",
-              "muscles": "Dorsal ancho, hombro",
+              "muscles": {
+                "es": "Dorsal ancho, hombro",
+                "en": "Lats, shoulder"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo extendido en la pared o marco, inclina el torso. Dorsales flexibles permiten mejor línea en el pino."
+              "note": {
+                "es": "Brazo extendido en la pared o marco, inclina el torso. Dorsales flexibles permiten mejor línea en el pino.",
+                "en": "Arm extended against the wall or door frame, lean the torso. Flexible lats allow a better line in the handstand."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "deep_breathing",
               "name": "Respiración profunda",
-              "muscles": "Diafragma, sistema nervioso",
+              "muscles": {
+                "es": "Diafragma, sistema nervioso",
+                "en": "Diaphragm, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Inhala 4s por nariz, exhala 6s por boca. Calma el sistema nervioso después del trabajo invertido."
+              "note": {
+                "es": "Inhala 4s por nariz, exhala 6s por boca. Calma el sistema nervioso después del trabajo invertido.",
+                "en": "Inhale 4 s through the nose, exhale 6 s through the mouth. Calms the nervous system after inverted work."
+              }
             }
           ],
           "day_type": "full"
         },
         {
           "day_id": "vie",
-          "day_name": "Viernes",
-          "day_focus": "Pared + fuerza de empuje",
-          "workout_title": "Handstand en pared y empuje",
+          "day_name": {
+            "es": "Viernes",
+            "en": "Friday"
+          },
+          "day_focus": {
+            "es": "Pared + fuerza de empuje",
+            "en": "Wall + push strength"
+          },
+          "workout_title": {
+            "es": "Handstand en pared y empuje",
+            "en": "Wall handstand and press"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Rutina completa: flexión, extensión, círculos, presión en el suelo. No negocies este calentamiento."
+              "note": {
+                "es": "Rutina completa: flexión, extensión, círculos, presión en el suelo. No negocies este calentamiento.",
+                "en": "Full routine: flexion, extension, circles, pressing on the floor. Don't skip this warm-up."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "shoulder_dislocates",
               "name": "Dislocaciones de hombro",
-              "muscles": "Hombros, movilidad glenohumeral",
+              "muscles": {
+                "es": "Hombros, movilidad glenohumeral",
+                "en": "Shoulders, glenohumeral mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Con la liga de resistencia estirada entre las manos (o un palo si lo tienes a mano), pasa los brazos por encima de la cabeza y detrás. Abre la flexión de hombro necesaria para un handstand recto."
+              "note": {
+                "es": "Con la liga de resistencia estirada entre las manos (o un palo si lo tienes a mano), pasa los brazos por encima de la cabeza y detrás. Abre la flexión de hombro necesaria para un handstand recto.",
+                "en": "With the resistance band stretched between your hands (or a stick if you have one handy), pass your arms overhead and behind you. Open up the shoulder flexion needed for a straight handstand."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "thoracic_rotation",
               "name": "Rotación torácica",
-              "muscles": "Columna torácica, oblicuos",
+              "muscles": {
+                "es": "Columna torácica, oblicuos",
+                "en": "Thoracic spine, obliques"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En cuadrupedia, mano detrás de la nuca y rota abriendo el pecho. Movilidad torácica facilita la alineación del pino."
+              "note": {
+                "es": "En cuadrupedia, mano detrás de la nuca y rota abriendo el pecho. Movilidad torácica facilita la alineación del pino.",
+                "en": "On all fours, hand behind the neck and rotate opening the chest. Thoracic mobility helps handstand alignment."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "wall_handstand_chest_to_wall",
               "name": "Handstand en pared (pecho a la pared)",
-              "muscles": "Hombros, core, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, equilibrio",
+                "en": "Shoulders, core, balance"
+              },
               "sets": 5,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "Sube caminando los pies por la pared hasta quedar con el pecho mirando la pared. Es la variante más exigente de las dos — te toca ahora que ya llevas dos sesiones con la espalda apoyada. Brazos totalmente extendidos, empuja el suelo, aprieta glúteos y abdomen."
+              "note": {
+                "es": "Sube caminando los pies por la pared hasta quedar con el pecho mirando la pared. Es la variante más exigente de las dos — te toca ahora que ya llevas dos sesiones con la espalda apoyada. Brazos totalmente extendidos, empuja el suelo, aprieta glúteos y abdomen.",
+                "en": "Walk your feet up the wall until your chest faces the wall. This is the more demanding of the two variants — it's your turn now that you've had two sessions with your back supported. Arms fully extended, push the floor away, squeeze glutes and abs."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — primer contacto",
-              "muscles": "Equilibrio, hombros, core",
+              "muscles": {
+                "es": "Equilibrio, hombros, core",
+                "en": "Balance, shoulders, core"
+              },
               "sets": 2,
               "reps": "3 s libres",
               "rest_seconds": 90,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 3,
-              "note": "Segundo intento libre de la semana. Mismo patrón que el lunes: suelta un instante cerca de la pared, siente el punto de equilibrio, no lo persigas todavía. Si te caes, sal girando por el hombro — nunca con la muñeca."
+              "note": {
+                "es": "Segundo intento libre de la semana. Mismo patrón que el lunes: suelta un instante cerca de la pared, siente el punto de equilibrio, no lo persigas todavía. Si te caes, sal girando por el hombro — nunca con la muñeca.",
+                "en": "Second free attempt of the week. Same pattern as Monday: let go for an instant near the wall, feel the balance point, don't chase it yet. If you fall, exit by rolling through the shoulder — never with the wrist."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "pike_pushup",
               "name": "Flexiones Pike",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 3,
               "reps": "8-10",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Caderas altas en V. Baja controlado, sube explosivo. Construye la fuerza de empuje vertical que necesitas para sostenerte invertido."
+              "note": {
+                "es": "Caderas altas en V. Baja controlado, sube explosivo. Construye la fuerza de empuje vertical que necesitas para sostenerte invertido.",
+                "en": "Hips high in a V. Lower under control, drive up explosively. Builds the vertical pushing strength you need to hold yourself inverted."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "pushup_std",
               "name": "Flexiones estándar",
-              "muscles": "Pecho, tríceps, hombros",
+              "muscles": {
+                "es": "Pecho, tríceps, hombros",
+                "en": "Chest, triceps, shoulders"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Cuerpo en línea recta (posición hollow). Baja hasta que el pecho casi toque el suelo. Practica la tensión corporal total."
+              "note": {
+                "es": "Cuerpo en línea recta (posición hollow). Baja hasta que el pecho casi toque el suelo. Practica la tensión corporal total.",
+                "en": "Body in a straight line (hollow position). Lower until your chest almost touches the floor. Practice full-body tension."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "side_plank",
               "name": "Plancha lateral",
-              "muscles": "Oblicuos, glúteo medio",
+              "muscles": {
+                "es": "Oblicuos, glúteo medio",
+                "en": "Obliques, glute medius"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "Cuerpo recto de pies a cabeza. Aprieta glúteos. Estabilidad lateral es crucial para no caer de lado en el handstand."
+              "note": {
+                "es": "Cuerpo recto de pies a cabeza. Aprieta glúteos. Estabilidad lateral es crucial para no caer de lado en el handstand.",
+                "en": "Body straight from feet to head. Squeeze the glutes. Lateral stability is crucial to avoid falling sideways in the handstand."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "glute_bridge",
               "name": "Puente de glúteos",
-              "muscles": "Glúteos, lumbar",
+              "muscles": {
+                "es": "Glúteos, lumbar",
+                "en": "Glutes, lower back"
+              },
               "sets": 3,
               "reps": "15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Aprieta fuerte arriba y mantén 2s. Los glúteos activos son clave para cerrar la línea del pino y evitar banana-back."
+              "note": {
+                "es": "Aprieta fuerte arriba y mantén 2s. Los glúteos activos son clave para cerrar la línea del pino y evitar banana-back.",
+                "en": "Squeeze hard at the top and hold 2s. Active glutes are key to closing the handstand line and avoiding banana-back."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "hollow_rock",
               "name": "Hollow rock",
-              "muscles": "Core profundo, recto abdominal",
+              "muscles": {
+                "es": "Core profundo, recto abdominal",
+                "en": "Deep core, rectus abdominis"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Desde hollow hold, balancea suavemente sin perder la forma. La misma tensión que corrige el balance cuando estás invertido."
+              "note": {
+                "es": "Desde hollow hold, balancea suavemente sin perder la forma. La misma tensión que corrige el balance cuando estás invertido.",
+                "en": "From a hollow hold, swing gently without losing form. The same tension that corrects your balance when you're inverted."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
-              "muscles": "Deltoides posterior, manguito rotador",
+              "muscles": {
+                "es": "Deltoides posterior, manguito rotador",
+                "en": "Rear delts, rotator cuff"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Liga a la altura de la cara. Jala abriendo codos, retrae escápulas. Salud de hombro para compensar tanto empuje vertical."
+              "note": {
+                "es": "Liga a la altura de la cara. Jala abriendo codos, retrae escápulas. Salud de hombro para compensar tanto empuje vertical.",
+                "en": "Band at face height. Pull while opening the elbows, retract the scapulae. Shoulder health to offset so much vertical pushing."
+              }
             },
             {
               "sort_order": 12,
               "exercise_id": "pike_stretch",
               "name": "Estiramiento de pike",
-              "muscles": "Isquiotibiales, espalda baja",
+              "muscles": {
+                "es": "Isquiotibiales, espalda baja",
+                "en": "Hamstrings, lower back"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Mantén las piernas rectas. Respira y relaja con cada exhalación."
+              "note": {
+                "es": "Mantén las piernas rectas. Respira y relaja con cada exhalación.",
+                "en": "Keep the legs straight. Breathe and relax with each exhale."
+              }
             },
             {
               "sort_order": 13,
               "exercise_id": "triceps_stretch",
               "name": "Estiramiento de tríceps",
-              "muscles": "Tríceps, hombro",
+              "muscles": {
+                "es": "Tríceps, hombro",
+                "en": "Triceps, shoulder"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Codo detrás de la cabeza, presiona suave con la otra mano. 15s cada lado."
+              "note": {
+                "es": "Codo detrás de la cabeza, presiona suave con la otra mano. 15s cada lado.",
+                "en": "Elbow behind the head, press gently with the other hand. 15s each side."
+              }
             },
             {
               "sort_order": 14,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral",
-              "muscles": "Pectoral, deltoides anterior",
+              "muscles": {
+                "es": "Pectoral, deltoides anterior",
+                "en": "Pectorals, anterior deltoid"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo en marco de puerta a 90°. Paso adelante y siente la apertura del pecho."
+              "note": {
+                "es": "Brazo en marco de puerta a 90°. Paso adelante y siente la apertura del pecho.",
+                "en": "Arm on the door frame at 90°. Step forward and feel the chest opening."
+              }
             }
           ],
           "day_type": "push"
@@ -543,501 +795,747 @@
     },
     {
       "phase_number": 2,
-      "name": "Fase 2 – Tiempo invertido y kick-ups",
+      "name": {
+        "es": "Fase 2 – Tiempo invertido y kick-ups",
+        "en": "Phase 2 – Inverted Time and Kick-ups"
+      },
       "weeks": "5-8",
       "color": "#F59E0B",
       "days": [
         {
           "day_id": "lun",
-          "day_name": "Lunes",
-          "day_focus": "Holds en pared + kick-up",
-          "workout_title": "Pared y patada al pino",
+          "day_name": {
+            "es": "Lunes",
+            "en": "Monday"
+          },
+          "day_focus": {
+            "es": "Holds en pared + kick-up",
+            "en": "Wall holds + kick-up"
+          },
+          "workout_title": {
+            "es": "Pared y patada al pino",
+            "en": "Wall and kick to handstand"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Rutina completa incluyendo presión en el suelo con dedos hacia atrás. Ahora que el volumen invertido sube, las muñecas necesitan más atención."
+              "note": {
+                "es": "Rutina completa incluyendo presión en el suelo con dedos hacia atrás. Ahora que el volumen invertido sube, las muñecas necesitan más atención.",
+                "en": "Full routine including pressing on the floor with fingers pointing back. Now that inverted volume increases, the wrists need more attention."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "inchworm",
               "name": "Oruga",
-              "muscles": "Hombros, isquiotibiales, core",
+              "muscles": {
+                "es": "Hombros, isquiotibiales, core",
+                "en": "Shoulders, hamstrings, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Camina con las manos hasta plancha, mantén 2s y regresa. Activa cadena completa."
+              "note": {
+                "es": "Camina con las manos hasta plancha, mantén 2s y regresa. Activa cadena completa.",
+                "en": "Walk your hands out to a plank, hold 2 sec and return. Activates the full chain."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "scapular_activation",
               "name": "Activación escapular",
-              "muscles": "Serrato anterior, trapecio",
+              "muscles": {
+                "es": "Serrato anterior, trapecio",
+                "en": "Serratus anterior, trapezius"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En plancha alta, protrae y retrae las escápulas. El serrato activo mantiene los hombros estables invertido."
+              "note": {
+                "es": "En plancha alta, protrae y retrae las escápulas. El serrato activo mantiene los hombros estables invertido.",
+                "en": "In a high plank, protract and retract the shoulder blades. An active serratus keeps the shoulders stable when inverted."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "handstand_wall",
               "name": "Handstand en pared – hold largo",
-              "muscles": "Hombros, core, trapecio",
+              "muscles": {
+                "es": "Hombros, core, trapecio",
+                "en": "Shoulders, core, traps"
+              },
               "sets": 4,
               "reps": "",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "Pecho a la pared. Busca la forma perfecta: empuja el suelo, orejas entre los brazos, ombligo adentro, glúteos apretados. Intenta despegar la punta de los pies de la pared por instantes."
+              "note": {
+                "es": "Pecho a la pared. Busca la forma perfecta: empuja el suelo, orejas entre los brazos, ombligo adentro, glúteos apretados. Intenta despegar la punta de los pies de la pared por instantes.",
+                "en": "Chest to wall. Aim for perfect form: push the floor away, ears between the arms, navel in, glutes squeezed. Try to lift your toes off the wall for brief moments."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "handstand_kick_ups",
               "name": "Kick-up a la pared",
-              "muscles": "Hombros, core, coordinación",
+              "muscles": {
+                "es": "Hombros, core, coordinación",
+                "en": "Shoulders, core, coordination"
+              },
               "sets": 4,
               "reps": "3-5",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Desde posición de estocada, manos al suelo y patea arriba. Pierna guía recta, pierna de patada impulsa. No tires demasiado fuerte — busca llegar justo a la pared con control. Salida de emergencia si te pasas: gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas."
+              "note": {
+                "es": "Desde posición de estocada, manos al suelo y patea arriba. Pierna guía recta, pierna de patada impulsa. No tires demasiado fuerte — busca llegar justo a la pared con control. Salida de emergencia si te pasas: gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas.",
+                "en": "From a lunge position, hands on the floor and kick up. Lead leg straight, kicking leg drives the movement. Don't kick too hard — aim to reach the wall just right, with control. Emergency exit if you overshoot: roll out through the shoulder to the side, never brake with the wrist or fall on your back."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — intentos",
-              "muscles": "Equilibrio, hombros, core",
+              "muscles": {
+                "es": "Equilibrio, hombros, core",
+                "en": "Balance, shoulders, core"
+              },
               "sets": 3,
               "reps": "8 s libres",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 8,
-              "note": "Ya llevas cuatro semanas de pared: patea con la misma técnica del kick-up y esta vez suelta de verdad. Busca el punto de equilibrio con los dedos (over-balance) y los talones de la mano (under-balance). Cada caída es información, no fallo. Si se te escapa, gira por el hombro — es la misma salida que practicaste en el kick-up."
+              "note": {
+                "es": "Ya llevas cuatro semanas de pared: patea con la misma técnica del kick-up y esta vez suelta de verdad. Busca el punto de equilibrio con los dedos (over-balance) y los talones de la mano (under-balance). Cada caída es información, no fallo. Si se te escapa, gira por el hombro — es la misma salida que practicaste en el kick-up.",
+                "en": "You've already put in four weeks against the wall: kick up with the same kick-up technique and this time actually let go. Find the balance point with your fingers (over-balance) and the heel of the hand (under-balance). Every fall is information, not failure. If it gets away from you, roll out over the shoulder — it's the same exit you practiced in the kick-up."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "pike_elevated",
               "name": "Pike push-up elevado",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 3,
               "reps": "6-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Pies en silla o caja. Más vertical = más transferencia al HSPU. Baja la cabeza entre las manos controladamente."
+              "note": {
+                "es": "Pies en silla o caja. Más vertical = más transferencia al HSPU. Baja la cabeza entre las manos controladamente.",
+                "en": "Feet on a chair or box. More vertical = more transfer to the HSPU. Lower your head between your hands with control."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "hollow_hold",
               "name": "Hollow hold",
-              "muscles": "Core profundo, recto abdominal",
+              "muscles": {
+                "es": "Core profundo, recto abdominal",
+                "en": "Deep core, rectus abdominis"
+              },
               "sets": 2,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazos extendidos arriba. Imagina que estás invertido: cada segundo aquí construye la forma del pino."
+              "note": {
+                "es": "Brazos extendidos arriba. Imagina que estás invertido: cada segundo aquí construye la forma del pino.",
+                "en": "Arms extended overhead. Imagine you're inverted: every second here builds the handstand shape."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "pike_pushup",
               "name": "Flexiones Pike",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 3,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Versión de suelo, dosis de mantenimiento. No sueltes la base aunque ya estés en el pike elevado — la sigues necesitando para el volumen total de empuje."
+              "note": {
+                "es": "Versión de suelo, dosis de mantenimiento. No sueltes la base aunque ya estés en el pike elevado — la sigues necesitando para el volumen total de empuje.",
+                "en": "Floor version, a maintenance dose. Don't drop the base even once you're doing the elevated pike — you still need it for total pushing volume."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
-              "muscles": "Deltoides posterior, manguito rotador",
+              "muscles": {
+                "es": "Deltoides posterior, manguito rotador",
+                "en": "Rear delts, rotator cuff"
+              },
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Liga a la altura de la cara. Jala abriendo codos, retrae escápulas. El empuje sube esta fase — el antagonista sube con él."
+              "note": {
+                "es": "Liga a la altura de la cara. Jala abriendo codos, retrae escápulas. El empuje sube esta fase — el antagonista sube con él.",
+                "en": "Band at face height. Pull while opening the elbows, retract the scapulae. Push volume goes up this phase — the antagonist goes up with it."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "shoulder_dislocates",
               "name": "Dislocaciones de hombro",
-              "muscles": "Movilidad glenohumeral",
+              "muscles": {
+                "es": "Movilidad glenohumeral",
+                "en": "Glenohumeral mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Movimientos lentos y controlados para soltar los hombros después del trabajo invertido."
+              "note": {
+                "es": "Movimientos lentos y controlados para soltar los hombros después del trabajo invertido.",
+                "en": "Slow, controlled movements to release the shoulders after the inverted work."
+              }
             },
             {
               "sort_order": 12,
               "exercise_id": "lat_stretch",
               "name": "Estiramiento de dorsales",
-              "muscles": "Dorsal ancho",
+              "muscles": {
+                "es": "Dorsal ancho",
+                "en": "Lats"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Brazo extendido contra la pared, inclina el torso. Dorsales sueltos = mejor overhead."
+              "note": {
+                "es": "Brazo extendido contra la pared, inclina el torso. Dorsales sueltos = mejor overhead.",
+                "en": "Arm extended against the wall, lean the torso. Loose lats = better overhead position."
+              }
             },
             {
               "sort_order": 13,
               "exercise_id": "deep_breathing",
               "name": "Respiración profunda",
-              "muscles": "Diafragma, sistema nervioso",
+              "muscles": {
+                "es": "Diafragma, sistema nervioso",
+                "en": "Diaphragm, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Acostado boca arriba. Inhala 4s, exhala 6s. Restaura el sistema después del esfuerzo invertido."
+              "note": {
+                "es": "Acostado boca arriba. Inhala 4s, exhala 6s. Restaura el sistema después del esfuerzo invertido.",
+                "en": "Lying face up. Inhale 4s, exhale 6s. Restores the system after inverted effort."
+              }
             }
           ],
           "day_type": "push"
         },
         {
           "day_id": "mie",
-          "day_name": "Miércoles",
-          "day_focus": "Equilibrio + core avanzado",
-          "workout_title": "Balance y core invertido",
+          "day_name": {
+            "es": "Miércoles",
+            "en": "Wednesday"
+          },
+          "day_focus": {
+            "es": "Equilibrio + core avanzado",
+            "en": "Balance + Advanced Core"
+          },
+          "workout_title": {
+            "es": "Balance y core invertido",
+            "en": "Balance and inverted core"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Círculos, extensión, flexión, carga progresiva en cuadrupedia."
+              "note": {
+                "es": "Círculos, extensión, flexión, carga progresiva en cuadrupedia.",
+                "en": "Circles, extension, flexion, progressive loading in a quadruped position."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "arm_circles",
               "name": "Círculos de brazos",
-              "muscles": "Hombros, manguito rotador",
+              "muscles": {
+                "es": "Hombros, manguito rotador",
+                "en": "Shoulders, rotator cuff"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "De pequeños a grandes. Incluye círculos en sentido contrario."
+              "note": {
+                "es": "De pequeños a grandes. Incluye círculos en sentido contrario.",
+                "en": "From small to large. Include circles in the opposite direction."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "cat_cow",
               "name": "Gato-Vaca",
-              "muscles": "Columna, core",
+              "muscles": {
+                "es": "Columna, core",
+                "en": "Spine, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Fluye con la respiración. Prepara la columna para el trabajo invertido."
+              "note": {
+                "es": "Fluye con la respiración. Prepara la columna para el trabajo invertido.",
+                "en": "Flow with the breath. Prepares the spine for inverted work."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "crow_pose",
               "name": "Crow pose (Bakasana)",
-              "muscles": "Hombros, core, muñecas, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, muñecas, equilibrio",
+                "en": "Shoulders, core, wrists, balance"
+              },
               "sets": 4,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 15,
-              "note": "Rodillas sobre los tríceps, inclínate adelante hasta que los pies se despeguen. Mira un punto en el suelo 30cm adelante de tus manos. El crow enseña el equilibrio de manos y la presión de dedos que usarás en el handstand."
+              "note": {
+                "es": "Rodillas sobre los tríceps, inclínate adelante hasta que los pies se despeguen. Mira un punto en el suelo 30cm adelante de tus manos. El crow enseña el equilibrio de manos y la presión de dedos que usarás en el handstand.",
+                "en": "Knees on the triceps, lean forward until the feet lift off. Look at a point on the floor 30cm ahead of your hands. The crow pose teaches the hand balance and finger pressure you'll use in the handstand."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "handstand_wall",
               "name": "Handstand en pared – toe pulls",
-              "muscles": "Hombros, core, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, equilibrio",
+                "en": "Shoulders, core, balance"
+              },
               "sets": 4,
               "reps": "",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pecho a la pared. Despega un pie, luego el otro. Cuando puedas, despega ambos 1-2 segundos. Siente cómo los dedos de las manos controlan el balance: presiona para no caer de espaldas."
+              "note": {
+                "es": "Pecho a la pared. Despega un pie, luego el otro. Cuando puedas, despega ambos 1-2 segundos. Siente cómo los dedos de las manos controlan el balance: presiona para no caer de espaldas.",
+                "en": "Chest to the wall. Lift one foot, then the other. When you can, lift both for 1-2 seconds. Feel how your fingers control the balance: press to avoid falling backward."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "hollow_rock",
               "name": "Hollow rock",
-              "muscles": "Core profundo, recto abdominal",
+              "muscles": {
+                "es": "Core profundo, recto abdominal",
+                "en": "Deep core, rectus abdominis"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Desde hollow hold, balancea suavemente adelante y atrás sin perder la forma. Enseña al core a mantener tensión durante el movimiento — exactamente lo que pasa cuando corriges balance en el pino."
+              "note": {
+                "es": "Desde hollow hold, balancea suavemente adelante y atrás sin perder la forma. Enseña al core a mantener tensión durante el movimiento — exactamente lo que pasa cuando corriges balance en el pino.",
+                "en": "From a hollow hold, swing gently forward and back without losing form. Teaches the core to hold tension through movement — exactly what happens when you correct your balance in a handstand."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "v_ups",
               "name": "Abdominales en V",
-              "muscles": "Core, flexores de cadera",
+              "muscles": {
+                "es": "Core, flexores de cadera",
+                "en": "Core, hip flexors"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Manos y pies se encuentran arriba. Controla la bajada. Potencia de core para correcciones rápidas."
+              "note": {
+                "es": "Manos y pies se encuentran arriba. Controla la bajada. Potencia de core para correcciones rápidas.",
+                "en": "Hands and feet meet at the top. Control the descent. Core power for quick corrections."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "lsit_prog",
               "name": "L-sit progresión",
-              "muscles": "Core, flexores de cadera, tríceps",
+              "muscles": {
+                "es": "Core, flexores de cadera, tríceps",
+                "en": "Core, hip flexors, triceps"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 90,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 15,
-              "note": "En el suelo o en paralelas. Empuja fuerte el suelo y eleva las piernas. Si no puedes piernas rectas, mantén rodillas dobladas. Compresión activa de core + empuje de hombros. Es una introducción puntual de esta fase: no vuelve a aparecer en fase 3, donde la compresión de core ya queda cubierta por hollow_hold y v_ups."
+              "note": {
+                "es": "En el suelo o en paralelas. Empuja fuerte el suelo y eleva las piernas. Si no puedes piernas rectas, mantén rodillas dobladas. Compresión activa de core + empuje de hombros. Es una introducción puntual de esta fase: no vuelve a aparecer en fase 3, donde la compresión de core ya queda cubierta por hollow_hold y v_ups.",
+                "en": "On the floor or on parallettes. Push hard into the floor and raise the legs. If you can't keep legs straight, keep the knees bent. Active core compression + shoulder push. This is a one-off introduction in this phase: it doesn't reappear in phase 3, where core compression is already covered by hollow_hold and v_ups."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "pike_stretch",
               "name": "Estiramiento de pike",
-              "muscles": "Isquiotibiales, espalda baja",
+              "muscles": {
+                "es": "Isquiotibiales, espalda baja",
+                "en": "Hamstrings, lower back"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Piernas juntas y rectas. Respira profundo y relaja cada vez más."
+              "note": {
+                "es": "Piernas juntas y rectas. Respira profundo y relaja cada vez más.",
+                "en": "Legs together and straight. Breathe deeply and relax more and more."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "triceps_stretch",
               "name": "Estiramiento de tríceps",
-              "muscles": "Tríceps, hombro",
+              "muscles": {
+                "es": "Tríceps, hombro",
+                "en": "Triceps, shoulder"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Mantén 15s cada lado. Respira y relaja."
+              "note": {
+                "es": "Mantén 15s cada lado. Respira y relaja.",
+                "en": "Hold 15s per side. Breathe and relax."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral",
-              "muscles": "Pectoral, deltoides anterior",
+              "muscles": {
+                "es": "Pectoral, deltoides anterior",
+                "en": "Pectorals, anterior deltoid"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Apertura de pecho en marco de puerta. Pectorales acortados limitan la apertura de hombro necesaria para el pino."
+              "note": {
+                "es": "Apertura de pecho en marco de puerta. Pectorales acortados limitan la apertura de hombro necesaria para el pino.",
+                "en": "Chest opener in a doorframe. Shortened pecs limit the shoulder opening the handstand needs."
+              }
             }
           ],
           "day_type": "full"
         },
         {
           "day_id": "vie",
-          "day_name": "Viernes",
-          "day_focus": "Fuerza vertical + hold máximo",
-          "workout_title": "Empuje y tiempo en pared",
+          "day_name": {
+            "es": "Viernes",
+            "en": "Friday"
+          },
+          "day_focus": {
+            "es": "Fuerza vertical + hold máximo",
+            "en": "Vertical Strength + Max Hold"
+          },
+          "workout_title": {
+            "es": "Empuje y tiempo en pared",
+            "en": "Push and wall time"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Rutina completa. Incluye carga en cuadrupedia inclinando el peso hacia adelante."
+              "note": {
+                "es": "Rutina completa. Incluye carga en cuadrupedia inclinando el peso hacia adelante.",
+                "en": "Full routine. Includes loading on all fours by leaning the weight forward."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "shoulder_dislocates",
               "name": "Dislocaciones de hombro",
-              "muscles": "Hombros, movilidad glenohumeral",
+              "muscles": {
+                "es": "Hombros, movilidad glenohumeral",
+                "en": "Shoulders, glenohumeral mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Lentas y controladas. Busca amplitud máxima sin dolor."
+              "note": {
+                "es": "Lentas y controladas. Busca amplitud máxima sin dolor.",
+                "en": "Slow and controlled. Aim for maximum range of motion without pain."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "scapular_activation",
               "name": "Activación escapular",
-              "muscles": "Serrato anterior, trapecio",
+              "muscles": {
+                "es": "Serrato anterior, trapecio",
+                "en": "Serratus anterior, trapezius"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En plancha, protrae/retrae. También eleva las escápulas para activar el trapecio superior."
+              "note": {
+                "es": "En plancha, protrae/retrae. También eleva las escápulas para activar el trapecio superior.",
+                "en": "In a plank, protract/retract. Also elevate the shoulder blades to activate the upper trapezius."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "pike_elevated",
               "name": "Pike push-up elevado",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 4,
               "reps": "6-8",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Pies en superficie alta. Cuanto más vertical el torso, más específico para el handstand pushup. Baja controlado, sube con intención."
+              "note": {
+                "es": "Pies en superficie alta. Cuanto más vertical el torso, más específico para el handstand pushup. Baja controlado, sube con intención.",
+                "en": "Feet on an elevated surface. The more vertical the torso, the more specific to the handstand push-up. Lower under control, push up with intent."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "handstand_wall",
               "name": "Handstand en pared – hold máximo",
-              "muscles": "Hombros, core, trapecio",
+              "muscles": {
+                "es": "Hombros, core, trapecio",
+                "en": "Shoulders, core, traps"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Pecho a la pared. Busca tu máximo tiempo con forma perfecta. Cuando la forma se rompe, baja. Calidad sobre cantidad. Si sostienes los 45s del temporizador sin esfuerzo, es la señal de que estás listo para la fase 3."
+              "note": {
+                "es": "Pecho a la pared. Busca tu máximo tiempo con forma perfecta. Cuando la forma se rompe, baja. Calidad sobre cantidad. Si sostienes los 45s del temporizador sin esfuerzo, es la señal de que estás listo para la fase 3.",
+                "en": "Chest to wall. Aim for your maximum time with perfect form. When your form breaks, come down. Quality over quantity. If you hold the 45 s timer effortlessly, that's the sign you're ready for phase 3."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — intentos",
-              "muscles": "Equilibrio, hombros, core",
+              "muscles": {
+                "es": "Equilibrio, hombros, core",
+                "en": "Balance, shoulders, core"
+              },
               "sets": 3,
               "reps": "8 s libres",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 8,
-              "note": "Segundo día libre de la semana. Después del hold máximo de arriba, sueltas con los hombros ya calientes. Respira suave una vez arriba, no bloquees el aire. Si se te escapa, gira por el hombro hacia el lateral."
+              "note": {
+                "es": "Segundo día libre de la semana. Después del hold máximo de arriba, sueltas con los hombros ya calientes. Respira suave una vez arriba, no bloquees el aire. Si se te escapa, gira por el hombro hacia el lateral.",
+                "en": "Second freestanding day of the week. After the max hold above, you go for it with the shoulders already warm. Breathe gently once you're up, don't hold your breath. If it gets away from you, roll out over the shoulder to the side."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "hollow_hold",
               "name": "Hollow hold",
-              "muscles": "Core profundo",
+              "muscles": {
+                "es": "Core profundo",
+                "en": "Deep core"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 35,
-              "note": "Brazos arriba. Si los 35s de hoy se sostienen con la espalda baja pegada al suelo y sin perder la forma, la próxima sesión intenta unos segundos más por tu cuenta; si pierdes la posición, descansa y repite los mismos 35s."
+              "note": {
+                "es": "Brazos arriba. Si los 35s de hoy se sostienen con la espalda baja pegada al suelo y sin perder la forma, la próxima sesión intenta unos segundos más por tu cuenta; si pierdes la posición, descansa y repite los mismos 35s.",
+                "en": "Arms up. If today's 35s hold with the lower back flat on the floor and without losing form, next session try a few more seconds on your own; if you lose position, rest and repeat the same 35s."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "side_plank",
               "name": "Plancha lateral",
-              "muscles": "Oblicuos, glúteo medio",
+              "muscles": {
+                "es": "Oblicuos, glúteo medio",
+                "en": "Obliques, glute medius"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 25,
-              "note": "Cada lado. Cadera arriba, cuerpo en línea. La fuerza lateral previene caídas en el pino."
+              "note": {
+                "es": "Cada lado. Cadera arriba, cuerpo en línea. La fuerza lateral previene caídas en el pino.",
+                "en": "Each side. Hips up, body in line. Lateral strength prevents falls in the handstand."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
-              "muscles": "Deltoides posterior, manguito rotador",
+              "muscles": {
+                "es": "Deltoides posterior, manguito rotador",
+                "en": "Rear delts, rotator cuff"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Liga a la altura de la cara. Cierra la semana devolviéndole al hombro lo que le pediste en los holds máximos — más series esta fase, el empuje también subió."
+              "note": {
+                "es": "Liga a la altura de la cara. Cierra la semana devolviéndole al hombro lo que le pediste en los holds máximos — más series esta fase, el empuje también subió.",
+                "en": "Band at face height. Closes out the week by giving the shoulder back what you asked of it in the max holds — more sets this phase, since the push also went up."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "lat_stretch",
               "name": "Estiramiento de dorsales",
-              "muscles": "Dorsal ancho",
+              "muscles": {
+                "es": "Dorsal ancho",
+                "en": "Lats"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado contra la pared. Abre los laterales del torso."
+              "note": {
+                "es": "Cada lado contra la pared. Abre los laterales del torso.",
+                "en": "Each side against the wall. Open the sides of the torso."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "pike_stretch",
               "name": "Estiramiento de pike",
-              "muscles": "Isquiotibiales",
+              "muscles": {
+                "es": "Isquiotibiales",
+                "en": "Hamstrings"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Relajación final. Lleva el pecho hacia las rodillas con cada exhalación."
+              "note": {
+                "es": "Relajación final. Lleva el pecho hacia las rodillas con cada exhalación.",
+                "en": "Final relaxation. Bring your chest toward your knees with each exhale."
+              }
             },
             {
               "sort_order": 12,
               "exercise_id": "deep_breathing",
               "name": "Respiración profunda",
-              "muscles": "Diafragma, sistema nervioso",
+              "muscles": {
+                "es": "Diafragma, sistema nervioso",
+                "en": "Diaphragm, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "5-6 ciclos completos. Inhala 4s, aguanta 2s, exhala 6s. Cierra la sesión con calma."
+              "note": {
+                "es": "5-6 ciclos completos. Inhala 4s, aguanta 2s, exhala 6s. Cierra la sesión con calma.",
+                "en": "5-6 full cycles. Inhale 4s, hold 2s, exhale 6s. Close the session calmly."
+              }
             }
           ],
           "day_type": "push"
@@ -1047,488 +1545,728 @@
     },
     {
       "phase_number": 3,
-      "name": "Fase 3 – Pino libre",
+      "name": {
+        "es": "Fase 3 – Pino libre",
+        "en": "Phase 3 – Freestanding Handstand"
+      },
       "weeks": "9-12",
       "color": "#EF4444",
       "days": [
         {
           "day_id": "lun",
-          "day_name": "Lunes",
-          "day_focus": "Handstand libre + fuerza",
-          "workout_title": "Freestanding y empuje pesado",
+          "day_name": {
+            "es": "Lunes",
+            "en": "Monday"
+          },
+          "day_focus": {
+            "es": "Handstand libre + fuerza",
+            "en": "Freestanding handstand + strength"
+          },
+          "workout_title": {
+            "es": "Freestanding y empuje pesado",
+            "en": "Freestanding and heavy push"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Calentamiento esencial. Ahora incluye cargas más altas: apoya peso en cuadrupedia y balancea adelante/atrás."
+              "note": {
+                "es": "Calentamiento esencial. Ahora incluye cargas más altas: apoya peso en cuadrupedia y balancea adelante/atrás.",
+                "en": "Essential warm-up. Now includes higher loads: put weight on the hands in a quadruped position and rock forward/back."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "arm_circles",
               "name": "Círculos de brazos",
-              "muscles": "Hombros, manguito rotador",
+              "muscles": {
+                "es": "Hombros, manguito rotador",
+                "en": "Shoulders, rotator cuff"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pequeños a grandes, ambos sentidos. Prepara el manguito rotador para la carga máxima invertida."
+              "note": {
+                "es": "Pequeños a grandes, ambos sentidos. Prepara el manguito rotador para la carga máxima invertida.",
+                "en": "Small to large, both directions. Prepares the rotator cuff for maximum inverted load."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "inchworm",
               "name": "Oruga",
-              "muscles": "Hombros, isquiotibiales, core",
+              "muscles": {
+                "es": "Hombros, isquiotibiales, core",
+                "en": "Shoulders, hamstrings, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Camina hasta plancha, mantén 3s, regresa. Activa la cadena completa antes de intentar el libre."
+              "note": {
+                "es": "Camina hasta plancha, mantén 3s, regresa. Activa la cadena completa antes de intentar el libre.",
+                "en": "Walk out to a plank, hold 3 s, return. Activates the full chain before attempting the freestanding version."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — holds",
-              "muscles": "Hombros, core, muñecas, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, muñecas, equilibrio",
+                "en": "Shoulders, core, wrists, balance"
+              },
               "sets": 6,
               "reps": "10 s libres",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 10,
-              "note": "Va primero en la sesión, antes del trabajo de fuerza: el equilibrio se afina mejor con los hombros frescos, no fatigados. Practica la patada controlada. Busca encontrar el punto de equilibrio: no mucho, no poco. Usa los dedos para frenar (over-balance) y los talones de las manos para corregir (under-balance). Si el intento se te escapa, gira por el hombro hacia el lateral — nunca frenes con la muñeca ni caigas de espaldas. El temporizador marca el techo realista del programa (10s) — no un objetivo mínimo: 5-10s consistentes ya es la meta cumplida. No te frustres, cada intento enseña. Filma tus intentos para ver tu línea."
+              "note": {
+                "es": "Va primero en la sesión, antes del trabajo de fuerza: el equilibrio se afina mejor con los hombros frescos, no fatigados. Practica la patada controlada. Busca encontrar el punto de equilibrio: no mucho, no poco. Usa los dedos para frenar (over-balance) y los talones de las manos para corregir (under-balance). Si el intento se te escapa, gira por el hombro hacia el lateral — nunca frenes con la muñeca ni caigas de espaldas. El temporizador marca el techo realista del programa (10s) — no un objetivo mínimo: 5-10s consistentes ya es la meta cumplida. No te frustres, cada intento enseña. Filma tus intentos para ver tu línea.",
+                "en": "Goes first in the session, before the strength work: balance is honed better with fresh shoulders, not fatigued ones. Practice the controlled kick-up. Look to find the balance point: not too much, not too little. Use your fingers to brake (over-balance) and the heels of your hands to correct (under-balance). If an attempt gets away from you, roll out sideways through the shoulder — never brake with the wrist or fall on your back. The timer marks the program's realistic ceiling (10 s) — not a minimum target: a consistent 5-10 s is already goal met. Don't get frustrated, every attempt teaches you something. Film your attempts to check your line."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "pike_hspu",
               "name": "Pike HSPU (progresión)",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 4,
               "reps": "5-6",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Pies elevados alto, torso lo más vertical posible. Baja la cabeza al suelo entre las manos. Este es el camino hacia el handstand pushup completo. Controla el excéntrico 3 segundos."
+              "note": {
+                "es": "Pies elevados alto, torso lo más vertical posible. Baja la cabeza al suelo entre las manos. Este es el camino hacia el handstand pushup completo. Controla el excéntrico 3 segundos.",
+                "en": "Feet elevated high, torso as vertical as possible. Lower the head to the floor between the hands. This is the path to the full handstand push-up. Control the eccentric for 3 seconds."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "handstand_wall",
               "name": "Handstand en pared – toe pulls controlados",
-              "muscles": "Hombros, core, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, equilibrio",
+                "en": "Shoulders, core, balance"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Pecho a la pared. Despega ambos pies y busca mantener 5-10s sin tocar. La pared es tu seguro — practica despegarte y encontrar equilibrio."
+              "note": {
+                "es": "Pecho a la pared. Despega ambos pies y busca mantener 5-10s sin tocar. La pared es tu seguro — practica despegarte y encontrar equilibrio.",
+                "en": "Chest to the wall. Lift both feet off and aim to hold 5-10s without touching. The wall is your safety net — practice coming off it and finding balance."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "hollow_rock",
               "name": "Hollow rock",
-              "muscles": "Core profundo",
+              "muscles": {
+                "es": "Core profundo",
+                "en": "Deep core"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Forma perfecta de banana. Si pierdes la forma, descansa. El core fuerte es tu seguro en el pino."
+              "note": {
+                "es": "Forma perfecta de banana. Si pierdes la forma, descansa. El core fuerte es tu seguro en el pino.",
+                "en": "Perfect banana form. If you lose form, rest. A strong core is your insurance in the handstand."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "pike_pushup",
               "name": "Flexiones Pike",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 3,
               "reps": "8-10",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Dosis de mantenimiento del ejercicio que empezó todo esto en fase 1 — sigue construyendo el empuje base mientras el HSPU progresa aparte."
+              "note": {
+                "es": "Dosis de mantenimiento del ejercicio que empezó todo esto en fase 1 — sigue construyendo el empuje base mientras el HSPU progresa aparte.",
+                "en": "Maintenance dose of the exercise that started it all in phase 1 — keeps building the base push while the HSPU progresses separately."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
-              "muscles": "Deltoides posterior, manguito rotador",
+              "muscles": {
+                "es": "Deltoides posterior, manguito rotador",
+                "en": "Rear delts, rotator cuff"
+              },
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Liga a la altura de la cara. En la fase de mayor exigencia de hombro, este antagonista no es opcional — y el empuje de esta fase es el más alto de todo el programa."
+              "note": {
+                "es": "Liga a la altura de la cara. En la fase de mayor exigencia de hombro, este antagonista no es opcional — y el empuje de esta fase es el más alto de todo el programa.",
+                "en": "Band at face height. In the phase with the highest shoulder demand, this antagonist isn't optional — and this phase's push volume is the highest in the whole program."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "shoulder_dislocates",
               "name": "Dislocaciones de hombro",
-              "muscles": "Movilidad glenohumeral",
+              "muscles": {
+                "es": "Movilidad glenohumeral",
+                "en": "Glenohumeral mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Soltar los hombros después del esfuerzo máximo. Lentas y amplias."
+              "note": {
+                "es": "Soltar los hombros después del esfuerzo máximo. Lentas y amplias.",
+                "en": "Release the shoulders after maximum effort. Slow and wide."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral",
-              "muscles": "Pectoral, deltoides anterior",
+              "muscles": {
+                "es": "Pectoral, deltoides anterior",
+                "en": "Pectorals, anterior deltoid"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En marco de puerta. 15s cada lado. Abre el pecho para mejor línea en futuras sesiones."
+              "note": {
+                "es": "En marco de puerta. 15s cada lado. Abre el pecho para mejor línea en futuras sesiones.",
+                "en": "In a doorframe. 15s each side. Opens the chest for a better line in future sessions."
+              }
             },
             {
               "sort_order": 12,
               "exercise_id": "deep_breathing",
               "name": "Respiración profunda",
-              "muscles": "Diafragma, sistema nervioso",
+              "muscles": {
+                "es": "Diafragma, sistema nervioso",
+                "en": "Diaphragm, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Boca arriba, ojos cerrados. Inhala 4s, aguanta 2s, exhala 6s. Celebra cada segundo que aguantaste invertido hoy."
+              "note": {
+                "es": "Boca arriba, ojos cerrados. Inhala 4s, aguanta 2s, exhala 6s. Celebra cada segundo que aguantaste invertido hoy.",
+                "en": "Lying on your back, eyes closed. Inhale 4s, hold 2s, exhale 6s. Celebrate every second you held inverted today."
+              }
             }
           ],
           "day_type": "push"
         },
         {
           "day_id": "mie",
-          "day_name": "Miércoles",
-          "day_focus": "Equilibrio avanzado + skill work",
-          "workout_title": "Balance y skills",
+          "day_name": {
+            "es": "Miércoles",
+            "en": "Wednesday"
+          },
+          "day_focus": {
+            "es": "Equilibrio avanzado + skill work",
+            "en": "Advanced balance + skill work"
+          },
+          "workout_title": {
+            "es": "Balance y skills",
+            "en": "Balance and skills"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Rutina completa con carga progresiva. Prepárate para el mayor volumen de skill work."
+              "note": {
+                "es": "Rutina completa con carga progresiva. Prepárate para el mayor volumen de skill work.",
+                "en": "Full routine with progressive loading. Get ready for the highest volume of skill work."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "cat_cow",
               "name": "Gato-Vaca",
-              "muscles": "Columna, core",
+              "muscles": {
+                "es": "Columna, core",
+                "en": "Spine, core"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Suave y con respiración. Prepara la columna para el trabajo de balance."
+              "note": {
+                "es": "Suave y con respiración. Prepara la columna para el trabajo de balance.",
+                "en": "Gentle and with breathing. Prepares the spine for balance work."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "thoracic_rotation",
               "name": "Rotación torácica",
-              "muscles": "Columna torácica, oblicuos",
+              "muscles": {
+                "es": "Columna torácica, oblicuos",
+                "en": "Thoracic spine, obliques"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En cuadrupedia, rota abriendo el pecho. Movilidad torácica para mejor alineación."
+              "note": {
+                "es": "En cuadrupedia, rota abriendo el pecho. Movilidad torácica para mejor alineación.",
+                "en": "In quadruped position, rotate opening the chest. Thoracic mobility for better alignment."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — práctica de equilibrio",
-              "muscles": "Hombros, core, muñecas, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, muñecas, equilibrio",
+                "en": "Shoulders, core, wrists, balance"
+              },
               "sets": 5,
               "reps": "8 s libres",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 8,
-              "note": "Enfócate en la CALIDAD de la entrada, no en la duración — por eso el temporizador de hoy es más corto que el del lunes. Patada suave y controlada. Una vez arriba: empuja el suelo, mete las costillas, aprieta todo. Usa dedos para over-balance, talones de mano para under-balance. Recuerda la salida de emergencia antes de tu primer intento de hoy: si se te escapa, gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas. Cada caída es data — ajusta el siguiente intento."
+              "note": {
+                "es": "Enfócate en la CALIDAD de la entrada, no en la duración — por eso el temporizador de hoy es más corto que el del lunes. Patada suave y controlada. Una vez arriba: empuja el suelo, mete las costillas, aprieta todo. Usa dedos para over-balance, talones de mano para under-balance. Recuerda la salida de emergencia antes de tu primer intento de hoy: si se te escapa, gira por el hombro hacia el lateral, nunca frenes con la muñeca ni caigas de espaldas. Cada caída es data — ajusta el siguiente intento.",
+                "en": "Focus on the QUALITY of the entry, not the duration — that's why today's timer is shorter than Monday's. Soft, controlled kick. Once you're up: push the floor away, tuck the ribs, squeeze everything. Use your fingers for over-balance, the heel of the hand for under-balance. Remember the emergency exit before your first attempt today: if it gets away from you, roll out over the shoulder to the side, never brake with the wrist or fall onto your back. Every fall is data — adjust the next attempt."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "crane_pose",
               "name": "Crane Pose (brazos rectos)",
-              "muscles": "Hombros, core",
+              "muscles": {
+                "es": "Hombros, core",
+                "en": "Shoulders, core"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 20,
-              "note": "El siguiente escalón real del crow pose que llevas practicando desde la fase 1: brazos completamente extendidos en vez de doblados. Busca 20s sólidos. El patrón de presión de dedos y equilibrio de manos se transfiere directamente al handstand."
+              "note": {
+                "es": "El siguiente escalón real del crow pose que llevas practicando desde la fase 1: brazos completamente extendidos en vez de doblados. Busca 20s sólidos. El patrón de presión de dedos y equilibrio de manos se transfiere directamente al handstand.",
+                "en": "The next real step up from the crow pose you've been practicing since phase 1: arms fully extended instead of bent. Aim for a solid 20s. The finger-pressure and hand-balance pattern transfers directly to the handstand."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "side_crow",
               "name": "Cuervo Lateral",
-              "muscles": "Oblicuos, hombros, equilibrio",
+              "muscles": {
+                "es": "Oblicuos, hombros, equilibrio",
+                "en": "Obliques, shoulders, balance"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 90,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 15,
-              "note": "Skill de equilibrio de manos con rotación lateral, sin la carga de codo en extensión del elbow lever. Rodillas apoyadas en un mismo brazo, inclínate hasta despegar los pies. Refuerza la propiocepción de manos que usas en el handstand."
+              "note": {
+                "es": "Skill de equilibrio de manos con rotación lateral, sin la carga de codo en extensión del elbow lever. Rodillas apoyadas en un mismo brazo, inclínate hasta despegar los pies. Refuerza la propiocepción de manos que usas en el handstand.",
+                "en": "A hand-balance skill with lateral rotation, without the extended-elbow load of the elbow lever. Knees resting on a single arm, lean forward until your feet lift off. Reinforces the hand proprioception you use in the handstand."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "handstand_wall",
               "name": "Handstand en pared — acumulación",
-              "muscles": "Hombros, core, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, equilibrio",
+                "en": "Shoulders, core, balance"
+              },
               "sets": 4,
               "reps": "",
               "rest_seconds": 120,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Con la pared. El objetivo es acumular 45s de tiempo invertido por serie con buena forma, no fingir un hold libre que todavía no tienes — el hito de 60s libres es un objetivo aparte, muy posterior a este roadmap."
+              "note": {
+                "es": "Con la pared. El objetivo es acumular 45s de tiempo invertido por serie con buena forma, no fingir un hold libre que todavía no tienes — el hito de 60s libres es un objetivo aparte, muy posterior a este roadmap.",
+                "en": "With the wall. The goal is to accumulate 45s of inverted time per set with good form, not to fake a freestanding hold you don't have yet — the 60s freestanding milestone is a separate goal, much further down this roadmap."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "v_ups",
               "name": "Abdominales en V",
-              "muscles": "Core, flexores de cadera",
+              "muscles": {
+                "es": "Core, flexores de cadera",
+                "en": "Core, hip flexors"
+              },
               "sets": 3,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Explosivos pero controlados. El core fuerte permite correcciones más rápidas y precisas en el equilibrio."
+              "note": {
+                "es": "Explosivos pero controlados. El core fuerte permite correcciones más rápidas y precisas en el equilibrio.",
+                "en": "Explosive but controlled. A strong core allows faster, more precise balance corrections."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "lat_stretch",
               "name": "Estiramiento de dorsales",
-              "muscles": "Dorsal ancho",
+              "muscles": {
+                "es": "Dorsal ancho",
+                "en": "Lats"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Cada lado. Respira y siente la apertura lateral."
+              "note": {
+                "es": "Cada lado. Respira y siente la apertura lateral.",
+                "en": "Each side. Breathe and feel the lateral opening."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "pike_stretch",
               "name": "Estiramiento de pike",
-              "muscles": "Isquiotibiales, espalda baja",
+              "muscles": {
+                "es": "Isquiotibiales, espalda baja",
+                "en": "Hamstrings, lower back"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Relajación completa. Deja que la gravedad haga el trabajo."
+              "note": {
+                "es": "Relajación completa. Deja que la gravedad haga el trabajo.",
+                "en": "Complete relaxation. Let gravity do the work."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "deep_breathing",
               "name": "Respiración profunda",
-              "muscles": "Diafragma, sistema nervioso",
+              "muscles": {
+                "es": "Diafragma, sistema nervioso",
+                "en": "Diaphragm, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Cierra los ojos. Inhala 4s, pausa 2s, exhala 6s. Visualiza tu handstand perfecto mientras respiras."
+              "note": {
+                "es": "Cierra los ojos. Inhala 4s, pausa 2s, exhala 6s. Visualiza tu handstand perfecto mientras respiras.",
+                "en": "Close your eyes. Inhale 4s, pause 2s, exhale 6s. Visualize your perfect handstand as you breathe."
+              }
             }
           ],
           "day_type": "full"
         },
         {
           "day_id": "vie",
-          "day_name": "Viernes",
-          "day_focus": "Empuje vertical + pino libre",
-          "workout_title": "Fuerza de empuje y freestanding",
+          "day_name": {
+            "es": "Viernes",
+            "en": "Friday"
+          },
+          "day_focus": {
+            "es": "Empuje vertical + pino libre",
+            "en": "Vertical push + freestanding handstand"
+          },
+          "workout_title": {
+            "es": "Fuerza de empuje y freestanding",
+            "en": "Push strength and freestanding"
+          },
           "exercises": [
             {
               "sort_order": 1,
               "exercise_id": "wrist_mobility",
               "name": "Movilidad de muñecas",
-              "muscles": "Muñecas, antebrazo",
+              "muscles": {
+                "es": "Muñecas, antebrazo",
+                "en": "Wrists, forearm"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 60,
-              "note": "Calentamiento completo: círculos, flexión, extensión, carga en cuadrupedia. La última fase es la más exigente para las muñecas."
+              "note": {
+                "es": "Calentamiento completo: círculos, flexión, extensión, carga en cuadrupedia. La última fase es la más exigente para las muñecas.",
+                "en": "Full warm-up: circles, flexion, extension, loading on all fours. The final phase is the toughest on the wrists."
+              }
             },
             {
               "sort_order": 2,
               "exercise_id": "scapular_activation",
               "name": "Activación escapular",
-              "muscles": "Serrato anterior, trapecio",
+              "muscles": {
+                "es": "Serrato anterior, trapecio",
+                "en": "Serratus anterior, trapezius"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Protracción/retracción + elevación en plancha. Máxima activación antes del HSPU."
+              "note": {
+                "es": "Protracción/retracción + elevación en plancha. Máxima activación antes del HSPU.",
+                "en": "Protraction/retraction + elevation in plank. Maximum activation before the HSPU."
+              }
             },
             {
               "sort_order": 3,
               "exercise_id": "shoulder_dislocates",
               "name": "Dislocaciones de hombro",
-              "muscles": "Hombros, movilidad glenohumeral",
+              "muscles": {
+                "es": "Hombros, movilidad glenohumeral",
+                "en": "Shoulders, glenohumeral mobility"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "warmup",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "Amplitud completa. Prepara el rango necesario para empujar verticalmente."
+              "note": {
+                "es": "Amplitud completa. Prepara el rango necesario para empujar verticalmente.",
+                "en": "Full amplitude. Prepare the range needed to press vertically."
+              }
             },
             {
               "sort_order": 4,
               "exercise_id": "handstand_free",
               "name": "Handstand libre — holds",
-              "muscles": "Hombros, core, muñecas, equilibrio",
+              "muscles": {
+                "es": "Hombros, core, muñecas, equilibrio",
+                "en": "Shoulders, core, wrists, balance"
+              },
               "sets": 6,
               "reps": "10 s libres",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": true,
               "timer_seconds": 10,
-              "note": "Busca tu mejor hold. Cuando encuentres el balance, respira suavemente y mantén la tensión. No bloquees la respiración. Meta: 5-10 segundos libres consistentes — el temporizador marca 10s, el techo de esa meta, no un mínimo: cada segundo que aguantes ya es una victoria. Si el intento se te escapa, gira por el hombro hacia el lateral."
+              "note": {
+                "es": "Busca tu mejor hold. Cuando encuentres el balance, respira suavemente y mantén la tensión. No bloquees la respiración. Meta: 5-10 segundos libres consistentes — el temporizador marca 10s, el techo de esa meta, no un mínimo: cada segundo que aguantes ya es una victoria. Si el intento se te escapa, gira por el hombro hacia el lateral.",
+                "en": "Find your best hold. Once you find your balance, breathe smoothly and keep the tension. Don't hold your breath. Goal: 5-10 consistent free seconds — the timer shows 10s, the ceiling of that goal, not a minimum: every second you hold is already a win. If the attempt gets away from you, roll out through the shoulder to the side."
+              }
             },
             {
               "sort_order": 5,
               "exercise_id": "pike_hspu",
               "name": "Pike HSPU (progresión)",
-              "muscles": "Hombros, tríceps",
+              "muscles": {
+                "es": "Hombros, tríceps",
+                "en": "Shoulders, triceps"
+              },
               "sets": 4,
               "reps": "4-6",
               "rest_seconds": 120,
               "priority": "primary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Máxima elevación de pies. Baja lento (3s), toca cabeza al suelo, empuja explosivo. Progresión directa hacia HSPU en pared."
+              "note": {
+                "es": "Máxima elevación de pies. Baja lento (3s), toca cabeza al suelo, empuja explosivo. Progresión directa hacia HSPU en pared.",
+                "en": "Maximum foot elevation. Lower slowly (3s), touch head to floor, push up explosively. Direct progression toward the wall HSPU."
+              }
             },
             {
               "sort_order": 6,
               "exercise_id": "diamond_pushup",
               "name": "Flexiones diamante",
-              "muscles": "Tríceps, pecho interno",
+              "muscles": {
+                "es": "Tríceps, pecho interno",
+                "en": "Triceps, inner chest"
+              },
               "sets": 3,
               "reps": "10-12",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Manos en diamante, codos pegados al cuerpo. Tríceps fuertes son esenciales para el lockout del handstand."
+              "note": {
+                "es": "Manos en diamante, codos pegados al cuerpo. Tríceps fuertes son esenciales para el lockout del handstand.",
+                "en": "Diamond hand position, elbows tucked to the body. Strong triceps are essential for locking out the handstand."
+              }
             },
             {
               "sort_order": 7,
               "exercise_id": "hollow_hold",
               "name": "Hollow hold",
-              "muscles": "Core profundo",
+              "muscles": {
+                "es": "Core profundo",
+                "en": "Deep core"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 40,
-              "note": "40 segundos con forma perfecta. El hollow hold es la posición de tu handstand: si lo puedes mantener aquí, lo puedes mantener invertido."
+              "note": {
+                "es": "40 segundos con forma perfecta. El hollow hold es la posición de tu handstand: si lo puedes mantener aquí, lo puedes mantener invertido.",
+                "en": "40 seconds with perfect form. The hollow hold is your handstand position: if you can hold it here, you can hold it upside down."
+              }
             },
             {
               "sort_order": 8,
               "exercise_id": "side_plank",
               "name": "Plancha lateral",
-              "muscles": "Oblicuos, glúteo medio",
+              "muscles": {
+                "es": "Oblicuos, glúteo medio",
+                "en": "Obliques, glute medius"
+              },
               "sets": 3,
               "reps": "",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": true,
               "timer_seconds": 25,
-              "note": "Cada lado. La misma estabilidad lateral que evita que te caigas de lado en el pino libre."
+              "note": {
+                "es": "Cada lado. La misma estabilidad lateral que evita que te caigas de lado en el pino libre.",
+                "en": "Each side. The same lateral stability that keeps you from falling sideways in the freestanding handstand."
+              }
             },
             {
               "sort_order": 9,
               "exercise_id": "face_pull",
               "name": "Face pull con liga",
-              "muscles": "Deltoides posterior, manguito rotador",
+              "muscles": {
+                "es": "Deltoides posterior, manguito rotador",
+                "en": "Rear delts, rotator cuff"
+              },
               "sets": 4,
               "reps": "12-15",
               "rest_seconds": 60,
               "priority": "secondary",
               "is_timer": false,
               "timer_seconds": 0,
-              "note": "Liga a la altura de la cara. Cierra la semana con el antagonista de todo el empuje vertical acumulado — el mayor volumen de tirón del programa para el mayor volumen de empuje."
+              "note": {
+                "es": "Liga a la altura de la cara. Cierra la semana con el antagonista de todo el empuje vertical acumulado — el mayor volumen de tirón del programa para el mayor volumen de empuje.",
+                "en": "Band at face height. Closes the week with the antagonist to all the accumulated vertical pushing — the program's highest pulling volume for its highest pushing volume."
+              }
             },
             {
               "sort_order": 10,
               "exercise_id": "triceps_stretch",
               "name": "Estiramiento de tríceps",
-              "muscles": "Tríceps, hombro",
+              "muscles": {
+                "es": "Tríceps, hombro",
+                "en": "Triceps, shoulder"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "15s cada lado. Los tríceps trabajan mucho en HSPU — no saltes este estiramiento."
+              "note": {
+                "es": "15s cada lado. Los tríceps trabajan mucho en HSPU — no saltes este estiramiento.",
+                "en": "15s per side. The triceps work hard in HSPU — don't skip this stretch."
+              }
             },
             {
               "sort_order": 11,
               "exercise_id": "pectoral_stretch",
               "name": "Estiramiento pectoral",
-              "muscles": "Pectoral, deltoides anterior",
+              "muscles": {
+                "es": "Pectoral, deltoides anterior",
+                "en": "Pectorals, anterior deltoid"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 30,
-              "note": "En marco de puerta, paso adelante. Abre el pecho completamente."
+              "note": {
+                "es": "En marco de puerta, paso adelante. Abre el pecho completamente.",
+                "en": "In a doorframe, step forward. Open the chest fully."
+              }
             },
             {
               "sort_order": 12,
               "exercise_id": "deep_breathing",
               "name": "Respiración profunda",
-              "muscles": "Diafragma, sistema nervioso",
+              "muscles": {
+                "es": "Diafragma, sistema nervioso",
+                "en": "Diaphragm, nervous system"
+              },
               "sets": 1,
               "reps": "",
               "rest_seconds": 0,
               "priority": "cooldown",
               "is_timer": true,
               "timer_seconds": 45,
-              "note": "Sesión final de la semana. Inhala 4s, pausa 2s, exhala 6s. Visualiza tu progreso: de la pared al pino libre. Cada semana estás más cerca."
+              "note": {
+                "es": "Sesión final de la semana. Inhala 4s, pausa 2s, exhala 6s. Visualiza tu progreso: de la pared al pino libre. Cada semana estás más cerca.",
+                "en": "Final session of the week. Inhale 4s, pause 2s, exhale 6s. Visualize your progress: from the wall to the freestanding handstand. Every week you're closer."
+              }
             }
           ],
           "day_type": "push"
