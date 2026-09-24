@@ -2840,6 +2840,8 @@
   "session.prevExercise": "Ejercicio anterior",
   "session.nextExercise": "Siguiente ejercicio",
   "session.shareTitle": "Compartir sesión",
+  "session.nextWorkoutDay": "Vuelve el {{day}}: tu próximo entreno te espera.",
+  "session.nextWorkoutDayWithTime": "Vuelve el {{day}} a las {{time}}: tu próximo entreno te espera.",
 
   "day.saturday": "Sábado",
   "day.sunday": "Domingo",
