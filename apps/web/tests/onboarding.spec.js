@@ -106,12 +106,11 @@ test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async
   await continueBtn.click()
 
   // ── Paso 6: Recordatorio por defecto (#695) ──────────────────────────────
-  // El prompt nativo de permiso bloquearía el test: se simula «denegado», que
-  // es justo la rama «no insistir» — el recordatorio se guarda igual y se avanza.
+  // Desde #815 este paso ya no pide el permiso de notificaciones del
+  // navegador (eso vive solo en la celebración del primer entreno), así que
+  // ya no hace falta simular un `Notification.requestPermission` denegado
+  // para que el guardado no se bloquee con un prompt nativo real.
   await expect(page.getByText(/A QUÉ HORA SUELES ENTRENAR|WHEN DO YOU USUALLY TRAIN/i)).toBeVisible({ timeout: 8000 })
-  await page.evaluate(() => {
-    if ('Notification' in window) Notification.requestPermission = () => Promise.resolve('denied')
-  })
   await page.getByRole('button', { name: /^(Noche|Evening)\b/i }).click()
   await page.getByRole('button', { name: /ACTIVAR RECORDATORIO|TURN ON REMINDER/i }).click()
 
@@ -214,9 +213,10 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   await expect(continueBtn).toBeEnabled({ timeout: 10000 })
   await continueBtn.click()
 
-  // Paso de recordatorio (#695): se salta con «Ahora no» para dejar el permiso
-  // de notificaciones sin decidir, que es lo que hace que la celebración del
-  // primer entreno ofrezca el push (#694).
+  // Paso de recordatorio (#695): se salta con «Ahora no». Desde #815 el
+  // permiso de notificaciones queda sin decidir tanto si se salta como si se
+  // guarda el recordatorio —este paso ya no lo toca—, así que la celebración
+  // del primer entreno puede ofrecer el push (#694).
   await expect(page.getByText(/A QUÉ HORA SUELES ENTRENAR|WHEN DO YOU USUALLY TRAIN/i)).toBeVisible({ timeout: 8000 })
   await page.getByRole('button', { name: /^(Ahora no|Not now)$/i }).click()
 

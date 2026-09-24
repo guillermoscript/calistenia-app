@@ -18,7 +18,6 @@ import {
   type TrainingTimePresetId,
 } from '@calistenia/core/lib/onboarding-reminder'
 import type { ProgramMeta } from '@calistenia/core/types'
-import { requestNotificationPermission, subscribeToPush, getNotificationSupport } from '../../lib/push-subscription'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
 import {
@@ -208,21 +207,15 @@ export default function OnboardingFlow({
   }
 
   // #695: guarda el recordatorio por defecto («¿a qué hora sueles entrenar?»)
-  // con la entrega ya delegada al dispatcher del servidor. Pedir permiso de
-  // notificaciones puede acabar denegado — igual guardamos el recordatorio: el
-  // issue pide no insistir, no bloquear el guardado.
+  // con la entrega ya delegada al dispatcher del servidor. Desde #815 este
+  // paso ya NO pide el permiso de notificaciones del navegador: eso vive
+  // únicamente en la celebración del primer entreno (`PushPermissionCard`),
+  // para que `shouldShowPushPrompt` siga viendo el permiso como
+  // `undetermined` cuando el usuario llega ahí.
   const handleSaveReminder = async () => {
     setSavingReminder(true)
     setSaveError(false)
     try {
-      const support = getNotificationSupport()
-      let permission: 'granted' | 'denied' | 'unsupported' = 'unsupported'
-      if (support.notifications) {
-        const granted = await requestNotificationPermission()
-        permission = granted ? 'granted' : 'denied'
-        if (granted && userId) subscribeToPush(userId).catch(() => {})
-      }
-
       const chosenPreset = findTrainingTimePreset(reminderPreset)
       const days = reminderDaysFromTraining(training.training_days)
       await saveReminder(chosenPreset.hour, chosenPreset.minute, days, 'workout')
@@ -231,7 +224,6 @@ export default function OnboardingFlow({
         preset: chosenPreset.id,
         time: formatReminderTime(chosenPreset.hour, chosenPreset.minute),
         days_count: days.length,
-        permission,
       })
       goToStep(personalizingStep)
     } catch {

@@ -8,14 +8,22 @@ import i18n from './i18n'
 
 let _permissionGranted: boolean | null = null
 
-async function ensurePermission(): Promise<boolean> {
+/**
+ * Comprueba el permiso SIN pedirlo (#815 hallazgo #1/#3): antes esta función
+ * llamaba a `Notification.requestPermission()` en cuanto el permiso estaba
+ * `default`, así que el primer aviso de descanso/serie de una sesión (incluido
+ * el primer entreno, antes de la celebración) disparaba el diálogo nativo. El
+ * único sitio que debe pedirlo de forma proactiva es `PushPermissionCard`, en
+ * la celebración. Mientras el permiso siga `default` no se cachea: si el
+ * usuario lo concede después (celebración o Ajustes), el siguiente aviso lo
+ * ve fresco sin recargar la página.
+ */
+function checkPermission(): boolean {
   if (_permissionGranted !== null) return _permissionGranted
   if (!('Notification' in window)) { _permissionGranted = false; return false }
   if (Notification.permission === 'granted') { _permissionGranted = true; return true }
   if (Notification.permission === 'denied') { _permissionGranted = false; return false }
-  const result = await Notification.requestPermission()
-  _permissionGranted = result === 'granted'
-  return _permissionGranted
+  return false
 }
 
 interface NotifyOptions {
@@ -31,7 +39,7 @@ interface NotifyOptions {
 }
 
 async function send(opts: NotifyOptions): Promise<void> {
-  if (!(await ensurePermission())) return
+  if (!checkPermission()) return
 
   // For non-urgent notifications, skip if tab is focused (in-app sounds suffice)
   if (!opts.urgent && document.visibilityState === 'visible') return
@@ -62,9 +70,21 @@ async function send(opts: NotifyOptions): Promise<void> {
   }
 }
 
-/** Request permission proactively (call on session start) */
+/**
+ * Pide el permiso de forma EXPLÍCITA. A diferencia de `checkPermission()`
+ * (que usa `send()` y nunca pregunta), esta sí llama a
+ * `Notification.requestPermission()` cuando el permiso está `default`.
+ * `SessionView` la llama al arrancar la sesión, pero solo cuando la tarjeta
+ * de la celebración (`PushPermissionCard`) ya tuvo su turno (#815).
+ */
 export async function requestPermission(): Promise<boolean> {
-  return ensurePermission()
+  if (_permissionGranted !== null) return _permissionGranted
+  if (!('Notification' in window)) { _permissionGranted = false; return false }
+  if (Notification.permission === 'granted') { _permissionGranted = true; return true }
+  if (Notification.permission === 'denied') { _permissionGranted = false; return false }
+  const result = await Notification.requestPermission()
+  _permissionGranted = result === 'granted'
+  return _permissionGranted
 }
 
 /** Rest period started */

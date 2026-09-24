@@ -2,7 +2,7 @@
 import '@/lib/init-core'
 import '../global.css'
 // Registra setNotificationHandler app-wide (rest timer + recordatorios) al boot.
-import '@/lib/notifications'
+import { ensureRestTimerChannel } from '@/lib/notifications'
 
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { AppState, Platform } from 'react-native'
@@ -199,6 +199,14 @@ function RootLayout() {
   // si no se cancelan, cada recordatorio sonaría dos veces.
   useEffect(() => {
     cancelLegacyLocalReminders()
+  }, [])
+
+  // ── Rest timer: canal Android listo desde el arranque (#815 hallazgo #4) ──
+  // Antes lo creaba `SessionView` al montar la sesión (junto al permiso, que
+  // ya no se pide ahí). Crear el canal no pide permiso ni pinta nada: solo
+  // asegura que exista antes de que `scheduleRestEnd` lo use.
+  useEffect(() => {
+    ensureRestTimerChannel()
   }, [])
 
   // ── Sesión fantasma (#254): expulsión en caliente + revalidación ──────────

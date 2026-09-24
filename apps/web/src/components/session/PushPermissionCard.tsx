@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PushPermissionState } from '@calistenia/core/lib/push-prompt'
 import { markPushPromptSeen, shouldShowPushPrompt, trackPushPromptAnswered, trackPushPromptViewed } from '@calistenia/core/lib/push-prompt'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
+import { summarizeReminderSchedule } from '@calistenia/core/lib/push-prompt-copy'
 import { Button } from '../ui/button'
 import { getNotificationSupport, requestNotificationPermission, subscribeToPush } from '../../lib/push-subscription'
 
@@ -23,6 +25,12 @@ function currentPermission(): PushPermissionState {
  * Tarjeta que ofrece el permiso de notificaciones en la celebración del
  * primer entreno (#694). Ver `push-prompt.ts`: se ofrece una sola vez por
  * usuario y dispositivo, y solo si el sistema todavía no decidió.
+ *
+ * Copy de priming (#815): si el onboarding dejó un recordatorio guardado
+ * (hora + días), el beneficio se vuelve concreto («1 aviso los días que
+ * entrenas, a las 19:00») en vez del genérico «activa las notificaciones».
+ * La tarjeta lee el recordatorio ella misma con el mismo hook que Ajustes >
+ * Recordatorios, sin que `CelebrateScreen` tenga que pasárselo.
  */
 export default function PushPermissionCard({ userId, workoutKey, totalSessions }: Props) {
   const { t } = useTranslation()
@@ -35,6 +43,16 @@ export default function PushPermissionCard({ userId, workoutKey, totalSessions }
   )
   const [result, setResult] = useState<'granted' | 'denied' | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const { reminders } = useWorkoutReminders(userId ?? null)
+  const workoutReminder = reminders.find((r) => r.reminderType === 'workout' && r.enabled)
+  const schedule = summarizeReminderSchedule(workoutReminder ?? null)
+  const desc = schedule
+    ? t(schedule.isEveryDay ? 'pushPrompt.descWithScheduleEveryDay' : 'pushPrompt.descWithSchedule', {
+        time: schedule.time,
+        days: schedule.dayShortIndexes.map((i) => t(`dayShort.${i}`)).join(', '),
+      })
+    : t('pushPrompt.desc')
 
   useEffect(() => {
     if (visible) trackPushPromptViewed({ workoutKey, totalSessions })
@@ -82,7 +100,7 @@ export default function PushPermissionCard({ userId, workoutKey, totalSessions }
         </div>
       ) : (
         <>
-          <div className="text-sm text-foreground/80 mb-3">{t('pushPrompt.desc')}</div>
+          <div className="text-sm text-foreground/80 mb-3">{desc}</div>
           <div className="flex gap-2">
             <Button
               variant="limeSolid"

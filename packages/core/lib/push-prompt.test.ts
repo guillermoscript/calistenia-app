@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { storage } from '../platform'
 import { op } from './analytics'
 import {
+  canAskPermissionOnSessionStart,
   isPushPromptSeen,
   markPushPromptSeen,
   pushPromptSeenKey,
@@ -48,6 +49,23 @@ describe('shouldShowPushPrompt', () => {
   it('sin usuario no se ofrece', () => {
     expect(shouldShowPushPrompt({ userId: null, permission: 'undetermined' })).toBe(false)
     expect(isPushPromptSeen(undefined)).toBe(true)
+  })
+})
+
+describe('canAskPermissionOnSessionStart', () => {
+  it('no pide al arrancar la sesión mientras la tarjeta de la celebración no se haya visto', () => {
+    vi.mocked(storage.getItem).mockReturnValue(null)
+    expect(canAskPermissionOnSessionStart('u1')).toBe(false)
+  })
+
+  it('pide al arrancar la sesión una vez vista la tarjeta (aceptada, rechazada o cerrada)', () => {
+    vi.mocked(storage.getItem).mockReturnValue('true')
+    expect(canAskPermissionOnSessionStart('u1')).toBe(true)
+  })
+
+  it('sin usuario no pide, aunque isPushPromptSeen devuelva true para null', () => {
+    expect(canAskPermissionOnSessionStart(null)).toBe(false)
+    expect(canAskPermissionOnSessionStart(undefined)).toBe(false)
   })
 })
 

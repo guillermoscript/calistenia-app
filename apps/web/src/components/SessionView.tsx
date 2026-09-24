@@ -15,6 +15,7 @@ import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { ExerciseLog, ExerciseTiming, Workout } from '@calistenia/core/types'
 import { ExerciseTimingTracker } from '@calistenia/core/lib/exerciseTiming'
 import { TRAINING_FUNNEL_EVENTS } from '@calistenia/core/lib/session-funnel'
+import { canAskPermissionOnSessionStart } from '@calistenia/core/lib/push-prompt'
 import {
   buildSteps,
   computeExerciseBoundaries,
@@ -23,6 +24,7 @@ import {
   initSessionState,
 } from '@calistenia/core/lib/session-machine'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
+import { useSessionIdentity } from '../hooks/useSessionIdentity'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
 import PRCelebration from './PRCelebration'
@@ -150,8 +152,16 @@ export default function SessionView({
     setProgress({ stepIdx, phase, setsCount, timing: timingTracker.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps -- se empuja el progreso al avanzar, no cuando cambia la identidad de `setProgress`
 
-  // Permiso de notificaciones al arrancar la sesión
-  useEffect(() => { notif.requestPermission() }, [])
+  // Permiso para los avisos de descanso y serie (#815). Mientras la
+  // celebración no haya ofrecido `PushPermissionCard`, NO se pide aquí: el
+  // primer entreno lo dejaría decidido antes de llegar a ella y la tarjeta no
+  // saldría nunca. Una vez vista (aceptada, rechazada o cerrada) se vuelve a lo
+  // de antes —pedirlo al arrancar la sesión si el sistema aún no ha decidido—
+  // para que quien cerró la tarjeta no se quede sin aviso de fin de descanso.
+  const { userId } = useSessionIdentity()
+  useEffect(() => {
+    if (canAskPermissionOnSessionStart(userId)) notif.requestPermission()
+  }, [userId])
 
   const goToPrevExercise = useCallback(() => {
     if (currentExerciseIndex <= 0) return
