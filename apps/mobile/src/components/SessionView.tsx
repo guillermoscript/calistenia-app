@@ -407,12 +407,12 @@ export default function SessionView({
             {(hasPrevExercise || hasNextExercise) && (
               <View className="absolute inset-x-1 top-1/2 -mt-5 flex-row justify-between" pointerEvents="box-none">
                 {hasPrevExercise ? (
-                  <Pressable onPress={goToPrevExercise} className="size-10 items-center justify-center rounded-full bg-muted/50 active:opacity-70" accessibilityLabel="Anterior">
+                  <Pressable onPress={goToPrevExercise} className="size-10 items-center justify-center rounded-full bg-muted/50 active:opacity-70" accessibilityLabel={t('session.prevExercise')}>
                     <ChevronLeft size={16} color={MUTED} />
                   </Pressable>
                 ) : <View />}
                 {hasNextExercise ? (
-                  <Pressable onPress={goToNextExercise} className="size-10 items-center justify-center rounded-full bg-muted/50 active:opacity-70" accessibilityLabel="Siguiente">
+                  <Pressable onPress={goToNextExercise} className="size-10 items-center justify-center rounded-full bg-muted/50 active:opacity-70" accessibilityLabel={t('session.nextExercise')}>
                     <ChevronRight size={16} color={MUTED} />
                   </Pressable>
                 ) : <View />}
@@ -459,7 +459,7 @@ export default function SessionView({
           prEvent={prCelebration.event}
           exerciseName={prCelebration.exerciseName}
           isTimer={prCelebration.isTimer}
-          userName={(sessionUser?.display_name as string) || (sessionUser?.name as string) || 'Atleta'}
+          userName={(sessionUser?.display_name as string) || (sessionUser?.name as string) || t('race.athlete')}
           avatarUrl={sessionUser ? getUserAvatarUrl(sessionUser, '200x200') : null}
           referralCode={(sessionUser?.referral_code as string) || null}
           workoutId={workoutKey}

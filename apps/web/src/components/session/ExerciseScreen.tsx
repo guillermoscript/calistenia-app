@@ -146,18 +146,18 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
             }
             />
           ))}
-          <span className="font-mono text-[10px] text-muted-foreground ml-1">SERIE {setNumber}/{totalSets}</span>
+          <span className="font-mono text-[10px] text-muted-foreground ml-1">{t('session.set').toUpperCase()} {setNumber}/{totalSets}</span>
         </div>
 
         {/* Progressive overload hint */}
         {lastLog && lastBestReps > 0 && setNumber === 1 && (
           <div className="text-[12px] text-amber-400/80 bg-amber-400/5 rounded-md px-3.5 py-2.5 mb-4 border-l-[3px] border-amber-400/30">
-            Ultima vez: <strong>{lastBestReps}</strong> reps
+            {t('exercise.lastTime')} <strong>{lastBestReps}</strong> {t('common.reps')}
             {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
             {' — '}
             {lastBestWeight > 0
-              ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep`
-              : `intenta ${lastBestReps + 1} reps`
+              ? t('exercise.tryMoreWeight', { weight: (lastBestWeight + 2.5).toFixed(1) })
+              : t('exercise.tryMoreReps', { reps: lastBestReps + 1 })
             }
           </div>
         )}
@@ -179,7 +179,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
         {/* Recent history */}
         {recentLogs.length > 0 && (
           <div className="mb-5">
-            <div className="text-[9px] text-muted-foreground/50 tracking-[2px] mb-1.5 uppercase font-mono">Últimas sesiones</div>
+            <div className="text-[9px] text-muted-foreground/50 tracking-[2px] mb-1.5 uppercase font-mono">{t('exercise.recentHistory')}</div>
             {recentLogs.map((log, i) => (
               <div key={i} className="text-[12px] text-muted-foreground/50 mb-0.5">
                 <span className="font-mono text-muted-foreground/30 mr-2">{log.date}</span>
@@ -210,11 +210,11 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           <div className="relative">
             <button
               onClick={handleQuick}
-              aria-label={`Registrar serie completada con ${defaultReps}`}
+              aria-label={t('session.logSetAriaLabel', { reps: defaultReps })}
               className="w-full py-[18px] px-4 rounded-lg cursor-pointer bg-lime/14 text-lime font-mono text-sm font-bold tracking-[1.5px] flex items-center justify-center gap-2.5 transition-[background-color,transform] duration-100 hover:bg-lime/22 active:scale-[0.97] active:bg-lime/24 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             >
               <span className="text-xl leading-none">+</span>
-              SERIE COMPLETADA — {defaultReps}
+              {t('session.logSetLabel', { reps: defaultReps })}
             </button>
             {flyUp > 0 && (
               <span
@@ -246,7 +246,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
             {hasMedia && (
               <button
                 onClick={() => setShowMedia(true)}
-                aria-label="Ver fotos del ejercicio"
+                aria-label={t('exercise.viewMedia')}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md cursor-pointer border border-lime/20 bg-lime/5 text-lime text-sm leading-none hover:bg-lime/10 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-lime/40"
               >
                 <Image size={15} />
@@ -255,7 +255,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
             <button
               onClick={() => setShowYoutube(true)}
-              aria-label="Ver tutorial en YouTube"
+              aria-label={t('exercise.viewTutorial')}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md cursor-pointer border border-red-500/20 bg-red-500/5 text-red-500 text-sm leading-none hover:bg-red-500/10 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-red-500/40"
             >
               ▶
@@ -264,14 +264,14 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
           {editOpen && (
             <div className="px-3.5 py-3 bg-lime/4 rounded-lg border border-lime/12 form-slide-in">
-              <div className="text-[9px] text-lime tracking-[2px] mb-2.5 uppercase font-mono">Registrar serie personalizada</div>
+              <div className="text-[9px] text-lime tracking-[2px] mb-2.5 uppercase font-mono">{t('exercise.customSet')}</div>
               <div className="flex gap-2">
                 <Input
                   value={customReps}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomReps(e.target.value)}
-                  placeholder={`Reps (ej: ${exercise.reps})`}
+                  placeholder={t('exercise.repsPlaceholder', { reps: exercise.reps })}
                   maxLength={20}
-                  aria-label="Repeticiones"
+                  aria-label={t('exercise.repsAriaLabel')}
                   className="flex-1 min-w-0 h-9 text-xs"
                 />
                 <Input
@@ -282,7 +282,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   value={customWeight}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomWeight(e.target.value)}
                   placeholder={t('session.weightPlaceholder')}
-                  aria-label="Lastre en kilogramos"
+                  aria-label={t('session.weightPlaceholder')}
                   className="w-[88px] h-9 text-xs"
                 />
                 <Input
@@ -294,7 +294,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomRpe(e.target.value)}
                   placeholder="RPE"
                   title={t('session.rpeTitle')}
-                  aria-label="RPE del 1 al 10"
+                  aria-label={t('exercise.rpeAriaLabel')}
                   className="w-[56px] h-9 text-xs"
                 />
               </div>
@@ -304,7 +304,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomNote(e.target.value)}
                   placeholder={t('session.optionalNote')}
                   maxLength={200}
-                  aria-label="Nota opcional"
+                  aria-label={t('session.optionalNote')}
                   className="flex-1 min-w-0 h-9 text-xs"
                 />
                 <Button
@@ -317,7 +317,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                     !customReps && 'bg-lime/20 text-muted-foreground cursor-not-allowed'
                   )}
                 >
-                  GUARDAR
+                  {t('common.save').toUpperCase()}
                 </Button>
               </div>
             </div>

@@ -43,7 +43,7 @@ export default function DiscardSessionDialog({ open, onOpenChange, setsCount, on
             onClick={() => onOpenChange(false)}
             className="font-mono text-[11px] tracking-wide"
           >
-            CONTINUAR ENTRENANDO
+            {t('session.continueTraining')}
           </Button>
         </DialogFooter>
       </DialogContent>

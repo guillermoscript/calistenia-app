@@ -17,8 +17,8 @@ const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090'
 /** Completa sets y salta descansos hasta llegar a la pantalla de nota. */
 async function completeAllSets(page) {
   for (let i = 0; i < 80; i++) {
-    const guardarBtn = page.getByRole('button', { name: /^GUARDAR$/i })
-    const saltarNotaBtn = page.getByRole('button', { name: /^SALTAR$/i })
+    const guardarBtn = page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i })
+    const saltarNotaBtn = page.getByRole('button', { name: /^(SALTAR|SKIP)$/i })
     if (await guardarBtn.isVisible({ timeout: 500 }).catch(() => false)) return 'note'
     if (await saltarNotaBtn.isVisible({ timeout: 200 }).catch(() => false)) return 'note'
 
@@ -29,7 +29,7 @@ async function completeAllSets(page) {
       continue
     }
 
-    const serieBtn = page.getByRole('button', { name: /SERIE COMPLETADA/i })
+    const serieBtn = page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i })
     if (await serieBtn.isVisible({ timeout: 500 }).catch(() => false)) {
       await serieBtn.click()
       await page.waitForTimeout(300)
@@ -61,15 +61,15 @@ test('signup → primera sesión completada y persistida en PocketBase', async (
     page.locator('[aria-label*="Descartar" i], [aria-label*="Discard" i]'),
   ).toBeVisible({ timeout: 8000 })
   await dismissOverlays(page)
-  await expect(page.getByText(/SERIE \d+\/\d+/).first()).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText(/(SERIE|SET) \d+\/\d+/).first()).toBeVisible({ timeout: 5000 })
 
   // 4. Completar todos los sets hasta la pantalla de nota
   const reached = await completeAllSets(page)
   expect(reached, 'no llegó a la pantalla de nota tras completar los sets').toBe('note')
 
   // 5. Saltar la nota → pantalla de celebración
-  await page.getByRole('button', { name: /^SALTAR$/i }).click()
-  await expect(page.getByText(/SESIÓN COMPLETADA/i)).toBeVisible({ timeout: 8000 })
+  await page.getByRole('button', { name: /^(SALTAR|SKIP)$/i }).click()
+  await expect(page.getByText(/SESIÓN COMPLETADA|SESSION COMPLETED/i)).toBeVisible({ timeout: 8000 })
 
   // 6. La sesión quedó persistida en PB (no solo en la cola offline)
   const auth = await page.evaluate(() => {
@@ -97,7 +97,7 @@ test('signup → primera sesión completada y persistida en PocketBase', async (
     .toBeGreaterThan(0)
 
   // 7. Volver al dashboard
-  await page.getByRole('button', { name: /IR AL DASHBOARD/i }).click()
+  await page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i }).click()
   await expect(
     page.getByText(/racha|streak|sesiones|sessions|objetivo|goal/i).first(),
   ).toBeVisible({ timeout: 8000 })

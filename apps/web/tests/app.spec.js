@@ -150,28 +150,28 @@ test.describe('SessionView - modo sesión', () => {
   test('muestra el nombre del ejercicio y el tracker de series', async ({ page }) => {
     await startSession(page)
     // Exercise name visible (varies by program)
-    await expect(page.getByText(/SERIE \d+\/\d+/).first()).toBeVisible()
+    await expect(page.getByText(/(SERIE|SET) \d+\/\d+/).first()).toBeVisible()
   })
 
   test('botón SERIE COMPLETADA loguea y avanza al descanso', async ({ page }) => {
     await startSession(page)
-    await page.getByRole('button', { name: /SERIE COMPLETADA/i }).click()
+    await page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i }).click()
     await expect(page.getByText(/Descansando|Resting|DESCANSO/i).first()).toBeVisible({ timeout: 3000 })
     await expect(page.getByRole('button', { name: /SALTAR DESCANSO|SKIP REST/i })).toBeVisible()
   })
 
   test('pantalla de descanso muestra cuenta regresiva', async ({ page }) => {
     await startSession(page)
-    await page.getByRole('button', { name: /SERIE COMPLETADA/i }).click()
+    await page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i }).click()
     await expect(page.getByText(/\d+:\d{2}/).first()).toBeVisible({ timeout: 3000 })
   })
 
   test('SALTAR DESCANSO vuelve a la pantalla de ejercicio', async ({ page }) => {
     await startSession(page)
-    await page.getByRole('button', { name: /SERIE COMPLETADA/i }).click()
+    await page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i }).click()
     await expect(page.getByRole('button', { name: /SALTAR DESCANSO|SKIP REST/i })).toBeVisible({ timeout: 3000 })
     await page.getByRole('button', { name: /SALTAR DESCANSO|SKIP REST/i }).click()
-    await expect(page.getByRole('button', { name: /SERIE COMPLETADA/i })).toBeVisible({ timeout: 3000 })
+    await expect(page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i })).toBeVisible({ timeout: 3000 })
   })
 
   test('discard button muestra el overlay de confirmación', async ({ page }) => {
@@ -190,7 +190,7 @@ test.describe('SessionView - modo sesión', () => {
     await page.locator('[aria-label*="Descartar" i], [aria-label*="Discard" i]').click({ force: true })
     await expect(page.getByRole('button', { name: /CONTINUAR ENTRENANDO/i })).toBeVisible({ timeout: 3000 })
     await page.getByRole('button', { name: /CONTINUAR ENTRENANDO/i }).click()
-    await expect(page.getByRole('button', { name: /SERIE COMPLETADA/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i })).toBeVisible({ timeout: 5000 })
   })
 
 })
@@ -210,8 +210,8 @@ test.describe('SessionView - nota y celebración', () => {
   async function completeAllSets(page) {
     for (let i = 0; i < 50; i++) {
       // Check for note screen first
-      const guardarBtn = page.getByRole('button', { name: /^GUARDAR$/i })
-      const saltarNotaBtn = page.getByRole('button', { name: /^SALTAR$/i })
+      const guardarBtn = page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i })
+      const saltarNotaBtn = page.getByRole('button', { name: /^(SALTAR|SKIP)$/i })
       if (await guardarBtn.isVisible({ timeout: 500 }).catch(() => false)) return 'note'
       if (await saltarNotaBtn.isVisible({ timeout: 200 }).catch(() => false)) return 'note'
 
@@ -224,7 +224,7 @@ test.describe('SessionView - nota y celebración', () => {
       }
 
       // Try to complete a set
-      const serieBtn = page.getByRole('button', { name: /SERIE COMPLETADA/i })
+      const serieBtn = page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i })
       if (await serieBtn.isVisible({ timeout: 500 }).catch(() => false)) {
         await serieBtn.click()
         await page.waitForTimeout(300)
@@ -241,24 +241,24 @@ test.describe('SessionView - nota y celebración', () => {
     const reached = await completeAllSets(page)
     expect(reached).toBe('note')
     await expect(page.getByText(/último set listo/i)).toBeVisible({ timeout: 5000 })
-    await expect(page.getByRole('button', { name: /^GUARDAR$/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /^SALTAR$/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^(SALTAR|SKIP)$/i })).toBeVisible()
   })
 
   test('pantalla de nota permite escribir y guardar', async ({ page }) => {
     await startSession(page)
     await completeAllSets(page)
-    await expect(page.getByRole('button', { name: /^GUARDAR$/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i })).toBeVisible({ timeout: 5000 })
     await page.getByPlaceholder(/Dominadas|Ej:/i).fill('Todo bien hoy')
-    await page.getByRole('button', { name: /^GUARDAR$/i }).click()
-    await expect(page.getByText(/SESIÓN COMPLETADA/i)).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i }).click()
+    await expect(page.getByText(/SESIÓN COMPLETADA|SESSION COMPLETED/i)).toBeVisible({ timeout: 5000 })
   })
 
   test('pantalla de celebración muestra checkmark, título y quote', async ({ page }) => {
     await startSession(page)
     await completeAllSets(page)
-    await page.getByRole('button', { name: /^SALTAR$/i }).click()
-    await expect(page.getByText(/SESIÓN COMPLETADA/i)).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /^(SALTAR|SKIP)$/i }).click()
+    await expect(page.getByText(/SESIÓN COMPLETADA|SESSION COMPLETED/i)).toBeVisible({ timeout: 5000 })
     await expect(page.getByText('✓')).toBeVisible()
     await expect(page.getByText(/"/i).first()).toBeVisible()
   })
@@ -266,16 +266,16 @@ test.describe('SessionView - nota y celebración', () => {
   test('pantalla de celebración tiene botón IR AL DASHBOARD', async ({ page }) => {
     await startSession(page)
     await completeAllSets(page)
-    await page.getByRole('button', { name: /^SALTAR$/i }).click()
-    await expect(page.getByRole('button', { name: /IR AL DASHBOARD/i })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /^(SALTAR|SKIP)$/i }).click()
+    await expect(page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i })).toBeVisible({ timeout: 5000 })
   })
 
   test('IR AL DASHBOARD navega al tab de dashboard', async ({ page }) => {
     await startSession(page)
     await completeAllSets(page)
-    await page.getByRole('button', { name: /^SALTAR$/i }).click()
-    await expect(page.getByRole('button', { name: /IR AL DASHBOARD/i })).toBeVisible({ timeout: 5000 })
-    await page.getByRole('button', { name: /IR AL DASHBOARD/i }).click()
+    await page.getByRole('button', { name: /^(SALTAR|SKIP)$/i }).click()
+    await expect(page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i }).click()
     await expect(page.getByText(/racha|streak|sesiones|sessions|objetivo|goal/i).first()).toBeVisible({ timeout: 5000 })
   })
 

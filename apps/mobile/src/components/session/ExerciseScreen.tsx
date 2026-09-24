@@ -116,10 +116,12 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
       {lastLog && lastBestReps > 0 && setNumber === 1 && (
         <View className="mb-4 rounded-md border-l-[3px] border-amber-400/30 bg-amber-400/5 px-3.5 py-2.5">
           <Text className="text-[12px] text-amber-400/80">
-            {t('exercise.lastTime')} <Text className="font-sans-bold text-[12px] text-amber-400">{lastBestReps}</Text> reps
+            {t('exercise.lastTime')} <Text className="font-sans-bold text-[12px] text-amber-400">{lastBestReps}</Text> {t('common.reps')}
             {lastBestWeight > 0 ? <Text className="text-[12px] text-amber-400/80"> +<Text className="font-sans-bold text-[12px] text-amber-400">{lastBestWeight}</Text>kg</Text> : null}
             {' — '}
-            {lastBestWeight > 0 ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep` : `intenta ${lastBestReps + 1} reps`}
+            {lastBestWeight > 0
+              ? t('exercise.tryMoreWeight', { weight: (lastBestWeight + 2.5).toFixed(1) })
+              : t('exercise.tryMoreReps', { reps: lastBestReps + 1 })}
           </Text>
         </View>
       )}
@@ -145,7 +147,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           <Pressable
             onPress={() => setShowImages(v => !v)}
             className="mb-2 flex-row items-center gap-1.5"
-            accessibilityLabel={showImages ? 'Ocultar demo' : 'Ver demo'}
+            accessibilityLabel={showImages ? t('exercise.hideDemo') : t('exercise.showDemo')}
           >
             <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
               DEMO
@@ -163,7 +165,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                     source={{ uri: mediaSequence }}
                     style={{ width: '100%', aspectRatio: 16 / 9 }}
                     contentFit="contain"
-                    accessibilityLabel={`${exercise.name} — secuencia`}
+                    accessibilityLabel={`${exercise.name} — ${t('exercise.sequenceLabel')}`}
                   />
                 </View>
               ) : null}
@@ -172,14 +174,14 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
               {mediaMuscles ? (
                 <View>
                   <Text className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
-                    MÚSCULOS TRABAJADOS
+                    {t('exercise.musclesWorked')}
                   </Text>
                   <View className="rounded-lg overflow-hidden bg-muted/30">
                     <Image
                       source={{ uri: mediaMuscles }}
                       style={{ width: '100%', aspectRatio: 4 / 3 }}
                       contentFit="contain"
-                      accessibilityLabel={`${exercise.name} — músculos trabajados`}
+                      accessibilityLabel={`${exercise.name} — ${t('exercise.musclesWorked').toLowerCase()}`}
                     />
                   </View>
                 </View>
@@ -199,7 +201,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                       <Pressable
                         onPress={() => setImgIdx(i => (i - 1 + mediaImages.length) % mediaImages.length)}
                         className="size-8 items-center justify-center rounded-full border border-border"
-                        accessibilityLabel="Imagen anterior"
+                        accessibilityLabel={t('exercise.prevImage')}
                       >
                         <Text className="text-muted-foreground text-sm">‹</Text>
                       </Pressable>
@@ -209,7 +211,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                       <Pressable
                         onPress={() => setImgIdx(i => (i + 1) % mediaImages.length)}
                         className="size-8 items-center justify-center rounded-full border border-border"
-                        accessibilityLabel="Imagen siguiente"
+                        accessibilityLabel={t('exercise.nextImage')}
                       >
                         <Text className="text-muted-foreground text-sm">›</Text>
                       </Pressable>
@@ -225,7 +227,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
       {/* Historial reciente */}
       {recentLogs.length > 0 && (
         <View className="mb-5">
-          <Text className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">Últimas sesiones</Text>
+          <Text className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">{t('exercise.recentHistory')}</Text>
           {recentLogs.map((log, i) => (
             <Text key={i} className="mb-0.5 text-xs text-muted-foreground/60" numberOfLines={1}>
               <Text className="font-mono text-xs text-muted-foreground/30">{log.date}</Text>
@@ -276,7 +278,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
         {editOpen && (
           <View className="rounded-lg border border-lime/20 bg-lime/5 px-3.5 py-3">
-            <Text className="mb-2.5 font-mono text-[9px] uppercase tracking-[2px] text-lime">Registrar serie personalizada</Text>
+            <Text className="mb-2.5 font-mono text-[9px] uppercase tracking-[2px] text-lime">{t('exercise.customSet')}</Text>
             <View className="flex-row gap-2">
               <Input
                 value={customReps}

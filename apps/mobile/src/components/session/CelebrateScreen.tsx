@@ -76,7 +76,7 @@ export default function CelebrateScreen({
     })
   }, [workoutKey])
 
-  const userName = (user?.display_name as string) || (user?.name as string) || 'Atleta'
+  const userName = (user?.display_name as string) || (user?.name as string) || t('race.athlete')
   const avatarUrl = user ? getUserAvatarUrl(user, '200x200') : null
   const referralCode = (user?.referral_code as string) || null
 
@@ -102,7 +102,7 @@ export default function CelebrateScreen({
           workoutKey,
           referralCode,
         })
-        await shareCardImage(uri, { message, title: 'Compartir sesión' }, {
+        await shareCardImage(uri, { message, title: t('session.shareTitle') }, {
           ...MOBILE_SHARE_CARD_CONTEXTS.workoutCompletion,
           workout_id: workoutKey,
         })
@@ -112,7 +112,7 @@ export default function CelebrateScreen({
     } finally {
       setSharing(false)
     }
-  }, [sharing, userName, workoutTitle, totalSetsLogged, durationMin, today, workoutKey, referralCode])
+  }, [sharing, userName, workoutTitle, totalSetsLogged, durationMin, today, workoutKey, referralCode, t])
 
   return (
     <View className="flex-1">
@@ -135,14 +135,14 @@ export default function CelebrateScreen({
           {t('notify.sessionComplete')}
         </Text>
         <Text className="mt-2.5 font-mono text-[11px] tracking-[2px] text-muted-foreground">
-          {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
+          {workoutTitle.toUpperCase()} · {totalSetsLogged} {t('common.sets').toUpperCase()} · {durationMin} {t('common.minutes').toUpperCase()}
         </Text>
         <Text className="mt-2 text-center font-sans-medium text-[13px] text-lime">{tagline}</Text>
       </Animated.View>
 
       {timingBreakdown.rows.length > 0 && (
         <Animated.View entering={reduced ? undefined : FadeInDown.delay(240).duration(450)} className="w-full max-w-[360px] gap-1.5">
-          <Text className="mb-1 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">Tiempo por ejercicio</Text>
+          <Text className="mb-1 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">{t('session.timePerExercise')}</Text>
           {timingBreakdown.rows.map((row, i) => (
             <TimingBar
               key={row.exerciseId}
@@ -155,7 +155,7 @@ export default function CelebrateScreen({
             />
           ))}
           {timingBreakdown.overflowCount > 0 && (
-            <Text className="font-mono text-[10px] text-muted-foreground/50">+{timingBreakdown.overflowCount} más</Text>
+            <Text className="font-mono text-[10px] text-muted-foreground/50">{t('session.moreCount', { count: timingBreakdown.overflowCount })}</Text>
           )}
         </Animated.View>
       )}
@@ -215,7 +215,7 @@ export default function CelebrateScreen({
         entering={reduced ? undefined : FadeIn.delay(800).duration(400)}
         className="font-mono text-[11px] tracking-wide text-muted-foreground/50"
       >
-        o toca en cualquier lugar
+        {t('session.tapAnywhereHint')}
       </Animated.Text>
     </Pressable>
       </ScrollView>

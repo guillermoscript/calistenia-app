@@ -154,12 +154,12 @@ export default function RestScreen({ seconds: defaultSeconds, exerciseId, nextSt
 
       {nextStep && (
         <div className="w-full max-w-[340px] bg-card border border-border rounded-xl px-4 py-3.5">
-          <div className="text-[9px] text-muted-foreground tracking-[3px] mb-2 uppercase font-mono">Siguiente</div>
+          <div className="text-[9px] text-muted-foreground tracking-[3px] mb-2 uppercase font-mono">{t('common.next')}</div>
           <div className={cn('h-0.5 rounded mb-2.5', PRIORITY_COLORS[nextStep.exercise.priority]?.stripe || 'bg-muted')} />
           <div className="font-semibold text-[15px] mb-1">{nextStep.exercise.name}</div>
           <div className="font-mono text-[12px] text-lime">
             {nextStep.exercise.reps}
-            <span className="text-muted-foreground ml-2.5 text-[11px]">· Serie {nextStep.setNumber}/{nextStep.totalSets}</span>
+            <span className="text-muted-foreground ml-2.5 text-[11px]">· {t('session.set')} {nextStep.setNumber}/{nextStep.totalSets}</span>
           </div>
           <div className="text-[12px] text-muted-foreground mt-1">{nextStep.exercise.muscles}</div>
         </div>

@@ -84,7 +84,7 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
                       <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
                         <img
                           src={sequenceUrl}
-                          alt={`${exercise.name} — secuencia`}
+                          alt={t('media.sequenceAlt', { name: exercise.name })}
                           className="w-full max-h-[420px] object-contain"
                         />
                       </div>
@@ -95,12 +95,12 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
                   {musclesUrl && (
                     <div>
                       <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
-                        MÚSCULOS TRABAJADOS
+                        {t('media.musclesWorked')}
                       </div>
                       <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
                         <img
                           src={musclesUrl}
-                          alt={`${exercise.name} — músculos trabajados`}
+                          alt={t('media.musclesAlt', { name: exercise.name })}
                           className="w-full max-h-[320px] object-contain"
                         />
                       </div>
@@ -168,7 +168,7 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
                 </svg>
                 <div>
                   <div className="font-semibold text-sm mb-0.5">{t('media.searchYouTube')}</div>
-                  <div className="text-[12px] text-muted-foreground">Resultados para: &quot;{exercise.youtube}&quot;</div>
+                  <div className="text-[12px] text-muted-foreground">{t('media.youtubeResultsFor', { query: exercise.youtube })}</div>
                 </div>
                 <div className="ml-auto text-muted-foreground text-lg">&nearr;</div>
               </a>
@@ -186,7 +186,7 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
                 </div>
                 <div>
                   <div className="font-medium text-sm mb-0.5">{t('media.searchGoogle')}</div>
-                  <div className="text-[12px] text-muted-foreground">Resultados generales + videos</div>
+                  <div className="text-[12px] text-muted-foreground">{t('media.googleResultsDescription')}</div>
                 </div>
                 <div className="ml-auto text-muted-foreground text-lg">&nearr;</div>
               </a>

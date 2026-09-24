@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface ExerciseNavArrowsProps {
   hasPrev: boolean
   hasNext: boolean
@@ -11,6 +13,7 @@ interface ExerciseNavArrowsProps {
  * la fase de ejercicio y otra para la de descanso) antes del #475.
  */
 export default function ExerciseNavArrows({ hasPrev, hasNext, onPrev, onNext }: ExerciseNavArrowsProps) {
+  const { t } = useTranslation()
   if (!hasPrev && !hasNext) return null
 
   return (
@@ -19,7 +22,7 @@ export default function ExerciseNavArrows({ hasPrev, hasNext, onPrev, onNext }: 
         <button
           onClick={onPrev}
           className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
-          aria-label="Ejercicio anterior"
+          aria-label={t('session.prevExercise')}
         >
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
         </button>
@@ -28,7 +31,7 @@ export default function ExerciseNavArrows({ hasPrev, hasNext, onPrev, onNext }: 
         <button
           onClick={onNext}
           className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
-          aria-label="Siguiente ejercicio"
+          aria-label={t('session.nextExercise')}
         >
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
         </button>
