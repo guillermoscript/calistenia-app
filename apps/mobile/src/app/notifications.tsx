@@ -44,51 +44,40 @@ function getNotificationMessage(
   const name = n.actorName || '?'
   switch (n.type as NotificationType) {
     case 'follow':
-      return `${name} te empezó a seguir`
+      return t('notif.follow', { name })
     case 'follow_request':
       return t('notif.followRequest', { name })
     case 'follow_accepted':
       return t('notif.followAccepted', { name })
     case 'reaction': {
-      const emoji = n.data?.emoji ? ` ${n.data.emoji}` : ''
-      const target = n.data?.onComment ? 'tu comentario' : 'tu sesión'
-      const base = `${name} reaccionó a ${target}${emoji}`
-      // Para reacciones a un comentario mostramos a cuál se reaccionó.
-      return n.data?.onComment && n.data?.commentPreview
-        ? `${base}: «${n.data.commentPreview}»`
-        : base
+      // Reacción a un comentario vs. a la sesión (el hook marca data.onComment).
+      const emoji = n.data?.emoji || ''
+      if (n.data?.onComment) {
+        const base = t('notif.reactionComment', { name, emoji })
+        return n.data?.commentPreview ? `${base}: «${n.data.commentPreview}»` : base
+      }
+      return t('notif.reaction', { name, emoji })
     }
-    case 'comment':
-      return n.data?.preview
-        ? `${name} comentó tu sesión: «${n.data.preview}»`
-        : `${name} comentó tu sesión`
-    case 'comment_reply':
-      return n.data?.preview
-        ? `${name} respondió tu comentario: «${n.data.preview}»`
-        : `${name} respondió tu comentario`
+    case 'comment': {
+      const base = t('notif.comment', { name })
+      return n.data?.preview ? `${base}: «${n.data.preview}»` : base
+    }
+    case 'comment_reply': {
+      const base = t('notif.commentReply', { name })
+      return n.data?.preview ? `${base}: «${n.data.preview}»` : base
+    }
     case 'challenge_join':
-      return `${name} se unió a tu reto`
-    case 'challenge_complete': {
-      const title = n.data?.challengeTitle ? ` "${n.data.challengeTitle}"` : ''
-      return `Reto completado${title}`
-    }
-    case 'achievement': {
-      const icon = n.data?.achievementIcon ? `${n.data.achievementIcon} ` : '🏅 '
-      const aName = n.data?.achievementName || 'un logro'
-      return `${icon}Desbloqueaste ${aName}`
-    }
-    case 'streak': {
-      const days = n.data?.days ? ` de ${n.data.days} días` : ''
-      return `¡Nueva racha${days}!`
-    }
-    case 'referral_signup': {
-      const refName = n.data?.referredName || name
-      return `${refName} se registró con tu enlace`
-    }
-    case 'referral_bonus': {
-      const refName = n.data?.referredName || name
-      return `¡Bonus por referir a ${refName}!`
-    }
+      return t('notif.challengeJoin', { name })
+    case 'challenge_complete':
+      return t('notif.challengeComplete', { title: n.data?.challengeTitle || '' })
+    case 'achievement':
+      return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementName || t('notif.anAchievement') })}`
+    case 'streak':
+      return t('notif.streak', { days: n.data?.days || '' })
+    case 'referral_signup':
+      return t('notif.referralSignup', { name: n.data?.referredName || name })
+    case 'referral_bonus':
+      return t('notif.referralBonus', { name: n.data?.referredName || name })
     // ── New friend-activity types ─────────────────────────────────────────────
     case 'friend_streak':
       return t('notif.friendStreak', { name, days: n.data?.days ?? 0 })
@@ -110,7 +99,7 @@ function getNotificationMessage(
     case 'inactivity_72h':
       return t('notif.inactivity72h')
     default:
-      return `${name} te envió una notificación`
+      return t('notif.default', { name })
   }
 }
 
@@ -303,11 +292,11 @@ export default function NotificationsScreen() {
       <View className="flex-row items-center justify-between px-4 pb-3 pt-2">
         <View>
           <Text className="font-bebas text-4xl leading-none text-foreground">
-            Notificaciones
+            {t('nav.notifications')}
           </Text>
           {hasUnread && (
             <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[3px] text-lime">
-              {unreadCount} sin leer
+              {t('notifications.unreadCount', { count: unreadCount })}
             </Text>
           )}
         </View>
@@ -319,7 +308,7 @@ export default function NotificationsScreen() {
               className="rounded-lg bg-muted/60 px-3 py-1.5 active:opacity-70"
             >
               <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                Marcar todo
+                {t('notifications.markAllShort')}
               </Text>
             </Pressable>
           )}
@@ -347,7 +336,7 @@ export default function NotificationsScreen() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color="hsl(74 90% 45%)" />
           <Text className="mt-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Cargando…
+            {t('common.loading')}
           </Text>
         </View>
       ) : (

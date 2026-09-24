@@ -245,7 +245,7 @@ export default function TodayScreen() {
               onPress={() => router.push('/notifications')}
               className="size-10 items-center justify-center rounded-full bg-card border border-border active:opacity-70"
               accessibilityRole="button"
-              accessibilityLabel="Notificaciones"
+              accessibilityLabel={t('nav.notifications')}
             >
               <Bell size={18} color="hsl(0 0% 55%)" />
               <NotificationBadge count={unreadCount} />
@@ -460,9 +460,9 @@ export default function TodayScreen() {
 
         {/* Accesos rápidos comunidad */}
         <View className="flex-row gap-2">
-          <CommunityPill icon={<Users size={15} color="hsl(0 0% 55%)" />} label="Amigos" onPress={() => router.push('/friends')} />
-          <CommunityPill icon={<Trophy size={15} color="hsl(0 0% 55%)" />} label="Ranking" onPress={() => router.push('/leaderboard')} />
-          <CommunityPill icon={<Flag size={15} color="hsl(0 0% 55%)" />} label="Retos" onPress={() => router.push('/challenges')} />
+          <CommunityPill icon={<Users size={15} color="hsl(0 0% 55%)" />} label={t('nav.friends')} onPress={() => router.push('/friends')} />
+          <CommunityPill icon={<Trophy size={15} color="hsl(0 0% 55%)" />} label={t('nav.leaderboard')} onPress={() => router.push('/leaderboard')} />
+          <CommunityPill icon={<Flag size={15} color="hsl(0 0% 55%)" />} label={t('nav.challenges')} onPress={() => router.push('/challenges')} />
         </View>
 
         <InsightsCard userId={milestoneUser?.id ?? null} />
@@ -477,7 +477,7 @@ export default function TodayScreen() {
         <StreakMilestone
           streak={getLongestStreak()}
           userId={milestoneUser.id}
-          userName={(milestoneUser.display_name as string) || (milestoneUser.name as string) || 'Atleta'}
+          userName={(milestoneUser.display_name as string) || (milestoneUser.name as string) || t('race.athlete')}
           referralCode={(milestoneUser.referral_code as string) || null}
           onDismiss={() => setShowMilestone(false)}
         />

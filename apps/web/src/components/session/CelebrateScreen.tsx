@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { formatTimingClock, prepareTimingBreakdown } from '@calistenia/core/lib/exerciseTiming'
@@ -36,6 +37,7 @@ export default function CelebrateScreen({
   onRepeat,
   onNavigateAway,
 }: CelebrateScreenProps) {
+  const { t } = useTranslation()
   const { userId } = useSessionIdentity()
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
   const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings), [timings])
@@ -86,10 +88,10 @@ export default function CelebrateScreen({
       <div style={{ animation: 'fadeUp 0.5s 0.15s ease-out both' }}>
         <div className="font-bebas tracking-[3px] text-foreground leading-none mb-2"
           style={{ fontSize: 'clamp(40px, 10vw, 64px)' }}>
-          SESIÓN COMPLETADA
+          {t('session.completedTitle')}
         </div>
         <div className="font-mono text-[11px] text-muted-foreground tracking-[2px]">
-          {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
+          {workoutTitle.toUpperCase()} · {totalSetsLogged} {t('common.sets').toUpperCase()} · {durationMin} {t('common.minutes').toUpperCase()}
         </div>
       </div>
 
@@ -106,7 +108,7 @@ export default function CelebrateScreen({
 
       {timingBreakdown.rows.length > 0 && (
         <div className="w-full max-w-[380px]" style={{ animation: 'fadeUp 0.5s 0.45s ease-out both' }}>
-          <div className="text-[9px] font-mono tracking-[3px] text-muted-foreground uppercase mb-3">TIEMPO POR EJERCICIO</div>
+          <div className="text-[9px] font-mono tracking-[3px] text-muted-foreground uppercase mb-3">{t('session.timePerExercise').toUpperCase()}</div>
           <div className="flex flex-col gap-1.5">
             {timingBreakdown.rows.map(row => (
               <div key={row.exerciseId} className="flex items-center gap-2">
@@ -153,9 +155,9 @@ export default function CelebrateScreen({
           variant="limeSolid"
           className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
         >
-          IR AL DASHBOARD
+          {t('session.goToDashboard')}
         </Button>
-        <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
+        <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">{t('session.tapAnywhereHint')}</div>
       </div>
     </div>
   )

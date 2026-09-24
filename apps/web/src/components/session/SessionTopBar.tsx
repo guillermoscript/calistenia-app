@@ -43,7 +43,7 @@ export default function SessionTopBar({
         <button
           onClick={onBack}
           className="bg-transparent border-none cursor-pointer text-muted-foreground min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-foreground transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-lime/40"
-          aria-label="Volver"
+          aria-label={t('common.back')}
         >
           <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
@@ -55,7 +55,7 @@ export default function SessionTopBar({
             </div>
           )}
           {phase === 'rest' && (
-            <div className="font-mono text-[10px] text-muted-foreground tracking-[3px]">DESCANSO</div>
+            <div className="font-mono text-[10px] text-muted-foreground tracking-[3px]">{t('session.restLabel')}</div>
           )}
           {phase === 'section-transition' && (
             <div className="font-mono text-[10px] text-lime tracking-[3px]">
@@ -63,17 +63,17 @@ export default function SessionTopBar({
             </div>
           )}
           {phase === 'note' && (
-            <div className="font-mono text-[10px] text-lime tracking-[3px]">COMPLETADO</div>
+            <div className="font-mono text-[10px] text-lime tracking-[3px]">{t('dashboard.completed')}</div>
           )}
           <div className="font-mono text-[9px] text-muted-foreground/40 tracking-wide tabular-nums">
-            {exerciseIndex}/{exerciseTotal} · {stepIndex}/{stepTotal} series
+            {exerciseIndex}/{exerciseTotal} · {stepIndex}/{stepTotal} {t('common.sets')}
           </div>
         </div>
 
         <button
           onClick={onDiscard}
           className="bg-transparent border-none cursor-pointer text-muted-foreground min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-red-400 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-red-500/40"
-          aria-label="Descartar sesion"
+          aria-label={t('session.discardButton')}
         >
           <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>

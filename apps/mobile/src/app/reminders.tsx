@@ -132,6 +132,7 @@ function TimeAndDays({
   dayLabels: ReminderDayLabel[]
   lime: string
 }) {
+  const { t } = useTranslation()
   return (
     <View>
       {/* HH:MM inputs */}
@@ -142,7 +143,7 @@ function TimeAndDays({
           onBlur={() => setHour(clampHour(hour))}
           keyboardType="number-pad"
           maxLength={2}
-          accessibilityLabel="Hora"
+          accessibilityLabel={t('reminders.hourLabel')}
           className="w-16 h-14 text-center text-foreground bg-muted/30 rounded-xl border-0 font-bebas text-3xl"
           style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'white', textAlign: 'center' }}
         />
@@ -153,7 +154,7 @@ function TimeAndDays({
           onBlur={() => setMinute(clampMinute(minute))}
           keyboardType="number-pad"
           maxLength={2}
-          accessibilityLabel="Minutos"
+          accessibilityLabel={t('reminders.minuteLabel')}
           className="w-16 h-14 text-center text-foreground bg-muted/30 rounded-xl border-0 font-bebas text-3xl"
           style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'white', textAlign: 'center' }}
         />
@@ -414,7 +415,7 @@ export default function RemindersScreen() {
     } else {
       setPermStatus('denied')
       Alert.alert(
-        'Notificaciones',
+        t('nav.notifications'),
         t('reminders.permissionNeeded'),
         [{ text: 'OK' }],
       )
@@ -537,7 +538,7 @@ export default function RemindersScreen() {
             onPress={() => { haptics.selection(); router.back() }}
             className="-ml-2 mb-1 size-9 flex-row items-center justify-center self-start rounded-lg"
             accessibilityRole="button"
-            accessibilityLabel={t('common.back', { defaultValue: 'Atrás' })}
+            accessibilityLabel={t('common.back')}
           >
             <ChevronLeft size={24} color="rgba(255,255,255,0.55)" />
           </Pressable>
@@ -566,18 +567,18 @@ export default function RemindersScreen() {
             <View className="flex-1 items-end">
               {permStatus === 'granted' ? (
                 <Text className="font-mono text-[10px]" style={{ color: 'rgba(74,222,128,0.7)' }}>
-                  notif. activas
+                  {t('reminders.notifActiveStatus')}
                 </Text>
               ) : permStatus === 'denied' ? (
                 <Pressable onPress={handleEnableNotifications}>
                   <Text className="font-mono text-[10px]" style={{ color: 'rgba(248,113,113,0.8)' }}>
-                    notif. bloqueadas
+                    {t('reminders.notifBlockedStatus')}
                   </Text>
                 </Pressable>
               ) : (
                 <Pressable onPress={handleEnableNotifications}>
                   <Text className="font-mono text-[10px]" style={{ color: 'rgba(251,191,36,0.8)' }}>
-                    activar notif.
+                    {t('reminders.notifEnableCta')}
                   </Text>
                 </Pressable>
               )}
@@ -687,7 +688,7 @@ export default function RemindersScreen() {
               <View className="mb-4">
                 {/* Interval picker */}
                 <Text className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
-                  Cada
+                  {t('reminders.pauseIntervalLabel')}
                 </Text>
                 <View className="flex-row gap-1.5 mb-5">
                   {PAUSE_INTERVALS.map((v) => {
@@ -716,7 +717,7 @@ export default function RemindersScreen() {
 
                 {/* Work-hour range */}
                 <Text className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
-                  Horario laboral
+                  {t('reminders.pauseHoursLabel')}
                 </Text>
                 <View className="flex-row items-center gap-2 mb-4">
                   <TextInput
@@ -725,7 +726,7 @@ export default function RemindersScreen() {
                     onBlur={() => setPauseHourStart(clampHour(pauseHourStart))}
                     keyboardType="number-pad"
                     maxLength={2}
-                    accessibilityLabel="Hora de inicio"
+                    accessibilityLabel={t('reminders.pauseStartLabel')}
                     style={{
                       width: 56,
                       height: 48,
@@ -748,7 +749,7 @@ export default function RemindersScreen() {
                     onBlur={() => setPauseHourEnd(clampHour(pauseHourEnd))}
                     keyboardType="number-pad"
                     maxLength={2}
-                    accessibilityLabel="Hora de fin"
+                    accessibilityLabel={t('reminders.pauseEndLabel')}
                     style={{
                       width: 56,
                       height: 48,
@@ -840,10 +841,10 @@ export default function RemindersScreen() {
             style={{ backgroundColor: 'rgba(248,113,113,0.05)', borderWidth: 1, borderColor: 'rgba(248,113,113,0.15)' }}
           >
             <Text className="font-sans-medium text-[12px] mb-1" style={{ color: '#F87171' }}>
-              Notificaciones bloqueadas
+              {t('reminders.blockedTitle')}
             </Text>
             <Text className="text-[11px] text-muted-foreground leading-relaxed">
-              Los recordatorios están guardados pero no recibirás alertas. Ve a Configuración de tu dispositivo → Notificaciones y permite esta app.
+              {t('reminders.blockedBody')}
             </Text>
           </View>
         )}
@@ -961,7 +962,7 @@ export default function RemindersScreen() {
                         className="shrink-0 size-11 items-center justify-center"
                         disabled={isBusy}
                         accessibilityRole="switch"
-                        accessibilityLabel={`${item.enabled ? 'Desactivar' : 'Activar'} ${item.label}`}
+                        accessibilityLabel={`${item.enabled ? t('reminders.toggleOffLabel') : t('reminders.toggleOnLabel')} ${item.label}`}
                         accessibilityState={{ checked: item.enabled }}
                       >
                         {/* Custom inline toggle (matches web style) */}
