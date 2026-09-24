@@ -420,7 +420,7 @@
               "timer_seconds": 0,
               "muscles": {
                 "es": "Deltoide posterior, romboides",
-                "en": "Rear deltoid, rhomboids"
+                "en": "Rear delts, rhomboids"
               },
               "note": {
                 "es": "Montaje sin anclaje: sujeta la banda con las dos manos separadas al ancho de los hombros y los brazos estirados al frente, a la altura de los ojos. Tira DOBLANDO el codo y llevando los puños hacia las orejas, con el codo siempre por encima de la muñeca: no es una apertura de brazos rectos, es un tirón con rotación del hombro hacia fuera. Eso es lo que corrige la postura.",
@@ -464,7 +464,7 @@
               "timer_seconds": 20,
               "muscles": {
                 "es": "Deltoide posterior",
-                "en": "Rear delt"
+                "en": "Rear delts"
               },
               "note": {
                 "es": "Es el complemento del face pull, no una repetición de él: aquí los brazos van RECTOS a la altura del pecho y no hay recorrido, porque la toalla no se estira. Sujétala tensa, tira hacia afuera como si quisieras romperla y mantén la tensión con las escápulas juntas todo el tiempo.",
@@ -1428,7 +1428,7 @@
               "timer_seconds": 0,
               "muscles": {
                 "es": "Deltoide posterior, romboides",
-                "en": "Rear deltoid, rhomboids"
+                "en": "Rear delts, rhomboids"
               },
               "note": {
                 "es": "Mismo montaje con las dos manos, tres repeticiones más y ahora con pausa de 2s manteniendo los codos altos y las escápulas juntas antes de volver.",
@@ -1472,7 +1472,7 @@
               "timer_seconds": 30,
               "muscles": {
                 "es": "Deltoide posterior",
-                "en": "Rear delt"
+                "en": "Rear delts"
               },
               "note": {
                 "es": "Diez segundos más de tensión continua, con los brazos rectos. Al no haber recorrido, el tiempo es la única progresión honesta: aguanta apretando sin aflojar a la mitad.",
@@ -2330,7 +2330,7 @@
           },
           "workout_title": {
             "es": "Flexión Diamante y Cierre de Hombro",
-            "en": "Diamond Push-up and Shoulder Closer"
+            "en": "Diamond Push-up and Shoulder Finisher"
           },
           "exercises": [
             {
@@ -2458,7 +2458,7 @@
               "timer_seconds": 0,
               "muscles": {
                 "es": "Deltoide posterior, romboides",
-                "en": "Rear deltoid, rhomboids"
+                "en": "Rear delts, rhomboids"
               },
               "note": {
                 "es": "Cuarta serie manteniendo la pausa de 2s y el mismo montaje con las dos manos.",
@@ -2502,7 +2502,7 @@
               "timer_seconds": 40,
               "muscles": {
                 "es": "Deltoide posterior",
-                "en": "Rear delt"
+                "en": "Rear delts"
               },
               "note": {
                 "es": "Tope de tiempo del programa: cuarenta segundos de tensión continua sin soltar. Si a los treinta se te va la postura, para ahí y anota el tiempo real.",
