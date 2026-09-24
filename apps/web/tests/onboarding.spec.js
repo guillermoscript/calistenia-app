@@ -106,12 +106,11 @@ test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async
   await continueBtn.click()
 
   // ── Paso 6: Recordatorio por defecto (#695) ──────────────────────────────
-  // El prompt nativo de permiso bloquearía el test: se simula «denegado», que
-  // es justo la rama «no insistir» — el recordatorio se guarda igual y se avanza.
+  // Desde #815 este paso ya no pide el permiso de notificaciones del
+  // navegador (eso vive solo en la celebración del primer entreno), así que
+  // ya no hace falta simular un `Notification.requestPermission` denegado
+  // para que el guardado no se bloquee con un prompt nativo real.
   await expect(page.getByText(/A QUÉ HORA SUELES ENTRENAR|WHEN DO YOU USUALLY TRAIN/i)).toBeVisible({ timeout: 8000 })
-  await page.evaluate(() => {
-    if ('Notification' in window) Notification.requestPermission = () => Promise.resolve('denied')
-  })
   await page.getByRole('button', { name: /^(Noche|Evening)\b/i }).click()
   await page.getByRole('button', { name: /ACTIVAR RECORDATORIO|TURN ON REMINDER/i }).click()
 
@@ -190,8 +189,9 @@ test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async
 })
 
 /**
- * Día 0 (#694): el CTA primario del último paso arranca directamente una
- * sesión corta (4 ejercicios, 8 series) en /session, sin pasar por el home ni
+ * Día 0 (#694, recortado a 3 ejercicios en #812): el CTA primario del último
+ * paso arranca directamente una sesión corta (3 ejercicios, 6 series) en
+ * /session, sin pasar por el home ni
  * por el prompt de calentamiento. Se recorre el wizard saltando lo opcional.
  */
 test('el último paso del onboarding arranca el primer entreno en /session', async ({ page }) => {
@@ -213,9 +213,10 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   await expect(continueBtn).toBeEnabled({ timeout: 10000 })
   await continueBtn.click()
 
-  // Paso de recordatorio (#695): se salta con «Ahora no» para dejar el permiso
-  // de notificaciones sin decidir, que es lo que hace que la celebración del
-  // primer entreno ofrezca el push (#694).
+  // Paso de recordatorio (#695): se salta con «Ahora no». Desde #815 el
+  // permiso de notificaciones queda sin decidir tanto si se salta como si se
+  // guarda el recordatorio —este paso ya no lo toca—, así que la celebración
+  // del primer entreno puede ofrecer el push (#694).
   await expect(page.getByText(/A QUÉ HORA SUELES ENTRENAR|WHEN DO YOU USUALLY TRAIN/i)).toBeVisible({ timeout: 8000 })
   await page.getByRole('button', { name: /^(Ahora no|Not now)$/i }).click()
 
@@ -226,7 +227,7 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   // Aterriza en la sesión activa: primer ejercicio del nivel principiante y
   // contador de series del entreno corto.
   await expect(page).toHaveURL(/\/session$/, { timeout: 15000 })
-  await expect(page.getByText(/1\/8 series/i).first()).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText(/1\/6 series/i).first()).toBeVisible({ timeout: 15000 })
   await expect(page.getByRole('button', { name: /serie completada|set completed/i }).first()).toBeVisible({ timeout: 5000 })
 
   // El onboarding queda marcado y la intención pendiente se consumió.

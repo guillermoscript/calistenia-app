@@ -51,6 +51,18 @@ export function shouldShowPushPrompt(i: PushPromptInput): boolean {
   return !isPushPromptSeen(i.userId)
 }
 
+/**
+ * `true` cuando `SessionView` puede pedir el permiso al arrancar una sesión
+ * (avisos de fin de descanso y de serie). Nunca antes de que la celebración
+ * haya ofrecido la tarjeta: el primer entreno lo dejaría decidido y la tarjeta
+ * no saldría nunca (#815). Una vez vista, se vuelve a pedir en cada sesión
+ * mientras el sistema no decida, como antes: desde Android 13 el aviso local
+ * de fin de descanso también necesita el permiso. Sin usuario, no.
+ */
+export function canAskPermissionOnSessionStart(userId: string | null | undefined): boolean {
+  return !!userId && isPushPromptSeen(userId)
+}
+
 const SURFACE = 'post_workout'
 
 export function trackPushPromptViewed(props: { workoutKey: string; totalSessions: number }): void {

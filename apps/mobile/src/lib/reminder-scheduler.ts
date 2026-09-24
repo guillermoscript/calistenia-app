@@ -32,10 +32,14 @@ export type ReminderPermStatus = 'granted' | 'denied' | 'undetermined'
  * Los recordatorios llegan como push remoto, así que comparten el canal de
  * push (`push-registration.ts`). Se crea aquí también porque la pantalla de
  * recordatorios puede pedir permiso antes de que se registre el token.
+ *
+ * Exportada por separado del permiso (#815): el paso de recordatorio del
+ * onboarding necesita el canal listo mucho antes de que el sistema decida el
+ * permiso —que ahora se pide en la celebración del primer entreno, no aquí—.
  */
 const PUSH_CHANNEL_ID = 'push-notifications'
 
-async function ensureAndroidChannel(): Promise<void> {
+export async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return
   await Notifications.setNotificationChannelAsync(PUSH_CHANNEL_ID, {
     name: 'Notificaciones',

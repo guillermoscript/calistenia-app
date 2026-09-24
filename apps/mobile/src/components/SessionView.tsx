@@ -30,6 +30,7 @@ import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { ExerciseLog, ExerciseTiming, Workout } from '@calistenia/core/types'
 import { ExerciseTimingTracker } from '@calistenia/core/lib/exerciseTiming'
 import { TRAINING_FUNNEL_EVENTS } from '@calistenia/core/lib/session-funnel'
+import { canAskPermissionOnSessionStart } from '@calistenia/core/lib/push-prompt'
 import { quickReps } from '@calistenia/core/lib/exercise-format'
 import {
   buildSteps,
@@ -147,8 +148,16 @@ export default function SessionView({
     setProgress({ stepIdx, phase, setsCount, timing: timingTracker.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Permiso de notificaciones al arrancar la sesión
-  useEffect(() => { requestNotifPermission() }, [])
+  // Permiso de notificaciones al arrancar la sesión (#815). Mientras la
+  // celebración no haya ofrecido `PushPermissionCard`, NO se pide aquí: el
+  // primer entreno lo dejaría decidido antes de llegar a ella y la tarjeta no
+  // saldría nunca. Una vez vista (aceptada, rechazada o cerrada) se vuelve a lo
+  // de antes, porque desde Android 13 el aviso local de fin de descanso también
+  // necesita POST_NOTIFICATIONS: sin pedirlo, quien cerró la tarjeta se
+  // quedaría sin él para siempre.
+  useEffect(() => {
+    if (canAskPermissionOnSessionStart(sessionUser?.id)) requestNotifPermission()
+  }, [sessionUser?.id])
 
   // Finalizar timings exactamente una vez al llegar a la pantalla de nota
   useEffect(() => {

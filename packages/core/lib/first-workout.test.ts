@@ -15,7 +15,10 @@ import {
   takeFirstWorkoutPending,
   trackFirstWorkoutStarted,
 } from './first-workout'
+import { localize } from './i18n-db'
 import { isFreeSessionKey } from './session-key'
+
+const LEVELS = ['principiante', 'intermedio', 'avanzado'] as const
 
 vi.mock('../platform', () => ({
   storage: {
@@ -38,7 +41,7 @@ beforeEach(() => {
 
 describe('buildFirstWorkout', () => {
   // vitest.setup.ts prima el índice del catálogo (#486): aquí está cargado.
-  it('cada id curado existe en el catálogo empaquetado y no necesita material', () => {
+  it('cada id curado existe en el catálogo empaquetado y no necesita material (ejercicio principal + regresión)', () => {
     const index = getCatalogIndexSync()
     expect(index).not.toBeNull()
     for (const id of FIRST_WORKOUT_EXERCISE_IDS) {
@@ -48,16 +51,19 @@ describe('buildFirstWorkout', () => {
     }
   })
 
-  it.each(['principiante', 'intermedio', 'avanzado'] as const)('%s: 4 ejercicios, 2 series, ~6 min, sin material', (level) => {
+  it('FIRST_WORKOUT_EXERCISE_IDS incluye los regressionId, no solo los ejercicios principales (#812)', () => {
+    expect(FIRST_WORKOUT_EXERCISE_IDS).toEqual(
+      expect.arrayContaining(['bodyweight_squat', 'knee_push_up', 'pushup_std', 'dead_bug']),
+    )
+  })
+
+  it.each(LEVELS)('%s: 3 ejercicios, 2 series, sin material (#812, antes eran 4)', (level) => {
     const w = buildFirstWorkout(level, 'es')
-    expect(w.exercises).toHaveLength(4)
+    expect(w.exercises).toHaveLength(3)
     expect(w.exercises.every(e => e.sets === 2)).toBe(true)
     expect(w.exercises.every(e => e.rest === 30)).toBe(true)
     expect(w.exercises.every(e => e.equipment?.length === 1 && e.equipment[0] === 'ninguno')).toBe(true)
     expect(w.exercises.every(e => e.section === 'main')).toBe(true)
-    const minutes = estimateFirstWorkoutMinutes(level)
-    expect(minutes).toBeGreaterThanOrEqual(4)
-    expect(minutes).toBeLessThanOrEqual(8)
   })
 
   it('toma nombre y músculos del catálogo en el idioma pedido', () => {
@@ -82,6 +88,119 @@ describe('buildFirstWorkout', () => {
     const plank = buildFirstWorkout('principiante', 'es').exercises.find(e => e.id === 'plank')!
     expect(plank.isTimer).toBe(true)
     expect(plank.timerSeconds).toBe(20)
+  })
+})
+
+describe('nota de técnica + regresión (#812)', () => {
+  it.each(LEVELS)('%s: cada ejercicio trae nota no vacía en es y en, con el prefijo de regresión y sin quedar colgando', (level) => {
+    for (const locale of ['es', 'en'] as const) {
+      const w = buildFirstWorkout(level, locale)
+      const marker = locale === 'en' ? 'Too hard? Try' : 'Si no te sale:'
+      for (const ex of w.exercises) {
+        expect(ex.note.trim().length, `${level}/${ex.id}/${locale}`).toBeGreaterThan(0)
+        expect(ex.note, `${level}/${ex.id}/${locale}`).toContain(marker)
+        // El prefijo nunca se queda sin regresión detrás.
+        expect(ex.note.trim().endsWith(marker) || ex.note.trim().endsWith(`${marker}.`), `${level}/${ex.id}/${locale}`).toBe(false)
+      }
+    }
+  })
+
+  it('bodyweight_squat (sin regressionId): la nota contiene la regresión embebida en es y en', () => {
+    const es = buildFirstWorkout('principiante', 'es').exercises.find(e => e.id === 'bodyweight_squat')!
+    const en = buildFirstWorkout('principiante', 'en').exercises.find(e => e.id === 'bodyweight_squat')!
+    expect(es.note).toContain('siéntate y levántate de una silla')
+    expect(en.note).toContain('sitting down onto a chair and standing back up')
+  })
+
+  it('knee_push_up (sin regressionId, sin material: incline_push_up del catálogo pide banco)', () => {
+    const es = buildFirstWorkout('principiante', 'es').exercises.find(e => e.id === 'knee_push_up')!
+    const en = buildFirstWorkout('principiante', 'en').exercises.find(e => e.id === 'knee_push_up')!
+    expect(es.note).toContain('mesa o el sofá')
+    expect(en.note).toContain('table or the couch')
+  })
+
+  it('pushup_std (intermedio, regressionId: knee_push_up): la regresión SIEMPRE es el texto curado, nunca el nombre pelado del catálogo', () => {
+    // Revisión #812 ronda 2: con regressionId y catálogo cargado (el caso normal en
+    // producción) el nombre pelado del catálogo («Push-up Rodillas») ganaba al texto
+    // curado que sí explica el «cómo» — código muerto en la práctica. Ver
+    // `regressionPhrase()`.
+    const index = getCatalogIndexSync()!
+    const catalogName = index.byId.get('knee_push_up')!.name
+    const es = buildFirstWorkout('intermedio', 'es').exercises.find(e => e.id === 'pushup_std')!
+    const en = buildFirstWorkout('intermedio', 'en').exercises.find(e => e.id === 'pushup_std')!
+    expect(es.note).toContain('flexión con las rodillas apoyadas')
+    expect(en.note).toContain('Too hard? Try knee push-ups.')
+    expect(es.note).not.toContain(localize(catalogName, 'es'))
+    expect(en.note).not.toContain(localize(catalogName, 'en'))
+  })
+
+  it('jump_squat (avanzado, regressionId: bodyweight_squat) y diamond_pushup (regressionId: pushup_std): regresión con el texto curado', () => {
+    const index = getCatalogIndexSync()!
+    const es = buildFirstWorkout('avanzado', 'es').exercises
+    const jumpSquat = es.find(e => e.id === 'jump_squat')!
+    const diamond = es.find(e => e.id === 'diamond_pushup')!
+    expect(jumpSquat.note).toContain('sentadilla sin salto')
+    expect(jumpSquat.note).not.toContain(localize(index.byId.get('bodyweight_squat')!.name, 'es'))
+    expect(diamond.note).toContain('flexión estándar')
+    expect(diamond.note).not.toContain(localize(index.byId.get('pushup_std')!.name, 'es'))
+  })
+
+  it('hollow_hold (avanzado, regressionId: dead_bug): dead_bug existe en el catálogo sin material y la nota trae el texto curado', () => {
+    // regressionId sigue validando contra el catálogo (FIRST_WORKOUT_EXERCISE_IDS),
+    // pero ya no decide el texto que se muestra.
+    const index = getCatalogIndexSync()!
+    const deadBug = index.byId.get('dead_bug')!
+    expect(deadBug.equipment ?? ['ninguno']).toEqual(['ninguno'])
+    const es = buildFirstWorkout('avanzado', 'es').exercises.find(e => e.id === 'hollow_hold')!
+    expect(es.note).toContain('dead bug (alterna brazo y pierna contraria, despacio)')
+    expect(es.note).not.toContain(localize(deadBug.name, 'es'))
+  })
+
+  it('jump_squat: la nota curada incluye la advertencia de dolor que trae el catálogo para el mismo ejercicio', () => {
+    // La nota curada gana siempre a la del catálogo, así que si el catálogo marca una
+    // condición de seguridad para este ejercicio, la nota curada tiene que llevarla
+    // también — no puede perderse.
+    const index = getCatalogIndexSync()!
+    expect(localize(index.byId.get('jump_squat')!.note, 'es')).toContain('Solo si no hay dolor')
+    const es = buildFirstWorkout('avanzado', 'es').exercises.find(e => e.id === 'jump_squat')!
+    const en = buildFirstWorkout('avanzado', 'en').exercises.find(e => e.id === 'jump_squat')!
+    expect(es.note).toContain('Solo si no hay dolor')
+    expect(en.note).toContain('no pain')
+  })
+
+  it('la nota curada GANA a la del catálogo, aunque el catálogo tenga note vacío ({es:"",en:""}) o no', () => {
+    const index = getCatalogIndexSync()!
+    // bodyweight_squat y knee_push_up traen note: {es:'',en:''} en el catálogo — es un
+    // objeto no nulo, así que `cat?.note ?? entry.note` (lo que proponía la issue) habría
+    // devuelto ese objeto vacío y la nota habría salido en blanco.
+    expect(localize(index.byId.get('bodyweight_squat')!.note, 'es')).toBe('')
+    expect(localize(index.byId.get('knee_push_up')!.note, 'es')).toBe('')
+    const squat = buildFirstWorkout('principiante', 'es').exercises.find(e => e.id === 'bodyweight_squat')!
+    expect(squat.note.trim().length).toBeGreaterThan(0)
+
+    // plank SÍ trae note no vacío en el catálogo, y aun así pierde frente a la nota
+    // curada del primer entreno, escrita para alguien que lo hace por primera vez.
+    const catalogPlankNote = localize(index.byId.get('plank')!.note, 'es')
+    expect(catalogPlankNote.length).toBeGreaterThan(0)
+    const plank = buildFirstWorkout('principiante', 'es').exercises.find(e => e.id === 'plank')!
+    expect(plank.note).not.toContain(catalogPlankNote)
+    expect(plank.note).toContain('línea recta de la cabeza a los talones')
+  })
+})
+
+describe('estimateFirstWorkoutMinutes (#812: 3 ejercicios bajan el tiempo frente a los 4 originales)', () => {
+  it.each([
+    ['principiante', 5],
+    ['intermedio', 5],
+    ['avanzado', 5],
+  ] as const)('%s: %i min exactos', (level, minutes) => {
+    expect(estimateFirstWorkoutMinutes(level)).toBe(minutes)
+  })
+
+  it('baja frente a los ~7 min que daban los 4 ejercicios originales', () => {
+    for (const level of LEVELS) {
+      expect(estimateFirstWorkoutMinutes(level)).toBeLessThan(7)
+    }
   })
 })
 
@@ -143,7 +262,7 @@ describe('trackFirstWorkoutStarted', () => {
   it('emite first_workout_started con origen, nivel y clave', () => {
     trackFirstWorkoutStarted({ source: 'onboarding', level: 'principiante', workoutKey: 'free_first_1' })
     expect(op.track).toHaveBeenCalledWith('first_workout_started', expect.objectContaining({
-      source: 'onboarding', level: 'principiante', workout_key: 'free_first_1', exercise_count: 4,
+      source: 'onboarding', level: 'principiante', workout_key: 'free_first_1', exercise_count: 3,
     }))
   })
 })
