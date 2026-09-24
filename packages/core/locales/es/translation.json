@@ -4936,6 +4936,8 @@
   "firstWorkout.cardCta": "Empezar",
   "pushPrompt.title": "¿Te avisamos del próximo?",
   "pushPrompt.desc": "Un recordatorio para que la racha no se quede en uno.",
+  "pushPrompt.descWithSchedule": "1 aviso los días que entrenas ({{days}}), a las {{time}}.",
+  "pushPrompt.descWithScheduleEveryDay": "1 aviso cada día, a las {{time}}.",
   "pushPrompt.accept": "Activar avisos",
   "pushPrompt.decline": "Ahora no",
   "pushPrompt.granted": "Avisos activados",

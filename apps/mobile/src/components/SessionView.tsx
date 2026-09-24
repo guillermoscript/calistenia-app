@@ -21,7 +21,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 
-import { requestNotifPermission } from '@/lib/notifications'
 import { haptics as haptic } from '@/lib/haptics'
 import { useLiveSession } from '@/lib/use-live-session'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -147,8 +146,11 @@ export default function SessionView({
     setProgress({ stepIdx, phase, setsCount, timing: timingTracker.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Permiso de notificaciones al arrancar la sesión
-  useEffect(() => { requestNotifPermission() }, [])
+  // Ya NO se pide el permiso de notificaciones al arrancar la sesión (#815):
+  // esta sesión puede ser el primer entreno, y pedirlo aquí lo dejaría
+  // decidido antes de llegar a la celebración, donde vive el único prompt
+  // (`PushPermissionCard`). El rest timer/aviso de serie completada siguen
+  // funcionando igual si el permiso ya estaba concedido de antes.
 
   // Finalizar timings exactamente una vez al llegar a la pantalla de nota
   useEffect(() => {

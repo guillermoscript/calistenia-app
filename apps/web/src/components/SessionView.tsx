@@ -150,8 +150,11 @@ export default function SessionView({
     setProgress({ stepIdx, phase, setsCount, timing: timingTracker.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps -- se empuja el progreso al avanzar, no cuando cambia la identidad de `setProgress`
 
-  // Permiso de notificaciones al arrancar la sesión
-  useEffect(() => { notif.requestPermission() }, [])
+  // Ya NO se pide el permiso de notificaciones al arrancar la sesión (#815):
+  // esta sesión puede ser el primer entreno, y pedirlo aquí lo dejaría
+  // decidido antes de llegar a la celebración, donde vive el único prompt
+  // (`PushPermissionCard`). `notif.send()` sigue comprobando el permiso por
+  // su cuenta antes de cada aviso (rest timer, serie completada).
 
   const goToPrevExercise = useCallback(() => {
     if (currentExerciseIndex <= 0) return

@@ -6,6 +6,12 @@
  * usuario acaba de completar un entreno: el aviso tiene un porqué («no
  * pierdas la racha»). Se ofrece una sola vez por usuario y dispositivo
  * (`shouldShowPushPrompt`/`markPushPromptSeen` en `packages/core/lib/push-prompt`).
+ *
+ * Copy de priming (#815): si el onboarding dejó un recordatorio guardado
+ * (hora + días), el beneficio se vuelve concreto («1 aviso los días que
+ * entrenas, a las 19:00») en vez del genérico «activa las notificaciones».
+ * La tarjeta lee el recordatorio ella misma —no lo recibe por props— con el
+ * mismo hook que usa Ajustes > Recordatorios.
  */
 import { useEffect, useRef, useState } from 'react'
 import { View, Pressable } from 'react-native'
@@ -19,6 +25,8 @@ import { haptics } from '@/lib/haptics'
 import { COLORS } from '@/lib/theme'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { getPushPermissionState, registerPushTokenAsync } from '@/lib/push-registration'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
+import { summarizeReminderSchedule } from '@calistenia/core/lib/push-prompt-copy'
 import {
   shouldShowPushPrompt,
   markPushPromptSeen,
@@ -42,6 +50,18 @@ export default function PushPermissionCard({ userId, workoutKey, totalSessions }
   const [visible, setVisible] = useState(false)
   const [result, setResult] = useState<PushPromptResult | null>(null)
   const viewedTracked = useRef(false)
+
+  // Recordatorio ya guardado en el onboarding (si lo hay): mismo hook que
+  // Ajustes > Recordatorios, así que reutiliza la caché de TanStack Query.
+  const { reminders } = useWorkoutReminders(userId ?? null)
+  const workoutReminder = reminders.find((r) => r.reminderType === 'workout' && r.enabled)
+  const schedule = summarizeReminderSchedule(workoutReminder ?? null)
+  const desc = schedule
+    ? t(schedule.isEveryDay ? 'pushPrompt.descWithScheduleEveryDay' : 'pushPrompt.descWithSchedule', {
+        time: schedule.time,
+        days: schedule.dayShortIndexes.map((i) => t(`dayShort.${i}`)).join(', '),
+      })
+    : t('pushPrompt.desc')
 
   useEffect(() => {
     let cancelled = false
@@ -88,7 +108,7 @@ export default function PushPermissionCard({ userId, workoutKey, totalSessions }
         </View>
         <View className="flex-1">
           <Text className="font-sans-medium text-sm text-foreground">{t('pushPrompt.title')}</Text>
-          <Text className="mt-0.5 text-xs text-muted-foreground">{t('pushPrompt.desc')}</Text>
+          <Text className="mt-0.5 text-xs text-muted-foreground">{desc}</Text>
         </View>
       </View>
 

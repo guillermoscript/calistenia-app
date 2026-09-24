@@ -42,7 +42,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { haptics } from '@/lib/haptics'
 import { useStartFirstWorkout } from '@/lib/start-first-workout'
-import { ensureReminderPermission, getReminderPermission } from '@/lib/reminder-scheduler'
+import { ensureAndroidChannel, getReminderPermission } from '@/lib/reminder-scheduler'
 import { registerPushTokenAsync } from '@/lib/push-registration'
 
 import { OnboardingProgress } from './OnboardingProgress'
@@ -226,17 +226,22 @@ export function OnboardingFlow() {
   }
 
   // El recordatorio queda guardado SIEMPRE (offline-first, `saveReminder`
-  // escribe a local antes de intentar PB y nunca lanza), permiso concedido o
-  // no: negarlo solo cambia si sonará, no si el recordatorio existe (#695).
+  // escribe a local antes de intentar PB y nunca lanza). Desde #815 este paso
+  // ya NO pide el permiso de notificaciones del SO: eso vive únicamente en la
+  // celebración del primer entreno (`PushPermissionCard`), para que
+  // `shouldShowPushPrompt` siga viendo el permiso como `undetermined` cuando
+  // el usuario llega ahí. Aquí solo se crea el canal de Android (sin prompt)
+  // y, si el permiso YA estaba concedido de antes (reinstalación, iOS…), se
+  // registra el token sin volver a preguntar.
   const handleSaveReminder = async () => {
     setSavingReminder(true)
     setSaveError(false)
     try {
       const presetMeta = findTrainingTimePreset(reminderPreset)
-      const granted = await ensureReminderPermission()
-      setReminderPermissionDenied(!granted)
-      if (granted && userId) {
-        registerPushTokenAsync(pb, userId).catch((e) => {
+      await ensureAndroidChannel()
+      const permission = await getReminderPermission()
+      if (permission === 'granted' && userId) {
+        registerPushTokenAsync(pb, userId, { requestPermission: false }).catch((e) => {
           Sentry.captureException(e, { tags: { feature: 'onboarding_reminder', op: 'register_push_token' } })
         })
       }
@@ -246,7 +251,6 @@ export function OnboardingFlow() {
         preset: reminderPreset,
         time: formatReminderTime(presetMeta.hour, presetMeta.minute),
         days_count: days.length,
-        permission: granted ? 'granted' : 'denied',
       })
       goToStep(personalizingStep)
     } catch (e) {
