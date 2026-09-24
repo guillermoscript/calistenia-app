@@ -73,9 +73,9 @@ async function send(opts: NotifyOptions): Promise<void> {
 /**
  * Pide el permiso de forma EXPLÍCITA. A diferencia de `checkPermission()`
  * (que usa `send()` y nunca pregunta), esta sí llama a
- * `Notification.requestPermission()` cuando el permiso está `default` — solo
- * debe invocarse tras una acción explícita del usuario (p. ej. aceptar en
- * `PushPermissionCard`).
+ * `Notification.requestPermission()` cuando el permiso está `default`.
+ * `SessionView` la llama al arrancar la sesión, pero solo cuando la tarjeta
+ * de la celebración (`PushPermissionCard`) ya tuvo su turno (#815).
  */
 export async function requestPermission(): Promise<boolean> {
   if (_permissionGranted !== null) return _permissionGranted
