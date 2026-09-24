@@ -227,8 +227,8 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   // Aterriza en la sesión activa: primer ejercicio del nivel principiante y
   // contador de series del entreno corto.
   await expect(page).toHaveURL(/\/session$/, { timeout: 15000 })
-  await expect(page.getByText(/1\/6 series/i).first()).toBeVisible({ timeout: 15000 })
-  await expect(page.getByRole('button', { name: /serie completada|set completed/i }).first()).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText(/1\/6 (series|sets)/i).first()).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: /serie completada|completed set/i }).first()).toBeVisible({ timeout: 5000 })
 
   // El onboarding queda marcado y la intención pendiente se consumió.
   const state = await page.evaluate(() => {
