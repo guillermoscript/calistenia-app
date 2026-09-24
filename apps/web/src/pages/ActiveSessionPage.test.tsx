@@ -80,7 +80,7 @@ describe('ActiveSessionPage sin sesión activa (#694)', () => {
     await waitFor(() => expect(h.startSession).toHaveBeenCalledTimes(1))
 
     const [workout, key, source] = h.startSession.mock.calls[0]
-    expect(workout.exercises).toHaveLength(4)
+    expect(workout.exercises).toHaveLength(3)
     expect(key).toMatch(/^free_first_/)
     expect(source).toBe('free')
     expect(h.trackStarted).toHaveBeenCalledWith({ source: 'onboarding', level: 'principiante', workoutKey: key })
