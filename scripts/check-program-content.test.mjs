@@ -275,13 +275,16 @@ describe("checkProgram — campos bilingües sin 'en' (#797)", () => {
     expect(musclesFindings[0].message).toContain('3 sitio(s)')
   })
 
-  it("'bilingual_field' es aviso siempre — ni con --strict, porque no está en STRICT_RULES", () => {
-    expect(STRICT_RULES.has('bilingual_field')).toBe(false)
+  it("'bilingual_field' es aviso sin --strict y ERROR con --strict (está en STRICT_RULES desde #799)", () => {
+    expect(STRICT_RULES.has('bilingual_field')).toBe(true)
+    const loose = findingsFor(checkProgram(SLUG, baseProgram()), 'bilingual_field')
+    expect(loose.length).toBeGreaterThan(0)
+    expect(loose.every(f => f.level === 'warning')).toBe(true)
     const result = checkProgram(SLUG, baseProgram(), { strict: true })
     const found = findingsFor(result, 'bilingual_field')
     expect(found.length).toBeGreaterThan(0)
-    expect(found.every(f => f.level === 'warning')).toBe(true)
-    expect(result.errors.some(e => e.includes("sin 'en'"))).toBe(false)
+    expect(found.every(f => f.level === 'error')).toBe(true)
+    expect(result.errors.some(e => e.includes("sin 'en'"))).toBe(true)
   })
 
   it('los tres programas con exercise.name ya bilingüe (#711/#731/#733) siguen en 0 errores', () => {
@@ -875,10 +878,12 @@ describe('checkProgram — baseProgram() en modo --strict', () => {
   // Sus instructions no prometen descarga ni ningún ejercicio de la lista de
   // #715, su slug (principiante-fundamentos) es `maintain` y ninguno de sus
   // ejercicios es advanced: el fixture base tiene que seguir limpio también
-  // cuando las reglas de lógica son errores.
-  it('no reporta errores', () => {
-    const { errors } = checkProgram(SLUG, baseProgram(), { strict: true })
-    expect(errors).toEqual([])
+  // cuando las reglas de lógica son errores. Sus textos siguen en español
+  // plano a propósito (los tests de `bilingual_field` los necesitan así), y
+  // esa regla es ERROR con --strict desde #799: se excluye aquí.
+  it('no reporta errores (salvo bilingual_field)', () => {
+    const { findings } = checkProgram(SLUG, baseProgram(), { strict: true })
+    expect(findings.filter(f => f.level === 'error' && f.rule !== 'bilingual_field')).toEqual([])
   })
 })
 

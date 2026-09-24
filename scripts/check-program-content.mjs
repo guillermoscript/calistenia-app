@@ -35,11 +35,10 @@
  * (`packages/core/lib/i18n-db.ts`) igual que `program.instructions`, y el
  * generador de la siembra (`generate-program-seed-migration.mjs::i18n()`) ya
  * los trata como `{es, en}` sin tocar código: es un problema de CONTENIDO, no
- * de infraestructura. Los 15 `programs/*.json` de hoy los traen en español
- * plano — la regla `bilingual_field` lo avisa (nunca corta, ni con `--strict`)
- * hasta que el lote de traducción (#792-#796) migre el contenido. Promoverla
- * a ERROR es añadir `'bilingual_field'` a `STRICT_RULES` más abajo, un cambio
- * de una línea. El `name` de ejercicio queda FUERA de esta regla a propósito:
+ * de infraestructura. La regla `bilingual_field` exige `en` en todos; nació
+ * como AVISO y pasó a `STRICT_RULES` (ERROR con `--strict`) cuando los lotes
+ * de traducción #798/#799 migraron los 15 programas. El `name` de ejercicio
+ * queda FUERA de esta regla a propósito (sale del catálogo, ya bilingüe):
  * ver el comentario de `trackBilingual` más abajo.
  *
  * Cada hallazgo lleva un `rule` estable (ver `STRICT_RULES` y los ids de cada
@@ -185,13 +184,10 @@ const BILINGUAL_EXAMPLES = 5
  * (`heavy_consecutive_days`, `pattern_frequency`, `promised_exercise`) son
  * decisiones de programación discutibles y se quedan en AVISO siempre.
  *
- * `bilingual_field` (#797) es distinta de esas: no es una decisión de
- * programación discutible, es contenido que TODAVÍA no está traducido. Se
- * queda fuera de este Set a propósito — con los 15 programas en español
- * plano, meterla aquí tiraría `pnpm programs:content:check --strict` (el modo
- * de CI desde #711) en rojo hoy mismo. Cuando el lote de traducción
- * (#792-#796) migre el contenido, promoverla es añadir `'bilingual_field'` a
- * este Set: una línea, sin tocar la regla.
+ * `bilingual_field` (#797) no es una decisión de programación discutible:
+ * es contenido sin traducir. Nació como AVISO para no tirar la CI mientras
+ * los 15 programas seguían en español plano, y entra en este Set con el
+ * último lote de traducción (#799): desde ahí un campo sin `en` rompe la CI.
  */
 export const STRICT_RULES = new Set([
   // Material (#714): el catálogo dejó de mentir sobre goblet squat, remos de
@@ -207,6 +203,8 @@ export const STRICT_RULES = new Set([
   'deload_promise',
   'fat_loss_cardio',
   'fat_loss_nutrition',
+  // Traducción (#797 → #798/#799): los 15 programas ya traen `{es, en}`.
+  'bilingual_field',
 ])
 
 /** Escalones de `difficulty` del catálogo, en orden. Solo hay tres. */
@@ -786,9 +784,8 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
   //
   // Un aviso por sitio serían hasta ~2.200 líneas (una por ejercicio, en los
   // 15 programas de hoy); esto agrega TODOS los huecos de un mismo campo en
-  // un único aviso, con `BILINGUAL_EXAMPLES` rutas de muestra. AVISO siempre
-  // — `bilingual_field` no está en `STRICT_RULES` (ver el comentario de
-  // arriba) hasta que el lote de traducción migre el contenido.
+  // un único hallazgo, con `BILINGUAL_EXAMPLES` rutas de muestra. AVISO sin
+  // --strict; ERROR con --strict (`bilingual_field` está en `STRICT_RULES`).
   for (const [field, paths] of bilingualGaps) {
     const shown = paths.slice(0, BILINGUAL_EXAMPLES)
     const rest = paths.length - shown.length
