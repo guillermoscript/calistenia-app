@@ -86,10 +86,10 @@ export interface ActiveProgramProgress {
 }
 
 /** `program_phases` → el `Phase` que espera core. */
-function toPhases(rows: RecordModel[]): Phase[] {
+function toPhases(rows: RecordModel[], locale?: string): Phase[] {
   return rows.map((ph) => ({
     id: Number(ph.phase_number),
-    name: localize(ph.name as never),
+    name: localize(ph.name as never, locale),
     weeks: String(ph.weeks ?? ""),
     color: String(ph.color ?? ""),
     bg: String(ph.bg_color ?? ""),
@@ -98,13 +98,13 @@ function toPhases(rows: RecordModel[]): Phase[] {
 }
 
 /** `program_day_config` de una fase → los `WeekDay` que espera core. */
-function toWeekDays(rows: RecordModel[], phaseNumber: number): WeekDay[] {
+function toWeekDays(rows: RecordModel[], phaseNumber: number, locale?: string): WeekDay[] {
   return rows
     .filter((dc) => Number(dc.phase_number) === phaseNumber)
     .map((dc) => ({
       id: dc.day_id as WeekDay["id"],
-      name: localize(dc.day_name as never),
-      focus: localize(dc.day_focus as never),
+      name: localize(dc.day_name as never, locale),
+      focus: localize(dc.day_focus as never, locale),
       type: (dc.day_type ?? "full") as DayType,
       color: String(dc.day_color ?? ""),
     }));
@@ -116,13 +116,16 @@ function toWeekDays(rows: RecordModel[], phaseNumber: number): WeekDay[] {
  * `current` se acepta como parámetro para los llamantes que ya lo han leído
  * (el briefing diario lo necesita antes que la fase): pasarlo ahorra la
  * consulta, no pasarlo la hace aquí.
+ *
+ * `locale` elige el idioma de los nombres de fase/día/foco (por defecto `es`):
+ * el push de inactividad lo pide en el idioma del usuario (#804).
  */
 export async function resolveActiveProgramProgress(
   pb: PB,
   userId: string,
   tz: string,
   today: string,
-  opts: { current?: CurrentProgram | null } = {},
+  opts: { current?: CurrentProgram | null; locale?: string } = {},
 ): Promise<ActiveProgramProgress | null> {
   const current = opts.current !== undefined ? opts.current : await getCurrentProgram(pb, userId);
   if (!current) return null;
@@ -138,7 +141,7 @@ export async function resolveActiveProgramProgress(
     getSettings(pb, userId),
   ]);
 
-  const phases = toPhases(phaseRows);
+  const phases = toPhases(phaseRows, opts.locale);
   const input = {
     startedAt,
     durationWeeks: Number(program.duration_weeks ?? 0),
@@ -156,7 +159,7 @@ export async function resolveActiveProgramProgress(
   // preguntarle a core cuál es; la segunda ya calcula adherencia y `next_day`
   // con los días correctos. `program_day_config` se lee una sola vez.
   const withoutDays = computeProgramProgress({ ...input, weekDays: [] });
-  const weekDays = toWeekDays(dayRows, withoutDays.currentPhase);
+  const weekDays = toWeekDays(dayRows, withoutDays.currentPhase, opts.locale);
   const computed = computeProgramProgress({ ...input, weekDays });
 
   // Mismo último recurso que `useProgramProgress`: `settings.phase` solo pinta

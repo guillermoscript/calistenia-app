@@ -168,8 +168,8 @@ routerAdd("POST", "/api/follows/{id}/accept", function (e) {
     )
     helpers.sendPush(
       followerId,
-      (name || "Alguien") + " ha aceptado tu solicitud",
-      "Ya puedes ver su actividad",
+      { es: (name || "Alguien") + " ha aceptado tu solicitud", en: (name || "Someone") + " accepted your request" },
+      { es: "Ya puedes ver su actividad", en: "You can now see their activity" },
       "/u/" + userId,
       "follow_accepted",
       userId

@@ -50,9 +50,10 @@ test("referral crea follows mutuos, puntos dobles y notifica al referrer", async
   // Nota: los auto-follows del hook disparan en cascada el hook de follow
   // ("te sigue"), así que hay que buscar el push de referral específicamente.
   const push = await waitForPush(
-    (p) => p.path === "/api/send-push" && p.body?.user_id === referrer.id && /se registro con tu enlace/.test(p.body.title || ""),
+    (p) => p.path === "/api/send-push" && p.body?.user_id === referrer.id && /se registro con tu enlace/.test(p.body.title?.es || ""),
     "push referral_signup al referrer"
   )
+  assert.equal(push.body.title.en, "Nuevo Usuario signed up with your link", "título en inglés (#804)")
   assert.equal(push.body.url, "/referrals")
   assert.equal(push.internalKey, "test-internal-key")
 })

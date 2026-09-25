@@ -74,10 +74,18 @@ onRecordAfterCreateSuccess(function(e) {
 
     helpers.sendPush(
       followingId,
-      pending
-        ? (followerName || "Alguien") + " quiere seguirte"
-        : (followerName || "Alguien") + " te sigue",
-      pending ? "Toca para aceptar o rechazar" : "Tienes un nuevo seguidor",
+      {
+        es: pending
+          ? (followerName || "Alguien") + " quiere seguirte"
+          : (followerName || "Alguien") + " te sigue",
+        en: pending
+          ? (followerName || "Someone") + " wants to follow you"
+          : (followerName || "Someone") + " is following you",
+      },
+      {
+        es: pending ? "Toca para aceptar o rechazar" : "Tienes un nuevo seguidor",
+        en: pending ? "Tap to accept or decline" : "You have a new follower",
+      },
       "/u/" + followerId,
       pending ? "follow_request" : "follow",
       followerId
@@ -117,8 +125,8 @@ onRecordAfterCreateSuccess(function(e) {
 
     helpers.sendPush(
       ownerId,
-      (reactorName || "Alguien") + " " + emoji,
-      "Reacciono a tu sesion",
+      { es: (reactorName || "Alguien") + " " + emoji, en: (reactorName || "Someone") + " " + emoji },
+      { es: "Reacciono a tu sesion", en: "Reacted to your session" },
       "/feed?session=" + sessionId,
       "reaction",
       reactorId
@@ -163,7 +171,10 @@ onRecordAfterCreateSuccess(function(e) {
           )
           helpers.sendPush(
             parentAuthorId,
-            (authorName || "Alguien") + " respondio tu comentario",
+            {
+              es: (authorName || "Alguien") + " respondio tu comentario",
+              en: (authorName || "Someone") + " replied to your comment",
+            },
             preview,
             "/feed?session=" + sessionId + "&comment=" + newCommentId,
             "comment_reply",
@@ -199,7 +210,10 @@ onRecordAfterCreateSuccess(function(e) {
           )
           helpers.sendPush(
             ownerId,
-            (authorName || "Alguien") + " comento tu sesion",
+            {
+              es: (authorName || "Alguien") + " comento tu sesion",
+              en: (authorName || "Someone") + " commented on your session",
+            },
             preview,
             "/feed?session=" + sessionId + "&comment=" + newCommentId,
             "comment",
@@ -257,8 +271,8 @@ onRecordAfterCreateSuccess(function(e) {
 
     helpers.sendPush(
       authorId,
-      (reactorName || "Alguien") + " " + emoji,
-      "Reaccionó a tu comentario",
+      { es: (reactorName || "Alguien") + " " + emoji, en: (reactorName || "Someone") + " " + emoji },
+      { es: "Reaccionó a tu comentario", en: "Reacted to your comment" },
       sessionId ? ("/feed?session=" + sessionId + "&comment=" + commentId) : "/feed",
       "reaction",
       reactorId
@@ -308,7 +322,7 @@ onRecordAfterCreateSuccess(function(e) {
 
     helpers.sendPush(
       creatorId,
-      (userName || "Alguien") + " se unio a tu desafio",
+      { es: (userName || "Alguien") + " se unio a tu desafio", en: (userName || "Someone") + " joined your challenge" },
       challengeTitle,
       "/challenges/" + challengeId,
       "challenge_join",
@@ -370,7 +384,13 @@ onRecordAfterUpdateSuccess(function(e) {
       helpers.createSelfNotification(creatorId, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
       recipients.push(creatorId)
     }
-    helpers.sendPushBatch(recipients, "Desafio completado!", challengeTitle, "/challenges/" + challengeId, "challenge_complete")
+    helpers.sendPushBatch(
+      recipients,
+      { es: "Desafio completado!", en: "Challenge completed!" },
+      challengeTitle,
+      "/challenges/" + challengeId,
+      "challenge_complete"
+    )
   } catch (err) {
     console.log("[notif] challenge_complete hook error:", err)
   }
@@ -403,16 +423,26 @@ onRecordAfterUpdateSuccess(function(e) {
     }
 
     helpers.createSelfNotification(userId, "achievement", achievementId, "achievement", { achievementName: achievementName, achievementIcon: achievementIcon })
-    helpers.sendPush(userId, achievementIcon + " " + achievementName, "Nuevo logro desbloqueado!", "/profile", "achievement")
+    helpers.sendPush(
+      userId,
+      achievementIcon + " " + achievementName,
+      { es: "Nuevo logro desbloqueado!", en: "New achievement unlocked!" },
+      "/profile",
+      "achievement"
+    )
 
     // Fan-out a seguidores: "tu amigo desbloqueó un logro"
+    var achieverName = helpers.getUserName(userId)
     helpers.notifyFollowers(
       userId,
       "friend_achievement",
       achievementId,
       { achievementName: achievementName, achievementIcon: achievementIcon },
       {
-        title: (helpers.getUserName(userId) || "Tu amigo") + " desbloqueo un logro",
+        title: {
+          es: (achieverName || "Tu amigo") + " desbloqueo un logro",
+          en: (achieverName || "Your friend") + " unlocked an achievement",
+        },
         body: achievementIcon + " " + achievementName,
         url: "/u/" + userId,
       }

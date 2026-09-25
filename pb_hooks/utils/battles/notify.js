@@ -29,8 +29,8 @@ function notifyBattleJoin(app, battle, joinerId) {
     )
     notifications.sendPush(
       creatorId,
-      name || 'Alguien',
-      'se ha unido a tu batalla',
+      { es: name || 'Alguien', en: name || 'Someone' },
+      { es: 'se ha unido a tu batalla', en: 'joined your battle' },
       '/battle/' + battleId,
       'challenge_join',
       joinerId,
@@ -62,8 +62,8 @@ function notifyBattleStart(app, battle, actorId) {
     }
     notifications.sendPushBatch(
       recipients,
-      'La batalla empieza',
-      'Tu batalla arranca ahora',
+      { es: 'La batalla empieza', en: 'The battle begins' },
+      { es: 'Tu batalla arranca ahora', en: 'Your battle starts now' },
       '/battle/' + battleId,
       'challenge_join',
       actorId,
@@ -131,8 +131,8 @@ function notifyBattleRematch(app, newBattle, actorId, invites) {
       )
       notifications.sendPush(
         invite.userId,
-        name || 'Alguien',
-        'te reta a la revancha',
+        { es: name || 'Alguien', en: name || 'Someone' },
+        { es: 'te reta a la revancha', en: 'challenges you to a rematch' },
         '/battle-invite/' + invite.token,
         'challenge_join',
         actorId,

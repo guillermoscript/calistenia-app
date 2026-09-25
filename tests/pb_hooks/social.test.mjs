@@ -35,7 +35,8 @@ test("follow notifica al seguido con push", async () => {
     (p) => p.path === "/api/send-push" && p.body?.user_id === b.id,
     "push de follow"
   )
-  assert.match(push.body.title, /Ana Follower te sigue/)
+  assert.match(push.body.title.es, /Ana Follower te sigue/)
+  assert.equal(push.body.title.en, "Ana Follower is following you", "título en inglés (#804)")
   assert.equal(push.body.url, `/u/${a.id}`)
 })
 
