@@ -158,7 +158,7 @@ async function loadCandidates(pb: any, now: Date): Promise<InactivityCandidate[]
 }
 
 /** ¿Tiene el usuario ALGUNA sesión (de cualquier tipo)? Colección ausente/error → no cuenta. */
-async function hasAnySession(pb: any, userId: string): Promise<boolean> {
+export async function hasAnySession(pb: any, userId: string): Promise<boolean> {
   const collections = ["sessions", "circuit_sessions", "cardio_sessions"];
   for (const col of collections) {
     try {
@@ -199,7 +199,7 @@ async function loadAlreadySentKinds(pb: any, userId: string): Promise<Set<Inacti
  * deep-link del push. `null` si no tiene programa activo, si core no puede
  * derivar el próximo día, o si algo falla — el copy genérico cubre ese caso.
  */
-async function resolveDayLabel(
+export async function resolveDayLabel(
   pb: any,
   userId: string,
   tz: string,

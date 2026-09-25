@@ -702,7 +702,7 @@ export interface CommentRecord {
 
 // ─── Notifications ──────────────────────────────────────────────────────────
 
-export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined' | 'inactivity_24h' | 'inactivity_72h'
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined' | 'inactivity_24h' | 'inactivity_72h' | 'inactivity_7d' | 'inactivity_14d' | 'inactivity_new_start'
 
 export interface NotificationRecord {
   id: string

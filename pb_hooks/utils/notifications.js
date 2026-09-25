@@ -142,7 +142,12 @@ function categoryForType(type) {
     // puede sacar a alguien de "se registró y nunca entrenó"; silenciarlo con
     // una categoría social apagable anularía la feature.
     case "inactivity_24h":
-    case "inactivity_72h": return ""
+    case "inactivity_72h":
+    // inactivity_7d / inactivity_14d / inactivity_new_start (#807): los de
+    // recuperación más allá del día 7, mismo razonamiento.
+    case "inactivity_7d":
+    case "inactivity_14d":
+    case "inactivity_new_start": return ""
     default: return ""
   }
 }
