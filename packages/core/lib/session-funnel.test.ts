@@ -103,11 +103,56 @@ describe('sessionFunnelProperties', () => {
     const props = sessionFunnelProperties({
       workoutKey: 'p3_jue', source: 'program', startedAt: 1, endedAt: 2,
       exerciseCount: 6, plannedSets: 18, setsLogged: 9, reason: 'expired',
+      currentExerciseIndex: 1, currentExerciseId: 'bodyweight_squat',
+      currentSection: 'main', currentPhase: 'exercise', isFirstWorkout: true,
     })
     for (const forbidden of ['note', 'email', 'name', 'lat', 'lng', 'notes']) {
       expect(props).not.toHaveProperty(forbidden)
     }
     expect(Object.values(props).every(v => typeof v !== 'object' || v === null)).toBe(true)
+  })
+
+  // #823: contexto de dónde abandonó, para la investigación de retención (#792).
+  describe('contexto de abandono (#823)', () => {
+    it('manda el ejercicio, la sección, la fase y si es el primer entreno', () => {
+      expect(sessionFunnelProperties({
+        workoutKey: 'p2_mie', source: 'program',
+        currentExerciseIndex: 1, currentExerciseId: 'knee_push_up',
+        currentSection: 'main', currentPhase: 'rest', isFirstWorkout: false,
+      })).toMatchObject({
+        current_exercise_index: 1,
+        current_exercise_id: 'knee_push_up',
+        current_section: 'main',
+        current_phase: 'rest',
+        is_first_workout: false,
+      })
+    })
+
+    // `stepIdx: 0` es el primer ejercicio, no "sin dato" — un `if` por
+    // veracidad lo tiraría en silencio, exactamente el bug que ya evita
+    // `exercise_count`/`sets_logged` más arriba.
+    it('el índice 0 viaja: no es un booleano', () => {
+      const props = sessionFunnelProperties({
+        workoutKey: 'p1_lun', source: 'program', currentExerciseIndex: 0,
+      })
+      expect(props).toHaveProperty('current_exercise_index', 0)
+    })
+
+    // `is_first_workout: false` también viaja: solo `undefined` se omite.
+    it('is_first_workout en false viaja igual que en true', () => {
+      expect(sessionFunnelProperties({
+        workoutKey: 'p1_lun', source: 'program', isFirstWorkout: false,
+      })).toHaveProperty('is_first_workout', false)
+    })
+
+    // Compatibilidad hacia atrás: sin ninguno de los campos nuevos, no deben
+    // aparecer como `undefined`/`null` — ni la clave debe existir siquiera.
+    it('sin ninguno de los campos nuevos, no aparecen ni como undefined', () => {
+      const props = sessionFunnelProperties({ workoutKey: 'p1_lun', source: 'program' })
+      for (const key of ['current_exercise_index', 'current_exercise_id', 'current_section', 'current_phase', 'is_first_workout']) {
+        expect(props).not.toHaveProperty(key)
+      }
+    })
   })
 })
 
