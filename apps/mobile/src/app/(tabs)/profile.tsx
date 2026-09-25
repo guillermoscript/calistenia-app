@@ -22,7 +22,7 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
 import { AvatarPicker } from '@/components/profile/AvatarPicker'
-import { SettingsRow, Field, UnitInput, Segmented } from '@/components/profile/SettingsPanel'
+import { SettingsRow, Field, UnitInput, Segmented, DayToggle } from '@/components/profile/SettingsPanel'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
@@ -35,12 +35,18 @@ import {
   fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
 } from '@calistenia/core/hooks/useProfileForm'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
-import type { ActivityLevel } from '@/components/onboarding/StepGoals'
+import { parseDecimal } from '@calistenia/core/lib/bmi'
+import {
+  FOCUS_AREA_IDS, DAY_IDS,
+  type ActivityLevel, type DayId, type FocusAreaId, type Intensity, type Pace,
+} from '@calistenia/core/types/onboarding'
+import { Chip } from '@/components/ui/chip'
+import { Textarea } from '@/components/ui/textarea'
 import { Sentry } from '@/lib/instrument'
 
 type SaveState = 'idle' | 'saving' | 'saved'
 /** Temas de ajuste que se despliegan en la lista del final. */
-type SettingsSection = 'body' | 'prefs' | 'account'
+type SettingsSection = 'body' | 'training' | 'prefs' | 'account'
 
 // Pares `valor → clave de traducción` de los campos de una sola opción.
 const ACTIVITY_OPTIONS = [
@@ -50,11 +56,28 @@ const ACTIVITY_OPTIONS = [
   ['very_active', 'onboarding.activityVeryActive'],
 ] as const satisfies readonly (readonly [ActivityLevel, string])[]
 
+const PACE_OPTIONS = [
+  ['gradual', 'onboarding.paceGradual'],
+  ['balanced', 'onboarding.paceBalanced'],
+  ['aggressive', 'onboarding.paceAggressive'],
+] as const satisfies readonly (readonly [Pace, string])[]
+
+const INTENSITY_OPTIONS = [
+  ['light', 'onboarding.intensityLight'],
+  ['moderate', 'onboarding.intensityModerate'],
+  ['intense', 'onboarding.intensityIntense'],
+] as const satisfies readonly (readonly [Intensity, string])[]
+
 const THEME_OPTIONS = [
   ['system', 'profile.themeSystem'],
   ['light', 'profile.themeLight'],
   ['dark', 'profile.themeDark'],
 ] as const satisfies readonly (readonly [ThemeMode, string])[]
+const LEVELS = [
+  { value: 'principiante', label: 'difficulty.beginner' },
+  { value: 'intermedio', label: 'difficulty.intermediate' },
+  { value: 'avanzado', label: 'difficulty.advanced' },
+]
 const LEVEL_LABEL_KEYS: Record<string, string> = {
   principiante: 'difficulty.beginner',
   intermedio: 'difficulty.intermediate',
@@ -112,6 +135,17 @@ export default function ProfileScreen() {
   // falla): guardar con los campos vacíos borraría peso/altura/edad/sexo/
   // actividad ya guardados. (#243 F4a)
   const [bodyLoaded, setBodyLoaded] = useState(false)
+
+  // Entrenamiento (#820): nivel, objetivo de peso, ritmo, áreas de foco, días
+  // y intensidad — antes se pedían en el onboarding; ahora se editan aquí. En
+  // `users`, igual que peso/altura/actividad (no son PII ocultos).
+  const [goalWeight, setGoalWeight] = useState('')
+  const [pace, setPace] = useState<Pace | ''>('')
+  const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([])
+  const [trainingDays, setTrainingDays] = useState<DayId[]>([])
+  const [intensity, setIntensity] = useState<Intensity | ''>('')
+  const [goal, setGoal] = useState('')
+  const [trainingSaveState, setTrainingSaveState] = useState<SaveState>('idle')
   // Edad/sexo son PII ocultos en `users` (fix GHSA-wwj3-9h95-wcpf): no se
   // serializan ni se pueden escribir con token de usuario. Su fuente fiable es
   // la fila de `nutrition_goals` (protegida per-user), que además es lo que
@@ -162,6 +196,13 @@ export default function ProfileScreen() {
         setHeight(body.height)
         setActivityLevel(body.activityLevel)
         setLevel(rec.level || '')
+        // Entrenamiento (#820): mismo registro de `users`, sin PII oculta.
+        setGoalWeight(rec.goal_weight ? String(rec.goal_weight) : '')
+        setPace(rec.pace || '')
+        setFocusAreas(Array.isArray(rec.focus_areas) ? rec.focus_areas : [])
+        setTrainingDays(Array.isArray(rec.training_days) ? rec.training_days : [])
+        setIntensity(rec.intensity || '')
+        setGoal(rec.goal || '')
         // Edad/sexo desde la fila de nutrition_goals (PII protegida). Si el
         // usuario aún no tiene objetivo, quedan vacíos y solo se fijarán al
         // crear uno (el wizard los pide). (#243 F4a)
@@ -205,6 +246,37 @@ export default function ProfileScreen() {
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_fields' } })
       setBodySaveState('idle')
+    }
+  }
+
+  const toggleFocusArea = (id: FocusAreaId) => {
+    setFocusAreas((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+  const toggleTrainingDay = (id: DayId) => {
+    setTrainingDays((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  // Guardado propio del panel de entrenamiento (#820): mismos campos que
+  // pedía el onboarding en Goals/Training, ahora editables aquí en cualquier
+  // momento — nunca se pierden, solo dejaron de bloquear el camino crítico.
+  const handleSaveTraining = async () => {
+    if (!user || trainingSaveState === 'saving' || !bodyLoaded) return
+    setTrainingSaveState('saving')
+    try {
+      await pb.collection('users').update(user.id, {
+        level,
+        goal_weight: parseDecimal(goalWeight),
+        pace: pace || '',
+        focus_areas: focusAreas,
+        training_days: trainingDays,
+        intensity: intensity || '',
+        goal,
+      })
+      setTrainingSaveState('saved')
+      setTimeout(() => setTrainingSaveState('idle'), 2000)
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_training_fields' } })
+      setTrainingSaveState('idle')
     }
   }
 
@@ -386,6 +458,86 @@ export default function ProfileScreen() {
                 >
                   <Text className="font-bebas text-base tracking-wide text-lime-foreground">
                     {bodySaveState === 'saving' ? t('profile.saving') : bodySaveState === 'saved' ? t('profile.saved') : t('common.save').toUpperCase()}
+                  </Text>
+                </Button>
+              </View>
+            </SettingsRow>
+
+            <SettingsRow
+              label={t('profile.sectionTraining')}
+              value={levelLabel}
+              open={openSection === 'training'}
+              onPress={() => toggleSection('training')}
+              bordered
+              muted={muted} lime={lime}
+            >
+              <Field label={t('profile.level')}>
+                <Segmented
+                  allowClear={false}
+                  options={LEVELS.map((l) => ({ value: l.value, label: t(l.label) }))}
+                  value={level}
+                  onChange={(next) => { if (next) setLevel(next) }}
+                />
+              </Field>
+
+              <Field label={t('profile.goalWeightShort')}>
+                <UnitInput value={goalWeight} onChangeText={setGoalWeight} placeholder={t('profile.goalWeightPlaceholder')} keyboardType="decimal-pad" unit="kg" />
+              </Field>
+
+              <Field label={t('onboarding.pace')}>
+                <Segmented
+                  options={PACE_OPTIONS.map(([value, key]) => ({ value, label: t(key) }))}
+                  value={pace}
+                  onChange={setPace}
+                />
+              </Field>
+
+              <Field label={t('onboarding.focusAreas')}>
+                <View className="flex-row flex-wrap gap-2">
+                  {FOCUS_AREA_IDS.map((id) => (
+                    <Chip
+                      key={id}
+                      label={t(`onboarding.focus.${id}`)}
+                      active={focusAreas.includes(id)}
+                      onPress={() => toggleFocusArea(id)}
+                    />
+                  ))}
+                </View>
+              </Field>
+
+              <Field label={t('onboarding.trainingDays')}>
+                <View className="flex-row gap-1.5">
+                  {DAY_IDS.map((d) => (
+                    <DayToggle
+                      key={d}
+                      label={t(`onboarding.days.${d}`)}
+                      active={trainingDays.includes(d)}
+                      onPress={() => toggleTrainingDay(d)}
+                    />
+                  ))}
+                </View>
+              </Field>
+
+              <Field label={t('onboarding.intensity')}>
+                <Segmented
+                  options={INTENSITY_OPTIONS.map(([value, key]) => ({ value, label: t(key) }))}
+                  value={intensity}
+                  onChange={setIntensity}
+                />
+              </Field>
+
+              <Field label={t('profile.goal')}>
+                <Textarea value={goal} onChangeText={setGoal} placeholder={t('profile.goalPlaceholder')} numberOfLines={3} />
+              </Field>
+
+              <View className="border-t border-border/70 pt-4">
+                <Button
+                  className="h-11 bg-lime active:bg-lime/90"
+                  onPress={handleSaveTraining}
+                  disabled={trainingSaveState === 'saving' || !bodyLoaded}
+                >
+                  <Text className="font-bebas text-base tracking-wide text-lime-foreground">
+                    {trainingSaveState === 'saving' ? t('profile.saving') : trainingSaveState === 'saved' ? t('profile.saved') : t('common.save').toUpperCase()}
                   </Text>
                 </Button>
               </View>

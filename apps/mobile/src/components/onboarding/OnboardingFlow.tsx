@@ -2,8 +2,13 @@
  * OnboardingFlow — mobile port of the web onboarding flow.
  *
  * Branching:
- *   needsProfile=true  → 7 steps: Welcome(0) Basics(1) Goals(2) Health(3) Training(4) Program(5) Personalizing(6)
+ *   needsProfile=true  → 7 steps: Welcome(0) Basics(1) Essentials(2) Health(3) Program(4) Reminder(5) Personalizing(6)
  *   needsProfile=false → 3 steps: Welcome(0) Program(1) Personalizing(2)
+ *
+ * #820: Essentials merges the old Goals + Training steps into one
+ * (primary_goal + level); the rest of their fields (goal weight, activity,
+ * pace, focus areas, training days, intensity, free-text goal) moved to
+ * Profile > Training, reachable after the first workout.
  *
  * Recovery: if user already has an active program and onboarding is not done,
  * markOnboardingDone immediately and go to tabs.
@@ -48,14 +53,12 @@ import { registerPushTokenAsync } from '@/lib/push-registration'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
-import { StepGoals, type GoalsValues } from './StepGoals'
+import { StepEssentials } from './StepEssentials'
 import { StepHealth } from './StepHealth'
-import { StepTraining } from './StepTraining'
 import { StepProgram } from './StepProgram'
 import { StepReminder } from './StepReminder'
 import { StepPersonalizing } from './StepPersonalizing'
-import type { HealthValues } from '@calistenia/core/types/onboarding'
-import type { TrainingValues } from '@calistenia/core/types/onboarding'
+import type { GoalsValues, HealthValues, TrainingValues } from '@calistenia/core/types/onboarding'
 
 const EMPTY_BASICS: BasicsValues = { weight: '', height: '', age: '', sex: '' }
 const EMPTY_GOALS: GoalsValues = { primary_goal: '', goal_weight: '', waist: '', activity_level: '', pace: '' }
@@ -120,6 +123,7 @@ export function OnboardingFlow() {
   // Recordatorio de entreno por defecto (#695): comparte hook con la pantalla
   // de Ajustes > Recordatorios.
   const { reminders, saveReminder } = useWorkoutReminders(userId ?? null)
+  const hasWorkoutReminder = reminders.some((r) => r.reminderType === 'workout' && r.enabled)
   const [reminderPreset, setReminderPreset] = useState<TrainingTimePresetId>(DEFAULT_TRAINING_TIME_PRESET)
   const [savingReminder, setSavingReminder] = useState(false)
   const [reminderPermissionDenied, setReminderPermissionDenied] = useState(false)
@@ -128,22 +132,21 @@ export function OnboardingFlow() {
   const [discoverySource, setDiscoverySource] = useState<DiscoverySourceId | null>(null)
   const discoveryTracked = useRef(false)
 
-  // Step index layout (frozen via needsProfile)
+  // Step index layout (frozen via needsProfile). #820: essentials merges the
+  // old goals + training steps into one (primary_goal + level).
   const profileStep = needsProfile ? 1 : -1
-  const goalsStep = needsProfile ? 2 : -1
+  const essentialsStep = needsProfile ? 2 : -1
   const healthStep = needsProfile ? 3 : -1
-  const trainingStep = needsProfile ? 4 : -1
-  const programStep = needsProfile ? 5 : 1
-  const reminderStep = needsProfile ? 6 : 2
-  const personalizingStep = needsProfile ? 7 : 3
-  const totalSteps = needsProfile ? 8 : 4
+  const programStep = needsProfile ? 4 : 1
+  const reminderStep = needsProfile ? 5 : 2
+  const personalizingStep = needsProfile ? 6 : 3
+  const totalSteps = needsProfile ? 7 : 4
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
     if (s === profileStep) return 'profile'
-    if (s === goalsStep) return 'goals'
+    if (s === essentialsStep) return 'essentials'
     if (s === healthStep) return 'health'
-    if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
     if (s === reminderStep) return 'reminder'
     if (s === personalizingStep) return 'personalizing'
@@ -199,30 +202,40 @@ export function OnboardingFlow() {
     }
   }
 
-  const handleSaveBasics = async () => {
-    if (await saveBasics(basics)) goToStep(goalsStep)
+  // Paso siguiente al de programa: se salta el recordatorio si ya hay uno
+  // activo (perfil existente, o volvió atrás tras guardarlo).
+  const nextAfterProgram = hasWorkoutReminder ? personalizingStep : reminderStep
+
+  // Atajo «elígelo por mí» (#820): selecciona el recomendado y avanza en un
+  // solo toque, sin obligar a mirar la lista completa de programas.
+  const handlePickForMe = async (programId: string) => {
+    await handleSelectProgram(programId)
+    goToStep(nextAfterProgram)
   }
 
-  const handleSaveGoals = async () => {
-    // `basics` va con las metas para sembrar el objetivo de nutrición: es el
-    // primer momento con peso/altura/edad/sexo Y actividad/objetivo/ritmo.
-    if (await saveGoals(goals, basics)) goToStep(healthStep)
+  const handleSaveBasics = async () => {
+    if (await saveBasics(basics)) goToStep(essentialsStep)
+  }
+
+  // #820: guarda objetivo + nivel de un tirón (antes eran dos pasos, "goals" y
+  // "training"). El resto de campos finos de ambos pasos viejos ya no se piden
+  // aquí y quedan editables desde Perfil > Entrenamiento, así que se guardan
+  // vacíos hasta que el usuario los rellene ahí.
+  const handleSaveEssentials = async () => {
+    if (!(await saveGoals(goals, basics))) return
+    if (await saveTraining(training)) goToStep(healthStep)
   }
 
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
     if (await saveHealth(next)) goToStep(advanceTo)
   }
 
-  const handleSaveHealth = () => saveHealthAnd(health, trainingStep)
+  const handleSaveHealth = () => saveHealthAnd(health, programStep)
 
   const handleNoIssues = () => {
     const empty: HealthValues = { medical_conditions: [], injuries: [] }
     setHealth(empty)
-    saveHealthAnd(empty, trainingStep)
-  }
-
-  const handleSaveTraining = async () => {
-    if (await saveTraining(training)) goToStep(programStep)
+    saveHealthAnd(empty, programStep)
   }
 
   // El recordatorio queda guardado SIEMPRE (offline-first, `saveReminder`
@@ -300,7 +313,6 @@ export function OnboardingFlow() {
 
   const firstName = displayName?.split(/[\s@]/)[0] ?? ''
   const currentWeightNum = parseDecimal(basics.weight)
-  const currentHeightNum = parseDecimal(basics.height)
 
   // Build MatchUserInput from current live user fields merged with in-progress values
   const matchUserInput: MatchUserInput = {
@@ -383,19 +395,19 @@ export function OnboardingFlow() {
               saving={savingProfile}
               onBack={() => goToStep(0)}
               onContinue={handleSaveBasics}
-              onSkip={() => goToStep(goalsStep)}
+              onSkip={() => goToStep(essentialsStep)}
             />
           ) : null}
 
-          {step === goalsStep ? (
-            <StepGoals
-              values={goals}
-              onChange={setGoals}
-              currentWeightKg={currentWeightNum}
-              currentHeightCm={currentHeightNum}
-              saving={savingGoals}
+          {step === essentialsStep ? (
+            <StepEssentials
+              primaryGoal={goals.primary_goal}
+              onPrimaryGoalChange={(primary_goal) => setGoals({ ...goals, primary_goal })}
+              level={training.level}
+              onLevelChange={(level) => setTraining({ ...training, level })}
+              saving={savingGoals || savingTraining}
               onBack={() => goToStep(profileStep)}
-              onContinue={handleSaveGoals}
+              onContinue={handleSaveEssentials}
               onSkip={() => goToStep(healthStep)}
             />
           ) : null}
@@ -405,20 +417,9 @@ export function OnboardingFlow() {
               values={health}
               onChange={setHealth}
               saving={savingHealth}
-              onBack={() => goToStep(goalsStep)}
+              onBack={() => goToStep(essentialsStep)}
               onContinue={handleSaveHealth}
               onSkipAsNone={handleNoIssues}
-            />
-          ) : null}
-
-          {step === trainingStep ? (
-            <StepTraining
-              values={training}
-              onChange={setTraining}
-              saving={savingTraining}
-              onBack={() => goToStep(healthStep)}
-              onContinue={handleSaveTraining}
-              onSkip={() => goToStep(programStep)}
             />
           ) : null}
 
@@ -430,21 +431,15 @@ export function OnboardingFlow() {
               userId={userId}
               user={matchUserInput}
               onSelectProgram={handleSelectProgram}
+              onPickForMe={handlePickForMe}
               onCreateProgram={() => {
                 // Igual que web (App.tsx): cerrar onboarding y abrir el editor (#224)
                 if (userId) markOnboardingDone(userId)
                 op.track('onboarding_create_own_program')
                 router.replace('/program-editor')
               }}
-              onBack={() => goToStep(needsProfile ? trainingStep : 0)}
-              onContinue={() => {
-                // Si ya tiene un recordatorio de entreno activo (perfil existente,
-                // o volvió atrás tras guardarlo), el paso no aporta nada: saltarlo.
-                const hasWorkoutReminder = reminders.some(
-                  (r) => r.reminderType === 'workout' && r.enabled,
-                )
-                goToStep(hasWorkoutReminder ? personalizingStep : reminderStep)
-              }}
+              onBack={() => goToStep(needsProfile ? healthStep : 0)}
+              onContinue={() => goToStep(nextAfterProgram)}
             />
           ) : null}
 

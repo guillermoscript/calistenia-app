@@ -5,9 +5,10 @@ import { dismissOverlays, suppressOverlays, selectDay, TEST_PASS, TEST_NAME } fr
  * Golden path: onboarding completo + activación de programa real.
  *
  * A diferencia de smoke.spec.js (que salta el wizard con "Ya conozco la app"),
- * este spec recorre los 8 pasos (welcome → basics → goals → health → training
- * → program → reminder → personalizing), selecciona el programa sembrado
- * "Intermedio – Balance Total" y verifica que:
+ * este spec recorre los 7 pasos (welcome → basics → essentials → health →
+ * program → reminder → personalizing; #820 fusionó los antiguos "goals" y
+ * "training" en un único paso de objetivo + nivel), selecciona el programa
+ * sembrado "Intermedio – Balance Total" y verifica que:
  *   1. user_programs tiene el enrollment is_current=true en PB
  *   2. workout_reminders tiene el recordatorio por defecto del paso nuevo (#695)
  *   3. el dashboard muestra el programa activo (no el fallback)
@@ -51,7 +52,7 @@ async function readAuth(page) {
   })
 }
 
-test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async ({ page, request }) => {
+test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async ({ page, request }) => {
   test.setTimeout(150_000)
 
   await signup(page)
@@ -80,32 +81,24 @@ test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async
   await page.getByRole('button', { name: /^(Hombre|Male)/i }).click()
   await page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i }).click()
 
-  // ── Paso 2: Goals ────────────────────────────────────────────────────────
-  await expect(page.getByText(/TUS METAS|YOUR GOALS/i)).toBeVisible({ timeout: 8000 })
-  await page.locator('#ob-goal-weight').fill('72')
-  await page.getByRole('button', { name: /^(Activo|Active)\b/i }).click()
-  await page.getByRole('button', { name: /^(Balanceado|Balanced)/i }).click()
+  // ── Paso 2: Essentials — objetivo + nivel fusionados (#820) ──────────────
+  await expect(page.getByText(/TU OBJETIVO|YOUR GOAL/i)).toBeVisible({ timeout: 8000 })
+  await page.getByRole('button', { name: /^(Ganar músculo|Build muscle)/i }).click()
+  await page.getByRole('button', { name: /^(Intermedio|Intermediate)\b/i }).click()
   await page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i }).click()
 
   // ── Paso 3: Health (atajo "sin condiciones" guarda y avanza solo) ────────
   await expect(page.getByText(/^SALUD$|^HEALTH$/i)).toBeVisible({ timeout: 8000 })
   await page.getByRole('button', { name: /No tengo condiciones|No conditions/i }).click()
 
-  // ── Paso 4: Training ─────────────────────────────────────────────────────
-  await expect(page.getByText(/TU ENTRENAMIENTO|YOUR TRAINING/i)).toBeVisible({ timeout: 8000 })
-  await page.getByRole('button', { name: /^(Intermedio|Intermediate)\b/i }).click()
-  await page.getByRole('button', { name: /^(Moderada|Moderate)/i }).click()
-  await page.locator('#ob-goal').fill('Dominadas estrictas x10')
-  await page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i }).click()
-
-  // ── Paso 5: Programa — seleccionar la card escribe user_programs en PB ───
+  // ── Paso 4: Programa — seleccionar la card escribe user_programs en PB ───
   await expect(page.getByText(/ELIGE TU PROGRAMA|CHOOSE YOUR PROGRAM/i)).toBeVisible({ timeout: 8000 })
   await page.getByText(/Balance Total/i).first().click()
   const continueBtn = page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i })
   await expect(continueBtn).toBeEnabled({ timeout: 10000 }) // deshabilitado hasta que el write termina
   await continueBtn.click()
 
-  // ── Paso 6: Recordatorio por defecto (#695) ──────────────────────────────
+  // ── Paso 5: Recordatorio por defecto (#695) ──────────────────────────────
   // Desde #815 este paso ya no pide el permiso de notificaciones del
   // navegador (eso vive solo en la celebración del primer entreno), así que
   // ya no hace falta simular un `Notification.requestPermission` denegado
@@ -114,8 +107,8 @@ test('onboarding completo activa el programa elegido (wizard de 8 pasos)', async
   await page.getByRole('button', { name: /^(Noche|Evening)\b/i }).click()
   await page.getByRole('button', { name: /ACTIVAR RECORDATORIO|TURN ON REMINDER/i }).click()
 
-  // ── Paso 7: Personalizing (fase loading dura 2.4s) → preview → finish ────
-  await expect(page.getByText(/PERSONALIZANDO|PERSONALIZING/i)).toBeVisible({ timeout: 8000 })
+  // ── Paso 6: Personalizing — sin espera falsa (#820), va directo al plan ──
+  await expect(page.getByText(/TU PLAN|YOUR PLAN/i)).toBeVisible({ timeout: 8000 })
   // Desde #694 el CTA primario arranca el primer entreno; ir al inicio es el
   // enlace secundario. Este test cubre el camino al dashboard; el del primer
   // entreno está en el test de abajo.
@@ -200,12 +193,11 @@ test('el último paso del onboarding arranca el primer entreno en /session', asy
   await signup(page)
 
   await page.getByRole('button', { name: /^EMPEZAR$|^START$/i }).click()
-  // Basics y goals son opcionales: «Omitir por ahora».
+  // Basics y essentials (#820: objetivo + nivel fusionados) son opcionales:
+  // «Omitir por ahora». Principiante viene marcado por defecto en el nivel.
   await page.getByRole('button', { name: /Omitir por ahora|Skip for now/i }).click()
   await page.getByRole('button', { name: /Omitir por ahora|Skip for now/i }).click()
   await page.getByRole('button', { name: /No tengo condiciones ni lesiones|No conditions or injuries/i }).click()
-  // Training: principiante viene marcado por defecto.
-  await page.getByRole('button', { name: /^(CONTINUAR|CONTINUE)$/i }).click()
 
   await expect(page.getByText(/ELIGE TU PROGRAMA|CHOOSE YOUR PROGRAM/i)).toBeVisible({ timeout: 8000 })
   await page.getByText(/Balance Total/i).first().click()

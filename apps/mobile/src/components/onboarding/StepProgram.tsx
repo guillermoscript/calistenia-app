@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { FlatList, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,8 @@ interface Props {
   onCreateProgram: () => void
   onBack: () => void
   onContinue: () => void
+  /** Atajo «elígelo por mí» (#820): selecciona y avanza en un solo toque. */
+  onPickForMe: (programId: string) => Promise<void>
 }
 
 type ProgramTier = 'primary' | 'secondary' | 'other'
@@ -146,9 +148,10 @@ const ProgramItem = memo(function ProgramItem({ item, isSelected, userId, onSele
 
 export function StepProgram({
   programs, selectedProgramId, selecting, userId, user,
-  onSelectProgram, onCreateProgram, onBack, onContinue,
+  onSelectProgram, onCreateProgram, onBack, onContinue, onPickForMe,
 }: Props) {
   const { t } = useTranslation()
+  const [pickingForMe, setPickingForMe] = useState(false)
 
   const { primary, secondary, penalties } = matchUserToPrograms(user, programs)
 
@@ -173,6 +176,21 @@ export function StepProgram({
     ...rest.map((p) => ({ program: p, tier: 'other' as const, penalties: penalties.get(p.id) ?? [] })),
   ]
 
+  // Atajo de un toque (#820): el recomendado de la celda nivel×objetivo, o el
+  // primero de la lista si no hay match (p.ej. sin nivel declarado).
+  const recommended = primary ?? secondary ?? ordered[0]?.program ?? null
+
+  const handlePickForMe = async () => {
+    if (!recommended || pickingForMe) return
+    haptics.selection()
+    setPickingForMe(true)
+    try {
+      await onPickForMe(recommended.id)
+    } finally {
+      setPickingForMe(false)
+    }
+  }
+
   const renderItem = useCallback(({ item }: { item: ProgramRow }) => (
     <ProgramItem
       item={item}
@@ -190,6 +208,18 @@ export function StepProgram({
         <Text className="font-bebas text-3xl mb-1">{t('onboarding.chooseProgramTitle')}</Text>
         <Text className="text-sm text-muted-foreground text-center">{t('onboarding.chooseProgramDesc')}</Text>
       </View>
+
+      {recommended ? (
+        <Button
+          onPress={handlePickForMe}
+          disabled={pickingForMe || selecting}
+          className="h-11 mb-3 bg-lime active:bg-lime/90"
+        >
+          <Text className="font-bebas text-lg tracking-wide text-lime-foreground">
+            {pickingForMe ? t('onboarding.saving') : t('onboarding.pickForMe')}
+          </Text>
+        </Button>
+      ) : null}
 
       <View className="flex-row items-center gap-2 px-3 py-2 rounded-lg bg-amber-400/5 border border-amber-400/20 mb-4">
         <Text className="text-amber-400 text-sm">★</Text>

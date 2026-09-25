@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Animated as RNAnimated, Easing, Pressable, View } from 'react-native'
+import { useEffect, useMemo } from 'react'
+import { Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { Button } from '@/components/ui/button'
@@ -9,10 +9,7 @@ import { cn } from '@/lib/utils'
 import Confetti from '@/components/Confetti'
 import { haptics } from '@/lib/haptics'
 import type { ProgramMeta } from '@calistenia/core/types'
-import type { Pace } from './StepGoals'
-
-const PHASE_DURATION_MS = 2400
-const MESSAGE_COUNT = 4
+import type { Pace } from '@calistenia/core/types/onboarding'
 
 const PACE_KG_PER_WEEK: Record<Pace, number> = {
   gradual: 0.25,
@@ -45,39 +42,13 @@ export function StepPersonalizing({
   firstWorkoutMinutes,
 }: Props) {
   const { t, i18n } = useTranslation()
-  const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
-  const [msgIndex, setMsgIndex] = useState(0)
-  const progressAnim = useRef(new RNAnimated.Value(0)).current
-  const spinAnim = useRef(new RNAnimated.Value(0)).current
 
+  // Sin trabajo real pendiente en este punto (programa y recordatorio ya se
+  // guardaron en los pasos anteriores), así que el plan se muestra directo:
+  // nada de spinner ni mensajes falsos rotando durante 2.4s fijos (#820).
   useEffect(() => {
-    RNAnimated.loop(
-      RNAnimated.timing(spinAnim, {
-        toValue: 1,
-        duration: 1000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start()
-
-    RNAnimated.timing(progressAnim, {
-      toValue: 1,
-      duration: PHASE_DURATION_MS,
-      easing: Easing.linear,
-      useNativeDriver: false,
-    }).start()
-
-    const interval = PHASE_DURATION_MS / MESSAGE_COUNT
-    const timers: ReturnType<typeof setTimeout>[] = []
-    for (let i = 1; i < MESSAGE_COUNT; i++) {
-      timers.push(setTimeout(() => setMsgIndex(i), i * interval))
-    }
-    timers.push(setTimeout(() => {
-      haptics.success()
-      setPhase('preview')
-    }, PHASE_DURATION_MS))
-    return () => timers.forEach(clearTimeout)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    haptics.success()
+  }, [])
 
   const projection = useMemo(() => {
     if (!currentWeightKg || !goalWeightKg || !pace) return null
@@ -96,46 +67,6 @@ export function StepPersonalizing({
     const dateLabel = `${targetDate.getDate()} ${m[targetDate.getMonth()]} ${targetDate.getFullYear()}`
     return { weeks, dateLabel }
   }, [currentWeightKg, goalWeightKg, pace, i18n.language])
-
-  const spin = spinAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  })
-
-  if (phase === 'loading') {
-    return (
-      <View className="items-center justify-center py-12">
-        <Text className="font-bebas text-4xl text-lime mb-8 leading-none">
-          {t('onboarding.personalizingTitle')}
-        </Text>
-
-        <View className="mb-8">
-          <RNAnimated.View
-            style={{ transform: [{ rotate: spin }] }}
-            className="w-16 h-16 rounded-full border-4 border-muted-foreground/15 border-t-lime"
-          />
-        </View>
-
-        <View className="min-h-[2.5rem] items-center justify-center">
-          <Text className="text-sm text-muted-foreground text-center">
-            {t(`onboarding.personalizing.msg${msgIndex + 1}`)}
-          </Text>
-        </View>
-
-        <View className="mt-6 w-48 h-1 rounded-full bg-muted-foreground/15 overflow-hidden">
-          <RNAnimated.View
-            className="h-full bg-lime rounded-full"
-            style={{
-              width: progressAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['0%', '100%'],
-              }),
-            }}
-          />
-        </View>
-      </View>
-    )
-  }
 
   return (
     <View>

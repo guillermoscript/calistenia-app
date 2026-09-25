@@ -9,9 +9,10 @@
  * mismo control en todas partes para elegir una opción (segmentado).
  *
  * Se mantiene a la par del fichero web a propósito: los dos perfiles tienen que
- * envejecer igual, así que si aquí cambia un control, allí también. Falta el
- * `ChipToggle` de «elegir varios»: el móvil todavía no edita áreas de foco,
- * condiciones ni lesiones, y no se adelanta código sin call site.
+ * envejecer igual, así que si aquí cambia un control, allí también. «Elegir
+ * varios» reutiliza el `Chip` de `components/ui/chip` (ya existía para el
+ * onboarding) en vez de duplicarlo aquí; `DayToggle` sí vive en este fichero
+ * porque no tiene equivalente fuera de los ajustes de perfil (#820).
  */
 import * as React from 'react'
 import { View, Pressable } from 'react-native'
@@ -168,5 +169,24 @@ export function Segmented<T extends string>({ options, value, onChange, columns,
         </View>
       ))}
     </View>
+  )
+}
+
+/** Casilla de día: cuadrada y compacta, siete en fila (#820). */
+export function DayToggle({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      className={cn(
+        'flex-1 h-11 items-center justify-center rounded-md border',
+        active ? 'border-lime/40 bg-lime/10' : 'border-border',
+      )}
+    >
+      <Text className={cn('font-mono text-[10px] uppercase tracking-widest', active ? 'text-lime' : 'text-muted-foreground')}>
+        {label}
+      </Text>
+    </Pressable>
   )
 }
