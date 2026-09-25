@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useAuthUser } from '@/lib/use-auth-user'
 import type { ProgramMeta, ProgramDifficulty } from '@calistenia/core/types'
+import { programCoverUrl } from '@calistenia/core/lib/programCover'
+import { coverContentPosition } from '@calistenia/core/lib/coverFocus'
 
 const LIME = 'hsl(74 90% 45%)'
 const DIFFICULTY_ORDER: ProgramDifficulty[] = ['beginner', 'intermediate', 'advanced']
@@ -249,19 +251,25 @@ const ProgramRow = memo(function ProgramRow({ program, isActive, onOpen }: {
     <Pressable
       onPress={handlePress}
       className={cn(
-        'flex-row items-center gap-3 rounded-xl border bg-card px-4 py-3.5 active:opacity-70',
+        'overflow-hidden rounded-xl border bg-card active:opacity-70',
         isActive ? 'border-lime/40' : 'border-border',
       )}
     >
+      {/* Portada como banner a todo el ancho, igual que la tarjeta de la web
+          (`ProgramsPage.tsx`). Va ENCIMA del texto y no a su lado: así el
+          texto arranca en la misma columna tenga o no foto el programa. */}
       {!!program.cover_image_url && (
-        // shrink-0: en RN el flexShrink por defecto es 0 salvo que el padre
-        // apriete; se deja explícito para que la miniatura no se estruje
-        // cuando el nombre del programa es largo.
-        <View className="size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+        <View className="border-b border-border bg-muted">
+          {/* 800 px y no la miniatura de 400 de `cover_image_url`: a todo el
+              ancho de un teléfono de 1080 px la de 400 se ve blanda. */}
           <Image
-            source={{ uri: program.cover_image_url }}
-            style={{ width: '100%', height: '100%' }}
+            source={{ uri: programCoverUrl(program, '800x0') ?? program.cover_image_url }}
+            // 16:9 como la tarjeta web, y no 128 px de alto (~2,8:1), que se
+            // comía casi toda una foto vertical.
+            style={{ width: '100%', aspectRatio: 16 / 9 }}
             contentFit="cover"
+            // El encuadre lo marca el autor en el editor; sin marcar, centrado.
+            contentPosition={coverContentPosition(program.cover_focus)}
             transition={150}
             cachePolicy="memory-disk"
             recyclingKey={program.id}
@@ -269,43 +277,45 @@ const ProgramRow = memo(function ProgramRow({ program, isActive, onOpen }: {
           />
         </View>
       )}
-      <View className="flex-1 gap-0.5">
-        <View className="flex-row flex-wrap items-center gap-1.5">
-          <Text className="font-sans-medium text-foreground" numberOfLines={1}>{program.name}</Text>
-          {program.is_official && <BadgeCheck size={14} color={LIME} />}
-        </View>
-        <Text className="text-xs text-muted-foreground" numberOfLines={2}>
-          {program.description}
-        </Text>
-        <View className="mt-1 flex-row items-center gap-2">
-          {isActive && (
-            <View className="rounded-full bg-lime/15 px-2 py-0.5">
-              <Text className="font-mono text-[9px] uppercase tracking-wide text-lime">{t('programs.activeBadge')}</Text>
-            </View>
-          )}
-          <Text className="font-mono text-[10px] text-muted-foreground">
-            {program.duration_weeks} {t('programs.weeks')}
+      <View className="flex-row items-center gap-3 px-4 py-3.5">
+        <View className="flex-1 gap-0.5">
+          <View className="flex-row flex-wrap items-center gap-1.5">
+            <Text className="font-sans-medium text-foreground" numberOfLines={1}>{program.name}</Text>
+            {program.is_official && <BadgeCheck size={14} color={LIME} />}
+          </View>
+          <Text className="text-xs text-muted-foreground" numberOfLines={2}>
+            {program.description}
           </Text>
-          {program.difficulty && (
-            <View
-              className={cn(
-                'rounded-full border px-2 py-0.5',
-                DIFFICULTY_BADGE[program.difficulty]?.box ?? 'border-border',
-              )}
-            >
-              <Text
+          <View className="mt-1 flex-row items-center gap-2">
+            {isActive && (
+              <View className="rounded-full bg-lime/15 px-2 py-0.5">
+                <Text className="font-mono text-[9px] uppercase tracking-wide text-lime">{t('programs.activeBadge')}</Text>
+              </View>
+            )}
+            <Text className="font-mono text-[10px] text-muted-foreground">
+              {program.duration_weeks} {t('programs.weeks')}
+            </Text>
+            {program.difficulty && (
+              <View
                 className={cn(
-                  'font-mono text-[9px] uppercase tracking-wide',
-                  DIFFICULTY_BADGE[program.difficulty]?.text ?? 'text-muted-foreground',
+                  'rounded-full border px-2 py-0.5',
+                  DIFFICULTY_BADGE[program.difficulty]?.box ?? 'border-border',
                 )}
               >
-                {t(`difficulty.${program.difficulty}`)}
-              </Text>
-            </View>
-          )}
+                <Text
+                  className={cn(
+                    'font-mono text-[9px] uppercase tracking-wide',
+                    DIFFICULTY_BADGE[program.difficulty]?.text ?? 'text-muted-foreground',
+                  )}
+                >
+                  {t(`difficulty.${program.difficulty}`)}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
+        <ChevronRight size={18} color="hsl(0 0% 55%)" />
       </View>
-      <ChevronRight size={18} color="hsl(0 0% 55%)" />
     </Pressable>
   )
 })

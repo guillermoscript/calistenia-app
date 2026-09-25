@@ -7,11 +7,36 @@
  * existió solo se podían fijar por script, así que ningún programa creado desde
  * aquí entraba nunca en el «PARA TI» del onboarding.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { ProgramEditorState } from '@calistenia/core/hooks/useProgramEditor'
+import {
+  coverObjectPosition,
+  focusFromPoint,
+  formatCoverFocus,
+  nudgeCoverFocus,
+  parseCoverFocus,
+  type CoverFocus,
+} from '@calistenia/core/lib/coverFocus'
 import { COVER_ACCEPT, pickCover } from '../../lib/program-media'
+
+/** Dirección de cada flecha al mover el foco con teclado. */
+const FOCUS_KEYS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+}
+
+/**
+ * Los recortes reales de la portada: 16:9 en la tarjeta del catálogo y en la
+ * ficha de móvil, 2:1 en la ficha de escritorio (`ProgramCover`).
+ */
+const CROP_PREVIEWS = [
+  { label: '16:9', className: 'aspect-video w-32' },
+  { label: '2:1', className: 'aspect-[2/1] w-36' },
+] as const
 import { EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { CONDITION_IDS, INJURY_IDS } from '@calistenia/core/types/onboarding'
 import { Input } from '../ui/input'
@@ -110,51 +135,117 @@ function CoverPicker({
       return
     }
     setError(null)
-    updateInfo({ coverFile: result.file, coverRemoved: false })
+    // Foco a cero: el de la foto anterior no dice nada de esta.
+    updateInfo({ coverFile: result.file, coverRemoved: false, coverFocus: '' })
   }
 
   const handleRemove = () => {
     setError(null)
     // `coverRemoved` solo tiene efecto sobre lo que YA está en el servidor;
     // descartar un fichero recién elegido es simplemente soltarlo.
-    updateInfo({ coverFile: null, coverRemoved: true })
+    updateInfo({ coverFile: null, coverRemoved: true, coverFocus: '' })
     if (inputRef.current) inputRef.current.value = ''
+  }
+
+  const focus = parseCoverFocus(info.coverFocus)
+  const setFocus = (next: CoverFocus) => updateInfo({ coverFocus: formatCoverFocus(next) })
+
+  const handleFocusKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const delta = FOCUS_KEYS[e.key]
+    if (!delta) return
+    e.preventDefault()
+    const step = e.shiftKey ? 10 : 2
+    setFocus(nudgeCoverFocus(focus, delta[0] * step, delta[1] * step))
   }
 
   return (
     <div>
       <label className={LABEL_CLASS} htmlFor="pe-cover">{t('programEditor.coverLabel')}</label>
-      <div className="flex items-start gap-4">
-        {preview ? (
-          <img
-            src={preview}
-            alt={t('programEditor.coverPreviewAlt')}
-            className="h-24 w-40 shrink-0 rounded-lg border border-border object-cover"
-          />
-        ) : (
-          <div className="flex h-24 w-40 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-[10px] uppercase tracking-widest text-muted-foreground">
-            {t('programEditor.coverEmpty')}
+      {preview ? (
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start">
+          {/* La foto ENTERA, sin recortar: se pulsa donde está lo importante y
+              el punto blanco marca el foco. Con teclado, flechas (Mayús = paso
+              largo). */}
+          <div
+            role="group"
+            tabIndex={0}
+            aria-label={t('programEditor.coverFocusLabel')}
+            aria-describedby="pe-cover-focus-hint"
+            onKeyDown={handleFocusKey}
+            className="relative self-start overflow-hidden rounded-lg border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--lime))]"
+          >
+            <img
+              src={preview}
+              alt={t('programEditor.coverPreviewAlt')}
+              draggable={false}
+              onClick={e => {
+                const r = e.currentTarget.getBoundingClientRect()
+                setFocus(focusFromPoint(e.clientX - r.left, e.clientY - r.top, r.width, r.height))
+              }}
+              className="block max-h-56 max-w-full cursor-crosshair select-none"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_2px_rgba(0,0,0,0.45)]"
+              style={{ left: `${focus.x}%`, top: `${focus.y}%` }}
+            />
           </div>
-        )}
-        <div className="flex flex-col gap-2">
-          <input
-            ref={inputRef}
-            id="pe-cover"
-            type="file"
-            accept={COVER_ACCEPT}
-            onChange={e => handleFile(e.target.files?.[0])}
-            className="text-[11px] file:mr-2 file:rounded-md file:border file:border-border file:bg-transparent file:px-2.5 file:py-1 file:text-[10px] file:uppercase file:tracking-widest file:text-foreground"
-          />
-          {preview && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="self-start text-[10px] uppercase tracking-widest text-muted-foreground hover:text-red-400"
-            >
-              {t('programEditor.coverRemove')}
-            </button>
-          )}
+          <div className="flex flex-col gap-2">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {t('programEditor.coverFocusPreview')}
+            </span>
+            <div className="flex items-start gap-2">
+              {CROP_PREVIEWS.map(crop => (
+                <div key={crop.label} className="flex flex-col gap-1">
+                  <div className={cn('overflow-hidden rounded-md border border-border bg-muted', crop.className)}>
+                    <img
+                      src={preview}
+                      alt=""
+                      className="size-full object-cover"
+                      style={{ objectPosition: coverObjectPosition(info.coverFocus) }}
+                    />
+                  </div>
+                  <span className="font-mono text-[10px] text-muted-foreground">{crop.label}</span>
+                </div>
+              ))}
+            </div>
+            <span id="pe-cover-focus-hint" className="max-w-xs text-[11px] text-muted-foreground">
+              {t('programEditor.coverFocusHint')}
+            </span>
+          </div>
         </div>
+      ) : (
+        <div className="mb-3 flex h-24 w-40 items-center justify-center rounded-lg border border-dashed border-border text-[10px] uppercase tracking-widest text-muted-foreground">
+          {t('programEditor.coverEmpty')}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <input
+          ref={inputRef}
+          id="pe-cover"
+          type="file"
+          accept={COVER_ACCEPT}
+          onChange={e => handleFile(e.target.files?.[0])}
+          className="text-[11px] file:mr-2 file:rounded-md file:border file:border-border file:bg-transparent file:px-2.5 file:py-1 file:text-[10px] file:uppercase file:tracking-widest file:text-foreground"
+        />
+        {preview && info.coverFocus && (
+          <button
+            type="button"
+            onClick={() => updateInfo({ coverFocus: '' })}
+            className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            {t('programEditor.coverFocusReset')}
+          </button>
+        )}
+        {preview && (
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-red-400"
+          >
+            {t('programEditor.coverRemove')}
+          </button>
+        )}
       </div>
       {error
         ? <div className="mt-1.5 text-[11px] text-red-400" role="alert">{error}</div>

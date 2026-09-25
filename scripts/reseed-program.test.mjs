@@ -371,10 +371,11 @@ describe.skipIf(!HAS_PB)('resiembra de un programa oficial contra PocketBase rea
   })
 
   it('los campos que no son contenido no se tocan', () => {
-    // `is_active`, `is_featured`, `visibility`, `cover_image`, `created_by` y
-    // `forked_from` los manda el editor o el operador, no el JSON del catálogo.
-    // Una resiembra que los pisara apagaría programas o borraría portadas (#618).
-    const AJENOS = ['is_active', 'is_featured', 'visibility', 'cover_image', 'created_by', 'forked_from', 'is_official']
+    // `is_active`, `is_featured`, `visibility`, `cover_image`, `cover_focus`,
+    // `created_by` y `forked_from` los manda el editor o el operador, no el JSON
+    // del catálogo. Una resiembra que los pisara apagaría programas o borraría
+    // portadas (#618) y su encuadre.
+    const AJENOS = ['is_active', 'is_featured', 'visibility', 'cover_image', 'cover_focus', 'created_by', 'forked_from', 'is_official']
     const recorte = fila => Object.fromEntries(AJENOS.map(k => [k, fila[k]]))
     expect(recorte(s.programaDespues[0])).toEqual(recorte(s.programaAntes[0]))
   })

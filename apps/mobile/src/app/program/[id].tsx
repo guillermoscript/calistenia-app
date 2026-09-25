@@ -12,11 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { OptionSheet, type OptionSheetOption } from '@/components/ui/option-sheet'
+import { ImageViewer } from '@/components/ui/image-viewer'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
+import { programCoverUrl } from '@calistenia/core/lib/programCover'
+import { coverContentPosition } from '@calistenia/core/lib/coverFocus'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import { useProgramDayBreakdown } from '@calistenia/core/hooks/useProgramDayBreakdown'
 import { defaultBreakdownPhase } from '@calistenia/core/lib/program-day-breakdown'
@@ -77,6 +80,7 @@ export default function ProgramDetailScreen() {
   const [selecting, setSelecting] = useState(false)
   const [busy, setBusy] = useState(false)
   const [showActions, setShowActions] = useState(false)
+  const [coverOpen, setCoverOpen] = useState(false)
   const [error, setError] = useState('')
 
   // Mismo criterio que web (`ProgramDetailPage.tsx:149,560`): el dueño del
@@ -230,18 +234,27 @@ export default function ProgramDetailScreen() {
           )
         ) : (
           <>
+            {/* Proporción fija 16:9 en vez de 160 px de alto: en un teléfono
+                ancho la altura fija recortaba media foto. Tocarla la abre
+                entera en el visor. */}
             {!!program.cover_image_url && (
-              <View className="h-40 overflow-hidden rounded-xl border border-border bg-card">
+              <Pressable
+                onPress={() => setCoverOpen(true)}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={program.name}
+                accessibilityHint={t('common.viewFullscreen')}
+                className="overflow-hidden rounded-xl border border-border bg-card active:opacity-80"
+              >
                 <Image
-                  source={{ uri: program.cover_image_url }}
-                  style={{ width: '100%', height: '100%' }}
+                  source={{ uri: programCoverUrl(program, '800x0') ?? program.cover_image_url }}
+                  style={{ width: '100%', aspectRatio: 16 / 9 }}
                   contentFit="cover"
+                  contentPosition={coverContentPosition(program.cover_focus)}
                   transition={150}
                   cachePolicy="memory-disk"
                   recyclingKey={program.id}
-                  accessibilityLabel={program.name}
                 />
-              </View>
+              </Pressable>
             )}
 
             <Card>
@@ -432,6 +445,14 @@ export default function ProgramDetailScreen() {
           onClose={() => setShowActions(false)}
         />
       )}
+
+      <ImageViewer
+        // El ORIGINAL, no `cover_image_url`: si el programa vino del catálogo en
+        // memoria trae la miniatura de 400 px de la lista y aquí se vería borrosa.
+        uri={coverOpen && program ? programCoverUrl(program) ?? program.cover_image_url ?? null : null}
+        label={program?.name}
+        onClose={() => setCoverOpen(false)}
+      />
     </SafeAreaView>
   )
 }

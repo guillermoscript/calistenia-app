@@ -441,6 +441,7 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     difficulty:     p.difficulty || undefined,
     cover_image:    p.cover_image || undefined,
     cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
+    cover_focus:    p.cover_focus || undefined,
     discipline:     disciplineByProgram.get(p.id) || 'calistenia',
     goal_type:      p.goal_type || undefined,
     skill:          p.skill || undefined,

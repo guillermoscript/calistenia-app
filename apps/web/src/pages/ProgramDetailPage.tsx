@@ -18,6 +18,7 @@ import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import ProgramProgressBar from '../components/programs/ProgramProgressBar'
+import { ProgramCover } from '../components/programs/ProgramCover'
 import AutoProgressToggle from '../components/programs/AutoProgressToggle'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
@@ -232,6 +233,10 @@ export default function ProgramDetailPage({
         // porque el campo es un `json` `{ es, en }` y pintarlo tal cual daría
         // «[object Object]».
         instructions: localize(progRecord.instructions, locale),
+        // Solo el nombre del fichero: la URL la monta `ProgramCover` con el
+        // tamaño que necesita cada sitio (banner o visor).
+        cover_image: progRecord.cover_image || undefined,
+        cover_focus: progRecord.cover_focus || undefined,
       }
       setProgram(meta)
 
@@ -540,6 +545,8 @@ export default function ProgramDetailPage({
         <span className="font-mono text-[11px] tracking-widest uppercase">{t('programDetail.backToPrograms')}</span>
       </button>
 
+      <ProgramCover program={program} />
+
       {/* Hero section */}
       <div className="mb-10">
         <div className="text-[11px] text-muted-foreground tracking-[0.3em] mb-2 uppercase font-mono motion-safe:animate-fade-in">
@@ -558,7 +565,8 @@ export default function ProgramDetailPage({
         {/* Crédito del remix y prueba social (#620). Las dos piezas se callan
             solas cuando no hay dato, así que el bloque desaparece entero en un
             programa original que nadie sigue todavía. */}
-        {(program.forked_from_name || followersCount) && (
+        {/* `!!`: con 0 seguidores `a || 0` vale 0 y React pinta un «0» suelto. */}
+        {(!!program.forked_from_name || !!followersCount) && (
           <div
             className="flex flex-wrap items-center gap-x-4 gap-y-1.5 max-w-2xl mb-6 motion-safe:animate-fade-in"
             style={{ animationDelay: '110ms', animationFillMode: 'both' }}
