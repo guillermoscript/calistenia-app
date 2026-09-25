@@ -28,7 +28,7 @@
  * en el `create` (ver el mismo trade-off documentado en reminder-dispatcher).
  */
 import { getAdminPB } from "./admin-pb.js";
-import { sendPushToUser } from "./push-sender.js";
+import { sendPushToUser, normalizePushLanguage, type LocalizedText, type PushLanguage } from "./push-sender.js";
 import { localParts, safeTimeZone, pushAllowed } from "./reminder-dispatcher.js";
 import { resolveActiveProgramProgress } from "./program-progress-server.js";
 
@@ -85,24 +85,43 @@ export function evaluateInactivity(input: {
   return kind;
 }
 
-/** Copy del push (Spanish, como el resto de pushes del backend). */
+/**
+ * Copy del push, bilingüe (#804). `dayLabel` sale de `resolveDayLabel` ya en
+ * el idioma del usuario, así que solo la variante que se envía lo lleva bien
+ * localizado: la otra nunca sale.
+ */
 export function buildInactivityCopy(
   kind: InactivityKind,
   dayLabel: string | null,
-): { title: string; body: string } {
+): { title: LocalizedText; body: LocalizedText } {
   if (kind === "inactivity_24h") {
     return {
-      title: "Tu primer entreno te espera 💪",
+      title: { es: "Tu primer entreno te espera 💪", en: "Your first workout is waiting 💪" },
       body: dayLabel
-        ? `Hoy toca ${dayLabel}. Son unos minutos, empieza ahora.`
-        : "Tienes una sesión corta lista. Son unos minutos, empieza ahora.",
+        ? {
+            es: `Hoy toca ${dayLabel}. Son unos minutos, empieza ahora.`,
+            en: `Today's session: ${dayLabel}. It only takes a few minutes — start now.`,
+          }
+        : {
+            es: "Tienes una sesión corta lista. Son unos minutos, empieza ahora.",
+            en: "You have a short session ready. It only takes a few minutes — start now.",
+          },
     };
   }
   return {
-    title: "¿Retomamos? Tu sesión de hoy está lista",
+    title: {
+      es: "¿Retomamos? Tu sesión de hoy está lista",
+      en: "Ready to get back to it? Today's session is ready",
+    },
     body: dayLabel
-      ? `${dayLabel}. Diez minutos bastan para volver a la rutina.`
-      : "Diez minutos bastan para volver a la rutina. Tu programa te espera.",
+      ? {
+          es: `${dayLabel}. Diez minutos bastan para volver a la rutina.`,
+          en: `${dayLabel}. Ten minutes is enough to get back on track.`,
+        }
+      : {
+          es: "Diez minutos bastan para volver a la rutina. Tu programa te espera.",
+          en: "Ten minutes is enough to get back on track. Your program is waiting.",
+        },
   };
 }
 
@@ -117,15 +136,24 @@ interface InactivityCandidate {
   id: string;
   timezone?: string;
   created: string;
+  /** Crudo de `users.language` — normalizar con `normalizePushLanguage` al usarlo. */
+  language?: string;
 }
 
-/** Candidatos: cuentas creadas entre hace 7 días y hace 24h (ventana de vida útil de la campaña). */
+/**
+ * Candidatos: cuentas creadas entre hace 7 días y hace 24h (ventana de vida útil
+ * de la campaña). Se pide `language` en el mismo `fields` que `timezone` (#804):
+ * ya es una sola consulta para todos los candidatos, así que añadir la columna
+ * sale gratis — no hace falta un `loadLanguages` aparte como en
+ * reminder-dispatcher.ts (ahí SÍ hacía falta: los recordatorios no cargan a los
+ * usuarios de una sola vez).
+ */
 async function loadCandidates(pb: any, now: Date): Promise<InactivityCandidate[]> {
   const from = pbDateTime(new Date(now.getTime() - INACTIVITY_MAX_AGE_MS));
   const to = pbDateTime(new Date(now.getTime() - DAY24_MS));
   return pb.collection("users").getFullList({
     filter: pb.filter("created >= {:from} && created <= {:to}", { from, to }),
-    fields: "id,timezone,created",
+    fields: "id,timezone,created,language",
   });
 }
 
@@ -176,9 +204,10 @@ async function resolveDayLabel(
   userId: string,
   tz: string,
   todayLocalDateStr: string,
+  language: PushLanguage,
 ): Promise<string | null> {
   try {
-    const active = await resolveActiveProgramProgress(pb, userId, tz, todayLocalDateStr);
+    const active = await resolveActiveProgramProgress(pb, userId, tz, todayLocalDateStr, { locale: language });
     if (!active || !active.progress.nextDay) return null;
     const wd = active.weekDays.find((w) => w.id === active.progress.nextDay);
     if (!wd) return null;
@@ -241,7 +270,8 @@ export async function dispatchInactivityPushes(
       }
 
       const todayLocalDateStr = localParts(now, tz).dateKey;
-      const dayLabel = await resolveDayLabel(pb, user.id, tz, todayLocalDateStr);
+      const language = normalizePushLanguage(user.language);
+      const dayLabel = await resolveDayLabel(pb, user.id, tz, todayLocalDateStr, language);
       const { title, body } = buildInactivityCopy(kind, dayLabel);
 
       // Marca de dedupe ANTES de enviar: si el `create` falla, no se envía —
@@ -262,7 +292,7 @@ export async function dispatchInactivityPushes(
         continue;
       }
 
-      await sendPushToUser(user.id, { title, body, url: "/workout", campaign: kind });
+      await sendPushToUser(user.id, { title, body, url: "/workout", campaign: kind, language });
       result.sent++;
     } catch (err) {
       console.error(`[inactivity] error procesando usuario ${user.id}:`, err);

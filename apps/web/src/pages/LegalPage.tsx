@@ -50,8 +50,8 @@ const UPDATED = '12 de agosto de 2026'
  *   e identify con email en
  *   `packages/core/hooks/useAuth.ts:70,119`, push en `push-sender.ts:100-174`,
  *   mapas CARTO en `apps/web/src/components/cardio/RouteMap.tsx:21-22`.
- * - Cron semanal de resúmenes: `pb_hooks/weekly_insights.pb.js:13,22-35`
- *   (enumera usuarios con token push, no todos).
+ * - Cron semanal de resúmenes: `mcp-server/src/api/weekly-insight-dispatcher.ts`
+ *   (enumera usuarios con token push, no todos; lunes 08:00 hora local, #804).
  * - Exportación: `apps/web/src/components/progress/ExportData.tsx:55-65`.
  * - Condiciones médicas y lesiones NO salen a la IA: solo se usan en cliente
  *   (`packages/core/lib/matchPrograms.ts:78-79`, `lib/injuryMatch.ts`).

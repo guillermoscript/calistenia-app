@@ -95,7 +95,7 @@ test("arranque sin bloqueo: el push SÍ sale (si no, el test de arriba no probar
 
   await waitFor(async () => {
     const sent = await pushesFor(friend.id)
-    return sent.some((p) => /empieza/i.test(p.body?.title || ""))
+    return sent.some((p) => /empieza/i.test(p.body?.title?.es || ""))
   }, "el participante no bloqueado sí recibe el push de arranque")
 })
 

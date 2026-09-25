@@ -35,6 +35,7 @@ import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { applyThemeMode, getThemeMode } from '@/lib/theme-mode'
 import { initI18n } from '@/lib/i18n'
+import { startLanguageSync } from '@calistenia/core/lib/language-sync'
 import { verifyStylesRegistered } from '@/lib/style-selfcheck'
 import { NAV_THEME } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -251,6 +252,9 @@ function RootLayout() {
       // Storage ya hidratado → aplica la preferencia de tema guardada (claro/oscuro/sistema).
       applyThemeMode(getThemeMode())
       initI18n()
+      // Idioma en `users.language` para que los push lleguen en el idioma de
+      // la app (#804). Después de initI18n: necesita `i18n.language`.
+      startLanguageSync()
       // El CSS de NativeWind se inyecta al importar '../global.css' (arriba del
       // todo). Si no llegó al registro, la app sale sin un solo estilo y sin
       // lanzar nada: esto lo convierte en un evento de Sentry (ver #1.7.0).

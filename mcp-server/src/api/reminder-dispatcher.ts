@@ -20,7 +20,7 @@
  * duplicados.
  */
 import { getAdminPB } from "./admin-pb.js";
-import { sendPushToUser } from "./push-sender.js";
+import { sendPushToUser, normalizePushLanguage, type LocalizedText, type PushLanguage } from "./push-sender.js";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -153,13 +153,40 @@ export function parseDaysOfWeek(raw: unknown): number[] {
 /**
  * Cuerpo del push de comida: si hay objetivo diario de calorías se muestra el
  * progreso del día; si no, un recordatorio genérico. Réplica exacta del texto
- * del cron anterior (lo fija `tests/pb_hooks/crons.test.mjs`).
+ * del cron anterior (lo fija `tests/pb_hooks/crons.test.mjs`) — el texto ES no
+ * se toca (#804 solo añade el EN al lado, en `contentFor`).
  */
 export function mealBody(label: string, todayCalories: number, dailyGoal: number): string {
   if (dailyGoal > 0) {
     return `Llevas ${Math.round(todayCalories)}/${Math.round(dailyGoal)} kcal hoy`;
   }
   return `No olvides registrar tu ${label}`;
+}
+
+/** Igual que `mealBody` pero en inglés, para el lado `en` del push (#804). */
+export function mealBodyEn(label: string, todayCalories: number, dailyGoal: number): string {
+  if (dailyGoal > 0) {
+    return `You're at ${Math.round(todayCalories)}/${Math.round(dailyGoal)} kcal today`;
+  }
+  return `Don't forget to log your ${label}`;
+}
+
+/**
+ * `meal_type` es un enum FIJO en español (desayuno/almuerzo/cena/snack, ver
+ * `meal-plan-generator.ts`) — es un dato, no algo que traducir. Esto es solo
+ * la etiqueta que usa el copy `en` del push; cualquier valor fuera del enum
+ * (o el "comida" genérico) se deja tal cual.
+ */
+const MEAL_LABEL_EN: Record<string, string> = {
+  desayuno: "breakfast",
+  almuerzo: "lunch",
+  cena: "dinner",
+  snack: "snack",
+  comida: "meal",
+};
+
+function mealLabelEn(label: string): string {
+  return MEAL_LABEL_EN[label] ?? label;
 }
 
 /** Contexto nutricional del día para construir el push de comida. */
@@ -173,31 +200,45 @@ export interface MealContext {
 /** Campaña del push — la usa el cliente (analítica) y el service worker (data). */
 export type ReminderCampaign = "workout_reminder" | "pause_reminder" | "meal_reminder";
 
-/** Contenido del push por tipo de recordatorio. */
+/** Contenido del push por tipo de recordatorio (#804: título/cuerpo bilingües). */
 export function contentFor(
   reminder: Pick<ReminderRow, "kind" | "mealType">,
   mealCtx?: Pick<MealContext, "todayCalories" | "dailyGoal">,
-): { title: string; body: string; url: string; campaign: ReminderCampaign } {
+): { title: LocalizedText; body: LocalizedText; url: string; campaign: ReminderCampaign } {
   if (reminder.kind === "meal") {
     const label = reminder.mealType || "comida";
+    const todayCalories = mealCtx?.todayCalories ?? 0;
+    const dailyGoal = mealCtx?.dailyGoal ?? 0;
     return {
-      title: `Hora de registrar tu ${label}`,
-      body: mealBody(label, mealCtx?.todayCalories ?? 0, mealCtx?.dailyGoal ?? 0),
+      title: {
+        es: `Hora de registrar tu ${label}`,
+        en: `Time to log your ${mealLabelEn(label)}`,
+      },
+      body: {
+        es: mealBody(label, todayCalories, dailyGoal),
+        en: mealBodyEn(mealLabelEn(label), todayCalories, dailyGoal),
+      },
       url: "/nutrition",
       campaign: "meal_reminder",
     };
   }
   if (reminder.kind === "pause") {
     return {
-      title: "Pausa activa",
-      body: "Levántate, estira y muévete — tu cuerpo lo agradece",
+      title: { es: "Pausa activa", en: "Active break" },
+      body: {
+        es: "Levántate, estira y muévete — tu cuerpo lo agradece",
+        en: "Get up, stretch, and move — your body will thank you",
+      },
       url: "/workout",
       campaign: "pause_reminder",
     };
   }
   return {
-    title: "¡Hora de entrenar!",
-    body: "Tu entrenamiento te espera. ¡No pierdas la racha!",
+    title: { es: "¡Hora de entrenar!", en: "Time to train!" },
+    body: {
+      es: "Tu entrenamiento te espera. ¡No pierdas la racha!",
+      en: "Your workout is waiting. Don't break your streak!",
+    },
     url: "/workout",
     campaign: "workout_reminder",
   };
@@ -247,8 +288,12 @@ async function loadEnabledReminders(pb: any): Promise<ReminderRow[]> {
   return rows;
 }
 
-/** Zona horaria por usuario (una sola consulta para todos los implicados). */
-async function loadTimezones(pb: any, userIds: string[]): Promise<Map<string, string>> {
+/**
+ * Zona horaria por usuario (una sola consulta para todos los implicados).
+ * Exportada: `weekly-insight-dispatcher.ts` la reutiliza (#804) — mismo troceo
+ * de 40, no tiene sentido duplicarlo.
+ */
+export async function loadTimezones(pb: any, userIds: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   if (userIds.length === 0) return map;
 
@@ -265,6 +310,32 @@ async function loadTimezones(pb: any, userIds: string[]): Promise<Map<string, st
       for (const u of users) map.set(u.id, safeTimeZone(u.timezone));
     } catch (err) {
       console.error("[reminders] error cargando timezones:", err);
+    }
+  }
+  return map;
+}
+
+/**
+ * Idioma de push por usuario (#804) — mismo patrón que `loadTimezones`: una
+ * sola consulta troceada de 40 en 40 en vez de una lectura por push. Exportada:
+ * `inactivity-dispatcher.ts` la reutiliza (mismo motivo que `pushAllowed`).
+ */
+export async function loadLanguages(pb: any, userIds: string[]): Promise<Map<string, PushLanguage>> {
+  const map = new Map<string, PushLanguage>();
+  if (userIds.length === 0) return map;
+
+  const CHUNK = 40;
+  for (let i = 0; i < userIds.length; i += CHUNK) {
+    const chunk = userIds.slice(i, i + CHUNK);
+    const filter = pb.filter(
+      chunk.map((_, n) => `id = {:id${n}}`).join(" || "),
+      Object.fromEntries(chunk.map((id, n) => [`id${n}`, id])),
+    );
+    try {
+      const users = await pb.collection("users").getFullList({ filter, fields: "id,language" });
+      for (const u of users) map.set(u.id, normalizePushLanguage((u as any).language));
+    } catch (err) {
+      console.error("[reminders] error cargando idiomas:", err);
     }
   }
   return map;
@@ -373,7 +444,11 @@ export async function dispatchDueReminders(
   result.considered = reminders.length;
   if (reminders.length === 0) return result;
 
-  const timezones = await loadTimezones(pb, [...new Set(reminders.map((r) => r.user))]);
+  const userIds = [...new Set(reminders.map((r) => r.user))];
+  const timezones = await loadTimezones(pb, userIds);
+  // Cargado en el mismo tick que timezones (#804): evita una lectura de idioma
+  // POR PUSH — sendPushToUser solo la haría si no le pasamos `language`.
+  const languages = await loadLanguages(pb, userIds);
 
   // Cache de la hora local por zona — muchos usuarios comparten zona.
   const partsByTz = new Map<string, LocalParts>();
@@ -419,8 +494,9 @@ export async function dispatchDueReminders(
     }
 
     const { title, body, url, campaign } = contentFor(reminder, mealCtx);
+    const language = languages.get(reminder.user) ?? "es";
     try {
-      await sendPushToUser(reminder.user, { title, body, url, campaign });
+      await sendPushToUser(reminder.user, { title, body, url, campaign, language });
       // Marcar ANTES de contar como enviado: si el update falla, el próximo
       // tick lo reintentaría, así que lo registramos como error explícito.
       await pb.collection(reminder.collection).update(reminder.id, {

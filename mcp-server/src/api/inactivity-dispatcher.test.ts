@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { evaluateInactivity, buildInactivityCopy, type InactivityKind } from "./inactivity-dispatcher.js";
+import { pickLocalized } from "./push-sender.js";
 
 const NONE = new Set<InactivityKind>();
 
@@ -74,25 +75,40 @@ describe("evaluateInactivity", () => {
 });
 
 describe("buildInactivityCopy", () => {
-  it("inactivity_24h con día resuelto usa el copy con foco", () => {
+  it("inactivity_24h con día resuelto usa el copy con foco, en ambos idiomas", () => {
     const c = buildInactivityCopy("inactivity_24h", "Lunes: Empuje");
-    expect(c.title).toContain("primer entreno");
-    expect(c.body).toBe("Hoy toca Lunes: Empuje. Son unos minutos, empieza ahora.");
+    expect(pickLocalized(c.title, "es")).toContain("primer entreno");
+    expect(pickLocalized(c.title, "en")).toContain("first workout");
+    expect(pickLocalized(c.body, "es")).toBe("Hoy toca Lunes: Empuje. Son unos minutos, empieza ahora.");
+    expect(pickLocalized(c.body, "en")).toBe(
+      "Today's session: Lunes: Empuje. It only takes a few minutes — start now.",
+    );
   });
 
-  it("inactivity_24h sin día resuelto cae al copy genérico", () => {
+  it("inactivity_24h sin día resuelto cae al copy genérico, en ambos idiomas", () => {
     const c = buildInactivityCopy("inactivity_24h", null);
-    expect(c.body).toBe("Tienes una sesión corta lista. Son unos minutos, empieza ahora.");
+    expect(pickLocalized(c.body, "es")).toBe("Tienes una sesión corta lista. Son unos minutos, empieza ahora.");
+    expect(pickLocalized(c.body, "en")).toBe(
+      "You have a short session ready. It only takes a few minutes — start now.",
+    );
   });
 
-  it("inactivity_72h con día resuelto usa el copy con foco", () => {
+  it("inactivity_72h con día resuelto usa el copy con foco, en ambos idiomas", () => {
     const c = buildInactivityCopy("inactivity_72h", "Martes: Tirón");
-    expect(c.title).toContain("Retomamos");
-    expect(c.body).toBe("Martes: Tirón. Diez minutos bastan para volver a la rutina.");
+    expect(pickLocalized(c.title, "es")).toContain("Retomamos");
+    expect(pickLocalized(c.title, "en")).toContain("get back to it");
+    expect(pickLocalized(c.body, "es")).toBe("Martes: Tirón. Diez minutos bastan para volver a la rutina.");
+    expect(pickLocalized(c.body, "en")).toBe("Martes: Tirón. Ten minutes is enough to get back on track.");
   });
 
-  it("inactivity_72h sin día resuelto cae al copy genérico", () => {
+  it("inactivity_72h sin día resuelto cae al copy genérico, en ambos idiomas", () => {
     const c = buildInactivityCopy("inactivity_72h", null);
-    expect(c.body).toBe("Diez minutos bastan para volver a la rutina. Tu programa te espera.");
+    expect(pickLocalized(c.body, "es")).toBe("Diez minutos bastan para volver a la rutina. Tu programa te espera.");
+    expect(pickLocalized(c.body, "en")).toBe("Ten minutes is enough to get back on track. Your program is waiting.");
+  });
+
+  it("un idioma sin reconocer cae a es (pickLocalized), como haría normalizePushLanguage", () => {
+    const c = buildInactivityCopy("inactivity_24h", null);
+    expect(pickLocalized(c.title, "es")).toBe("Tu primer entreno te espera 💪");
   });
 });

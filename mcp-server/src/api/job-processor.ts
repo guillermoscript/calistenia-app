@@ -9,7 +9,7 @@ import { analyzeMealImage } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan, generateWeeklyMealPlan } from "./meal-plan-generator.js";
 import { generatePantryPlan } from "./pantry-plan-generator.js";
-import { sendPushToUser } from "./push-sender.js";
+import { sendPushToUser, type LocalizedText } from "./push-sender.js";
 import { getAdminPB } from "./admin-pb.js";
 import { resolveTier, type Tier } from "./model-resolver.js";
 
@@ -55,8 +55,8 @@ export async function processJob(jobId: string): Promise<void> {
   const tier: Tier = resolveTier(input);
 
   let result: any;
-  let notifTitle: string;
-  let notifBody: string;
+  let notifTitle: LocalizedText;
+  let notifBody: LocalizedText;
 
   try {
     switch (job.type) {
@@ -87,8 +87,11 @@ export async function processJob(jobId: string): Promise<void> {
           tier,
           userContext,
         });
-        notifTitle = "Comida analizada";
-        notifBody = "Toca para revisar los alimentos detectados.";
+        notifTitle = { es: "Comida analizada", en: "Meal analyzed" };
+        notifBody = {
+          es: "Toca para revisar los alimentos detectados.",
+          en: "Tap to review the detected foods.",
+        };
         break;
       }
 
@@ -97,8 +100,11 @@ export async function processJob(jobId: string): Promise<void> {
           foodName: input.food_name,
           tier,
         });
-        notifTitle = "Alimento encontrado";
-        notifBody = `Datos nutricionales de "${input.food_name}" listos.`;
+        notifTitle = { es: "Alimento encontrado", en: "Food found" };
+        notifBody = {
+          es: `Datos nutricionales de "${input.food_name}" listos.`,
+          en: `Nutrition info for "${input.food_name}" is ready.`,
+        };
         break;
       }
 
@@ -114,8 +120,8 @@ export async function processJob(jobId: string): Promise<void> {
           pantryItems: Array.isArray(input.pantry_items) ? input.pantry_items : [],
           tier,
         });
-        notifTitle = "Plan listo";
-        notifBody = "Toca para ver las comidas sugeridas.";
+        notifTitle = { es: "Plan listo", en: "Plan ready" };
+        notifBody = { es: "Toca para ver las comidas sugeridas.", en: "Tap to see the suggested meals." };
         break;
       }
 
@@ -179,8 +185,11 @@ export async function processJob(jobId: string): Promise<void> {
         }
 
         result = { plan_id: planRecord.id, ...weeklyResult };
-        notifTitle = "Plan semanal listo";
-        notifBody = "Toca para ver tu plan de comidas de la semana.";
+        notifTitle = { es: "Plan semanal listo", en: "Weekly plan ready" };
+        notifBody = {
+          es: "Toca para ver tu plan de comidas de la semana.",
+          en: "Tap to see your meal plan for the week.",
+        };
         break;
       }
 
@@ -236,8 +245,11 @@ export async function processJob(jobId: string): Promise<void> {
         }
 
         result = { plan_id: planRecord.id, ...(weekResult as Record<string, unknown>) };
-        notifTitle = "Plan desde tu despensa listo";
-        notifBody = "Toca para ver tu plan de comidas de la semana.";
+        notifTitle = { es: "Plan desde tu despensa listo", en: "Plan from your pantry ready" };
+        notifBody = {
+          es: "Toca para ver tu plan de comidas de la semana.",
+          en: "Tap to see your meal plan for the week.",
+        };
         break;
       }
 
@@ -268,8 +280,8 @@ export async function processJob(jobId: string): Promise<void> {
       .catch((e) => console.error("[job-update-error]", e));
 
     await sendPushToUser(job.user, {
-      title: "No se pudo completar el analisis",
-      body: "Abre la app para intentar de nuevo.",
+      title: { es: "No se pudo completar el analisis", en: "We couldn't complete the analysis" },
+      body: { es: "Abre la app para intentar de nuevo.", en: "Open the app to try again." },
       url: "/nutrition",
     }).catch((e) => console.error("[push-error]", e));
   }

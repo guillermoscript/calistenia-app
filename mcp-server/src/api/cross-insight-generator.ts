@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Tier } from "./model-resolver.js";
 import { runStructuredGeneration } from "./structured-generation.js";
+import type { PushLanguage } from "./push-sender.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -60,6 +61,16 @@ export type { InsightContext };
 interface CrossInsightInput {
   context: InsightContext;
   tier: Tier;
+  /**
+   * Idioma del texto libre de salida (headline, observaciones, wins,
+   * watchouts, sugerencia) — #804: el push semanal usa `result.headline` tal
+   * cual (es un string plano, no {es,en}), así que sin esto siempre salía en
+   * español aunque el push de alrededor sí estuviera en el idioma del usuario.
+   * Cambio barato: una línea añadida al turno de usuario, NO al prompt de
+   * sistema (gestionado en Langfuse, fuera de este repo). Por defecto "es",
+   * que es el comportamiento de siempre.
+   */
+  language?: PushLanguage;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -160,8 +171,16 @@ function buildUserText(ctx: InsightContext): string {
 
 // ── Generator ────────────────────────────────────────────────────────────────
 
-export async function generateCrossInsight({ context, tier }: CrossInsightInput) {
-  const userText = buildUserText(context);
+export async function generateCrossInsight({ context, tier, language }: CrossInsightInput) {
+  // El contexto (etiquetas, fechas) va siempre en español — es el idioma de
+  // salida el que cambia, así que basta con pedirlo antes del resto del turno.
+  const languageNote =
+    language === "en"
+      ? "INSTRUCCIÓN DE IDIOMA: escribe TODO el texto libre de tu respuesta (headline, " +
+        "observation de cada correlación, wins, watchouts, suggestion.label) en INGLÉS. " +
+        "Los datos de este contexto están en español; ignóralo para decidir el idioma de salida.\n\n"
+      : "";
+  const userText = languageNote + buildUserText(context);
 
   const { object, modelName } = await runStructuredGeneration({
     promptName: "cross-metric-insight",

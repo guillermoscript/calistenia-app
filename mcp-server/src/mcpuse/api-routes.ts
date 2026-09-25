@@ -13,12 +13,12 @@ import { getAvailableProviders, resolveTier } from "../api/model-resolver.js";
 import { analyzeMealImage, scoreMealQuality, type UserContext } from "../api/meal-analyzer.js";
 import { lookupFoodByName } from "../api/food-lookup.js";
 import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
-import { sendPushToUser } from "../api/push-sender.js";
+import { sendPushToUser, isValidPushText } from "../api/push-sender.js";
 import { processJob, getAdminPB } from "../api/job-processor.js";
 import { runFreeSession } from "../api/free-session-generator.js";
 import { parsePantryText, matchConsumption, parseReceipt } from "../api/pantry-parser.js";
 import { generatePantryPlan } from "../api/pantry-plan-generator.js";
-import { buildInsightContextServer } from "../api/insight-context-server.js";
+import { generateWeeklyCrossInsightForUser } from "../api/weekly-insight-dispatcher.js";
 import type { Tier } from "../api/model-resolver.js";
 
 // ── In-memory rate limiter (port of Express version) ─────────────────────────
@@ -242,13 +242,23 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
       // destinatarios en UNA llamada en vez de un POST por seguidor dentro del hook
       // de escritura. Solo con la clave interna — un usuario nunca puede pushear a
       // terceros — y con despacho en segundo plano: el hook no debe esperar N envíos.
+      // title/body: string plano O {es,en} (#804) — nunca llega tal cual a un
+      // canal de push, sendPushToUser lo resuelve al idioma del destinatario.
+      if (!isValidPushText(title)) {
+        return c.json({ error: "Se requiere title (string u objeto {es,en} con al menos uno no vacío)" }, 400);
+      }
+      if (notifBody !== undefined && !isValidPushText(notifBody)) {
+        return c.json({ error: "body debe ser string u objeto {es,en} con valores string" }, 400);
+      }
+
       if (Array.isArray(user_ids)) {
         if (!isInternal) {
           return c.json({ error: "Solo llamadas internas pueden enviar en lote" }, 403);
         }
-        if (!title) return c.json({ error: "Se requiere title" }, 400);
         const ids = [...new Set(user_ids.filter((id): id is string => typeof id === "string" && id.length > 0))].slice(0, 500);
         if (ids.length === 0) return c.json({ error: "Se requiere al menos un user_id" }, 400);
+        // Cada llamada resuelve el idioma DE ESE destinatario — un mismo lote
+        // llega a cada usuario en el suyo, no en el del primero.
         void Promise.allSettled(ids.map((id) => sendPushToUser(id, { title, body: notifBody, url, campaign })))
           .then((results) => {
             const failed = results.filter((r) => r.status === "rejected").length;
@@ -257,7 +267,7 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
         return c.json({ queued: ids.length }, 202);
       }
 
-      if (!user_id || !title) return c.json({ error: "Se requiere user_id y title" }, 400);
+      if (!user_id) return c.json({ error: "Se requiere user_id" }, 400);
       // Non-internal callers may only push to their own account (prevent IDOR).
       if (!isInternal && user_id !== authUser!.id) {
         return c.json({ error: "Solo puedes enviar notificaciones a tu propia cuenta" }, 403);
@@ -525,11 +535,14 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
-  // ── 13c. POST /api/cron/generate-cross-insight (weekly cron, internal-key only) ─
-  // Server-side counterpart of /api/generate-cross-insight (#127): the
-  // pb_hooks/weekly_insights.pb.js cron calls this once per active user
-  // instead of relying on the client to build the context + call the AI +
-  // persist. Internal-key auth only — never user-facing.
+  // ── 13c. POST /api/cron/generate-cross-insight (weekly, internal-key only) ─
+  // Server-side counterpart of /api/generate-cross-insight (#127). Antes lo
+  // llamaba el cron `pb_hooks/weekly_insights.pb.js` una vez por usuario
+  // activo a las 08:00 hora del SERVIDOR; #804 lo sustituyó por el scheduler
+  // de `weekly-insight-dispatcher.ts` (hora LOCAL de cada usuario, porque goja
+  // no tiene `Intl`), que llama a esta misma función directamente sin pasar
+  // por HTTP. Esta ruta se conserva por si algún otro caller interno la usa,
+  // pero ya no es la única vía. Internal-key auth only — never user-facing.
   app.post("/api/cron/generate-cross-insight", async (c) => {
     const internalKey = process.env.INTERNAL_API_KEY;
     const providedKey = c.req.header("x-internal-key");
@@ -542,70 +555,9 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
       if (!user_id) return c.json({ error: "Se requiere user_id" }, 400);
 
       const pb = await getAdminPB();
-      let user: any;
-      try {
-        user = await pb.collection("users").getOne(user_id);
-      } catch (err: any) {
-        if (err?.status === 404) return c.json({ error: "Usuario no encontrado" }, 404);
-        throw err;
-      }
-      const tz = user.timezone || "UTC";
-      const tier = getTier(user);
-      const days = period_type === "monthly" ? 30 : 7;
-
-      const context = await buildInsightContextServer(pb, user_id, tz, days, true);
-
-      // Cost gate: MIN_INSIGHT_DAYS, mirrors packages/core/hooks/useCrossInsights.ts
-      // (client-side generation gate) — not worth an AI call on near-empty windows.
-      const MIN_INSIGHT_DAYS = 3;
-      if (context.summary.daysWithAnyData < MIN_INSIGHT_DAYS) {
-        return c.json({ generated: false, reason: "insufficient_data" });
-      }
-
-      // Dedup: skip if an insight for this exact period already exists — the
-      // weekly cron shouldn't regenerate (and re-spend AI budget on) the same week.
-      const periodStart = `${context.period.start} 00:00:00.000Z`;
-      try {
-        await pb.collection("user_insights").getFirstListItem(
-          pb.filter("user = {:u} && period_type = {:pt} && period_start = {:ps}", {
-            u: user_id,
-            pt: period_type,
-            ps: periodStart,
-          }),
-          { $autoCancel: false },
-        );
-        return c.json({ generated: false, reason: "already_exists" });
-      } catch (err: any) {
-        if (err?.status !== 404) throw err;
-        // 404 = not found = proceed to generate.
-      }
-
-      const { generateCrossInsight } = await import("../api/cross-insight-generator.js");
-      const result = await generateCrossInsight({ context, tier });
-
-      try {
-        await pb.collection("user_insights").create({
-          user: user_id,
-          period_type,
-          period_start: periodStart,
-          payload: result,
-        });
-      } catch (err: any) {
-        console.error("[cron-cross-insight] persist error:", err?.message ?? err);
-        return c.json({ generated: false, reason: "persist_failed", error: err?.message ?? String(err) });
-      }
-
-      try {
-        await sendPushToUser(user_id, {
-          title: "Tu resumen semanal está listo",
-          body: result.headline,
-          url: "/",
-        });
-      } catch (err) {
-        console.error("[cron-cross-insight] push error:", err);
-      }
-
-      return c.json({ generated: true, headline: result.headline });
+      const result = await generateWeeklyCrossInsightForUser(pb, user_id, period_type);
+      if (result.reason === "user_not_found") return c.json({ error: "Usuario no encontrado" }, 404);
+      return c.json(result);
     } catch (err) { return apiError(c, err); }
   });
 

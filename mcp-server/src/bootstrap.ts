@@ -8,7 +8,10 @@
  *     REQUIERE una sola instancia del API — varias réplicas duplicarían envíos.
  *   - Push de inactividad 24h/72h (#695): mismo motivo, mismo requisito de
  *     instancia única.
- *   - Graceful shutdown: stop both schedulers and flush OTel traces.
+ *   - Resumen semanal cruzado (#127/#804): sustituye al cron de
+ *     `pb_hooks/weekly_insights.pb.js` — mismo motivo (hora LOCAL del
+ *     usuario, goja sin `Intl`), mismo requisito de instancia única.
+ *   - Graceful shutdown: stop all schedulers and flush OTel traces.
  *
  * Imported for its side effects from server.ts. Guarded with a global flag
  * because `mcp-use dev` can re-evaluate the entry module on reload and we
@@ -17,6 +20,7 @@
 import { shutdownTracing } from "./instrumentation.js";
 import { startReminderScheduler, stopReminderScheduler } from "./api/reminder-dispatcher.js";
 import { startInactivityScheduler, stopInactivityScheduler } from "./api/inactivity-dispatcher.js";
+import { startWeeklyInsightScheduler, stopWeeklyInsightScheduler } from "./api/weekly-insight-dispatcher.js";
 
 const FLAG = "__calistenia_bootstrapped__" as const;
 const g = globalThis as typeof globalThis & { [FLAG]?: boolean };
@@ -39,10 +43,15 @@ if (!g[FLAG] && isServingProcess) {
     startInactivityScheduler();
   }
 
+  if (process.env.WEEKLY_INSIGHT_PUSH !== "off") {
+    startWeeklyInsightScheduler();
+  }
+
   const shutdown = async (signal: string) => {
     console.error(`\n[Shutdown] ${signal} — flushing traces…`);
     stopReminderScheduler();
     stopInactivityScheduler();
+    stopWeeklyInsightScheduler();
     await shutdownTracing();
     process.exit(0);
   };

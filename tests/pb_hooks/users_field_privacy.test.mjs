@@ -34,7 +34,7 @@ const PRIVATE_FIELDS = [
   // Plan de entrenamiento.
   "pace", "intensity", "focus_areas", "training_days",
   // Metadatos de cuenta y preferencias.
-  "timezone", "tier", "role", "default_currency", "currency_rates", "shopping_cadence_days",
+  "timezone", "language", "tier", "role", "default_currency", "currency_rates", "shopping_cadence_days",
   // Código de referido: hoy se podía recolectar fila a fila.
   "referral_code",
   // Espejo servidor del bloqueo. Ya era `hidden` en el esquema; va aquí para que

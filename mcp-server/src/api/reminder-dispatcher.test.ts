@@ -6,7 +6,9 @@ import {
   parseDaysOfWeek,
   contentFor,
   mealBody,
+  mealBodyEn,
 } from "./reminder-dispatcher.js";
+import { pickLocalized } from "./push-sender.js";
 
 // Instante de referencia: 2026-08-08T22:30:00Z (sábado por la noche en UTC).
 const UTC_SAT_2230 = new Date("2026-08-08T22:30:00Z");
@@ -142,18 +144,29 @@ describe("parseDaysOfWeek", () => {
 });
 
 describe("contentFor", () => {
-  it("usa el tipo de comida en el copy", () => {
+  it("usa el tipo de comida en el copy, en ambos idiomas", () => {
     const c = contentFor({ kind: "meal", mealType: "desayuno" });
-    expect(c.title).toContain("desayuno");
+    expect(pickLocalized(c.title, "es")).toContain("desayuno");
+    expect(pickLocalized(c.title, "en")).toContain("breakfast");
     expect(c.url).toBe("/nutrition");
     expect(c.campaign).toBe("meal_reminder");
   });
 
-  it("distingue pausa activa de entrenamiento", () => {
-    expect(contentFor({ kind: "pause" }).title).toBe("Pausa activa");
+  it("distingue pausa activa de entrenamiento, en ambos idiomas", () => {
+    expect(pickLocalized(contentFor({ kind: "pause" }).title, "es")).toBe("Pausa activa");
+    expect(pickLocalized(contentFor({ kind: "pause" }).title, "en")).toBe("Active break");
     expect(contentFor({ kind: "pause" }).campaign).toBe("pause_reminder");
-    expect(contentFor({ kind: "workout" }).title).toContain("entrenar");
+    expect(pickLocalized(contentFor({ kind: "workout" }).title, "es")).toContain("entrenar");
+    expect(pickLocalized(contentFor({ kind: "workout" }).title, "en")).toContain("train");
     expect(contentFor({ kind: "workout" }).campaign).toBe("workout_reminder");
+  });
+
+  it("un idioma desconocido (vacío/undefined) cae a es, igual que normalizePushLanguage", () => {
+    // pickLocalized no normaliza — lo hace el llamante — pero "es" es el
+    // idioma que le pasan los dispatchers cuando normalizePushLanguage no
+    // reconoce el valor guardado en users.language.
+    const c = contentFor({ kind: "workout" });
+    expect(pickLocalized(c.title, "es")).toBe("¡Hora de entrenar!");
   });
 });
 
@@ -171,13 +184,22 @@ describe("mealBody — progreso de calorías (paridad con el cron anterior)", ()
     expect(mealBody("desayuno", 300, 0)).toBe("No olvides registrar tu desayuno");
   });
 
-  it("contentFor usa el progreso cuando se le pasa contexto", () => {
-    const c = contentFor({ kind: "meal", mealType: "cena" }, { todayCalories: 300, dailyGoal: 2000 });
-    expect(c.title).toMatch(/registrar tu cena/);
-    expect(c.body).toBe("Llevas 300/2000 kcal hoy");
+  it("mealBodyEn — mismo criterio que mealBody, en inglés", () => {
+    expect(mealBodyEn("breakfast", 300, 2000)).toBe("You're at 300/2000 kcal today");
+    expect(mealBodyEn("breakfast", 300, 0)).toBe("Don't forget to log your breakfast");
   });
 
-  it("contentFor sin contexto sigue dando el texto genérico", () => {
-    expect(contentFor({ kind: "meal", mealType: "cena" }).body).toBe("No olvides registrar tu cena");
+  it("contentFor usa el progreso cuando se le pasa contexto, en ambos idiomas", () => {
+    const c = contentFor({ kind: "meal", mealType: "cena" }, { todayCalories: 300, dailyGoal: 2000 });
+    expect(pickLocalized(c.title, "es")).toMatch(/registrar tu cena/);
+    expect(pickLocalized(c.title, "en")).toMatch(/log your dinner/);
+    expect(pickLocalized(c.body, "es")).toBe("Llevas 300/2000 kcal hoy");
+    expect(pickLocalized(c.body, "en")).toBe("You're at 300/2000 kcal today");
+  });
+
+  it("contentFor sin contexto sigue dando el texto genérico, en ambos idiomas", () => {
+    const c = contentFor({ kind: "meal", mealType: "cena" });
+    expect(pickLocalized(c.body, "es")).toBe("No olvides registrar tu cena");
+    expect(pickLocalized(c.body, "en")).toBe("Don't forget to log your dinner");
   });
 });

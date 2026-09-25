@@ -77,7 +77,7 @@ test("el push de referral_bonus no sale si el referrer bloqueó al referido", as
   await sleep(1500)
   const sent = await pushes()
   const leak = sent.filter(
-    (p) => p.body?.user_id === referrer.id && /referido/i.test(p.body?.title || "")
+    (p) => p.body?.user_id === referrer.id && /referido/i.test(p.body?.title?.es || "")
   )
   assert.equal(
     leak.length, 0,
@@ -148,7 +148,7 @@ test("sin bloqueo, el push de referral_bonus sí sale (el test detectaría un fa
   await waitFor(async () => {
     const sent = await pushes()
     return sent.some(
-      (p) => p.body?.user_id === referrer.id && /referido/i.test(p.body?.title || "")
+      (p) => p.body?.user_id === referrer.id && /referido/i.test(p.body?.title?.es || "")
     )
   }, "el referrer sí recibe el push cuando no hay bloqueo")
 })

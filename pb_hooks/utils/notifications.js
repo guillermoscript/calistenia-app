@@ -214,6 +214,11 @@ function createNotification(userId, type, actorId, referenceId, referenceType, d
  * push se enviaba igual: quien bloquea seguía recibiendo el nombre y el texto
  * del bloqueado por notificación, aunque la notificación in-app se suprimiera.
  * Sin `actorId` no hay par que comprobar (push propio o del sistema).
+ *
+ * `title`/`body` admiten un string (se manda tal cual) o un objeto
+ * `{ es, en }` (#804): el AI API mira `users.language` de cada destinatario
+ * y elige la variante — aquí solo se arman los dos textos, nunca se decide el
+ * idioma. `JSON.stringify` en el `body` del POST deja pasar el objeto igual.
  */
 function sendPush(userId, title, body, url, type, actorId) {
   try {
@@ -258,6 +263,9 @@ function sendPush(userId, title, body, url, type, actorId) {
  * `type` aplica la preferencia de push por usuario. Nunca deja escapar un error.
  * Solo sirve cuando el mensaje es idéntico para todos — un push con URL nominal
  * por destinatario (revancha de batalla) sigue yendo por sendPush.
+ *
+ * `title`/`body` admiten string u objeto `{ es, en }` (#804), igual que
+ * sendPush: el AI API reparte cada destinatario a su idioma en el mismo envío.
  */
 function sendPushBatch(userIds, title, body, url, type, actorId) {
   try {
@@ -334,7 +342,8 @@ function getFollowers(userId) {
 }
 
 // Notifica (in-app + push) a todos los seguidores de `actorId`.
-// `push` = { title, body, url } o null para omitir el push.
+// `push` = { title, body, url } o null para omitir el push; `title`/`body`
+// admiten string u objeto `{ es, en }` (#804) — se pasan tal cual a sendPushBatch.
 // El gate de preferencias se aplica por seguidor (createNotification / sendPushBatch).
 //
 // Las notificaciones in-app siguen creándose una a una (son saves locales); el
@@ -397,13 +406,15 @@ function notifyFriendsOnWorkout(userId) {
     var followers = getFollowers(userId)
     if (followers.length === 0) return
 
-    var userName = getUserName(userId) || "Alguien"
+    var actorName = getUserName(userId)
+    var userName = actorName || "Alguien"
+    var userNameEn = actorName || "Someone"
     var total = countSessions(userId, null)
 
     if (total === 1) {
       notifyFollowers(userId, "friend_joined", userId, {}, {
-        title: userName + " empezo a entrenar",
-        body: "Acaba de completar su primer entrenamiento",
+        title: { es: userName + " empezo a entrenar", en: userNameEn + " started training" },
+        body: { es: "Acaba de completar su primer entrenamiento", en: "Just finished their first workout" },
         url: "/u/" + userId,
       })
       return
@@ -413,8 +424,8 @@ function notifyFriendsOnWorkout(userId) {
     var todayCount = countSessions(userId, todayStart)
     if (todayCount === 1) {
       notifyFollowers(userId, "friend_workout", userId, {}, {
-        title: userName + " entreno hoy",
-        body: "Mira la actividad de tu amigo",
+        title: { es: userName + " entreno hoy", en: userNameEn + " worked out today" },
+        body: { es: "Mira la actividad de tu amigo", en: "Check out your friend's activity" },
         url: "/u/" + userId,
       })
     }
@@ -459,8 +470,11 @@ function checkReferralBonus(userId) {
 
     sendPush(
       referrerId,
-      "Tu referido completo su primer entrenamiento!",
-      (referredName || "Tu referido") + " ya esta entrenando",
+      { es: "Tu referido completo su primer entrenamiento!", en: "Your referral completed their first workout!" },
+      {
+        es: (referredName || "Tu referido") + " ya esta entrenando",
+        en: (referredName || "Your referral") + " is training now",
+      },
       "/referrals",
       "referral_bonus",
       userId
@@ -490,12 +504,22 @@ function checkStreakMilestone(userId, oldStreak, newStreak) {
     var milestone = STREAK_MILESTONES[i]
     if (newStreak >= milestone && oldStreak < milestone) {
       createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
-      sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress", "streak")
+      sendPush(
+        userId,
+        { es: milestone + " dias seguidos!", en: milestone + " days in a row!" },
+        { es: "Tu racha de entrenamiento sigue creciendo", en: "Your workout streak keeps growing" },
+        "/progress",
+        "streak"
+      )
 
       // Fan-out a seguidores: "tu amigo lleva N dias seguidos"
+      var streakActorName = getUserName(userId)
       notifyFollowers(userId, "friend_streak", String(milestone), { days: milestone }, {
-        title: (getUserName(userId) || "Tu amigo") + " lleva " + milestone + " dias seguidos",
-        body: "Tu amigo esta en racha",
+        title: {
+          es: (streakActorName || "Tu amigo") + " lleva " + milestone + " dias seguidos",
+          en: (streakActorName || "Your friend") + " is on a " + milestone + "-day streak",
+        },
+        body: { es: "Tu amigo esta en racha", en: "Your friend is on a streak" },
         url: "/u/" + userId,
       })
       break

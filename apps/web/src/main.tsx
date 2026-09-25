@@ -14,8 +14,13 @@ import { hasActiveWorkout } from './lib/active-workout'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { installTranslateSafeDom } from './lib/translate-safe-dom'
 import { readNotificationClickMarker } from './lib/push-click-marker'
+import { startLanguageSync } from '@calistenia/core/lib/language-sync'
 import App from './App'
 import './index.css'
+
+// Idioma en `users.language` para que los push lleguen en el idioma de la app
+// (#804). i18next ya está inicializado (import de './lib/i18n' arriba).
+startLanguageSync()
 
 // ── Actualización del service worker (#690) ──────────────────────────────────
 //

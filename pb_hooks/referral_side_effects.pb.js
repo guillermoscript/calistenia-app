@@ -92,8 +92,11 @@ onRecordAfterCreateSuccess((e) => {
 
     helpers.sendPush(
       referrerId,
-      (referredName || "Alguien") + " se registro con tu enlace",
-      "Tu invitacion dio resultado",
+      {
+        es: (referredName || "Alguien") + " se registro con tu enlace",
+        en: (referredName || "Someone") + " signed up with your link",
+      },
+      { es: "Tu invitacion dio resultado", en: "Your invite paid off" },
       "/referrals",
       "referral_signup",
       referredId
