@@ -40,7 +40,9 @@
     "test:program-content": "pnpm --filter @calistenia/core exec vitest run ../../scripts/check-program-content.test.mjs --root ../../scripts",
     "test:program-reseed": "pnpm --filter @calistenia/core exec vitest run ../../scripts/reseed-program.test.mjs --root ../../scripts",
     "test:program-catalog": "pnpm --filter @calistenia/core exec vitest run ../../scripts/program-catalog.test.mjs --root ../../scripts",
-    "test:catalog-migration": "pnpm --filter @calistenia/core exec vitest run ../../scripts/fix-exercises-catalog-714.test.mjs --root ../../scripts"
+    "test:catalog-migration": "pnpm --filter @calistenia/core exec vitest run ../../scripts/fix-exercises-catalog-714.test.mjs --root ../../scripts",
+    "report:retention": "node scripts/openpanel-retention-report.mjs",
+    "test:retention-report": "pnpm --filter @calistenia/core exec vitest run ../../scripts/openpanel-retention-report.test.mjs --root ../../scripts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
