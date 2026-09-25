@@ -6,7 +6,7 @@
 
 Train with a structured calisthenics program, log every set, track your nutrition, run cardio with live GPS, and let an AI coach adapt the plan to you. Free, open source, and self-hostable.
 
-**[📱 Download the Android app](https://gym.guille.tech/download)** &nbsp;·&nbsp; **[🌐 Try the web app](https://gym.guille.tech)** &nbsp;·&nbsp; **[⭐ Star this repo](https://github.com/guillermoscript/calistenia-app)**
+**[📱 Download the Android app](https://gym.guille.tech/download?utm_source=github&utm_medium=readme&utm_campaign=repo)** &nbsp;·&nbsp; **[🌐 Try the web app](https://gym.guille.tech/?utm_source=github&utm_medium=readme&utm_campaign=repo)** &nbsp;·&nbsp; **[⭐ Star this repo](https://github.com/guillermoscript/calistenia-app)**
 
 ![React Native](https://img.shields.io/badge/React_Native-Expo-000?logo=expo)
 ![React](https://img.shields.io/badge/Web-React_+_Vite-61DAFB?logo=react&logoColor=000)
@@ -27,7 +27,7 @@ Most fitness apps are paywalled, bloated, or cloud-locked. Calistenia is the opp
 - **🔓 Free & open source (MIT)** — no subscription, no ads. Self-host it on a cheap VPS and own your data.
 - **📲 Real native app + web PWA** — install the Android APK or use it in any browser.
 
-> **Get it now:** [gym.guille.tech/download](https://gym.guille.tech/download) (Android) or [gym.guille.tech](https://gym.guille.tech) (web).
+> **Get it now:** [gym.guille.tech/download](https://gym.guille.tech/download?utm_source=github&utm_medium=readme&utm_campaign=repo) (Android) or [gym.guille.tech](https://gym.guille.tech/?utm_source=github&utm_medium=readme&utm_campaign=repo) (web).
 
 ## Features
 
