@@ -19,7 +19,11 @@ i18n
       es: { translation: es },
       en: { translation: en },
     },
-    fallbackLng: 'es',
+    // #821: español SOLO si el idioma detectado es realmente español;
+    // inglés para todo lo demás. `fallbackLng` es la red de seguridad para
+    // cuando no hay NINGÚN candidato detectado (ver `convertDetectedLanguage`
+    // más abajo, que ya deja resuelto el caso normal).
+    fallbackLng: 'en',
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
@@ -33,7 +37,31 @@ i18n
       // Saneándolo AQUÍ se arreglan los ~25 de una vez, porque todos leen
       // `i18n.language`. El detector aplica esto a TODO lo detectado, así que
       // también limpia un `i18nextLng` envenenado ya guardado en localStorage.
-      convertDetectedLanguage: (lng: string) => safeLocale(lng),
+      //
+      // #821: además del saneo de formato, aquí se decide QUÉ idioma soporta
+      // la app. Sin esto, un dispositivo en `pt-BR`/`de-DE` dejaría
+      // `i18n.language` literalmente en `pt-BR` — los textos de i18next SÍ
+      // caerían a inglés por `fallbackLng`, pero decenas de sitios leen
+      // `i18n.language` EN CRUDO para decidir cosas que no pasan por `t()`:
+      // `localize()` (`packages/core/lib/i18n-db.ts`, usado por
+      // `usePrograms`/`useProgramEditor`/`useAutoProgression`…) hace
+      // `field['pt-BR'] ?? field.es` y devolvería nombres de programa/
+      // ejercicio en ESPAÑOL; varios sitios en `apps/web` hacen
+      // `i18n.language === 'en' ? … : 'es-ES'` o `.startsWith('en') ? 'en' :
+      // 'es'`, que con `pt-BR` caen también al lado español. Justo el caso
+      // que motiva la issue (India, Alemania, Brasil, Indonesia…).
+      //
+      // Por eso se resuelve aquí, antes de que nada de eso se ejecute:
+      // español SOLO si la etiqueta saneada empieza por "es" (conserva la
+      // región — `es-MX`/`es-AR` siguen resolviendo a español vía el propio
+      // matching de i18next contra el idioma base, sin necesitar
+      // `fallbackLng`); cualquier otra cosa colapsa a `'en'` EXACTO, que ya
+      // es un idioma cargado, así que `i18n.language`/`resolvedLanguage`
+      // quedan en `'en'` de verdad — no solo el texto que renderiza `t()`.
+      convertDetectedLanguage: (lng: string) => {
+        const clean = safeLocale(lng)
+        return clean.toLowerCase().startsWith('es') ? clean : 'en'
+      },
     },
     interpolation: {
       escapeValue: false,
