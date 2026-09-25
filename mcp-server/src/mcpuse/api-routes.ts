@@ -19,6 +19,7 @@ import { runFreeSession } from "../api/free-session-generator.js";
 import { parsePantryText, matchConsumption, parseReceipt } from "../api/pantry-parser.js";
 import { generatePantryPlan } from "../api/pantry-plan-generator.js";
 import { generateWeeklyCrossInsightForUser } from "../api/weekly-insight-dispatcher.js";
+import { readEmailConfig, unsubscribeUser, unsubscribePage } from "../api/email-dispatcher.js";
 import type { Tier } from "../api/model-resolver.js";
 
 // ── In-memory rate limiter (port of Express version) ─────────────────────────
@@ -690,5 +691,26 @@ export function registerApiRoutes(server: AppServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
-  console.error("[API] Hono routes mounted: /api/health + 16 /api/* endpoints");
+  // ── Baja de los emails (#810) ─────────────────────────────────────────────
+  // Sin sesión: se abre desde el cliente de correo. Lo autoriza el token HMAC
+  // del enlace. GET = el usuario pulsa el enlace; POST = baja en un clic de
+  // Gmail/Yahoo (RFC 8058, cabecera List-Unsubscribe-Post).
+  const handleUnsubscribe = async (c: any) => {
+    const cfg = readEmailConfig();
+    const userId = c.req.query("u") ?? "";
+    const token = c.req.query("t") ?? "";
+    const lang = (c.req.header("accept-language") ?? "").toLowerCase().startsWith("es") ? "es" : "en";
+    if (!cfg) return c.html(unsubscribePage("error", lang), 503);
+    try {
+      const ok = await unsubscribeUser(await getAdminPB(), cfg, userId, token);
+      return c.html(unsubscribePage(ok ? "done" : "invalid", lang), ok ? 200 : 400);
+    } catch (err) {
+      console.error("[email] error al dar de baja:", err);
+      return c.html(unsubscribePage("error", lang), 500);
+    }
+  };
+  app.get("/api/email/unsubscribe", handleUnsubscribe);
+  app.post("/api/email/unsubscribe", handleUnsubscribe);
+
+  console.error("[API] Hono routes mounted: /api/health + 17 /api/* endpoints");
 }
