@@ -1,8 +1,24 @@
 # Analytics & Growth Events
 
-Version: **8**
+Version: **9**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
+
+> **Version 9 (2026-09-25, issue #824) — analytics hygiene.** No event
+> changes; no saved report changes.
+>
+> - **README links carry UTMs** (`utm_source=github&utm_medium=readme&utm_campaign=repo`)
+>   so web visits from the public repo stop landing in "Direct". Invite and
+>   share links are deliberately left without UTMs: they already carry their
+>   own token (`/invite`, `/race`, `/u`) and must stay byte-stable for App Links.
+> - **`session_start` is not ours.** It is OpenPanel's automatic session event.
+>   Our training-funnel event is `session_started`
+>   (`TRAINING_FUNNEL_EVENTS.sessionStarted`). The code never emits
+>   `session_start`; do not add them up in a report.
+> - **`discovery_source_answered` without `discovery_source` is historical.**
+>   Every emitter is guarded and `trackDiscoverySourceAnswered()` requires the
+>   source, so rows missing the property predate #586 reaching production (or
+>   come from an old cached build). Not a live bug.
 
 > **Version 8 (2026-09-23, issue #823) — where in the workout people
 > abandon.** Additive; no saved report changes.
@@ -455,7 +471,7 @@ The install referrer is **permanent**, so it is attributed to the **first sessio
 only** (marked spent in AsyncStorage under `analytics_install_attributed`);
 otherwise every mobile session ever would be credited to Play. Later events in
 that session don't need it — the worker inherits the referrer from the session's
-`session_start`. That is also why the guest event queue waits (max 2s) for the
+`session_start` (OpenPanel's automatic event — not our `session_started`). That is also why the guest event queue waits (max 2s) for the
 attribution to resolve before flushing: the session's referrer is whatever its
 first event carried.
 
