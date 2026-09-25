@@ -5,6 +5,7 @@ import { PHASES as FALLBACK_PHASES } from '@calistenia/core/data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
 import TodayWorkoutHero from '../components/dashboard/TodayWorkoutHero'
+import ActivationCard from '../components/dashboard/ActivationCard'
 import { cn } from '../lib/utils'
 import { todayStr, localHour, diffDays } from '@calistenia/core/lib/dateUtils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
@@ -183,7 +184,7 @@ export default function DashboardPage({
   const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays, programProgress } = useWorkoutState()
   const {
     getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity,
-    updateSettings, isWorkoutDone, getLastSessionDate, selectProgram: onSelectProgram,
+    updateSettings, isWorkoutDone, getLastSessionDate, getDoneDates, selectProgram: onSelectProgram,
     duplicateProgram, setPhaseOverride,
   } = useWorkoutActions()
   const { userId, user } = useAuthState()
@@ -337,6 +338,14 @@ export default function DashboardPage({
         isWorkoutDone={isWorkoutDone}
         today_str={today_str}
         onStart={(dayId) => navigate(`/workout?day=${dayId}`)}
+      />
+
+      {/* Objetivo de activación: 3 entrenos en los primeros 7 días (#800) */}
+      <ActivationCard
+        userId={userId ?? null}
+        created={user?.created}
+        doneDates={getDoneDates()}
+        onStart={onGoToWorkout}
       />
 
       {/* ═══ QUICK ACTIONS ═══════════════════════════════════════════════════ */}

@@ -247,6 +247,7 @@ GPS coordinates, or unnecessary personal data.
 | `discovery_survey_viewed` | The discovery survey modal shows a step | `surface=discovery_survey`, `source` (`survey_web`/`survey_mobile`), `step` (`source`/`goal`) | Web + mobile | Once per step per mount. Only after onboarding, never during a live workout or a web tour; once per user per device |
 | `discovery_survey_dismissed` | The user closes the survey without sending | `surface=discovery_survey`, `source`, `step` | Web + mobile | If the source step was already answered, `discovery_source_answered` fires first so that answer is not lost |
 | `discovery_survey_completed` | The user sends the survey | `surface=discovery_survey`, `source`, `user_goal`, `discovery_source`, `discovery_source_origin` | Web + mobile | `user_goal` is one of `routine`, `learn_skill`, `track_progress`, `train_at_home`, `other`. If the source was already answered in onboarding the survey skips that question and reports it with `discovery_source_origin=onboarding`. Stable ids only, never labels |
+| `activation_reached` | The user completes their 3rd distinct training day within the first 7 calendar days after signup (#800) | `surface=home`, `sessions_count` (always 3), `days_since_signup` (0-6), `program_id` when enrolled | Web + mobile | Early-activation north-star metric. Same-day repeats count once. A 3rd day on day 7 or later never emits. Once per user per device (storage flag `calistenia_activation_reached_<uid>`), so count unique profiles |
 
 The training-funnel events (`session_started`, `workout_completed`,
 `session_exited`, `workout_abandoned`, `workout_day_viewed`, `set_logged`,
@@ -428,6 +429,7 @@ Create a dashboard called **Growth Loop v1** with these reports:
 | Race adoption | Funnel | `race_created` → `race_joined` → `race_started` → `race_participant_finished` | `share_type` |
 | Training completion | Funnel | `session_started` → `workout_completed` | `program_id`, `phase`, `platform`, `source` |
 | Training funnel (full) | Funnel | `workout_day_viewed` → `session_started` → `set_logged` → `workout_completed` | `program_id`, `platform`, `source` |
+| Early activation (#800) | Funnel | `signup_completed` → `workout_completed` → `activation_reached` | `platform`, `program_id` |
 | Abandonment causes | Bar | `workout_abandoned` | `reason` |
 | Registration funnel | Funnel | `auth_viewed` → `signup_started` → `signup_completed` → `onboarding_started` → `onboarding_completed` | `method`, `platform` |
 | Sign-in failure rate | Bar | `login_failed` | `method`, `status` |

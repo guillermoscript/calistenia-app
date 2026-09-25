@@ -21,6 +21,7 @@ import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
 import FeaturedChallengeCard from '@/components/home/FeaturedChallengeCard'
 import CommunityProgramCard from '@/components/home/CommunityProgramCard'
+import ActivationCard from '@/components/home/ActivationCard'
 import GettingStartedCard, { isChecklistDismissed } from '@/components/home/GettingStartedCard'
 import { OneShotHint } from '@/components/ui/one-shot-hint'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
@@ -90,7 +91,7 @@ export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions } = useWorkoutActions()
+  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions, getDoneDates } = useWorkoutActions()
   const session = useActiveSession()
   const { startCircuit } = useCircuitSession()
   const milestoneUser = useAuthUser()
@@ -385,6 +386,14 @@ export default function TodayScreen() {
             )}
           </Pressable>
         )}
+
+        {/* Objetivo «3 entrenos en tus primeros 7 días» (#800). El 0/3 lo
+            enseña FirstWorkoutCard; esta toma el relevo desde la 1.ª sesión. */}
+        <ActivationCard
+          userId={milestoneUser?.id ?? null}
+          created={milestoneUser?.created}
+          doneDates={getDoneDates()}
+        />
 
         {/* Checklist «Primeros pasos» — activación de usuarios nuevos (#233).
             Arriba para quien empieza, sin tapar el hero. */}

@@ -196,6 +196,13 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   discoverySurveyViewed: 'discovery_survey_viewed',
   discoverySurveyDismissed: 'discovery_survey_dismissed',
   discoverySurveyCompleted: 'discovery_survey_completed',
+  /**
+   * El usuario completó su 3.er día de entreno dentro de los 7 primeros días
+   * desde el alta (#800) — la métrica norte de activación. Una vez por usuario
+   * y dispositivo; distinto de `workout_completed`, que es por sesión. Lleva
+   * `sessions_count` (siempre 3), `days_since_signup` (0-6) y `program_id`.
+   */
+  activationReached: 'activation_reached',
 } as const
 
 export type CanonicalAnalyticsEvent = typeof CANONICAL_ANALYTICS_EVENTS[keyof typeof CANONICAL_ANALYTICS_EVENTS]
