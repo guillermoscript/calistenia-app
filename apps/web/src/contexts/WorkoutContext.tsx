@@ -48,6 +48,8 @@ interface WorkoutActions {
   getCurrentStreak: () => number
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
+  /** Días con sesión completada, 'YYYY-MM-DD' ascendente (#800). */
+  getDoneDates: () => string[]
   checkAndUpdatePR: (exerciseId: string, reps: string, weight?: number) => Promise<PREvent | null>
   // Program actions
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
@@ -102,7 +104,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, getCurrentStreak, updateSettings, getMonthActivity,
-    getLastSessionDate, checkAndUpdatePR,
+    getLastSessionDate, getDoneDates, checkAndUpdatePR,
   } = useProgress(userId, activeProgram?.id ?? null)
 
   const { programProgress, setPhaseOverride } = useProgramProgress({
@@ -134,14 +136,14 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
-    getLastSessionDate, checkAndUpdatePR,
+    getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
     setPhaseOverride,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
-    getLastSessionDate, checkAndUpdatePR,
+    getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
     setPhaseOverride,
   ])

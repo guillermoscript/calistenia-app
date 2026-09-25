@@ -26,7 +26,8 @@ describe('canonical analytics contract', () => {
   it('defines the versioned growth-loop event set without duplicate names', () => {
     const events = Object.values(CANONICAL_ANALYTICS_EVENTS)
 
-    expect(events).toHaveLength(60)
+    expect(events).toHaveLength(61)
+    expect(events).toContain('activation_reached')
     // #636: el final de UN corredor y el cierre de LA carrera son dos eventos
     // distintos. Antes `race_finished` y `race_completed` se leían igual.
     expect(events).toContain('race_participant_finished')

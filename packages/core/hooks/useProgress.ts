@@ -38,6 +38,7 @@ interface UseProgressReturn {
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
+  getDoneDates: () => string[]
   checkAndUpdatePR: (exerciseId: string, reps: string, weight?: number) => Promise<PREvent | null>
 }
 
@@ -286,6 +287,12 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     return activity
   }, [derivedProgress])
 
+  // Días con sesión completada ('YYYY-MM-DD', asc). Referencia estable
+  // mientras `progress` no cambie — sirve de dependencia de memo (#800).
+  const getDoneDates = useCallback((): string[] =>
+    derivedProgress.sortedDoneDates,
+  [derivedProgress])
+
   // Lectura directa del valor precalculado: O(1)
   const getLastSessionDate = useCallback((): string | null =>
     derivedProgress.lastSessionDate,
@@ -296,6 +303,6 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, getCurrentStreak, updateSettings, getMonthActivity,
-    getLastSessionDate, checkAndUpdatePR,
+    getLastSessionDate, getDoneDates, checkAndUpdatePR,
   }
 }
