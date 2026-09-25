@@ -26,10 +26,10 @@ import {
   type DiscoverySourceId,
 } from '@calistenia/core/lib/discovery-source'
 import { rememberDiscoverySource } from '@calistenia/core/lib/discovery-survey'
+import type { GoalsValues, TrainingValues } from '@calistenia/core/types/onboarding'
 import { StepBasics, type BasicsValues } from './StepBasics'
-import { StepGoals, type GoalsValues } from './StepGoals'
+import { StepEssentials } from './StepEssentials'
 import { StepHealth, type HealthValues } from './StepHealth'
-import { StepTraining, type TrainingValues } from './StepTraining'
 import { StepProgram } from './StepProgram'
 import { StepReminder } from './StepReminder'
 import { StepPersonalizing } from './StepPersonalizing'
@@ -115,23 +115,24 @@ export default function OnboardingFlow({
   const hasWorkoutReminder = workoutReminders.some(r => r.reminderType === 'workout' && r.enabled)
 
   // Step index layout (frozen via needsProfile):
-  //   0=welcome, 1=basics, 2=goals, 3=health, 4=training (only if needsProfile),
+  //   0=welcome, 1=basics, 2=essentials (only if needsProfile), 3=health,
   //   then program, then reminder, then personalizing
+  // #820: goals + training used to be two separate steps; essentials merges
+  // them into one (primary_goal + level), the rest of their fields moved to
+  // "completa tu perfil" (ProfilePage), reachable after the first workout.
   const profileStep = needsProfile ? 1 : -1
-  const goalsStep = needsProfile ? 2 : -1
+  const essentialsStep = needsProfile ? 2 : -1
   const healthStep = needsProfile ? 3 : -1
-  const trainingStep = needsProfile ? 4 : -1
-  const programStep = needsProfile ? 5 : 1
-  const reminderStep = needsProfile ? 6 : 2
-  const personalizingStep = needsProfile ? 7 : 3
-  const totalSteps = needsProfile ? 8 : 4
+  const programStep = needsProfile ? 4 : 1
+  const reminderStep = needsProfile ? 5 : 2
+  const personalizingStep = needsProfile ? 6 : 3
+  const totalSteps = needsProfile ? 7 : 4
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
     if (s === profileStep) return 'profile'
-    if (s === goalsStep) return 'goals'
+    if (s === essentialsStep) return 'essentials'
     if (s === healthStep) return 'health'
-    if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
     if (s === reminderStep) return 'reminder'
     if (s === personalizingStep) return 'personalizing'
@@ -180,30 +181,42 @@ export default function OnboardingFlow({
     }
   }
 
-  const handleSaveBasics = async () => {
-    if (await saveBasics(basics)) goToStep(goalsStep)
+  // Paso siguiente al de programa: se salta el recordatorio si ya hay uno
+  // activo (perfil existente, o volvió atrás tras guardarlo).
+  const nextAfterProgram = hasWorkoutReminder ? personalizingStep : reminderStep
+
+  // Atajo «elígelo por mí» (#820): selecciona el recomendado y avanza en un
+  // solo toque, sin obligar a mirar la lista completa de programas.
+  const handlePickForMe = async (programId: string) => {
+    await handleSelectProgram(programId)
+    goToStep(nextAfterProgram)
   }
 
-  const handleSaveGoals = async () => {
-    // `basics` va con las metas para sembrar el objetivo de nutrición: es el
-    // primer momento con peso/altura/edad/sexo Y actividad/objetivo/ritmo.
-    if (await saveGoals(goals, basics)) goToStep(healthStep)
+  const handleSaveBasics = async () => {
+    if (await saveBasics(basics)) goToStep(essentialsStep)
+  }
+
+  // #820: guarda objetivo + nivel de un tirón (antes eran dos pasos, "goals" y
+  // "training"). `basics` va con las metas para sembrar el objetivo de
+  // nutrición si el usuario pasó por básicos; el resto de campos finos de
+  // ambos pasos viejos (peso objetivo, actividad, ritmo, áreas de foco, días,
+  // intensidad, objetivo libre) ya no se piden aquí y quedan editables desde
+  // el perfil, así que se guardan vacíos hasta que el usuario los rellene ahí.
+  const handleSaveEssentials = async () => {
+    if (!(await saveGoals(goals, basics))) return
+    if (await saveTraining(training)) goToStep(healthStep)
   }
 
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
     if (await saveHealth(next)) goToStep(advanceTo)
   }
 
-  const handleSaveHealth = () => saveHealthAnd(health, trainingStep)
+  const handleSaveHealth = () => saveHealthAnd(health, programStep)
 
   const handleNoIssues = () => {
     const empty: HealthValues = { medical_conditions: [], injuries: [] }
     setHealth(empty)
-    saveHealthAnd(empty, trainingStep)
-  }
-
-  const handleSaveTraining = async () => {
-    if (await saveTraining(training)) goToStep(programStep)
+    saveHealthAnd(empty, programStep)
   }
 
   // #695: guarda el recordatorio por defecto («¿a qué hora sueles entrenar?»)
@@ -270,7 +283,6 @@ export default function OnboardingFlow({
 
   const firstName = displayName?.split(/[\s@]/)[0] || ''
   const currentWeightNum = parseDecimal(basics.weight)
-  const currentHeightNum = parseDecimal(basics.height)
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -320,19 +332,19 @@ export default function OnboardingFlow({
             saving={savingProfile}
             onBack={() => goToStep(0)}
             onContinue={handleSaveBasics}
-            onSkip={() => goToStep(goalsStep)}
+            onSkip={() => goToStep(essentialsStep)}
           />
         )}
 
-        {step === goalsStep && (
-          <StepGoals
-            values={goals}
-            onChange={setGoals}
-            currentWeightKg={currentWeightNum}
-            currentHeightCm={currentHeightNum}
-            saving={savingGoals}
+        {step === essentialsStep && (
+          <StepEssentials
+            primaryGoal={goals.primary_goal}
+            onPrimaryGoalChange={(primary_goal) => setGoals({ ...goals, primary_goal })}
+            level={training.level}
+            onLevelChange={(level) => setTraining({ ...training, level })}
+            saving={savingGoals || savingTraining}
             onBack={() => goToStep(profileStep)}
-            onContinue={handleSaveGoals}
+            onContinue={handleSaveEssentials}
             onSkip={() => goToStep(healthStep)}
           />
         )}
@@ -342,20 +354,9 @@ export default function OnboardingFlow({
             values={health}
             onChange={setHealth}
             saving={savingHealth}
-            onBack={() => goToStep(goalsStep)}
+            onBack={() => goToStep(essentialsStep)}
             onContinue={handleSaveHealth}
             onSkipAsNone={handleNoIssues}
-          />
-        )}
-
-        {step === trainingStep && (
-          <StepTraining
-            values={training}
-            onChange={setTraining}
-            saving={savingTraining}
-            onBack={() => goToStep(healthStep)}
-            onContinue={handleSaveTraining}
-            onSkip={() => goToStep(programStep)}
           />
         )}
 
@@ -366,7 +367,7 @@ export default function OnboardingFlow({
             selecting={selecting}
             userId={userId}
             user={{
-              level: user?.level,
+              level: training.level || user?.level,
               weight: user?.weight,
               goal_weight: user?.goal_weight,
               primary_goal: goals.primary_goal || user?.primary_goal,
@@ -380,12 +381,13 @@ export default function OnboardingFlow({
               medical_conditions: health.medical_conditions.length ? health.medical_conditions : savedHealth.medical_conditions,
             }}
             onSelectProgram={handleSelectProgram}
+            onPickForMe={handlePickForMe}
             onCreateProgram={() => {
               if (userId) markOnboardingDone(userId)
               onCreateProgram()
             }}
-            onBack={() => goToStep(needsProfile ? trainingStep : 0)}
-            onContinue={() => goToStep(hasWorkoutReminder ? personalizingStep : reminderStep)}
+            onBack={() => goToStep(needsProfile ? healthStep : 0)}
+            onContinue={() => goToStep(nextAfterProgram)}
           />
         )}
 

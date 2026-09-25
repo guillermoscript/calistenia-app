@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import type { ProgramMeta } from '@calistenia/core/types'
-import type { Pace } from './StepGoals'
-
-const PHASE_DURATION_MS = 2400  // total loading splash duration
-const MESSAGE_COUNT = 4
+import type { Pace } from '@calistenia/core/types/onboarding'
 
 const PACE_KG_PER_WEEK: Record<Pace, number> = {
   gradual: 0.25,
@@ -32,18 +29,6 @@ interface Props {
 
 export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish, onFirstMeasurement, onStartFirstWorkout, firstWorkoutMinutes }: Props) {
   const { t, i18n } = useTranslation()
-  const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
-  const [msgIndex, setMsgIndex] = useState(0)
-
-  useEffect(() => {
-    const interval = PHASE_DURATION_MS / MESSAGE_COUNT
-    const timers: number[] = []
-    for (let i = 1; i < MESSAGE_COUNT; i++) {
-      timers.push(window.setTimeout(() => setMsgIndex(i), i * interval))
-    }
-    timers.push(window.setTimeout(() => setPhase('preview'), PHASE_DURATION_MS))
-    return () => timers.forEach(window.clearTimeout)
-  }, [])
 
   const projection = useMemo(() => {
     if (!currentWeightKg || !goalWeightKg || !pace) return null
@@ -54,43 +39,6 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
     const targetDate = dayjs().add(weeks * 7, 'day').locale(i18n.language.startsWith('en') ? 'en' : 'es')
     return { weeks, dateLabel: targetDate.format('D MMM YYYY') }
   }, [currentWeightKg, goalWeightKg, pace, i18n.language])
-
-  if (phase === 'loading') {
-    return (
-      <div className="flex flex-col items-center justify-center text-center py-12 animate-[fadeUp_0.5s_ease]">
-        <div className="font-bebas text-4xl text-[hsl(var(--lime))] mb-8 leading-none">
-          {t('onboarding.personalizingTitle')}
-        </div>
-
-        {/* Spinner */}
-        <div className="relative mb-8">
-          <div className="size-16 rounded-full border-4 border-muted-foreground/15 border-t-[hsl(var(--lime))] animate-spin" />
-        </div>
-
-        <div className="min-h-[2.5rem] flex items-center">
-          <div key={msgIndex} className="text-sm text-muted-foreground animate-[fadeUp_0.35s_ease]">
-            {t(`onboarding.personalizing.msg${msgIndex + 1}`)}
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-6 w-48 h-1 rounded-full bg-muted-foreground/15 overflow-hidden">
-          <div
-            className="h-full bg-[hsl(var(--lime))]"
-            style={{
-              animation: `personalizingBar ${PHASE_DURATION_MS}ms linear forwards`,
-            }}
-          />
-        </div>
-        <style>{`
-          @keyframes personalizingBar {
-            from { width: 0% }
-            to { width: 100% }
-          }
-        `}</style>
-      </div>
-    )
-  }
 
   return (
     <div className="animate-[fadeUp_0.5s_ease]">

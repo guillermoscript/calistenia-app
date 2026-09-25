@@ -15,8 +15,10 @@ import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId } from '../components/onboarding/StepHealth'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
-import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
-import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
+import {
+  FOCUS_AREA_IDS, DAY_IDS,
+  type FocusAreaId, type DayId, type Intensity, type ActivityLevel, type Pace,
+} from '@calistenia/core/types/onboarding'
 import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
 import { fetchUserHealth, upsertUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import {
