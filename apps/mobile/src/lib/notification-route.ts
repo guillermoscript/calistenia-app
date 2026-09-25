@@ -76,6 +76,9 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
 
     case 'inactivity_24h':
     case 'inactivity_72h':
+    case 'inactivity_7d':
+    case 'inactivity_14d':
+    case 'inactivity_new_start':
       // La acción útil es entrenar: Home arranca el entreno de hoy (#695).
       return '/(tabs)?autostart=1'
 

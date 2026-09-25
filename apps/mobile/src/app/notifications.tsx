@@ -98,6 +98,14 @@ function getNotificationMessage(
       return t('notif.inactivity24h')
     case 'inactivity_72h':
       return t('notif.inactivity72h')
+    // Recuperación más allá del día 7 (#807). `data.segment` distingue a quien
+    // nunca entrenó de quien entrenó y paró.
+    case 'inactivity_7d':
+      return t(n.data?.segment === 'trained_then_stopped' ? 'notif.inactivity7dStopped' : 'notif.inactivity7d')
+    case 'inactivity_14d':
+      return t(n.data?.segment === 'trained_then_stopped' ? 'notif.inactivity14dStopped' : 'notif.inactivity14d')
+    case 'inactivity_new_start':
+      return t('notif.inactivityNewStart')
     default:
       return t('notif.default', { name })
   }

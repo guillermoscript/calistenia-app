@@ -10,7 +10,7 @@ import { qk } from '../lib/query-keys'
  * en los cuatro switches que se derivan de ella (mensaje y ruta, en web y en
  * móvil), o el tipo se cae por el `default` y se pinta como «interactuó contigo».
  */
-export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined' | 'follow_request' | 'follow_accepted' | 'program_deleted' | 'inactivity_24h' | 'inactivity_72h'
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined' | 'follow_request' | 'follow_accepted' | 'program_deleted' | 'inactivity_24h' | 'inactivity_72h' | 'inactivity_7d' | 'inactivity_14d' | 'inactivity_new_start'
 
 export interface AppNotification {
   id: string

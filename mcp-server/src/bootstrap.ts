@@ -20,6 +20,7 @@
 import { shutdownTracing } from "./instrumentation.js";
 import { startReminderScheduler, stopReminderScheduler } from "./api/reminder-dispatcher.js";
 import { startInactivityScheduler, stopInactivityScheduler } from "./api/inactivity-dispatcher.js";
+import { startReactivationScheduler, stopReactivationScheduler } from "./api/reactivation-dispatcher.js";
 import { startWeeklyInsightScheduler, stopWeeklyInsightScheduler } from "./api/weekly-insight-dispatcher.js";
 
 const FLAG = "__calistenia_bootstrapped__" as const;
@@ -43,6 +44,11 @@ if (!g[FLAG] && isServingProcess) {
     startInactivityScheduler();
   }
 
+  // #807: recuperación a los 7/14 días y «nuevo comienzo» de los lunes.
+  if (process.env.REACTIVATION_PUSH !== "off") {
+    startReactivationScheduler();
+  }
+
   if (process.env.WEEKLY_INSIGHT_PUSH !== "off") {
     startWeeklyInsightScheduler();
   }
@@ -51,6 +57,7 @@ if (!g[FLAG] && isServingProcess) {
     console.error(`\n[Shutdown] ${signal} — flushing traces…`);
     stopReminderScheduler();
     stopInactivityScheduler();
+    stopReactivationScheduler();
     stopWeeklyInsightScheduler();
     await shutdownTracing();
     process.exit(0);
