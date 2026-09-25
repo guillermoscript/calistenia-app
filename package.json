@@ -45,8 +45,8 @@
     "test:retention-report": "pnpm --filter @calistenia/core exec vitest run ../../scripts/openpanel-retention-report.test.mjs --root ../../scripts"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "husky": "^9.1.7"
   }
 }
