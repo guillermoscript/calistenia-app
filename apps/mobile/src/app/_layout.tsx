@@ -28,6 +28,7 @@ import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHando
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
 import { resolveNotifUrl } from '@/lib/notification-route'
+import { setupNotificationTapRouting } from '@/lib/notification-tap-router'
 import { screenPattern } from '@/lib/screen-pattern'
 import { cancelLegacyLocalReminders } from '@/lib/reminder-scheduler'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
@@ -173,24 +174,24 @@ function RootLayout() {
       })
     }
 
-    // COLD START: if the app was opened by tapping a notification, handle it once.
-    Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (!response) return
-      trackTap(response, 'cold_start')
-      const url = response.notification.request.content.data?.url as string | undefined
-      const route = resolveNotifUrl(url)
-      if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
-    }).catch(() => { /* ignore */ })
-
-    // FOREGROUND / BACKGROUND TAP: listener for subsequent taps.
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      trackTap(response, 'tap')
-      const url = response.notification.request.content.data?.url as string | undefined
-      const route = resolveNotifUrl(url)
-      if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
+    // Maneja cold start (getLastNotificationResponseAsync) + taps en caliente
+    // (addNotificationResponseReceivedListener) y limpia la respuesta nativa
+    // tras consumirla en ambos casos: sin esto, CADA arranque en frío
+    // siguiente re-trackea y re-navega la misma notificación ya procesada
+    // (#822) — con `/(tabs)?autostart=1` eso arranca un entreno solo. Lógica
+    // pura en notification-tap-router.ts (testeada con fakes; el vitest de
+    // mobile no puede cargar expo-notifications).
+    return setupNotificationTapRouting({
+      getLastNotificationResponseAsync: () => Notifications.getLastNotificationResponseAsync(),
+      addNotificationResponseReceivedListener: (listener) =>
+        Notifications.addNotificationResponseReceivedListener(listener),
+      clearLastNotificationResponse: () => {
+        void Notifications.clearLastNotificationResponseAsync()
+      },
+      resolveNotifUrl,
+      push: (route) => routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0]),
+      track: trackTap,
     })
-
-    return () => sub.remove()
   }, [])  // intentionally empty — runs once on mount
 
   // ── Recordatorios: limpiar la programación local antigua ──────────────────
