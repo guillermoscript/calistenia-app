@@ -75,6 +75,7 @@ const baseInfo = (over: Partial<ProgramEditorState['info']> = {}): ProgramEditor
   coverUrl: null,
   coverFile: null,
   coverRemoved: false,
+  coverFocus: '',
   ...over,
 })
 

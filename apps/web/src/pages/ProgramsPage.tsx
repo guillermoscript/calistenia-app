@@ -15,6 +15,7 @@ import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '@calistenia/core/types'
 import { programCoverUrl } from '@calistenia/core/lib/programCover'
+import { coverObjectPosition } from '@calistenia/core/lib/coverFocus'
 import { ShareIcon, PlusIcon, EditIcon, SearchIcon } from '../components/icons/nav-icons'
 import i18n from '../lib/i18n'
 import { shareProgram } from '../lib/share'
@@ -108,7 +109,10 @@ function ProgramCard({ program, isOwn, canEdit, isActive, followersCount, onSele
 
       {/* Cover image */}
       {program.cover_image_url && (
-        <div className="-mx-5 -mt-5 mb-4 h-36 rounded-t-xl overflow-hidden bg-muted">
+        // 16:9 y no un alto fijo: con `h-36` la tarjeta de ~360 px quedaba en
+        // 2,5:1 y una foto vertical perdía casi todo su alto. El encuadre lo
+        // marca el autor (`cover_focus`); sin marcar, centrado.
+        <div className="-mx-5 -mt-5 mb-4 aspect-video rounded-t-xl overflow-hidden bg-muted">
           {/* `srcSet`: la de 400 px basta a densidad 1, pero la tarjeta mide
               ~360 px y a densidad 2-3 se veía blanda; el navegador elige. */}
           <img
@@ -118,7 +122,8 @@ function ProgramCard({ program, isOwn, canEdit, isActive, followersCount, onSele
             alt={program.name}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-cover object-[50%_25%]"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: coverObjectPosition(program.cover_focus) }}
           />
         </div>
       )}

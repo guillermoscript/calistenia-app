@@ -19,6 +19,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useProgramDetail } from '@calistenia/core/hooks/useProgramDetail'
 import { programCoverUrl } from '@calistenia/core/lib/programCover'
+import { coverContentPosition } from '@calistenia/core/lib/coverFocus'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import { useProgramDayBreakdown } from '@calistenia/core/hooks/useProgramDayBreakdown'
 import { defaultBreakdownPhase } from '@calistenia/core/lib/program-day-breakdown'
@@ -248,7 +249,7 @@ export default function ProgramDetailScreen() {
                   source={{ uri: programCoverUrl(program, '800x0') ?? program.cover_image_url }}
                   style={{ width: '100%', aspectRatio: 16 / 9 }}
                   contentFit="cover"
-                  contentPosition={{ top: '25%', left: '50%' }}
+                  contentPosition={coverContentPosition(program.cover_focus)}
                   transition={150}
                   cachePolicy="memory-disk"
                   recyclingKey={program.id}

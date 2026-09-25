@@ -236,6 +236,7 @@ export default function ProgramDetailPage({
         // Solo el nombre del fichero: la URL la monta `ProgramCover` con el
         // tamaño que necesita cada sitio (banner o visor).
         cover_image: progRecord.cover_image || undefined,
+        cover_focus: progRecord.cover_focus || undefined,
       }
       setProgram(meta)
 

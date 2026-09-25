@@ -25,6 +25,35 @@ import type { ProgramEditorState } from '@calistenia/core/hooks/useProgramEditor
 import { EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { CONDITION_IDS, INJURY_IDS } from '@calistenia/core/types/onboarding'
 import { pickCover, type MediaSource } from '@/lib/program-media'
+import {
+  coverContentPosition,
+  focusFromPoint,
+  formatCoverFocus,
+  parseCoverFocus,
+} from '@calistenia/core/lib/coverFocus'
+
+/**
+ * Los recortes reales de la portada: 16:9 en la lista y la ficha de móvil (y
+ * la tarjeta web), 2:1 en la ficha web de escritorio.
+ */
+const CROP_PREVIEWS = [
+  { label: '16:9', ratio: 16 / 9 },
+  { label: '2:1', ratio: 2 },
+] as const
+
+/** Alto máximo de la foto entera sobre la que se marca el foco. */
+const MAX_FOCUS_HEIGHT = 320
+
+/**
+ * Tamaño de la caja de la foto entera: todo el ancho disponible con la
+ * proporción de la imagen, salvo que pase de `MAX_FOCUS_HEIGHT`; entonces se
+ * estrecha para no ocupar la pantalla con una foto vertical.
+ */
+function focusBox(availableWidth: number, ratio: number | null): { width: number; height: number } {
+  const r = ratio && ratio > 0 ? ratio : 16 / 9
+  const height = Math.min(MAX_FOCUS_HEIGHT, availableWidth / r)
+  return { width: height * r, height }
+}
 
 const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'] as const
 const VISIBILITIES = ['private', 'link', 'public'] as const
@@ -77,6 +106,10 @@ function CoverPicker({
   const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Ancho disponible y proporción real de la foto, para dibujarla entera y
+  // traducir la pulsación a porcentaje.
+  const [boxWidth, setBoxWidth] = useState(0)
+  const [ratio, setRatio] = useState<number | null>(null)
 
   // Lo elegido ahora gana a lo que hay en el servidor; si se ha quitado, no se
   // enseña nada aunque el registro todavía tenga fichero.
@@ -98,7 +131,8 @@ function CoverPicker({
       }
       setError(null)
       haptics.light()
-      updateInfo({ coverFile: result.files[0], coverRemoved: false })
+      // Foco a cero: el de la foto anterior no dice nada de esta.
+      updateInfo({ coverFile: result.files[0], coverRemoved: false, coverFocus: '' })
     } finally {
       setBusy(false)
     }
@@ -107,19 +141,68 @@ function CoverPicker({
   const remove = () => {
     setError(null)
     haptics.light()
-    updateInfo({ coverFile: null, coverRemoved: true })
+    updateInfo({ coverFile: null, coverRemoved: true, coverFocus: '' })
+  }
+
+  const focus = parseCoverFocus(info.coverFocus)
+  const box = focusBox(boxWidth, ratio)
+
+  const setFocusAt = (x: number, y: number) => {
+    haptics.light()
+    updateInfo({ coverFocus: formatCoverFocus(focusFromPoint(x, y, box.width, box.height)) })
   }
 
   return (
     <View className="gap-1.5">
       <SectionLabel>{t('programEditor.coverLabel')}</SectionLabel>
       {preview ? (
-        <Image
-          source={{ uri: preview }}
-          style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 8 }}
-          contentFit="cover"
-          accessibilityLabel={t('programEditor.coverPreviewAlt')}
-        />
+        <View className="gap-3">
+          {/* La foto ENTERA, sin recortar, con el tamaño exacto de la imagen
+              (hasta 320 de alto): así la pulsación cae sobre la foto y no sobre
+              bandas vacías, y se traduce directa a porcentaje. */}
+          <View className="w-full items-center" onLayout={e => setBoxWidth(e.nativeEvent.layout.width)}>
+            <Pressable
+              onPress={e => setFocusAt(e.nativeEvent.locationX, e.nativeEvent.locationY)}
+              accessibilityRole="button"
+              accessibilityLabel={t('programEditor.coverFocusLabel')}
+              accessibilityHint={t('programEditor.coverFocusHint')}
+              style={{ width: box.width, height: box.height, borderRadius: 8, overflow: 'hidden' }}
+              className="bg-muted"
+            >
+              <Image
+                source={{ uri: preview }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+                onLoad={e => {
+                  if (e.source.width > 0 && e.source.height > 0) setRatio(e.source.width / e.source.height)
+                }}
+                accessibilityLabel={t('programEditor.coverPreviewAlt')}
+              />
+              <View
+                className="absolute size-6 rounded-full border-2 border-white"
+                style={{ left: `${focus.x}%`, top: `${focus.y}%`, marginLeft: -12, marginTop: -12, pointerEvents: 'none' }}
+              />
+            </Pressable>
+          </View>
+          <View className="gap-1">
+            <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+              {t('programEditor.coverFocusPreview')}
+            </Text>
+            <View className="flex-row gap-2">
+              {CROP_PREVIEWS.map(crop => (
+                <View key={crop.label} className="flex-1 gap-1">
+                  <Image
+                    source={{ uri: preview }}
+                    style={{ width: '100%', aspectRatio: crop.ratio, borderRadius: 6 }}
+                    contentFit="cover"
+                    contentPosition={coverContentPosition(info.coverFocus)}
+                  />
+                  <Text className="font-mono text-[10px] text-muted-foreground">{crop.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
       ) : (
         <View className="w-full items-center justify-center rounded-lg border border-dashed border-border py-8">
           <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">

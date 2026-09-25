@@ -373,6 +373,8 @@ export interface ProgramMeta {
   cover_image?: string
   /** Resolved cover image URL (built from PB file service) */
   cover_image_url?: string
+  /** Foco de la portada, «x y» en %; vacío = centrado (`lib/coverFocus.ts`). */
+  cover_focus?: string
   discipline?: 'yoga' | 'calistenia'
   /** Catalog-matching fields (see specs/2026-04-18-programs-catalog-personas-design.md) */
   goal_type?: ProgramGoalType

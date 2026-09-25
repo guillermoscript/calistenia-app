@@ -237,6 +237,13 @@ export interface ProgramEditorState {
     coverUrl: string | null
     coverFile: EditorMediaFile | null
     coverRemoved: boolean
+    /**
+     * Punto de foco de la portada, tal y como se guarda en `cover_focus`
+     * («x y» en %, '' = centrado; ver `lib/coverFocus.ts`). Los selectores lo
+     * vacían al elegir otra foto o quitarla: el foco de una foto no vale para
+     * otra.
+     */
+    coverFocus: string
   }
   phases: EditorPhase[]
   days: Record<string, EditorDay>  // key: "phaseIndex_dayId"
@@ -422,7 +429,7 @@ function createInitialState(): ProgramEditorState {
       goalType: '', skill: '', intensity: '',
       daysPerWeek: null, equipmentRequired: [], contraindications: [],
       instructions: '',
-      coverImage: '', coverUrl: null, coverFile: null, coverRemoved: false,
+      coverImage: '', coverUrl: null, coverFile: null, coverRemoved: false, coverFocus: '',
     },
     phases: defaultPhases(),
     days: buildDefaultDays(4),
@@ -1252,6 +1259,7 @@ export function useProgramEditor() {
             : null,
           coverFile: null,
           coverRemoved: false,
+          coverFocus: program.cover_focus || '',
         },
         phases: loadedPhases.length > 0 ? loadedPhases : defaultPhases(),
         days,
@@ -1295,6 +1303,10 @@ export function useProgramEditor() {
         // igual que `name` y `description`; leerlo sin `localize()` imprimiría
         // `[object Object]`.
         instructions: toTranslatable(state.info.instructions, locale),
+        // Encuadre de la portada (`lib/coverFocus.ts`). Viaja con el texto y no
+        // con la subida del fichero: mover el foco sin cambiar de foto es el
+        // caso normal. Sin portada no hay nada que encuadrar.
+        cover_focus: state.info.coverRemoved ? '' : state.info.coverFocus,
       }
       // Only set created_by on new programs — don't overwrite ownership on edit
       if (!state.programId) {

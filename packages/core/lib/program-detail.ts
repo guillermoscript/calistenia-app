@@ -49,6 +49,8 @@ export interface ProgramRow {
   difficulty?: string
   days_per_week?: number
   instructions?: TranslatableField
+  /** Foco de la portada, «x y» en % (`lib/coverFocus.ts`). */
+  cover_focus?: string
   /** Id del programa original (#620). Vacío si es un original o si aquel se borró. */
   forked_from?: string
   /**
@@ -88,6 +90,7 @@ export function toProgramMeta(row: ProgramRow, locale: string): ProgramMeta {
     // «Cómo seguir este programa» (#618). Siempre string, aunque sea vacío: la
     // ficha distingue «no cargado» (undefined) de «el autor no escribió nada».
     instructions: localize(row.instructions, locale),
+    cover_focus: row.cover_focus || undefined,
     // Crédito del remix (#620). El nombre pasa por `localize` porque en PB es un
     // `json {es,en}`: interpolarlo crudo pintaría «[object Object]».
     forked_from: row.forked_from || undefined,

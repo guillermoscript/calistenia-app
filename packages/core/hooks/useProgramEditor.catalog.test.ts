@@ -52,6 +52,7 @@ function makeInfo(overrides: Partial<ProgramEditorState['info']> = {}): ProgramE
     coverUrl: null,
     coverFile: null,
     coverRemoved: false,
+    coverFocus: '',
     ...overrides,
   }
 }

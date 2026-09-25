@@ -14,6 +14,7 @@ import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useAuthUser } from '@/lib/use-auth-user'
 import type { ProgramMeta, ProgramDifficulty } from '@calistenia/core/types'
 import { programCoverUrl } from '@calistenia/core/lib/programCover'
+import { coverContentPosition } from '@calistenia/core/lib/coverFocus'
 
 const LIME = 'hsl(74 90% 45%)'
 const DIFFICULTY_ORDER: ProgramDifficulty[] = ['beginner', 'intermediate', 'advanced']
@@ -258,15 +259,17 @@ const ProgramRow = memo(function ProgramRow({ program, isActive, onOpen }: {
           (`ProgramsPage.tsx`). Va ENCIMA del texto y no a su lado: así el
           texto arranca en la misma columna tenga o no foto el programa. */}
       {!!program.cover_image_url && (
-        <View className="h-32 border-b border-border bg-muted">
+        <View className="border-b border-border bg-muted">
           {/* 800 px y no la miniatura de 400 de `cover_image_url`: a todo el
               ancho de un teléfono de 1080 px la de 400 se ve blanda. */}
           <Image
             source={{ uri: programCoverUrl(program, '800x0') ?? program.cover_image_url }}
-            style={{ width: '100%', height: '100%' }}
+            // 16:9 como la tarjeta web, y no 128 px de alto (~2,8:1), que se
+            // comía casi toda una foto vertical.
+            style={{ width: '100%', aspectRatio: 16 / 9 }}
             contentFit="cover"
-            // Tercio superior, como la web: el recorte centrado cortaba cabezas.
-            contentPosition={{ top: '25%', left: '50%' }}
+            // El encuadre lo marca el autor en el editor; sin marcar, centrado.
+            contentPosition={coverContentPosition(program.cover_focus)}
             transition={150}
             cachePolicy="memory-disk"
             recyclingKey={program.id}
