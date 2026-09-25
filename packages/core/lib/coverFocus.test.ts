@@ -9,7 +9,7 @@ import {
   parseCoverFocus,
 } from './coverFocus'
 
-/** Patrón del campo en PocketBase (`1789300200_programs_cover_focus.js`). */
+/** Patrón del campo en PocketBase (`1790290200_programs_cover_focus.js`). */
 const PB_PATTERN = /^(100|[1-9]?[0-9]) (100|[1-9]?[0-9])$/
 
 describe('parseCoverFocus', () => {
