@@ -317,7 +317,7 @@ export function FoodItemCard({ model, food, index }: ModelProps & { food: FoodIt
                 )}
                 title={`Editar ${macro.label}`}
               >
-                {displayVal}{macro.suffix}
+                {displayVal}{macro.field === 'fat' ? `g ${t('nutrition.fatShort')}` : macro.suffix}
               </button>
             )
           })}
@@ -493,7 +493,7 @@ export function RepeatMealView({ model }: ModelProps) {
                 <span className="text-xs font-semibold text-foreground/80">{Math.round(entry.totalCalories)} kcal</span>
                 <span className="text-sky-500">P {Math.round(entry.totalProtein)}g</span>
                 <span className="text-amber-400">C {Math.round(entry.totalCarbs)}g</span>
-                <span className="text-pink-500">G {Math.round(entry.totalFat)}g</span>
+                <span className="text-pink-500">{t('nutrition.fatShort')} {Math.round(entry.totalFat)}g</span>
               </div>
             </button>
           ))}

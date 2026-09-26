@@ -33,6 +33,7 @@ import i18n from 'i18next'
 import { duplicatedName, localize } from '../lib/i18n-db'
 import { resolveExerciseDisplayName, resolveExerciseNameField } from '../lib/exercise-resolver'
 import { inferTimerFromReps } from '../lib/exercise-timer-inference'
+import { localizeReps } from '../lib/localize-reps'
 import { parseWeeklyProgression } from '../lib/weeklyProgression'
 import { loadCatalogIndex } from '../lib/catalogIndex'
 import { authorDisplayName } from '../lib/author-name'
@@ -237,7 +238,7 @@ export function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       // propósito: es la clave del historial de series y PRs.
       name:         resolveExerciseDisplayName(r.exercise_name, r.exercise_id, locale),
       sets:         r.sets,
-      reps:         r.reps,
+      reps:         localizeReps(r.reps, locale),
       rest:         r.rest_seconds,
       muscles:      localize(r.muscles, locale),
       note:         localize(r.note, locale),

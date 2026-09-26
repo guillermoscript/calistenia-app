@@ -37,7 +37,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -56,7 +59,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -75,7 +81,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Activación escapular",
+              "name": {
+                "es": "Activación escapular",
+                "en": "Scapular Activation"
+              },
               "exercise_id": "scapular_activation",
               "muscles": {
                 "es": "Escápulas, trapecios",
@@ -94,7 +103,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Flexiones desde rodillas",
+              "name": {
+                "es": "Flexiones desde rodillas",
+                "en": "Knee Push-ups"
+              },
               "exercise_id": "knee_push_up",
               "muscles": {
                 "es": "Pecho, tríceps, hombros",
@@ -112,7 +124,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Flexiones anchas",
+              "name": {
+                "es": "Flexiones anchas",
+                "en": "Wide Push-ups"
+              },
               "exercise_id": "wide_pushup",
               "muscles": {
                 "es": "Pecho, hombros",
@@ -130,7 +145,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Remo en sentadilla",
+              "name": {
+                "es": "Remo en sentadilla",
+                "en": "Squatting Row"
+              },
               "exercise_id": "bodyweight_squatting_row",
               "muscles": {
                 "es": "Espalda alta, bíceps, hombros",
@@ -148,7 +166,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Apertura con toalla",
+              "name": {
+                "es": "Apertura con toalla",
+                "en": "Towel Pull Apart"
+              },
               "exercise_id": "pull_apart",
               "muscles": {
                 "es": "Deltoides posterior, escápulas",
@@ -166,7 +187,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Plancha frontal",
+              "name": {
+                "es": "Plancha frontal",
+                "en": "Front Plank"
+              },
               "exercise_id": "plank",
               "muscles": {
                 "es": "Core, abdominales, espalda baja",
@@ -185,7 +209,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Superman",
+              "name": {
+                "es": "Superman",
+                "en": "Superman"
+              },
               "exercise_id": "superman",
               "muscles": {
                 "es": "Espalda baja, glúteos, dorsales",
@@ -203,7 +230,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pectorales, hombros",
@@ -222,7 +252,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps",
@@ -241,7 +274,10 @@
             },
             {
               "sort_order": 12,
-              "name": "Postura del niño",
+              "name": {
+                "es": "Postura del niño",
+                "en": "Child's Pose"
+              },
               "exercise_id": "childs_pose",
               "muscles": {
                 "es": "Espalda, hombros, relajación",
@@ -278,7 +314,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad articular",
@@ -297,7 +336,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Balanceos de pierna",
+              "name": {
+                "es": "Balanceos de pierna",
+                "en": "Leg Swings"
+              },
               "exercise_id": "leg_swings",
               "muscles": {
                 "es": "Cadera, isquiotibiales, cuádriceps",
@@ -316,7 +358,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Movilidad de tobillo",
+              "name": {
+                "es": "Movilidad de tobillo",
+                "en": "Ankle Mobility"
+              },
               "exercise_id": "ankle_mobility",
               "muscles": {
                 "es": "Tobillos, gemelos",
@@ -335,7 +380,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Puente de glúteos (calentamiento)",
+              "name": {
+                "es": "Puente de glúteos (calentamiento)",
+                "en": "Glute Bridge (warm-up)"
+              },
               "exercise_id": "glute_bridge_warmup",
               "muscles": {
                 "es": "Glúteos, cadena posterior",
@@ -354,7 +402,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Sentadilla con pausa",
+              "name": {
+                "es": "Sentadilla con pausa",
+                "en": "Pause Squat"
+              },
               "exercise_id": "squat_pause",
               "muscles": {
                 "es": "Cuádriceps, glúteos, core",
@@ -372,7 +423,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Puente de glúteos con pausa",
+              "name": {
+                "es": "Puente de glúteos con pausa",
+                "en": "Glute Bridge with Pause"
+              },
               "exercise_id": "glute_bridge_pause",
               "muscles": {
                 "es": "Glúteos, isquiotibiales",
@@ -390,7 +444,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Zancada reversa",
+              "name": {
+                "es": "Zancada reversa",
+                "en": "Reverse Lunge"
+              },
               "exercise_id": "reverse_lunge",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -408,7 +465,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Remo en sentadilla",
+              "name": {
+                "es": "Remo en sentadilla",
+                "en": "Squatting Row"
+              },
               "exercise_id": "bodyweight_squatting_row",
               "muscles": {
                 "es": "Espalda alta, bíceps, hombros",
@@ -426,7 +486,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Sentada en pared",
+              "name": {
+                "es": "Sentada en pared",
+                "en": "Wall Sit"
+              },
               "exercise_id": "wall_sit",
               "muscles": {
                 "es": "Cuádriceps, resistencia isométrica",
@@ -445,7 +508,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de cuádriceps",
+              "name": {
+                "es": "Estiramiento de cuádriceps",
+                "en": "Quad Stretch"
+              },
               "exercise_id": "quad_stretch",
               "muscles": {
                 "es": "Cuádriceps",
@@ -464,7 +530,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento de isquiotibiales",
+              "name": {
+                "es": "Estiramiento de isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
               "exercise_id": "hamstring_stretch",
               "muscles": {
                 "es": "Isquiotibiales",
@@ -483,7 +552,10 @@
             },
             {
               "sort_order": 12,
-              "name": "Estiramiento de gemelos",
+              "name": {
+                "es": "Estiramiento de gemelos",
+                "en": "Calf Stretch"
+              },
               "exercise_id": "calf_stretch",
               "muscles": {
                 "es": "Gemelos, sóleo",
@@ -520,7 +592,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad espinal",
@@ -539,7 +614,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Activación escapular",
+              "name": {
+                "es": "Activación escapular",
+                "en": "Scapular Activation"
+              },
               "exercise_id": "scapular_activation",
               "muscles": {
                 "es": "Escápulas, trapecios",
@@ -558,7 +636,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -577,7 +658,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Oruga",
+              "name": {
+                "es": "Oruga",
+                "en": "Inchworm"
+              },
               "exercise_id": "inchworm",
               "muscles": {
                 "es": "Cadena posterior, hombros, core",
@@ -596,7 +680,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Flexiones desde rodillas",
+              "name": {
+                "es": "Flexiones desde rodillas",
+                "en": "Knee Push-ups"
+              },
               "exercise_id": "knee_push_up",
               "muscles": {
                 "es": "Pecho, tríceps, hombros",
@@ -614,7 +701,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Sentadilla sin peso",
+              "name": {
+                "es": "Sentadilla sin peso",
+                "en": "Bodyweight Squat"
+              },
               "exercise_id": "bodyweight_squat",
               "muscles": {
                 "es": "Cuádriceps, glúteos, core",
@@ -632,7 +722,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Remo en sentadilla con toalla",
+              "name": {
+                "es": "Remo en sentadilla con toalla",
+                "en": "Squatting Towel Row"
+              },
               "exercise_id": "bodyweight_squatting_row_with_towel",
               "muscles": {
                 "es": "Espalda alta, bíceps, hombros",
@@ -650,7 +743,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Bird dog",
+              "name": {
+                "es": "Bird dog",
+                "en": "Bird Dog"
+              },
               "exercise_id": "bird_dog",
               "muscles": {
                 "es": "Core, espalda baja, equilibrio",
@@ -668,7 +764,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Puente de glúteos",
+              "name": {
+                "es": "Puente de glúteos",
+                "en": "Glute Bridge"
+              },
               "exercise_id": "glute_bridge",
               "muscles": {
                 "es": "Glúteos, isquiotibiales",
@@ -686,7 +785,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Hollow hold",
+              "name": {
+                "es": "Hollow hold",
+                "en": "Hollow Hold"
+              },
               "exercise_id": "hollow_hold",
               "muscles": {
                 "es": "Core profundo, recto abdominal",
@@ -705,7 +807,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento flexor de cadera",
+              "name": {
+                "es": "Estiramiento flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera",
@@ -724,7 +829,10 @@
             },
             {
               "sort_order": 12,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, costados",
@@ -743,7 +851,10 @@
             },
             {
               "sort_order": 13,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Relajación, sistema nervioso",
@@ -791,7 +902,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -810,7 +924,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -829,7 +946,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -848,7 +968,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Oruga",
+              "name": {
+                "es": "Oruga",
+                "en": "Inchworm"
+              },
               "exercise_id": "inchworm",
               "muscles": {
                 "es": "Cadena posterior, hombros, core",
@@ -867,7 +990,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Flexiones estándar",
+              "name": {
+                "es": "Flexiones estándar",
+                "en": "Standard Push-ups"
+              },
               "exercise_id": "pushup_std",
               "muscles": {
                 "es": "Pecho, tríceps, hombros",
@@ -885,7 +1011,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexiones anchas",
+              "name": {
+                "es": "Flexiones anchas",
+                "en": "Wide Push-ups"
+              },
               "exercise_id": "wide_pushup",
               "muscles": {
                 "es": "Pecho, hombros",
@@ -903,7 +1032,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Remo en sentadilla",
+              "name": {
+                "es": "Remo en sentadilla",
+                "en": "Squatting Row"
+              },
               "exercise_id": "bodyweight_squatting_row",
               "muscles": {
                 "es": "Espalda alta, bíceps, hombros",
@@ -921,7 +1053,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Apertura con toalla",
+              "name": {
+                "es": "Apertura con toalla",
+                "en": "Towel Pull Apart"
+              },
               "exercise_id": "pull_apart",
               "muscles": {
                 "es": "Deltoides posterior, escápulas",
@@ -939,7 +1074,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Plancha frontal",
+              "name": {
+                "es": "Plancha frontal",
+                "en": "Front Plank"
+              },
               "exercise_id": "plank",
               "muscles": {
                 "es": "Core, abdominales, espalda baja",
@@ -958,7 +1096,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Hollow hold",
+              "name": {
+                "es": "Hollow hold",
+                "en": "Hollow Hold"
+              },
               "exercise_id": "hollow_hold",
               "muscles": {
                 "es": "Core profundo, abdominales",
@@ -977,7 +1118,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pectorales, hombros",
@@ -996,7 +1140,10 @@
             },
             {
               "sort_order": 12,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps",
@@ -1015,7 +1162,10 @@
             },
             {
               "sort_order": 13,
-              "name": "Postura del niño",
+              "name": {
+                "es": "Postura del niño",
+                "en": "Child's Pose"
+              },
               "exercise_id": "childs_pose",
               "muscles": {
                 "es": "Espalda, hombros, relajación",
@@ -1052,7 +1202,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad articular",
@@ -1071,7 +1224,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Balanceos de pierna",
+              "name": {
+                "es": "Balanceos de pierna",
+                "en": "Leg Swings"
+              },
               "exercise_id": "leg_swings",
               "muscles": {
                 "es": "Cadera, isquiotibiales",
@@ -1090,7 +1246,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Puente de glúteos (calentamiento)",
+              "name": {
+                "es": "Puente de glúteos (calentamiento)",
+                "en": "Glute Bridge (warm-up)"
+              },
               "exercise_id": "glute_bridge_warmup",
               "muscles": {
                 "es": "Glúteos, activación",
@@ -1109,7 +1268,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Sentadilla sin peso",
+              "name": {
+                "es": "Sentadilla sin peso",
+                "en": "Bodyweight Squat"
+              },
               "exercise_id": "bodyweight_squat",
               "muscles": {
                 "es": "Cuádriceps, glúteos, core",
@@ -1127,7 +1289,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Zancada reversa",
+              "name": {
+                "es": "Zancada reversa",
+                "en": "Reverse Lunge"
+              },
               "exercise_id": "reverse_lunge",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -1145,7 +1310,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Puente de glúteos unilateral",
+              "name": {
+                "es": "Puente de glúteos unilateral",
+                "en": "Single-Leg Glute Bridge"
+              },
               "exercise_id": "glute_bridge_uni",
               "muscles": {
                 "es": "Glúteos, estabilización",
@@ -1163,7 +1331,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Remo en sentadilla",
+              "name": {
+                "es": "Remo en sentadilla",
+                "en": "Squatting Row"
+              },
               "exercise_id": "bodyweight_squatting_row",
               "muscles": {
                 "es": "Espalda alta, bíceps, hombros",
@@ -1181,7 +1352,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Sentada en pared",
+              "name": {
+                "es": "Sentada en pared",
+                "en": "Wall Sit"
+              },
               "exercise_id": "wall_sit",
               "muscles": {
                 "es": "Cuádriceps, resistencia",
@@ -1200,7 +1374,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de cuádriceps",
+              "name": {
+                "es": "Estiramiento de cuádriceps",
+                "en": "Quad Stretch"
+              },
               "exercise_id": "quad_stretch",
               "muscles": {
                 "es": "Cuádriceps",
@@ -1219,7 +1396,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de isquiotibiales",
+              "name": {
+                "es": "Estiramiento de isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
               "exercise_id": "hamstring_stretch",
               "muscles": {
                 "es": "Isquiotibiales",
@@ -1238,7 +1418,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento flexor de cadera",
+              "name": {
+                "es": "Estiramiento flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -1275,7 +1458,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad espinal",
@@ -1294,7 +1480,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Activación escapular",
+              "name": {
+                "es": "Activación escapular",
+                "en": "Scapular Activation"
+              },
               "exercise_id": "scapular_activation",
               "muscles": {
                 "es": "Escápulas, postura",
@@ -1313,7 +1502,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -1332,7 +1524,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Saltos de Tijera",
+              "name": {
+                "es": "Saltos de Tijera",
+                "en": "Jumping Jacks"
+              },
               "exercise_id": "jumping_jacks",
               "muscles": {
                 "es": "Full body, activación cardiovascular",
@@ -1351,7 +1546,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Flexiones pike",
+              "name": {
+                "es": "Flexiones pike",
+                "en": "Pike Push-ups"
+              },
               "exercise_id": "pike_pushup",
               "muscles": {
                 "es": "Hombros, tríceps",
@@ -1369,7 +1567,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Sentadilla con pausa",
+              "name": {
+                "es": "Sentadilla con pausa",
+                "en": "Pause Squat"
+              },
               "exercise_id": "squat_pause",
               "muscles": {
                 "es": "Cuádriceps, glúteos",
@@ -1387,7 +1588,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Remo de pie con toalla",
+              "name": {
+                "es": "Remo de pie con toalla",
+                "en": "Standing Towel Row"
+              },
               "exercise_id": "bodyweight_standing_row_with_towel",
               "muscles": {
                 "es": "Espalda alta, bíceps, antebrazos",
@@ -1405,7 +1609,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Plancha lateral",
+              "name": {
+                "es": "Plancha lateral",
+                "en": "Side Plank"
+              },
               "exercise_id": "side_plank",
               "muscles": {
                 "es": "Oblicuos, core lateral",
@@ -1424,7 +1631,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Superman",
+              "name": {
+                "es": "Superman",
+                "en": "Superman"
+              },
               "exercise_id": "superman",
               "muscles": {
                 "es": "Espalda baja, glúteos",
@@ -1442,7 +1652,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, costados",
@@ -1461,7 +1674,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento pike",
+              "name": {
+                "es": "Estiramiento pike",
+                "en": "Pike Stretch"
+              },
               "exercise_id": "pike_stretch",
               "muscles": {
                 "es": "Isquiotibiales, espalda",
@@ -1480,7 +1696,10 @@
             },
             {
               "sort_order": 12,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Relajación, recuperación",
