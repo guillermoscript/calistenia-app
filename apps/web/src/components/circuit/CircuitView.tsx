@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { localizeReps } from '@calistenia/core/lib/localize-reps'
 import { useNavigate } from 'react-router-dom'
 import { X, Pause } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -105,7 +106,7 @@ interface CircuitViewProps {
 }
 
 export default function CircuitView({ circuit }: CircuitViewProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const l = useLocalize()
   const navigate = useNavigate()
   const {
@@ -389,7 +390,7 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
               </div>
               {currentExercise.reps && (
                 <div className="font-mono text-lg text-lime mt-1">
-                  {currentExercise.reps}
+                  {localizeReps(currentExercise.reps, i18n.language)}
                 </div>
               )}
             </div>

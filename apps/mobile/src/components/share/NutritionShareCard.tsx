@@ -19,6 +19,7 @@
  * Use family variant names: BebasNeue_400Regular, DMSans_*Bold, etc.
  */
 import React, { memo } from 'react'
+import { t as translate } from 'i18next'
 import { View, Text, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 
@@ -172,7 +173,7 @@ function CompactMacroLine({ protein, carbs, fat, goalProtein, goalCarbs, goalFat
   const items = [
     { label: 'P', value: protein, goal: goalProtein, color: BLUE },
     { label: 'C', value: carbs,   goal: goalCarbs,   color: AMBER },
-    { label: 'G', value: fat,     goal: goalFat,     color: PINK },
+    { label: translate('nutrition.fatShort'), value: fat,     goal: goalFat,     color: PINK },
   ]
 
   return (

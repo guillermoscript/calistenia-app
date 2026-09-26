@@ -226,6 +226,13 @@ describe("checkProgram — campos bilingües sin 'en' (#797)", () => {
     expect(findingsFor(result, 'day_title')).toEqual([])
   })
 
+  it("un name de ejercicio en español plano dispara 'bilingual_field' (#847)", () => {
+    const doc = baseProgram()
+    doc.phases[0].days[0].exercises[0].name = 'Flexiones'
+    const result = checkProgram(SLUG, doc)
+    expect(findingsFor(result, 'bilingual_field').some(f => f.message.startsWith("'name'"))).toBe(true)
+  })
+
   it('un objeto {es} sin "en" también dispara la regla', () => {
     const doc = baseProgram()
     doc.phases[0].days[0].workout_title = { es: 'Empuje, tirón y piernas' }
@@ -259,12 +266,11 @@ describe("checkProgram — campos bilingües sin 'en' (#797)", () => {
     expect(findingsFor(result, 'bilingual_field').some(f => f.message.startsWith("'day_focus'"))).toBe(false)
   })
 
-  it('el name de ejercicio queda FUERA de la regla, aunque ya sea {es, en} (mujer-*)', () => {
+  it('un name de ejercicio ya {es, en} no dispara la regla (#847)', () => {
     const doc = baseProgram()
-    doc.phases[0].days[0].exercises[0].name = { es: 'Círculos de Brazos', en: 'Arm Circles' }
+    for (const ex of doc.phases[0].days[0].exercises) ex.name = { es: String(ex.name), en: String(ex.name) }
     const result = checkProgram(SLUG, doc)
-    expect(result.errors).toEqual([])
-    expect(result.findings.some(f => f.rule === 'bilingual_field' && f.message.includes("'name'"))).toBe(false)
+    expect(result.findings.some(f => f.rule === 'bilingual_field' && f.message.startsWith("'name'"))).toBe(false)
   })
 
   it("agrega por (programa, campo): tres ejercicios sin traducir dan UN solo aviso de 'muscles' con el recuento", () => {

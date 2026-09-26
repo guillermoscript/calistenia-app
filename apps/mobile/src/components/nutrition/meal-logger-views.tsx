@@ -283,7 +283,7 @@ export function RepeatMealView({
                   C {Math.round(entry.totalCarbs)}g
                 </Text>
                 <Text className="font-sans text-xs text-pink-500 tabular-nums">
-                  G {Math.round(entry.totalFat)}g
+                  {t('nutrition.fatShort')} {Math.round(entry.totalFat)}g
                 </Text>
               </View>
             </Pressable>
@@ -580,7 +580,7 @@ export function FoodItemCard({
               className={cn('px-2 py-1.5 rounded-lg active:bg-muted/60', 'min-h-[36px] items-center justify-center')}
             >
               <Text className={cn('font-sans text-xs tabular-nums', macro.color)}>
-                {displayVal}{macro.suffix}
+                {displayVal}{macro.field === 'fat' ? `g ${t('nutrition.fatShort')}` : macro.suffix}
               </Text>
             </Pressable>
           )
