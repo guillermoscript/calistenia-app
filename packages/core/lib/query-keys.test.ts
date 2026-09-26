@@ -174,6 +174,7 @@ describe('qk — unicidad de prefijos raíz entre dominios', () => {
       qk.sessions('u', 'p')[0], qk.setsLog('u')[0], qk.userSettings('u')[0],
       qk.restPreferences('u')[0], qk.favorites('u')[0], qk.workoutReminders('u')[0],
       qk.leaderboard('u', 'w', 'm')[0], qk.profileCompare('u', 'w', 'm')[0],
+      qk.lifetimeSessions('u')[0],
       qk.cardioSessions('u')[0], qk.challenges('u')[0], qk.challenge('c')[0],
       qk.challengeLeaderboard('c', 'u')[0], qk.expressProgress('c')[0],
       qk.bodyMeasurements('u')[0], qk.bodyPhotos('u')[0], qk.weight('u')[0],

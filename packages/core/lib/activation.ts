@@ -104,6 +104,62 @@ export function activationCardMode(state: ActivationState, today: string): Activ
   return state.sessionsInFirst7Days === 0 ? 'start' : 'progress'
 }
 
+/**
+ * Tramo del inicio simplificado (#808), con el mismo umbral que el objetivo:
+ * - `first`: 0 entrenos → solo «hoy toca X» y el plan de la semana.
+ * - `early`: 1-2 → además la racha y el progreso hacia el 3.º.
+ * - `full`: 3 o más → el inicio completo.
+ *
+ * A diferencia de la tarjeta, aquí cuentan los entrenos de TODA la vida de la
+ * cuenta, no los días de la primera semana: el inicio se simplifica «hasta el
+ * 3.er entreno», caiga cuando caiga.
+ */
+export type HomeStage = 'first' | 'early' | 'full'
+
+export function homeStage(totalSessions: number): HomeStage {
+  if (!(totalSessions > 0)) return 'first'
+  return totalSessions < ACTIVATION_TARGET_SESSIONS ? 'early' : 'full'
+}
+
+export interface HomeStageInputs {
+  /**
+   * `getTotalSessions()`: entrenos del programa ACTIVO (más los sin programa).
+   * Se queda en 0 al cambiar de programa, así que no basta por sí solo.
+   */
+  programSessions: number
+  /** `user_stats.total_sessions`, el contador de toda la cuenta. `null` mientras carga. */
+  lifetimeSessions: number | null | undefined
+  /** El flag de `homeFullKey`: este dispositivo ya vio al usuario llegar a 3. */
+  reachedBefore: boolean
+}
+
+export interface HomeStageView {
+  stage: HomeStage
+  /** Entrenos conocidos: el mayor de los dos contadores. */
+  sessions: number
+}
+
+/**
+ * Junta los dos contadores y el flag. Mientras el del servidor carga manda el
+ * del programa: quien acaba de darse de alta —el caso para el que existe el
+ * inicio simple— lo ve sin esperar a la red.
+ */
+export function resolveHomeStage({ programSessions, lifetimeSessions, reachedBefore }: HomeStageInputs): HomeStageView {
+  const sessions = Math.max(programSessions || 0, lifetimeSessions || 0)
+  return { stage: reachedBefore ? 'full' : homeStage(sessions), sessions }
+}
+
+/**
+ * Flag «ya llegó al inicio completo», por usuario y dispositivo. Haber hecho 3
+ * entrenos es un hecho que no caduca, así que guardarlo no puede quedarse
+ * viejo; evita el parpadeo del inicio simple mientras llega el contador del
+ * servidor.
+ */
+export const homeFullKey = (userId: string): string => `calistenia_home_full_${userId}`
+
+/** Preferencia «ver el inicio completo» antes del 3.er entreno, por usuario y dispositivo. */
+export const homeShowAllKey = (userId: string): string => `calistenia_home_show_all_${userId}`
+
 /** Clave de storage del flag «`activation_reached` ya emitido», por usuario y dispositivo. */
 export const activationReachedKey = (userId: string): string =>
   `calistenia_activation_reached_${userId}`
