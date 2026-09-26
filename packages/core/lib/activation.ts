@@ -104,6 +104,76 @@ export function activationCardMode(state: ActivationState, today: string): Activ
   return state.sessionsInFirst7Days === 0 ? 'start' : 'progress'
 }
 
+/**
+ * Tramo del inicio simplificado (#808), con el mismo umbral que el objetivo:
+ * - `first`: 0 entrenos → solo «hoy toca X» y el plan de la semana.
+ * - `early`: 1-2 → además la racha y el progreso hacia el 3.º.
+ * - `full`: 3 o más → el inicio completo.
+ *
+ * A diferencia de la tarjeta, aquí cuentan los entrenos de TODA la vida de la
+ * cuenta, no los días de la primera semana: el inicio se simplifica «hasta el
+ * 3.er entreno», caiga cuando caiga. Pero sale de la misma fuente que la
+ * tarjeta y que `getTotalSessions()` —filas de `sessions`: fuerza y yoga, no
+ * cardio ni circuitos—, así que el inicio nunca se abre entero mientras la
+ * tarjeta dice 0/3. (`user_stats.total_sessions` sí suma cardio y circuitos:
+ * por eso no se usa aquí.)
+ */
+export type HomeStage = 'first' | 'early' | 'full'
+
+export function homeStage(totalSessions: number): HomeStage {
+  if (!(totalSessions > 0)) return 'first'
+  return totalSessions < ACTIVATION_TARGET_SESSIONS ? 'early' : 'full'
+}
+
+export interface HomeStageInputs {
+  /**
+   * `getTotalSessions()`: entrenos del programa ACTIVO (más los sin programa).
+   * Se queda en 0 al cambiar de programa, así que no basta por sí solo.
+   */
+  programSessions: number
+  /**
+   * Filas de `sessions` del usuario en TODOS sus programas.
+   * `undefined` = cargando; `null` = no se sabe (sin red, error): se sigue
+   * con el contador del programa.
+   */
+  lifetimeSessions: number | null | undefined
+  /** El flag de `homeFullKey`: este dispositivo ya vio al usuario llegar a 3. */
+  reachedBefore: boolean
+}
+
+export interface HomeStageView {
+  stage: HomeStage
+  /** Entrenos conocidos: el mayor de los dos contadores. */
+  sessions: number
+  /**
+   * El contador de la cuenta aún no ha llegado y el del programa no basta para
+   * decidir: puede ser alguien nuevo o alguien que acaba de cambiar de
+   * programa. Mientras tanto no se pinta nada propio del tramo (ni bienvenida
+   * ni «ver todo»), para no decirle «empieza por tu primer entreno» a quien ya
+   * entrena. Con la caché persistida solo pasa en la primera carga de cada
+   * dispositivo.
+   */
+  pending: boolean
+}
+
+/** Junta los dos contadores y el flag. */
+export function resolveHomeStage({ programSessions, lifetimeSessions, reachedBefore }: HomeStageInputs): HomeStageView {
+  const sessions = Math.max(programSessions || 0, lifetimeSessions || 0)
+  const stage = reachedBefore ? 'full' : homeStage(sessions)
+  return { stage, sessions, pending: lifetimeSessions === undefined && stage !== 'full' }
+}
+
+/**
+ * Flag «ya llegó al inicio completo», por usuario y dispositivo. Haber hecho 3
+ * entrenos es un hecho que no caduca, así que guardarlo no puede quedarse
+ * viejo; evita el parpadeo del inicio simple mientras llega el contador del
+ * servidor.
+ */
+export const homeFullKey = (userId: string): string => `calistenia_home_full_${userId}`
+
+/** Preferencia «ver el inicio completo» antes del 3.er entreno, por usuario y dispositivo. */
+export const homeShowAllKey = (userId: string): string => `calistenia_home_show_all_${userId}`
+
 /** Clave de storage del flag «`activation_reached` ya emitido», por usuario y dispositivo. */
 export const activationReachedKey = (userId: string): string =>
   `calistenia_activation_reached_${userId}`

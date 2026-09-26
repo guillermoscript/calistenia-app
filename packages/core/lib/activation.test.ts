@@ -17,6 +17,10 @@ import {
   activationCardMode,
   activationReachedKey,
   deriveActivation,
+  homeFullKey,
+  homeShowAllKey,
+  homeStage,
+  resolveHomeStage,
   trackActivationReached,
 } from './activation'
 
@@ -189,5 +193,66 @@ describe('trackActivationReached', () => {
     trackActivationReached(null, reached, null)
     expect(track).not.toHaveBeenCalled()
     expect(mem.has(activationReachedKey('u1'))).toBe(false)
+  })
+})
+
+describe('homeStage (#808)', () => {
+  it('0 → first, 1-2 → early, 3+ → full', () => {
+    expect(homeStage(0)).toBe('first')
+    expect(homeStage(1)).toBe('early')
+    expect(homeStage(2)).toBe('early')
+    expect(homeStage(3)).toBe('full')
+    expect(homeStage(40)).toBe('full')
+  })
+
+  it('un contador raro (negativo, NaN) no rompe: cae al inicio simple', () => {
+    expect(homeStage(-1)).toBe('first')
+    expect(homeStage(Number.NaN)).toBe('first')
+  })
+})
+
+describe('resolveHomeStage (#808)', () => {
+  it('usuario nuevo con el contador de la cuenta ya cargado', () => {
+    expect(resolveHomeStage({ programSessions: 0, lifetimeSessions: 0, reachedBefore: false }))
+      .toEqual({ stage: 'first', sessions: 0, pending: false })
+    expect(resolveHomeStage({ programSessions: 2, lifetimeSessions: 2, reachedBefore: false }))
+      .toEqual({ stage: 'early', sessions: 2, pending: false })
+  })
+
+  it('mientras carga el de la cuenta y el del programa no basta: pending', () => {
+    expect(resolveHomeStage({ programSessions: 0, lifetimeSessions: undefined, reachedBefore: false }))
+      .toEqual({ stage: 'first', sessions: 0, pending: true })
+    expect(resolveHomeStage({ programSessions: 1, lifetimeSessions: undefined, reachedBefore: false }).pending).toBe(true)
+  })
+
+  it('si el del programa ya llega a 3, no hace falta esperar', () => {
+    expect(resolveHomeStage({ programSessions: 5, lifetimeSessions: undefined, reachedBefore: false }))
+      .toEqual({ stage: 'full', sessions: 5, pending: false })
+  })
+
+  it('sin red o con error (null) se sigue con el del programa, sin quedarse en pending', () => {
+    expect(resolveHomeStage({ programSessions: 1, lifetimeSessions: null, reachedBefore: false }))
+      .toEqual({ stage: 'early', sessions: 1, pending: false })
+  })
+
+  it('veterano que acaba de cambiar de programa: el contador de la cuenta lo mantiene en el inicio completo', () => {
+    expect(resolveHomeStage({ programSessions: 0, lifetimeSessions: 57, reachedBefore: false }))
+      .toEqual({ stage: 'full', sessions: 57, pending: false })
+  })
+
+  it('sesión recién hecha que el servidor aún no ha contado: gana el mayor', () => {
+    expect(resolveHomeStage({ programSessions: 3, lifetimeSessions: 2, reachedBefore: false }).stage).toBe('full')
+    expect(resolveHomeStage({ programSessions: 1, lifetimeSessions: 0, reachedBefore: false }).stage).toBe('early')
+  })
+
+  it('el flag del dispositivo manda aunque los contadores aún no hayan llegado', () => {
+    expect(resolveHomeStage({ programSessions: 0, lifetimeSessions: undefined, reachedBefore: true }))
+      .toEqual({ stage: 'full', sessions: 0, pending: false })
+  })
+
+  it('las claves de storage son por usuario', () => {
+    expect(homeFullKey('u1')).toBe('calistenia_home_full_u1')
+    expect(homeShowAllKey('u1')).toBe('calistenia_home_show_all_u1')
+    expect(homeFullKey('u1')).not.toBe(homeFullKey('u2'))
   })
 })

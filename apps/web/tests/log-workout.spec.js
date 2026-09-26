@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { showFullHome } from './helpers.js'
 
 const TEST_PASS = 'TestPass123!'
 const TEST_NAME = 'PW Tester'
@@ -27,6 +28,8 @@ test.describe('Log Past Workout', () => {
   })
 
   test('quick action card visible on dashboard', async ({ page }) => {
+    // Los accesos rápidos solo están en el inicio completo (#808).
+    await showFullHome(page)
     await page.goto('/')
     // The dashboard quick action card should be visible
     await expect(
@@ -35,6 +38,7 @@ test.describe('Log Past Workout', () => {
   })
 
   test('navigates to /log-workout from dashboard card', async ({ page }) => {
+    await showFullHome(page)
     await page.goto('/')
     await page.getByText(/log past workout|registrar entreno/i).first().click()
     await expect(page).toHaveURL(/\/log-workout/, { timeout: 8000 })
