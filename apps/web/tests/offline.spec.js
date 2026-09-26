@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { register, navigateTo } from './helpers.js'
+import { register, navigateTo, showFullHome } from './helpers.js'
 
 /**
  * Regresión de los 3 bugs de datos offline del #151 (fix en PR #195, 29d96ea):
@@ -83,6 +83,8 @@ test.describe('Offline → recuperación (#151)', () => {
   test('(b) escritura sin red se encola y drena al volver, sin pérdida ni logout', async ({ page, context, request }) => {
     test.setTimeout(90_000)
     await register(page)
+    // El «+200» del agua solo está en el inicio completo (#808).
+    await showFullHome(page)
     await navigateTo(page, '/')
     const auth = await pbAuth(page)
 
@@ -117,6 +119,7 @@ test.describe('Offline → recuperación (#151)', () => {
   test('(c) drenajes concurrentes NO duplican la escritura', async ({ page, context, request }) => {
     test.setTimeout(90_000)
     await register(page)
+    await showFullHome(page)
     await navigateTo(page, '/')
     const auth = await pbAuth(page)
 

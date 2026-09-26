@@ -30,8 +30,11 @@ vi.mock('react-i18next', () => ({
 const h = vi.hoisted(() => ({
   stage: 'first' as HomeStage,
   sessions: 0,
+  pending: false,
   activationMode: 'start' as ActivationCardMode,
   lastSessionDate: null as string | null,
+  /** `getTotalSessions()` (programa activo); null = igual que `sessions`. */
+  programSessions: null as number | null,
   useWater: vi.fn(() => ({ todayTotal: 0, goal: 2000, addWater: () => {}, adding: false })),
   useSleep: vi.fn(() => ({ entries: [] })),
   useLeaderboard: vi.fn(() => ({ entries: { sessions_week: [] }, load: () => {} })),
@@ -39,7 +42,7 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('@calistenia/core/hooks/useHomeStage', () => ({
-  useHomeStage: () => ({ stage: h.stage, sessions: h.sessions }),
+  useHomeStage: () => ({ stage: h.stage, sessions: h.sessions, pending: h.pending }),
 }))
 vi.mock('@calistenia/core/hooks/useActivation', () => ({
   useActivation: () => ({ mode: h.activationMode }),
@@ -63,7 +66,7 @@ vi.mock('../contexts/WorkoutContext', () => ({
     programProgress: { currentPhase: 1, totalWeeks: 8, currentWeek: 1, percent: 0 },
   }),
   useWorkoutActions: () => ({
-    getTotalSessions: () => h.sessions,
+    getTotalSessions: () => h.programSessions ?? h.sessions,
     getLongestStreak: () => 0,
     getWeeklyDoneCount: () => 0,
     getMonthActivity: () => ({}),
@@ -136,6 +139,8 @@ describe('DashboardPage — inicio simplificado (#808)', () => {
   beforeEach(() => {
     h.stage = 'first'
     h.sessions = 0
+    h.programSessions = null
+    h.pending = false
     h.activationMode = 'start'
     h.lastSessionDate = null
     for (const hook of DATA_HOOKS()) hook.mockClear()
@@ -198,6 +203,12 @@ describe('DashboardPage — inicio simplificado (#808)', () => {
       expect(screen.getByRole('button', { name: 'dashboard.earlyGoal.cta' })).toBeInTheDocument()
     })
 
+    it('recién cambiado de programa (0 en el activo): no pinta una racha de ceros', () => {
+      h.programSessions = 0
+      const { container } = mount()
+      expect(container.querySelector('#tour-stats')).toBeNull()
+    })
+
     it('el aviso genérico de «X días sin entrenar» no sale antes del 3.º', () => {
       h.activationMode = 'hidden'
       h.lastSessionDate = daysAgo(5)
@@ -229,6 +240,18 @@ describe('DashboardPage — inicio simplificado (#808)', () => {
       expect(screen.queryByText(/dashboard\.welcome|dashboard\.earlyGoal/)).toBeNull()
       expect(screen.queryByText('dashboard.showAll')).toBeNull()
       expect(screen.getByText('dashboard.nudge.title:5')).toBeInTheDocument()
+    })
+  })
+
+  describe('tramo sin decidir (pending)', () => {
+    it('mientras llega el contador de la cuenta: núcleo sí, bienvenida y «ver todo» no', () => {
+      h.pending = true
+      h.activationMode = 'hidden'
+      const { container } = mount()
+      expectCoreAnchors(container)
+      expect(screen.queryByText(/dashboard\.welcome|dashboard\.earlyGoal/)).toBeNull()
+      expect(screen.queryByText('dashboard.showAll')).toBeNull()
+      for (const hook of DATA_HOOKS()) expect(hook).not.toHaveBeenCalled()
     })
   })
 

@@ -469,7 +469,9 @@ export default function DashboardPage({
   // #808: hasta el 3.er entreno el inicio se queda en lo básico. `stage` sale
   // del mayor entre el contador del programa y el de toda la cuenta, así que
   // cambiar de programa no devuelve al inicio simple a quien ya entrena.
-  const { stage, sessions: knownSessions } = useHomeStage(userId, totalSessions)
+  // `stagePending`: el de la cuenta aún no ha llegado y el del programa no
+  // basta para decidir; no se pinta nada propio del tramo hasta saberlo.
+  const { stage, sessions: knownSessions, pending: stagePending } = useHomeStage(userId, totalSessions)
   const [showAll, setShowAll] = useState(() => readShowAll(userId))
   const showFull = stage === 'full' || showAll
   const toggleShowAll = useCallback(() => {
@@ -567,7 +569,7 @@ export default function DashboardPage({
       </div>
 
       {/* Antes del 3.er entreno, bienvenida o progreso hacia el 3.º (#808) */}
-      {stage !== 'full' && (
+      {stage !== 'full' && !stagePending && (
         <EarlyHomeMessage
           stage={stage}
           sessions={knownSessions}
@@ -668,8 +670,9 @@ export default function DashboardPage({
       </div>
 
       {/* ═══ STATS + ACTIVITY ════════════════════════════════════════════════ */}
-      {/* #808: la racha aparece con el primer entreno; con 0 solo pintaría ceros. */}
-      {(showFull || stage === 'early') && (
+      {/* #808: la racha aparece con el primer entreno. Mira también el programa
+          activo: recién cambiado, sus contadores siguen a 0 y solo pintaría ceros. */}
+      {(showFull || (stage === 'early' && totalSessions > 0)) && (
         <div className="mb-6">
           <div id="tour-stats" className="grid grid-cols-3 gap-3 mb-5">
             <div className="text-center">
@@ -718,7 +721,7 @@ export default function DashboardPage({
       )}
 
       {/* ═══ VER TODO EL INICIO (#808) ══════════════════════════════════════ */}
-      {stage !== 'full' && (
+      {stage !== 'full' && !stagePending && (
         <button
           onClick={toggleShowAll}
           aria-expanded={showAll}

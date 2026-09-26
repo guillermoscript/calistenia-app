@@ -5,8 +5,8 @@
  *
  * `getTotalSessions()` cuenta solo el programa activo: al cambiar de programa
  * vuelve a 0 y, por sí solo, devolvería al inicio simple a quien lleva meses
- * entrenando. Por eso se cruza con `user_stats.total_sessions`, el contador de
- * toda la cuenta que mantiene el servidor (fuerza, cardio y circuitos).
+ * entrenando. Por eso se cruza con el total de filas de `sessions` del usuario
+ * en todos sus programas: la misma fuente, sin el filtro de programa.
  */
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -35,24 +35,23 @@ function readFlag(key: string): boolean {
  */
 export function useHomeStage(userId: string | null | undefined, programSessions: number): HomeStageView {
   const uid = userId || null
-  const { data: lifetimeSessions } = useQuery({
+  const { data, fetchStatus } = useQuery({
     queryKey: qk.lifetimeSessions(uid),
     enabled: !!uid,
     staleTime: 60_000,
     queryFn: async (): Promise<number> => {
-      try {
-        const row = await pb.collection('user_stats').getFirstListItem(
-          pb.filter('user = {:uid}', { uid }),
-          { fields: 'total_sessions', $autoCancel: false },
-        )
-        return Number((row as { total_sessions?: number }).total_sessions) || 0
-      } catch (err) {
-        // Sin fila todavía: el servidor la crea con el primer entreno.
-        if ((err as { status?: number })?.status === 404) return 0
-        throw err
-      }
+      const res = await pb.collection('sessions').getList(1, 1, {
+        filter: pb.filter('user = {:uid}', { uid }),
+        fields: 'id',
+        $autoCancel: false,
+      })
+      return res.totalItems
     },
   })
+
+  // Sin dato: «cargando» solo mientras la petición está en vuelo. Sin red (la
+  // query queda en pausa) o con error se sigue con el contador del programa.
+  const lifetimeSessions = data ?? (fetchStatus === 'fetching' ? undefined : null)
 
   const view = resolveHomeStage({
     programSessions,

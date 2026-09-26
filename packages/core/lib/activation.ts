@@ -112,7 +112,11 @@ export function activationCardMode(state: ActivationState, today: string): Activ
  *
  * A diferencia de la tarjeta, aquí cuentan los entrenos de TODA la vida de la
  * cuenta, no los días de la primera semana: el inicio se simplifica «hasta el
- * 3.er entreno», caiga cuando caiga.
+ * 3.er entreno», caiga cuando caiga. Pero sale de la misma fuente que la
+ * tarjeta y que `getTotalSessions()` —filas de `sessions`: fuerza y yoga, no
+ * cardio ni circuitos—, así que el inicio nunca se abre entero mientras la
+ * tarjeta dice 0/3. (`user_stats.total_sessions` sí suma cardio y circuitos:
+ * por eso no se usa aquí.)
  */
 export type HomeStage = 'first' | 'early' | 'full'
 
@@ -127,7 +131,11 @@ export interface HomeStageInputs {
    * Se queda en 0 al cambiar de programa, así que no basta por sí solo.
    */
   programSessions: number
-  /** `user_stats.total_sessions`, el contador de toda la cuenta. `null` mientras carga. */
+  /**
+   * Filas de `sessions` del usuario en TODOS sus programas.
+   * `undefined` = cargando; `null` = no se sabe (sin red, error): se sigue
+   * con el contador del programa.
+   */
   lifetimeSessions: number | null | undefined
   /** El flag de `homeFullKey`: este dispositivo ya vio al usuario llegar a 3. */
   reachedBefore: boolean
@@ -137,16 +145,22 @@ export interface HomeStageView {
   stage: HomeStage
   /** Entrenos conocidos: el mayor de los dos contadores. */
   sessions: number
+  /**
+   * El contador de la cuenta aún no ha llegado y el del programa no basta para
+   * decidir: puede ser alguien nuevo o alguien que acaba de cambiar de
+   * programa. Mientras tanto no se pinta nada propio del tramo (ni bienvenida
+   * ni «ver todo»), para no decirle «empieza por tu primer entreno» a quien ya
+   * entrena. Con la caché persistida solo pasa en la primera carga de cada
+   * dispositivo.
+   */
+  pending: boolean
 }
 
-/**
- * Junta los dos contadores y el flag. Mientras el del servidor carga manda el
- * del programa: quien acaba de darse de alta —el caso para el que existe el
- * inicio simple— lo ve sin esperar a la red.
- */
+/** Junta los dos contadores y el flag. */
 export function resolveHomeStage({ programSessions, lifetimeSessions, reachedBefore }: HomeStageInputs): HomeStageView {
   const sessions = Math.max(programSessions || 0, lifetimeSessions || 0)
-  return { stage: reachedBefore ? 'full' : homeStage(sessions), sessions }
+  const stage = reachedBefore ? 'full' : homeStage(sessions)
+  return { stage, sessions, pending: lifetimeSessions === undefined && stage !== 'full' }
 }
 
 /**
