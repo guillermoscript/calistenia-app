@@ -597,7 +597,7 @@ export default function DashboardPage({
       {/* Progress bar */}
       <div id="tour-progress" className="mb-6">
         <div className="flex justify-between mb-2">
-          <span className={cn('text-[11px]', phaseAccent.text)}>{phase.nameKey ? t(phase.nameKey) : phase.name} · Semanas {phase.weeks}</span>
+          <span className={cn('text-[11px]', phaseAccent.text)}>{phase.nameKey ? t(phase.nameKey) : phase.name} · {t('dashboard.phaseWeeks', { weeks: phase.weeks })}</span>
           <span className="text-[11px] text-muted-foreground">{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-1.5" />
