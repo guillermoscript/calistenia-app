@@ -60,6 +60,9 @@ pb_data_backup_*/
 # ...and E2E test fixtures
 !apps/web/tests/fixtures/*.jpg
 
+# ...and the README screenshots (#813)
+!.github/readme/*.png
+
 # OpenCode AI agent config
 opencode.json
 skills-lock.json
