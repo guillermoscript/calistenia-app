@@ -305,7 +305,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
                       {item.food.portionAmount}{item.food.portionUnit} · <span className="text-foreground/70">{Math.round(item.food.calories)} kcal</span>
-                      {' · '}P {Math.round((item.food.protein ?? 0) * 10) / 10}g · C {Math.round((item.food.carbs ?? 0) * 10) / 10}g · G {Math.round((item.food.fat ?? 0) * 10) / 10}g
+                      {' · '}P {Math.round((item.food.protein ?? 0) * 10) / 10}g · C {Math.round((item.food.carbs ?? 0) * 10) / 10}g · {t('nutrition.fatShort')} {Math.round((item.food.fat ?? 0) * 10) / 10}g
                     </div>
                   </div>
                 )
@@ -376,7 +376,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
                       ) : (
                         <>
                           {item.portionAmount}{item.portionUnit} · <span className="text-foreground/70">{Math.round(item.calories)} kcal</span>
-                          {' · '}P {Math.round((item.protein ?? 0) * 10) / 10}g · C {Math.round((item.carbs ?? 0) * 10) / 10}g · G {Math.round((item.fat ?? 0) * 10) / 10}g
+                          {' · '}P {Math.round((item.protein ?? 0) * 10) / 10}g · C {Math.round((item.carbs ?? 0) * 10) / 10}g · {t('nutrition.fatShort')} {Math.round((item.fat ?? 0) * 10) / 10}g
                         </>
                       )}
                     </div>

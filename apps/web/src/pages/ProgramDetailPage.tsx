@@ -28,6 +28,7 @@ import { resolveExerciseDisplayName } from '@calistenia/core/lib/exercise-resolv
 import { loadCatalogIndex, getCatalogIndexSync } from '@calistenia/core/lib/catalogIndex'
 import { resolveExerciseId } from '@calistenia/core/lib/resolveExerciseId'
 import { inferTimerFromReps } from '@calistenia/core/lib/exercise-timer-inference'
+import { localizeReps } from '@calistenia/core/lib/localize-reps'
 import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { useProgramStats } from '@calistenia/core/hooks/useProgramStats'
 import { ProgramRemixCredit, ProgramFollowers } from '../components/programs/ProgramRemixCredit'
@@ -313,7 +314,7 @@ export default function ProgramDetailPage({
           // localizado; el `id` sigue crudo (clave del historial de series).
           name: resolveExerciseDisplayName(r.exercise_name, r.exercise_id, locale),
           sets: r.sets,
-          reps: r.reps,
+          reps: localizeReps(r.reps, locale),
           rest: r.rest_seconds,
           muscles: localize(r.muscles, locale),
           note: localize(r.note, locale),

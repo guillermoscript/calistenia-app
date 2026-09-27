@@ -10,9 +10,10 @@ import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { useRoutineView } from '@calistenia/core/hooks/useRoutineView'
 import { resolveExerciseNameField } from '@calistenia/core/lib/exercise-resolver'
 import { inferTimerFromReps } from '@calistenia/core/lib/exercise-timer-inference'
+import { localizeReps } from '@calistenia/core/lib/localize-reps'
 
 export default function RoutineViewPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const l = useLocalize()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
@@ -173,7 +174,7 @@ export default function RoutineViewPage() {
                             <div className={cn('text-sm font-medium', 'text-[hsl(var(--lime))]')}>
                               {(ex.is_timer || inferredTimer) && timerSeconds
                                 ? `${timerSeconds}s`
-                                : `${ex.sets}x${ex.reps}`
+                                : `${ex.sets}x${localizeReps(ex.reps, i18n.language)}`
                               }
                             </div>
                             {ex.rest_seconds > 0 && (

@@ -15,6 +15,14 @@ Train with a structured calisthenics program, log every set, track your nutritio
 
 </div>
 
+<p align="center">
+  <img src=".github/readme/home.png" alt="Home screen: today's workout, program progress and quick actions" width="260">
+  &nbsp;
+  <img src=".github/readme/workout.png" alt="Workout in progress: rest timer, a new personal record and the next exercise" width="260">
+  &nbsp;
+  <img src=".github/readme/nutrition.png" alt="Nutrition: daily calories, macros and today's meals" width="260">
+</p>
+
 ---
 
 ## Why Calistenia?
@@ -32,7 +40,7 @@ Most fitness apps are paywalled, bloated, or cloud-locked. Calistenia is the opp
 ## Features
 
 ### 💪 Training
-- **Structured 6-month program** — 4 progressive phases (Base → Strength → Intensity → Peak) with daily workouts.
+- **15 structured programs** — beginner to advanced, plus skill roadmaps (pull-up, handstand, muscle-up, planche), each split into progressive phases with daily workouts.
 - **Session tracking** — step through exercises one by one, log sets, reps, and notes.
 - **Rest & isometric timers** — auto-start rest countdowns and hold timers with audio + haptic cues.
 - **Form videos inline** — tap any exercise to watch a tutorial without leaving the app.
@@ -65,7 +73,10 @@ A pnpm monorepo with shared business logic across native and web.
 | **Backend** | PocketBase (SQLite, self-hosted) — 30+ collections, migration-driven |
 | **Testing** | Playwright |
 
-## Repo layout
+<details>
+<summary><strong>🛠️ For developers</strong> — run it locally, build the Android APK, self-host it</summary>
+
+### Repo layout
 
 ```
 calistenia-app/
@@ -79,7 +90,7 @@ calistenia-app/
 └── pocketbase       # PocketBase binary
 ```
 
-## Getting started
+### Getting started
 
 Requires **Node 20+** and **pnpm 10+**.
 
@@ -100,7 +111,7 @@ cd apps/mobile && pnpm start           # Expo dev server
 
 Migrations in `pb_migrations/` apply automatically on PocketBase start.
 
-### Mobile build (Android APK)
+#### Mobile build (Android APK)
 
 A GitHub Action (`.github/workflows/build-mobile-apk.yml`) builds the release APK and publishes it as a GitHub Release. The web download page fetches the latest release automatically.
 
@@ -109,7 +120,7 @@ A GitHub Action (`.github/workflows/build-mobile-apk.yml`) builds the release AP
 git tag mobile-v1.0.1 && git push origin mobile-v1.0.1
 ```
 
-## Deployment
+### Deployment
 
 The web app + PocketBase ship as a single Docker image (multi-stage build) and deploy via Dokploy + GitHub Actions on push to `main`. PocketBase serves both the API (`/_/`) and the static frontend from one port (`8090`). See `Dockerfile` and `docker-compose.yml`.
 
@@ -117,6 +128,8 @@ The web app + PocketBase ship as a single Docker image (multi-stage build) and d
 # Local smoke test
 docker compose up --build      # http://localhost:8090
 ```
+
+</details>
 
 ## Contributing
 

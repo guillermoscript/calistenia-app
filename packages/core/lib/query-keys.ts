@@ -169,6 +169,8 @@ export const qk = {
     ['invite-landing', code, challengeId] as const,
   leaderboard: (userId: string | null, weekStart: string, monthStart: string) =>
     ['leaderboard', userId, weekStart, monthStart] as const,
+  // Filas de `sessions` del propio usuario en todos sus programas: el tramo del inicio simple (#808).
+  lifetimeSessions: (userId: string | null) => ['lifetime-sessions', userId] as const,
   profileCompare: (userId: string | null, weekStart: string, monthYYYYMM: string) =>
     ['profileCompare', userId, weekStart, monthYYYYMM] as const,
   // Lista cruda de sesiones cardio (por usuario). Fuente única que comparten

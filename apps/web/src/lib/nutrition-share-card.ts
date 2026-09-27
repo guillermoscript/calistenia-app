@@ -446,7 +446,7 @@ function drawRichCard(
   const macroGroups = [
     { label: 'P', val: Math.round(totals.protein), color: BLUE },
     { label: 'C', val: Math.round(totals.carbs),   color: AMBER },
-    { label: 'G', val: Math.round(totals.fat),     color: PINK },
+    { label: i18n.t('nutrition.fatShort'), val: Math.round(totals.fat),     color: PINK },
   ]
   const macroW = (barW - 16) / 3
   macroGroups.forEach((mg, i) => {

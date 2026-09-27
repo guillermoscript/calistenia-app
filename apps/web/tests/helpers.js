@@ -135,6 +135,20 @@ export async function register(page, { email, password, name } = {}) {
 }
 
 /**
+ * El inicio web se simplifica hasta el 3.er entreno (#808): un usuario recién
+ * registrado no ve accesos rápidos ni widgets (agua, sueño…). Los specs que
+ * los usan activan la preferencia «Ver todo el inicio», la misma que guarda
+ * el botón. Surte efecto en la siguiente navegación.
+ */
+export async function showFullHome(page) {
+  await page.evaluate(() => {
+    const parsed = JSON.parse(localStorage.getItem('pocketbase_auth') || '{}')
+    const uid = parsed?.record?.id || parsed?.model?.id
+    if (uid) localStorage.setItem(`calistenia_home_show_all_${uid}`, 'true')
+  })
+}
+
+/**
  * Login with an existing account.
  */
 export async function login(page, email, password = TEST_PASS) {

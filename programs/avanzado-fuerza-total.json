@@ -37,7 +37,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Dislocaciones de hombro",
+              "name": {
+                "es": "Dislocaciones de hombro",
+                "en": "Shoulder Dislocates"
+              },
               "exercise_id": "shoulder_dislocates",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -56,7 +59,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -75,7 +81,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Activación escapular",
+              "name": {
+                "es": "Activación escapular",
+                "en": "Scapular Activation"
+              },
               "exercise_id": "scapular_activation",
               "muscles": {
                 "es": "Escápulas, serrato anterior",
@@ -94,7 +103,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Handstand libre",
+              "name": {
+                "es": "Handstand libre",
+                "en": "Freestanding Handstand"
+              },
               "exercise_id": "handstand_free",
               "muscles": {
                 "es": "Hombros, core, muñecas, equilibrio",
@@ -113,7 +125,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Planche tuck",
+              "name": {
+                "es": "Planche tuck",
+                "en": "Tuck Planche"
+              },
               "exercise_id": "planche_tuck",
               "muscles": {
                 "es": "Hombros anteriores, core, pecho",
@@ -132,7 +147,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexión a una mano (progresión)",
+              "name": {
+                "es": "Flexión a una mano (progresión)",
+                "en": "One-Arm Push-up (progression)"
+              },
               "exercise_id": "one_arm_prog",
               "muscles": {
                 "es": "Pecho unilateral, tríceps, core",
@@ -150,7 +168,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Dips con Lastre",
+              "name": {
+                "es": "Dips con Lastre",
+                "en": "Weighted Dips"
+              },
               "exercise_id": "weighted_dips",
               "muscles": {
                 "es": "Tríceps, pecho",
@@ -168,7 +189,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Flexiones Tiger Bend",
+              "name": {
+                "es": "Flexiones Tiger Bend",
+                "en": "Tiger Bend Push-ups"
+              },
               "exercise_id": "tiger_bend_pushup",
               "muscles": {
                 "es": "Tríceps, hombros, pecho",
@@ -186,7 +210,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -205,7 +232,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps, hombros",
@@ -224,7 +254,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -261,7 +294,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -280,7 +316,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Retracción escapular en barra",
+              "name": {
+                "es": "Retracción escapular en barra",
+                "en": "Bar Scapular Retraction"
+              },
               "exercise_id": "scap_retract",
               "muscles": {
                 "es": "Romboides, trapecio inferior",
@@ -299,7 +338,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Skin the cat",
+              "name": {
+                "es": "Skin the cat",
+                "en": "Skin the Cat"
+              },
               "exercise_id": "skin_the_cat",
               "muscles": {
                 "es": "Hombros, dorsales, core, movilidad",
@@ -317,7 +359,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Front Lever Advanced Tuck",
+              "name": {
+                "es": "Front Lever Advanced Tuck",
+                "en": "Advanced Tuck Front Lever"
+              },
               "exercise_id": "front_lever_advanced_tuck",
               "muscles": {
                 "es": "Dorsales, core",
@@ -336,7 +381,10 @@
             },
             {
               "sort_order": 5,
-              "name": "German Hang (colgado invertido)",
+              "name": {
+                "es": "German Hang (colgado invertido)",
+                "en": "German Hang"
+              },
               "exercise_id": "german_hang",
               "muscles": {
                 "es": "Hombros, pecho, bíceps (movilidad)",
@@ -355,7 +403,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Dominada a una mano (progresión)",
+              "name": {
+                "es": "Dominada a una mano (progresión)",
+                "en": "One-Arm Pull-up (progression)"
+              },
               "exercise_id": "one_arm_pullup_prog",
               "muscles": {
                 "es": "Dorsales, bíceps, agarre",
@@ -373,7 +424,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Dominadas Arquero",
+              "name": {
+                "es": "Dominadas Arquero",
+                "en": "Archer Pull-ups"
+              },
               "exercise_id": "archer_pull_up",
               "muscles": {
                 "es": "Dorsales, bíceps, core (unilateral)",
@@ -391,7 +445,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Face pull con liga",
+              "name": {
+                "es": "Face pull con liga",
+                "en": "Band Face Pull"
+              },
               "exercise_id": "face_pull",
               "muscles": {
                 "es": "Deltoides posterior, romboides",
@@ -409,7 +466,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, oblicuos",
@@ -428,7 +488,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -447,7 +510,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -484,7 +550,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Balanceos de pierna",
+              "name": {
+                "es": "Balanceos de pierna",
+                "en": "Leg Swings"
+              },
               "exercise_id": "leg_swings",
               "muscles": {
                 "es": "Caderas, isquiotibiales, movilidad",
@@ -503,7 +572,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad",
@@ -522,7 +594,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Oruga",
+              "name": {
+                "es": "Oruga",
+                "en": "Inchworm"
+              },
               "exercise_id": "inchworm",
               "muscles": {
                 "es": "Isquiotibiales, core, hombros",
@@ -541,7 +616,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pistol squat libre",
+              "name": {
+                "es": "Pistol squat libre",
+                "en": "Free Pistol Squat"
+              },
               "exercise_id": "pistol_free",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -559,7 +637,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Curl Femoral Deslizante",
+              "name": {
+                "es": "Curl Femoral Deslizante",
+                "en": "Sliding Leg Curl"
+              },
               "exercise_id": "sliding_leg_curl",
               "muscles": {
                 "es": "Isquiotibiales, glúteos",
@@ -577,7 +658,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Shrimp squat completo",
+              "name": {
+                "es": "Shrimp squat completo",
+                "en": "Full Shrimp Squat"
+              },
               "exercise_id": "shrimp_full",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -595,7 +679,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Single-leg RDL",
+              "name": {
+                "es": "Single-leg RDL",
+                "en": "Single-Leg RDL"
+              },
               "exercise_id": "single_rdl",
               "muscles": {
                 "es": "Isquiotibiales, glúteos, espalda baja",
@@ -613,7 +700,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Elevación de talón unilateral",
+              "name": {
+                "es": "Elevación de talón unilateral",
+                "en": "Single-Leg Calf Raise"
+              },
               "exercise_id": "calf_uni",
               "muscles": {
                 "es": "Gemelos, sóleo",
@@ -631,7 +721,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de cuádriceps",
+              "name": {
+                "es": "Estiramiento de cuádriceps",
+                "en": "Quad Stretch"
+              },
               "exercise_id": "quad_stretch",
               "muscles": {
                 "es": "Cuádriceps, flexores de cadera",
@@ -650,7 +743,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de isquiotibiales",
+              "name": {
+                "es": "Estiramiento de isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
               "exercise_id": "hamstring_stretch",
               "muscles": {
                 "es": "Isquiotibiales",
@@ -669,7 +765,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento de flexor de cadera",
+              "name": {
+                "es": "Estiramiento de flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -706,7 +805,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad torácica",
@@ -725,7 +827,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad",
@@ -744,7 +849,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -763,7 +871,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Dragon Flag",
+              "name": {
+                "es": "Dragon Flag",
+                "en": "Dragon Flag"
+              },
               "exercise_id": "dragon_flag",
               "muscles": {
                 "es": "Recto abdominal, oblicuos, lumbar",
@@ -781,7 +892,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Elevación de Piernas Colgado",
+              "name": {
+                "es": "Elevación de Piernas Colgado",
+                "en": "Hanging Leg Raise"
+              },
               "exercise_id": "hanging_leg_raise",
               "muscles": {
                 "es": "Recto abdominal, flexores de cadera",
@@ -799,7 +913,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Hollow-to-Arch Swing",
+              "name": {
+                "es": "Hollow-to-Arch Swing",
+                "en": "Hollow-to-Arch Swing"
+              },
               "exercise_id": "hollow_arch",
               "muscles": {
                 "es": "Core total, dorsales, glúteos",
@@ -817,7 +934,10 @@
             },
             {
               "sort_order": 7,
-              "name": "L-sit completo",
+              "name": {
+                "es": "L-sit completo",
+                "en": "Full L-sit"
+              },
               "exercise_id": "lsit_full",
               "muscles": {
                 "es": "Core, flexores de cadera, tríceps",
@@ -836,7 +956,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento de flexor de cadera",
+              "name": {
+                "es": "Estiramiento de flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -855,7 +978,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de pike",
+              "name": {
+                "es": "Estiramiento de pike",
+                "en": "Pike Stretch"
+              },
               "exercise_id": "pike_stretch",
               "muscles": {
                 "es": "Isquiotibiales, espalda baja",
@@ -874,7 +1000,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -911,7 +1040,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Dislocaciones de hombro",
+              "name": {
+                "es": "Dislocaciones de hombro",
+                "en": "Shoulder Dislocates"
+              },
               "exercise_id": "shoulder_dislocates",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -930,7 +1062,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -949,7 +1084,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad torácica",
@@ -968,7 +1106,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pike push-up (progresión HSPU)",
+              "name": {
+                "es": "Pike push-up (progresión HSPU)",
+                "en": "Pike Push-up (HSPU progression)"
+              },
               "exercise_id": "pike_hspu",
               "muscles": {
                 "es": "Hombros, tríceps, trapecio",
@@ -986,7 +1127,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Dips en paralelas",
+              "name": {
+                "es": "Dips en paralelas",
+                "en": "Parallel Bar Dips"
+              },
               "exercise_id": "dips_parallel",
               "muscles": {
                 "es": "Pecho inferior, tríceps, hombros",
@@ -1004,7 +1148,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexiones archer",
+              "name": {
+                "es": "Flexiones archer",
+                "en": "Archer Push-ups"
+              },
               "exercise_id": "archer_pushup",
               "muscles": {
                 "es": "Pecho unilateral, tríceps",
@@ -1022,7 +1169,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -1041,7 +1191,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps, hombros",
@@ -1060,7 +1213,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -1097,7 +1253,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -1116,7 +1275,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Retracción escapular en barra",
+              "name": {
+                "es": "Retracción escapular en barra",
+                "en": "Bar Scapular Retraction"
+              },
               "exercise_id": "scap_retract",
               "muscles": {
                 "es": "Romboides, trapecio inferior",
@@ -1135,7 +1297,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -1154,7 +1319,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pull-up con Mochila",
+              "name": {
+                "es": "Pull-up con Mochila",
+                "en": "Backpack-Weighted Pull-up"
+              },
               "exercise_id": "weighted_pullup",
               "muscles": {
                 "es": "Dorsal, bíceps",
@@ -1172,7 +1340,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Chin-ups",
+              "name": {
+                "es": "Chin-ups",
+                "en": "Chin-ups"
+              },
               "exercise_id": "chinup",
               "muscles": {
                 "es": "Bíceps, dorsales",
@@ -1190,7 +1361,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Inverted Row con Pausa",
+              "name": {
+                "es": "Inverted Row con Pausa",
+                "en": "Inverted Row with Pause"
+              },
               "exercise_id": "inverted_row_pause",
               "muscles": {
                 "es": "Romboides, trapecio medio",
@@ -1208,7 +1382,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, oblicuos",
@@ -1227,7 +1404,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -1246,7 +1426,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -1295,7 +1478,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Dislocaciones de hombro",
+              "name": {
+                "es": "Dislocaciones de hombro",
+                "en": "Shoulder Dislocates"
+              },
               "exercise_id": "shoulder_dislocates",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -1314,7 +1500,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -1333,7 +1522,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Activación escapular",
+              "name": {
+                "es": "Activación escapular",
+                "en": "Scapular Activation"
+              },
               "exercise_id": "scapular_activation",
               "muscles": {
                 "es": "Escápulas, serrato anterior",
@@ -1352,7 +1544,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Handstand libre",
+              "name": {
+                "es": "Handstand libre",
+                "en": "Freestanding Handstand"
+              },
               "exercise_id": "handstand_free",
               "muscles": {
                 "es": "Hombros, core, muñecas, equilibrio",
@@ -1371,7 +1566,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Advanced Tuck Planche",
+              "name": {
+                "es": "Advanced Tuck Planche",
+                "en": "Advanced Tuck Planche"
+              },
               "exercise_id": "advanced_tuck_planche",
               "muscles": {
                 "es": "Hombros, core",
@@ -1390,7 +1588,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexión a una mano (progresión)",
+              "name": {
+                "es": "Flexión a una mano (progresión)",
+                "en": "One-Arm Push-up (progression)"
+              },
               "exercise_id": "one_arm_prog",
               "muscles": {
                 "es": "Pecho unilateral, tríceps, core",
@@ -1408,7 +1609,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Dips con Lastre",
+              "name": {
+                "es": "Dips con Lastre",
+                "en": "Weighted Dips"
+              },
               "exercise_id": "weighted_dips",
               "muscles": {
                 "es": "Tríceps, pecho",
@@ -1426,7 +1630,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Flexiones Tiger Bend",
+              "name": {
+                "es": "Flexiones Tiger Bend",
+                "en": "Tiger Bend Push-ups"
+              },
               "exercise_id": "tiger_bend_pushup",
               "muscles": {
                 "es": "Tríceps, hombros, pecho",
@@ -1444,7 +1651,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -1463,7 +1673,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps, hombros",
@@ -1482,7 +1695,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -1519,7 +1735,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -1538,7 +1757,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Retracción escapular en barra",
+              "name": {
+                "es": "Retracción escapular en barra",
+                "en": "Bar Scapular Retraction"
+              },
               "exercise_id": "scap_retract",
               "muscles": {
                 "es": "Romboides, trapecio inferior",
@@ -1557,7 +1779,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Skin the cat",
+              "name": {
+                "es": "Skin the cat",
+                "en": "Skin the Cat"
+              },
               "exercise_id": "skin_the_cat",
               "muscles": {
                 "es": "Hombros, dorsales, core, movilidad",
@@ -1575,7 +1800,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Front lever single-leg",
+              "name": {
+                "es": "Front lever single-leg",
+                "en": "Single-Leg Front Lever"
+              },
               "exercise_id": "front_lever_single",
               "muscles": {
                 "es": "Dorsales, core, hombros",
@@ -1594,7 +1822,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Back lever",
+              "name": {
+                "es": "Back lever",
+                "en": "Back Lever"
+              },
               "exercise_id": "back_lever",
               "muscles": {
                 "es": "Hombros, bíceps, core, dorsales",
@@ -1613,7 +1844,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Dominada a una mano (progresión)",
+              "name": {
+                "es": "Dominada a una mano (progresión)",
+                "en": "One-Arm Pull-up (progression)"
+              },
               "exercise_id": "one_arm_pullup_prog",
               "muscles": {
                 "es": "Dorsales, bíceps, agarre",
@@ -1631,7 +1865,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Dominadas Arquero",
+              "name": {
+                "es": "Dominadas Arquero",
+                "en": "Archer Pull-ups"
+              },
               "exercise_id": "archer_pull_up",
               "muscles": {
                 "es": "Dorsales, bíceps, core (unilateral)",
@@ -1649,7 +1886,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Face pull con liga",
+              "name": {
+                "es": "Face pull con liga",
+                "en": "Band Face Pull"
+              },
               "exercise_id": "face_pull",
               "muscles": {
                 "es": "Deltoides posterior, romboides",
@@ -1667,7 +1907,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, oblicuos",
@@ -1686,7 +1929,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -1705,7 +1951,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -1742,7 +1991,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Balanceos de pierna",
+              "name": {
+                "es": "Balanceos de pierna",
+                "en": "Leg Swings"
+              },
               "exercise_id": "leg_swings",
               "muscles": {
                 "es": "Caderas, isquiotibiales, movilidad",
@@ -1761,7 +2013,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad",
@@ -1780,7 +2035,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Oruga",
+              "name": {
+                "es": "Oruga",
+                "en": "Inchworm"
+              },
               "exercise_id": "inchworm",
               "muscles": {
                 "es": "Isquiotibiales, core, hombros",
@@ -1799,7 +2057,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pistol squat libre",
+              "name": {
+                "es": "Pistol squat libre",
+                "en": "Free Pistol Squat"
+              },
               "exercise_id": "pistol_free",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -1817,7 +2078,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Curl Femoral Deslizante",
+              "name": {
+                "es": "Curl Femoral Deslizante",
+                "en": "Sliding Leg Curl"
+              },
               "exercise_id": "sliding_leg_curl",
               "muscles": {
                 "es": "Isquiotibiales, glúteos",
@@ -1835,7 +2099,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Shrimp squat completo",
+              "name": {
+                "es": "Shrimp squat completo",
+                "en": "Full Shrimp Squat"
+              },
               "exercise_id": "shrimp_full",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -1853,7 +2120,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Single-leg RDL",
+              "name": {
+                "es": "Single-leg RDL",
+                "en": "Single-Leg RDL"
+              },
               "exercise_id": "single_rdl",
               "muscles": {
                 "es": "Isquiotibiales, glúteos, espalda baja",
@@ -1871,7 +2141,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Elevación de talón unilateral",
+              "name": {
+                "es": "Elevación de talón unilateral",
+                "en": "Single-Leg Calf Raise"
+              },
               "exercise_id": "calf_uni",
               "muscles": {
                 "es": "Gemelos, sóleo",
@@ -1889,7 +2162,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de cuádriceps",
+              "name": {
+                "es": "Estiramiento de cuádriceps",
+                "en": "Quad Stretch"
+              },
               "exercise_id": "quad_stretch",
               "muscles": {
                 "es": "Cuádriceps, flexores de cadera",
@@ -1908,7 +2184,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de isquiotibiales",
+              "name": {
+                "es": "Estiramiento de isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
               "exercise_id": "hamstring_stretch",
               "muscles": {
                 "es": "Isquiotibiales",
@@ -1927,7 +2206,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento de flexor de cadera",
+              "name": {
+                "es": "Estiramiento de flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -1964,7 +2246,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad torácica",
@@ -1983,7 +2268,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad",
@@ -2002,7 +2290,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -2021,7 +2312,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Dragon Flag",
+              "name": {
+                "es": "Dragon Flag",
+                "en": "Dragon Flag"
+              },
               "exercise_id": "dragon_flag",
               "muscles": {
                 "es": "Recto abdominal, oblicuos, lumbar",
@@ -2039,7 +2333,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Elevación de Piernas Colgado",
+              "name": {
+                "es": "Elevación de Piernas Colgado",
+                "en": "Hanging Leg Raise"
+              },
               "exercise_id": "hanging_leg_raise",
               "muscles": {
                 "es": "Recto abdominal, flexores de cadera",
@@ -2057,7 +2354,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Hollow-to-Arch Swing",
+              "name": {
+                "es": "Hollow-to-Arch Swing",
+                "en": "Hollow-to-Arch Swing"
+              },
               "exercise_id": "hollow_arch",
               "muscles": {
                 "es": "Core total, dorsales, glúteos",
@@ -2075,7 +2375,10 @@
             },
             {
               "sort_order": 7,
-              "name": "L-sit completo",
+              "name": {
+                "es": "L-sit completo",
+                "en": "Full L-sit"
+              },
               "exercise_id": "lsit_full",
               "muscles": {
                 "es": "Core, flexores de cadera, tríceps",
@@ -2094,7 +2397,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento de flexor de cadera",
+              "name": {
+                "es": "Estiramiento de flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -2113,7 +2419,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de pike",
+              "name": {
+                "es": "Estiramiento de pike",
+                "en": "Pike Stretch"
+              },
               "exercise_id": "pike_stretch",
               "muscles": {
                 "es": "Isquiotibiales, espalda baja",
@@ -2132,7 +2441,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -2169,7 +2481,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Dislocaciones de hombro",
+              "name": {
+                "es": "Dislocaciones de hombro",
+                "en": "Shoulder Dislocates"
+              },
               "exercise_id": "shoulder_dislocates",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -2188,7 +2503,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -2207,7 +2525,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad torácica",
@@ -2226,7 +2547,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pike push-up (progresión HSPU)",
+              "name": {
+                "es": "Pike push-up (progresión HSPU)",
+                "en": "Pike Push-up (HSPU progression)"
+              },
               "exercise_id": "pike_hspu",
               "muscles": {
                 "es": "Hombros, tríceps, trapecio",
@@ -2244,7 +2568,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Dips en paralelas",
+              "name": {
+                "es": "Dips en paralelas",
+                "en": "Parallel Bar Dips"
+              },
               "exercise_id": "dips_parallel",
               "muscles": {
                 "es": "Pecho inferior, tríceps, hombros",
@@ -2262,7 +2589,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexiones archer",
+              "name": {
+                "es": "Flexiones archer",
+                "en": "Archer Push-ups"
+              },
               "exercise_id": "archer_pushup",
               "muscles": {
                 "es": "Pecho unilateral, tríceps",
@@ -2280,7 +2610,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -2299,7 +2632,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps, hombros",
@@ -2318,7 +2654,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -2355,7 +2694,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -2374,7 +2716,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Retracción escapular en barra",
+              "name": {
+                "es": "Retracción escapular en barra",
+                "en": "Bar Scapular Retraction"
+              },
               "exercise_id": "scap_retract",
               "muscles": {
                 "es": "Romboides, trapecio inferior",
@@ -2393,7 +2738,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -2412,7 +2760,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pull-up con Mochila",
+              "name": {
+                "es": "Pull-up con Mochila",
+                "en": "Backpack-Weighted Pull-up"
+              },
               "exercise_id": "weighted_pullup",
               "muscles": {
                 "es": "Dorsal, bíceps",
@@ -2430,7 +2781,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Chin-ups",
+              "name": {
+                "es": "Chin-ups",
+                "en": "Chin-ups"
+              },
               "exercise_id": "chinup",
               "muscles": {
                 "es": "Bíceps, dorsales",
@@ -2448,7 +2802,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Inverted Row Archer",
+              "name": {
+                "es": "Inverted Row Archer",
+                "en": "Archer Inverted Row"
+              },
               "exercise_id": "archer_inverted_row",
               "muscles": {
                 "es": "Dorsal unilateral",
@@ -2466,7 +2823,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, oblicuos",
@@ -2485,7 +2845,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -2504,7 +2867,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -2552,7 +2918,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Dislocaciones de hombro",
+              "name": {
+                "es": "Dislocaciones de hombro",
+                "en": "Shoulder Dislocates"
+              },
               "exercise_id": "shoulder_dislocates",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -2571,7 +2940,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -2590,7 +2962,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Activación escapular",
+              "name": {
+                "es": "Activación escapular",
+                "en": "Scapular Activation"
+              },
               "exercise_id": "scapular_activation",
               "muscles": {
                 "es": "Escápulas, serrato anterior",
@@ -2609,7 +2984,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pino libre (60s objetivo)",
+              "name": {
+                "es": "Pino libre (60s objetivo)",
+                "en": "Freestanding Handstand (60s goal)"
+              },
               "exercise_id": "handstand_60",
               "muscles": {
                 "es": "Hombros, core, muñecas, equilibrio",
@@ -2628,7 +3006,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Advanced Tuck Planche",
+              "name": {
+                "es": "Advanced Tuck Planche",
+                "en": "Advanced Tuck Planche"
+              },
               "exercise_id": "advanced_tuck_planche",
               "muscles": {
                 "es": "Hombros, core",
@@ -2647,7 +3028,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexión a una mano (progresión)",
+              "name": {
+                "es": "Flexión a una mano (progresión)",
+                "en": "One-Arm Push-up (progression)"
+              },
               "exercise_id": "one_arm_prog",
               "muscles": {
                 "es": "Pecho unilateral, tríceps, core",
@@ -2665,7 +3049,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Dips con Lastre",
+              "name": {
+                "es": "Dips con Lastre",
+                "en": "Weighted Dips"
+              },
               "exercise_id": "weighted_dips",
               "muscles": {
                 "es": "Tríceps, pecho",
@@ -2683,7 +3070,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Flexiones Tiger Bend",
+              "name": {
+                "es": "Flexiones Tiger Bend",
+                "en": "Tiger Bend Push-ups"
+              },
               "exercise_id": "tiger_bend_pushup",
               "muscles": {
                 "es": "Tríceps, hombros, pecho",
@@ -2701,7 +3091,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -2720,7 +3113,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps, hombros",
@@ -2739,7 +3135,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -2776,7 +3175,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -2795,7 +3197,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Retracción escapular en barra",
+              "name": {
+                "es": "Retracción escapular en barra",
+                "en": "Bar Scapular Retraction"
+              },
               "exercise_id": "scap_retract",
               "muscles": {
                 "es": "Romboides, trapecio inferior",
@@ -2814,7 +3219,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Skin the cat",
+              "name": {
+                "es": "Skin the cat",
+                "en": "Skin the Cat"
+              },
               "exercise_id": "skin_the_cat",
               "muscles": {
                 "es": "Hombros, dorsales, core, movilidad",
@@ -2832,7 +3240,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Front Lever Straddle",
+              "name": {
+                "es": "Front Lever Straddle",
+                "en": "Straddle Front Lever"
+              },
               "exercise_id": "front_lever_straddle",
               "muscles": {
                 "es": "Dorsales, core",
@@ -2851,7 +3262,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Back lever",
+              "name": {
+                "es": "Back lever",
+                "en": "Back Lever"
+              },
               "exercise_id": "back_lever",
               "muscles": {
                 "es": "Hombros, bíceps, core, dorsales",
@@ -2870,7 +3284,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Dominada a una mano (progresión)",
+              "name": {
+                "es": "Dominada a una mano (progresión)",
+                "en": "One-Arm Pull-up (progression)"
+              },
               "exercise_id": "one_arm_pullup_prog",
               "muscles": {
                 "es": "Dorsales, bíceps, agarre",
@@ -2888,7 +3305,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Dominadas Arquero",
+              "name": {
+                "es": "Dominadas Arquero",
+                "en": "Archer Pull-ups"
+              },
               "exercise_id": "archer_pull_up",
               "muscles": {
                 "es": "Dorsales, bíceps, core (unilateral)",
@@ -2906,7 +3326,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Face pull con liga",
+              "name": {
+                "es": "Face pull con liga",
+                "en": "Band Face Pull"
+              },
               "exercise_id": "face_pull",
               "muscles": {
                 "es": "Deltoides posterior, romboides",
@@ -2924,7 +3347,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, oblicuos",
@@ -2943,7 +3369,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -2962,7 +3391,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -2999,7 +3431,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Balanceos de pierna",
+              "name": {
+                "es": "Balanceos de pierna",
+                "en": "Leg Swings"
+              },
               "exercise_id": "leg_swings",
               "muscles": {
                 "es": "Caderas, isquiotibiales, movilidad",
@@ -3018,7 +3453,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad",
@@ -3037,7 +3475,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Oruga",
+              "name": {
+                "es": "Oruga",
+                "en": "Inchworm"
+              },
               "exercise_id": "inchworm",
               "muscles": {
                 "es": "Isquiotibiales, core, hombros",
@@ -3056,7 +3497,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pistol Squat con Lastre",
+              "name": {
+                "es": "Pistol Squat con Lastre",
+                "en": "Weighted Pistol Squat"
+              },
               "exercise_id": "weighted_pistol_squat",
               "muscles": {
                 "es": "Cuádriceps, glúteos",
@@ -3074,7 +3518,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Curl Femoral Deslizante",
+              "name": {
+                "es": "Curl Femoral Deslizante",
+                "en": "Sliding Leg Curl"
+              },
               "exercise_id": "sliding_leg_curl",
               "muscles": {
                 "es": "Isquiotibiales, glúteos",
@@ -3092,7 +3539,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Shrimp squat completo",
+              "name": {
+                "es": "Shrimp squat completo",
+                "en": "Full Shrimp Squat"
+              },
               "exercise_id": "shrimp_full",
               "muscles": {
                 "es": "Cuádriceps, glúteos, equilibrio",
@@ -3110,7 +3560,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Single-leg RDL",
+              "name": {
+                "es": "Single-leg RDL",
+                "en": "Single-Leg RDL"
+              },
               "exercise_id": "single_rdl",
               "muscles": {
                 "es": "Isquiotibiales, glúteos, espalda baja",
@@ -3128,7 +3581,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Elevación de talón unilateral",
+              "name": {
+                "es": "Elevación de talón unilateral",
+                "en": "Single-Leg Calf Raise"
+              },
               "exercise_id": "calf_uni",
               "muscles": {
                 "es": "Gemelos, sóleo",
@@ -3146,7 +3602,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de cuádriceps",
+              "name": {
+                "es": "Estiramiento de cuádriceps",
+                "en": "Quad Stretch"
+              },
               "exercise_id": "quad_stretch",
               "muscles": {
                 "es": "Cuádriceps, flexores de cadera",
@@ -3165,7 +3624,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Estiramiento de isquiotibiales",
+              "name": {
+                "es": "Estiramiento de isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
               "exercise_id": "hamstring_stretch",
               "muscles": {
                 "es": "Isquiotibiales",
@@ -3184,7 +3646,10 @@
             },
             {
               "sort_order": 11,
-              "name": "Estiramiento de flexor de cadera",
+              "name": {
+                "es": "Estiramiento de flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -3221,7 +3686,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad torácica",
@@ -3240,7 +3708,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Círculos de cadera",
+              "name": {
+                "es": "Círculos de cadera",
+                "en": "Hip Circles"
+              },
               "exercise_id": "hip_circles",
               "muscles": {
                 "es": "Caderas, movilidad",
@@ -3259,7 +3730,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -3278,7 +3752,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Dragon Flag",
+              "name": {
+                "es": "Dragon Flag",
+                "en": "Dragon Flag"
+              },
               "exercise_id": "dragon_flag",
               "muscles": {
                 "es": "Recto abdominal, oblicuos, lumbar",
@@ -3296,7 +3773,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Elevación de Piernas Colgado",
+              "name": {
+                "es": "Elevación de Piernas Colgado",
+                "en": "Hanging Leg Raise"
+              },
               "exercise_id": "hanging_leg_raise",
               "muscles": {
                 "es": "Recto abdominal, flexores de cadera",
@@ -3314,7 +3794,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Hollow-to-Arch Swing",
+              "name": {
+                "es": "Hollow-to-Arch Swing",
+                "en": "Hollow-to-Arch Swing"
+              },
               "exercise_id": "hollow_arch",
               "muscles": {
                 "es": "Core total, dorsales, glúteos",
@@ -3332,7 +3815,10 @@
             },
             {
               "sort_order": 7,
-              "name": "L-sit completo",
+              "name": {
+                "es": "L-sit completo",
+                "en": "Full L-sit"
+              },
               "exercise_id": "lsit_full",
               "muscles": {
                 "es": "Core, flexores de cadera, tríceps",
@@ -3351,7 +3837,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento de flexor de cadera",
+              "name": {
+                "es": "Estiramiento de flexor de cadera",
+                "en": "Hip Flexor Stretch"
+              },
               "exercise_id": "hip_flexor_stretch",
               "muscles": {
                 "es": "Flexores de cadera, psoas",
@@ -3370,7 +3859,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Estiramiento de pike",
+              "name": {
+                "es": "Estiramiento de pike",
+                "en": "Pike Stretch"
+              },
               "exercise_id": "pike_stretch",
               "muscles": {
                 "es": "Isquiotibiales, espalda baja",
@@ -3389,7 +3881,10 @@
             },
             {
               "sort_order": 10,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -3426,7 +3921,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Dislocaciones de hombro",
+              "name": {
+                "es": "Dislocaciones de hombro",
+                "en": "Shoulder Dislocates"
+              },
               "exercise_id": "shoulder_dislocates",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -3445,7 +3943,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Movilidad de muñecas",
+              "name": {
+                "es": "Movilidad de muñecas",
+                "en": "Wrist Mobility"
+              },
               "exercise_id": "wrist_mobility",
               "muscles": {
                 "es": "Muñecas, antebrazos",
@@ -3464,7 +3965,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Gato-vaca",
+              "name": {
+                "es": "Gato-vaca",
+                "en": "Cat-Cow"
+              },
               "exercise_id": "cat_cow",
               "muscles": {
                 "es": "Columna, movilidad torácica",
@@ -3483,7 +3987,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pike push-up (progresión HSPU)",
+              "name": {
+                "es": "Pike push-up (progresión HSPU)",
+                "en": "Pike Push-up (HSPU progression)"
+              },
               "exercise_id": "pike_hspu",
               "muscles": {
                 "es": "Hombros, tríceps, trapecio",
@@ -3501,7 +4008,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Dips en paralelas",
+              "name": {
+                "es": "Dips en paralelas",
+                "en": "Parallel Bar Dips"
+              },
               "exercise_id": "dips_parallel",
               "muscles": {
                 "es": "Pecho inferior, tríceps, hombros",
@@ -3519,7 +4029,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Flexiones archer",
+              "name": {
+                "es": "Flexiones archer",
+                "en": "Archer Push-ups"
+              },
               "exercise_id": "archer_pushup",
               "muscles": {
                 "es": "Pecho unilateral, tríceps",
@@ -3537,7 +4050,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -3556,7 +4072,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento de tríceps",
+              "name": {
+                "es": "Estiramiento de tríceps",
+                "en": "Triceps Stretch"
+              },
               "exercise_id": "triceps_stretch",
               "muscles": {
                 "es": "Tríceps, hombros",
@@ -3575,7 +4094,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",
@@ -3612,7 +4134,10 @@
           "exercises": [
             {
               "sort_order": 1,
-              "name": "Círculos de brazos",
+              "name": {
+                "es": "Círculos de brazos",
+                "en": "Arm Circles"
+              },
               "exercise_id": "arm_circles",
               "muscles": {
                 "es": "Hombros, movilidad articular",
@@ -3631,7 +4156,10 @@
             },
             {
               "sort_order": 2,
-              "name": "Retracción escapular en barra",
+              "name": {
+                "es": "Retracción escapular en barra",
+                "en": "Bar Scapular Retraction"
+              },
               "exercise_id": "scap_retract",
               "muscles": {
                 "es": "Romboides, trapecio inferior",
@@ -3650,7 +4178,10 @@
             },
             {
               "sort_order": 3,
-              "name": "Rotación torácica",
+              "name": {
+                "es": "Rotación torácica",
+                "en": "Thoracic Rotation"
+              },
               "exercise_id": "thoracic_rotation",
               "muscles": {
                 "es": "Columna torácica, movilidad",
@@ -3669,7 +4200,10 @@
             },
             {
               "sort_order": 4,
-              "name": "Pull-up con Mochila",
+              "name": {
+                "es": "Pull-up con Mochila",
+                "en": "Backpack-Weighted Pull-up"
+              },
               "exercise_id": "weighted_pullup",
               "muscles": {
                 "es": "Dorsal, bíceps",
@@ -3687,7 +4221,10 @@
             },
             {
               "sort_order": 5,
-              "name": "Chin-ups",
+              "name": {
+                "es": "Chin-ups",
+                "en": "Chin-ups"
+              },
               "exercise_id": "chinup",
               "muscles": {
                 "es": "Bíceps, dorsales",
@@ -3705,7 +4242,10 @@
             },
             {
               "sort_order": 6,
-              "name": "Inverted Row Archer",
+              "name": {
+                "es": "Inverted Row Archer",
+                "en": "Archer Inverted Row"
+              },
               "exercise_id": "archer_inverted_row",
               "muscles": {
                 "es": "Dorsal unilateral",
@@ -3723,7 +4263,10 @@
             },
             {
               "sort_order": 7,
-              "name": "Estiramiento dorsal",
+              "name": {
+                "es": "Estiramiento dorsal",
+                "en": "Lat Stretch"
+              },
               "exercise_id": "lat_stretch",
               "muscles": {
                 "es": "Dorsales, oblicuos",
@@ -3742,7 +4285,10 @@
             },
             {
               "sort_order": 8,
-              "name": "Estiramiento pectoral",
+              "name": {
+                "es": "Estiramiento pectoral",
+                "en": "Pectoral Stretch"
+              },
               "exercise_id": "pectoral_stretch",
               "muscles": {
                 "es": "Pecho, hombros anteriores",
@@ -3761,7 +4307,10 @@
             },
             {
               "sort_order": 9,
-              "name": "Respiración profunda",
+              "name": {
+                "es": "Respiración profunda",
+                "en": "Deep Breathing"
+              },
               "exercise_id": "deep_breathing",
               "muscles": {
                 "es": "Diafragma, sistema nervioso",

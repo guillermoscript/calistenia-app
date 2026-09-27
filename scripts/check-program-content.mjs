@@ -38,8 +38,7 @@
  * de infraestructura. La regla `bilingual_field` exige `en` en todos; nació
  * como AVISO y pasó a `STRICT_RULES` (ERROR con `--strict`) cuando los lotes
  * de traducción #798/#799 migraron los 15 programas. El `name` de ejercicio
- * queda FUERA de esta regla a propósito (sale del catálogo, ya bilingüe):
- * ver el comentario de `trackBilingual` más abajo.
+ * también lo exige desde #847: ver el comentario de `trackBilingual`.
  *
  * Cada hallazgo lleva un `rule` estable (ver `STRICT_RULES` y los ids de cada
  * llamada) para que `--json` se pueda filtrar por programa y regla.
@@ -536,18 +535,10 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
    * simplemente no hay nada que traducir todavía) — avisar dos veces del
    * mismo hueco sería ruido.
    *
-   * El `name` de EJERCICIO queda fuera a propósito, aunque el título de la
-   * #797 lo mencione: ni la lista «Qué hacer» ni los «Criterios de
-   * aceptación» de la issue lo incluyen, y las tres cifras hablan solas —
-   * 2.208 ejercicios en 15 programas duplicarían de un plumazo el volumen de
-   * avisos que ya generan `muscles`+`note`. `exercise-resolver.ts` además ya
-   * resuelve el caso que de verdad importa: un `name` que es una clave de
-   * máquina (`sphinx_pushup`) cae al `{es,en}` del catálogo en tiempo de
-   * lectura sin que el JSON de contenido necesite tocarse, y un nombre
-   * humano en español plano es justo el trabajo pendiente del lote de
-   * traducción, no un hueco de infraestructura que este validador deba
-   * señalar campo a campo. Los tres programas `mujer-*` que YA traen `name`
-   * bilingüe (#711/#731/#733) no se tocan ni se rozan por no estar cubiertos.
+   * El `name` de EJERCICIO entró en la regla con #847: #797 lo dejó fuera y
+   * 12 de los 15 programas siguieron enseñando el nombre en español a quien
+   * usa la app en inglés (un nombre humano en español plano NO cae al
+   * catálogo: `exercise-resolver.ts` solo lo hace con claves de máquina).
    */
   const isBilingual = v =>
     typeof v === 'object' && v !== null && !!String(v.es ?? '').trim() && !!String(v.en ?? '').trim()
@@ -646,6 +637,7 @@ export function checkProgram(slug, doc, { strict = false } = {}) {
         required(ex.muscles, `${where} · muscles`)
         required(ex.note, `${where} · note`)
         required(ex.rest_seconds, `${where} · rest_seconds`, { allowZero: true })
+        trackBilingual('name', ex.name, where)
         trackBilingual('muscles', ex.muscles, where)
         trackBilingual('note', ex.note, where)
 

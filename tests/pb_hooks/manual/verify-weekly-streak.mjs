@@ -1,5 +1,5 @@
 /**
- * Verificacion manual del recomputo a racha SEMANAL (migracion 1790320000, #801).
+ * Verificacion manual del recomputo a racha SEMANAL (migracion 1790440000, #801).
  *
  * Mismo motivo que `verify-backfill.mjs` para no ser un test normal: las
  * migraciones corren al arrancar, con la base vacia. Aqui se siembran sesiones,
@@ -22,7 +22,7 @@ import net from "node:net"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 const BIN = process.env.PB_BINARY || join(ROOT, "pocketbase")
-const MIGRATION = "1790320000_weekly_streak.js"
+const MIGRATION = "1790440000_weekly_streak.js"
 const SU_EMAIL = "weekly@test.local"
 const SU_PASS = "TestSuper123!"
 

@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useKeepAwake } from 'expo-keep-awake'
 import { useTranslation } from 'react-i18next'
+import { localizeReps } from '@calistenia/core/lib/localize-reps'
 import { X, Pause } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -69,7 +70,7 @@ const ElapsedClock = memo(function ElapsedClock({
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function CircuitScreen() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const l = useLocalize()
   const router = useRouter()
   useKeepAwake()
@@ -358,7 +359,7 @@ export default function CircuitScreen() {
                 {l(currentExercise.name)}
               </Text>
               {currentExercise.reps && (
-                <Text className="mt-1 font-mono text-lg text-lime">{currentExercise.reps}</Text>
+                <Text className="mt-1 font-mono text-lg text-lime">{localizeReps(currentExercise.reps, i18n.language)}</Text>
               )}
             </View>
 

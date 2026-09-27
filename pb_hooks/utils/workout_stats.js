@@ -155,7 +155,7 @@ var NO_WEEK = "(streak_week_start IS NULL OR streak_week_start = '')"
  *                                    El dia nuevo abre la semana (no la cumple)
  *   - semana anterior (retroactiva) → se queda igual. Recalcularla hacia atras
  *     exigiria releer todo el historial en cada create; el recomputo completo
- *     es trabajo del backfill (migracion 1790320000).
+ *     es trabajo del backfill (migracion 1790440000).
  */
 var NEW_STREAK_SQL = `
   CASE
