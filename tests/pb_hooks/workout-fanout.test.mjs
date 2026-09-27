@@ -65,24 +65,37 @@ test("primera sesión de un referido → referral_bonus al referrer (solo una ve
   await expectNotifications(referrer.id, "referral_bonus", 1, "sin bonus duplicado en la segunda")
 })
 
-test("circuit_sessions actualiza total_sessions y la racha server-side", async () => {
+/** Lunes de la semana de `day` ("YYYY-MM-DD"), desplazado `weeks` semanas. */
+function mondayOf(day, weeks = 0) {
+  const d = new Date(`${day}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + weeks * 7)
+  return d.toISOString().slice(0, 10)
+}
+
+test("circuit_sessions actualiza total_sessions y la racha semanal server-side", async () => {
+  // Un circuito sin fechas cae al dia del servidor, asi que la semana es la de
+  // hoy. La guardada es la anterior y esta cumplida: la racha tiene que seguir.
   const user = await createUser("Circuitero")
+  const today = localDateString(0)
   const stats = await create("user_stats", {
     user: user.id,
     total_sessions: 5,
     workout_streak_current: 3,
     workout_streak_best: 3,
-    last_workout_date: localDateString(-1), // ayer → la racha continúa
+    last_workout_date: mondayOf(today, -1),
+    streak_week_start: mondayOf(today, -1),
+    streak_week_mask: 1 | 2, // semana anterior cumplida
   })
 
-  // 1ª del día: racha 3→4, total 5→6
+  // 1ª del día: abre la semana de hoy, la racha sigue en 3, total 5→6
   await createAs(user, "circuit_sessions", { user: user.id, mode: "rounds", rounds_completed: 3 })
   await waitFor(async () => {
     const s = await getOne("user_stats", stats.id)
-    return s.total_sessions === 6 && s.workout_streak_current === 4 ? s : null
-  }, "racha continúa: 3→4, total 6").then((s) => {
-    assert.equal(s.workout_streak_best, 4, "best acompaña a current")
-    assert.equal(s.last_workout_date, localDateString(0))
+    return s.total_sessions === 6 ? s : null
+  }, "total 6").then((s) => {
+    assert.equal(s.workout_streak_current, 3, "la racha semanal sigue")
+    assert.equal(s.streak_week_start, mondayOf(today))
+    assert.equal(s.last_workout_date, today)
   })
 
   // 2ª del mismo día: total sube, racha no
@@ -91,16 +104,17 @@ test("circuit_sessions actualiza total_sessions y la racha server-side", async (
     const s = await getOne("user_stats", stats.id)
     return s.total_sessions === 7 ? s : null
   }, "total 7").then((s) => {
-    assert.equal(s.workout_streak_current, 4, "misma racha el mismo día")
+    assert.equal(s.workout_streak_current, 3, "el mismo día no cumple la semana")
   })
 
-  // Racha rota (último workout hace mucho): reinicia en 1, best se conserva
-  await update("user_stats", stats.id, { last_workout_date: "2020-01-01" })
+  // Racha rota (la semana guardada es de hace mucho): vuelve a 0, best se conserva
+  await update("user_stats", stats.id, { streak_week_start: "2020-01-06", streak_week_mask: 3 })
   await createAs(user, "circuit_sessions", { user: user.id, mode: "rounds", rounds_completed: 1 })
   await waitFor(async () => {
     const s = await getOne("user_stats", stats.id)
-    return s.total_sessions === 8 && s.workout_streak_current === 1 ? s : null
-  }, "racha rota → 1").then((s) => {
-    assert.equal(s.workout_streak_best, 4, "best no retrocede")
+    return s.total_sessions === 8 ? s : null
+  }, "total 8").then((s) => {
+    assert.equal(s.workout_streak_current, 0, "racha rota → 0")
+    assert.equal(s.workout_streak_best, 3, "best no retrocede")
   })
 })

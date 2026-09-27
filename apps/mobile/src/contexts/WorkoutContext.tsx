@@ -49,6 +49,7 @@ interface WorkoutActions {
   getTotalSessions: () => number
   getLongestStreak: () => number
   getCurrentStreak: () => number
+  getStreakWeekDays: () => number
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
   /** Días con sesión completada, 'YYYY-MM-DD' ascendente (#800). */
@@ -104,7 +105,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     progress, settings, usePB, pbReady,
     logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
-    getLongestStreak, getCurrentStreak, updateSettings, getMonthActivity,
+    getLongestStreak, getCurrentStreak, getStreakWeekDays, updateSettings, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
   } = useProgress(userId, activeProgram?.id ?? null)
 
@@ -136,13 +137,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
-    getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
+    getTotalSessions, getLongestStreak, getCurrentStreak, getStreakWeekDays, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
-    getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
+    getTotalSessions, getLongestStreak, getCurrentStreak, getStreakWeekDays, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
   ])

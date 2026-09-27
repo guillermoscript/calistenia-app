@@ -2,7 +2,7 @@
  * StreakShareCard — full-bleed shareable image for a streak milestone.
  * Mirrors WorkoutShareCard's brand styling (dark bg, lime accents, top glow):
  *   header → profile row + "RACHA EN LLAMAS" badge
- *   hero   → big 🔥 + streak count + "DÍAS DE RACHA" + tagline (fills frame)
+ *   hero   → big 🔥 + streak count + "SEMANAS DE RACHA" + tagline (fills frame)
  *   footer → brand footer
  *
  * Size defaults to 360×640 (9:16) but accepts width/height so the caller can
@@ -44,12 +44,15 @@ function formatDate(dateStr?: string): string {
   }
 }
 
-/** Tagline scales with the milestone so bigger streaks feel bigger. */
+/**
+ * Tagline scales with the milestone so bigger streaks feel bigger. The streak
+ * is in WEEKS since #801 (milestones 2, 4, 8, 12, 26, 52).
+ */
 function streakTagline(streak: number): string {
-  if (streak >= 100) return '100 días. Eres imparable. 🐐'
-  if (streak >= 60) return 'Dos meses sin fallar. Élite.'
-  if (streak >= 30) return 'Un mes entero. Esto ya es identidad.'
-  if (streak >= 14) return 'Dos semanas seguidas. Imparable.'
+  if (streak >= 52) return 'Un año sin fallar una semana. 🐐'
+  if (streak >= 26) return 'Medio año sin fallar. Élite.'
+  if (streak >= 12) return 'Tres meses. Esto ya es identidad.'
+  if (streak >= 4) return 'Un mes sin fallar una semana.'
   return 'La constancia es tu superpoder.'
 }
 
@@ -96,7 +99,7 @@ function StreakShareCard({ streak, userName, avatarUrl, date, width = BASE_W, he
             {streak}
           </Text>
           <Text className="font-bebas" style={s.streakLabel}>
-            DÍAS DE RACHA
+            SEMANAS DE RACHA
           </Text>
           <Text className="font-sans-medium" style={s.tagline}>
             {streakTagline(streak)}

@@ -1286,7 +1286,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
             `Readiness: ${readinessScore}/10 — ${readinessLabel}`,
             goals ? `Calorías: ${Math.round(nutrition.calories)}/${goals.calories} kcal` : `Calorías hoy: ${Math.round(nutrition.calories)} kcal`,
             workoutData?.has_workout ? `Entrenamiento: ${workoutData.day_name} — ${workoutData.day_focus} (${workoutData.exercises.length} ejercicios)` : "Sin entrenamiento programado hoy",
-            streak > 0 ? `Racha: ${streak} días 🔥` : "",
+            streak > 0 ? `Racha: ${streak} semanas 🔥` : "",
           ].filter(Boolean).join("\n")
         );
       } catch (err) {

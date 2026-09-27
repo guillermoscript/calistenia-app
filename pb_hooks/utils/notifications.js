@@ -489,7 +489,10 @@ function checkReferralBonus(userId) {
   }
 }
 
-var STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
+// En SEMANAS desde #801: la racha cuenta semanas seguidas con al menos 2 dias
+// de entreno (ver utils/workout_stats.js). Mismos hitos que el cliente
+// (packages/core/lib/streak-milestones.ts).
+var STREAK_MILESTONES = [2, 4, 8, 12, 26, 52]
 
 /**
  * Notifica el hito de racha si `newStreak` acaba de cruzar uno.
@@ -508,21 +511,23 @@ function checkStreakMilestone(userId, oldStreak, newStreak) {
   for (var i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
     var milestone = STREAK_MILESTONES[i]
     if (newStreak >= milestone && oldStreak < milestone) {
-      createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
+      // `weeks` y no `days`: el cliente distingue asi las notificaciones nuevas
+      // de las guardadas antes de #801, que siguen siendo de dias.
+      createSelfNotification(userId, "streak", String(milestone), "streak", { weeks: milestone })
       sendPush(
         userId,
-        { es: milestone + " dias seguidos!", en: milestone + " days in a row!" },
+        { es: milestone + " semanas seguidas entrenando!", en: milestone + " weeks in a row!" },
         { es: "Tu racha de entrenamiento sigue creciendo", en: "Your workout streak keeps growing" },
         "/progress",
         "streak"
       )
 
-      // Fan-out a seguidores: "tu amigo lleva N dias seguidos"
+      // Fan-out a seguidores: "tu amigo lleva N semanas seguidas"
       var streakActorName = getUserName(userId)
-      notifyFollowers(userId, "friend_streak", String(milestone), { days: milestone }, {
+      notifyFollowers(userId, "friend_streak", String(milestone), { weeks: milestone }, {
         title: {
-          es: (streakActorName || "Tu amigo") + " lleva " + milestone + " dias seguidos",
-          en: (streakActorName || "Your friend") + " is on a " + milestone + "-day streak",
+          es: (streakActorName || "Tu amigo") + " lleva " + milestone + " semanas seguidas",
+          en: (streakActorName || "Your friend") + " is on a " + milestone + "-week streak",
         },
         body: { es: "Tu amigo esta en racha", en: "Your friend is on a streak" },
         url: "/u/" + userId,

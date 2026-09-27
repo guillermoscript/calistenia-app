@@ -41,8 +41,8 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
 
   const handleShare = useCallback(async () => {
     await shareContent({
-      title: t('streak.milestone.title', { days: streak }),
-      text: t('streak.milestone.shareText', { days: streak }),
+      title: t('streak.milestone.title', { weeks: streak }),
+      text: t('streak.milestone.shareText', { weeks: streak }),
       url: referralCode ? localizedWebUrl(`/invite/${referralCode}`, i18n.language) : localizedWebUrl('/', i18n.language),
     })
   }, [streak, t, i18n.language, referralCode])
@@ -80,7 +80,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
         <span className="text-2xl flex-shrink-0">🔥</span>
         <div className="flex-1 min-w-0">
           <div className="font-bold text-foreground text-sm">
-            {t('streak.milestone.title', { days: streak })}
+            {t('streak.milestone.title', { weeks: streak })}
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
             {t(subtitleKey)}

@@ -295,8 +295,8 @@ export default function UserProfileScreen() {
         {/* Stats */}
         <View className="mb-6 flex-row gap-2">
           <StatBox label="Sesiones" value={profile.totalSessions} accent="text-lime" />
-          <StatBox label="Racha" value={profile.currentStreak} accent="text-sky-500" unit="d" />
-          <StatBox label="Mejor" value={profile.bestStreak} accent="text-amber-400" unit="d" />
+          <StatBox label="Racha" value={profile.currentStreak} accent="text-sky-500" unit="sem" />
+          <StatBox label="Mejor" value={profile.bestStreak} accent="text-amber-400" unit="sem" />
           <StatBox label="Nivel" value={profile.level} accent="text-pink-500" />
         </View>
 

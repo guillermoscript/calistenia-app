@@ -92,7 +92,7 @@ export default function TodayDashboard() {
             <div style={{ textAlign: "center", backgroundColor: card, borderRadius: 8, padding: "8px 12px", border: `1px solid ${border}` }}>
               <div style={{ fontSize: 18 }}>🔥</div>
               <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: textColor }}>{streak}</div>
-              <div style={{ fontSize: 10, color: sub }}>días</div>
+              <div style={{ fontSize: 10, color: sub }}>semanas</div>
             </div>
           )}
         </div>

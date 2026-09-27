@@ -29,8 +29,8 @@ interface CategoryDef {
 const CATEGORIES: CategoryDef[] = [
   { id: 'sessions_week', label: 'Sesiones', unit: '', hasTimeFilter: true },
   { id: 'total_sessions', label: 'Total sesiones', unit: '', hasTimeFilter: false },
-  { id: 'streak', label: 'Racha actual', unit: 'días', hasTimeFilter: false },
-  { id: 'streak_best', label: 'Mejor racha', unit: 'días', hasTimeFilter: false },
+  { id: 'streak', label: 'Racha actual', unit: 'semanas', hasTimeFilter: false },
+  { id: 'streak_best', label: 'Mejor racha', unit: 'semanas', hasTimeFilter: false },
   { id: 'xp', label: 'XP', unit: 'xp', hasTimeFilter: false },
   { id: 'total_sets', label: 'Series totales', unit: '', hasTimeFilter: false },
   { id: 'pr_pullups', label: 'Dominadas', unit: 'reps', hasTimeFilter: false },

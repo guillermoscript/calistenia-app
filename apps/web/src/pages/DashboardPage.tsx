@@ -32,6 +32,7 @@ import { useSleep } from '@calistenia/core/hooks/useSleep'
 import { useLeaderboard } from '@calistenia/core/hooks/useLeaderboard'
 import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { STREAK_WEEKLY_GOAL } from '@calistenia/core/lib/streak'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioSession } from '@calistenia/core/types'
 import type { CardioAggregateStats } from '@calistenia/core/hooks/useCardioStats'
@@ -183,7 +184,7 @@ export default function DashboardPage({
 }: DashboardPageProps) {
   const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays, programProgress } = useWorkoutState()
   const {
-    getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity,
+    getTotalSessions, getLongestStreak, getStreakWeekDays, getWeeklyDoneCount, getMonthActivity,
     updateSettings, isWorkoutDone, getLastSessionDate, getDoneDates, selectProgram: onSelectProgram,
     duplicateProgram, setPhaseOverride,
   } = useWorkoutActions()
@@ -221,6 +222,8 @@ export default function DashboardPage({
     return getActiveMilestone(streak, userId)
   }, [streak, userId, dismissedMilestone])
   const weeklyDone = getWeeklyDoneCount()
+  // Racha semanal (#801): días distintos de esta semana hacia el mínimo que la mantiene.
+  const streakWeekDays = getStreakWeekDays()
   const monthActivity = getMonthActivity()
   // #616: la fase sale del programa activo (o del override manual guardado en
   // `user_programs`), no del entero global `settings.phase`.
@@ -533,6 +536,11 @@ export default function DashboardPage({
           <div className="text-center">
             <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
             <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.bestStreak')}</div>
+            <div className="text-[9px] text-lime tracking-wide mt-0.5">
+              {streakWeekDays >= STREAK_WEEKLY_GOAL
+                ? t('streak.weekKept')
+                : t('streak.weekProgress', { done: streakWeekDays, goal: STREAK_WEEKLY_GOAL })}
+            </div>
           </div>
           <div className="text-center">
             <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}<span className="text-lg text-muted-foreground">/{settings.weeklyGoal || 5}</span></div>

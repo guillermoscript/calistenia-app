@@ -33,6 +33,7 @@ import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
 import type { DayId, WeekDay } from '@calistenia/core/types'
+import { STREAK_WEEKLY_GOAL } from '@calistenia/core/lib/streak'
 
 const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
 
@@ -91,7 +92,7 @@ export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions, getDoneDates } = useWorkoutActions()
+  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getStreakWeekDays, getTotalSessions, getDoneDates } = useWorkoutActions()
   const session = useActiveSession()
   const { startCircuit } = useCircuitSession()
   const milestoneUser = useAuthUser()
@@ -453,8 +454,15 @@ export default function TodayScreen() {
         {/* Stats */}
         <View className="flex-row gap-3">
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
-          {/* Racha viva, no el récord: el récord se queda en perfil (#229) */}
-          <StatCard label={t('profile.streak')} value={getCurrentStreak()} />
+          {/* Racha viva, no el récord: el récord se queda en perfil (#229).
+              Semanal desde #801: debajo, lo que falta para cumplir esta semana. */}
+          <StatCard
+            label={t('profile.streak')}
+            value={getCurrentStreak()}
+            hint={getStreakWeekDays() >= STREAK_WEEKLY_GOAL
+              ? t('streak.weekKept')
+              : t('streak.weekProgress', { done: getStreakWeekDays(), goal: STREAK_WEEKLY_GOAL })}
+          />
           <StatCard label={t('profile.sessions')} value={getTotalSessions()} />
         </View>
 
@@ -510,7 +518,7 @@ function CommunityPill({ icon, label, onPress }: { icon: ReactNode; label: strin
   )
 }
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
+function StatCard({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
   const numeric = typeof value === 'number' ? value : null
   const count = useCountUp(numeric ?? 0)
   const display = numeric !== null ? String(count) : value
@@ -519,6 +527,9 @@ function StatCard({ label, value }: { label: string; value: number | string }) {
       <CardContent className="items-center py-4">
         <Text className="font-bebas text-2xl leading-none text-foreground">{display}</Text>
         <Text className="mt-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
+        {hint ? (
+          <Text className="mt-1 font-mono text-[8px] uppercase tracking-[1px] text-lime" numberOfLines={1}>{hint}</Text>
+        ) : null}
       </CardContent>
     </Card>
   )

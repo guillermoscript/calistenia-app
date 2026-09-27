@@ -11,8 +11,9 @@ const LIME: ColorProp = '#a3e635'
 const MUTED: ColorProp = '#8a8782'
 
 const STRINGS = {
-  es: { streak: 'RACHA', day: 'DÍA', days: 'DÍAS', stale: 'ABRE LA APP', none: 'SIN RACHA' },
-  en: { streak: 'STREAK', day: 'DAY', days: 'DAYS', stale: 'OPEN THE APP', none: 'NO STREAK' },
+  // La racha cuenta semanas desde #801.
+  es: { streak: 'RACHA', week: 'SEMANA', weeks: 'SEMANAS', stale: 'ABRE LA APP', none: 'SIN RACHA' },
+  en: { streak: 'STREAK', week: 'WEEK', weeks: 'WEEKS', stale: 'OPEN THE APP', none: 'NO STREAK' },
 }
 
 const SHELL = {
@@ -40,7 +41,7 @@ export function StreakWidget({ snapshot, today }: { snapshot: WidgetSnapshot | n
   const color = alive ? LIME : MUTED
   const kicker = snapshot.streak === 0
     ? tr.none
-    : `${tr.streak} · ${snapshot.streak === 1 ? tr.day : tr.days}`
+    : `${tr.streak} · ${snapshot.streak === 1 ? tr.week : tr.weeks}`
 
   return (
     <FlexWidget clickAction="OPEN_APP" style={SHELL}>

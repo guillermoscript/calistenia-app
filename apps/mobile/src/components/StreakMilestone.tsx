@@ -6,6 +6,7 @@
  */
 import React, { useEffect, useState, useCallback } from 'react'
 import { Animated, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useRef } from 'react'
 
 import { Text } from '@/components/ui/text'
@@ -44,6 +45,7 @@ export default function StreakMilestone({
   const scale = useRef(new Animated.Value(0.85)).current
   const opacity = useRef(new Animated.Value(0)).current
   const captureRef = useRef<ShareCardCaptureHandle>(null)
+  const { t } = useTranslation()
   const { width: screenW, height: screenH } = useWindowDimensions()
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
 
@@ -96,7 +98,7 @@ export default function StreakMilestone({
     if (!milestone) return
     const message = referralCode
       ? shareReferralInvite(userName, referralCode).message
-      : `¡${milestone} días de racha en Calistenia App! 🔥`
+      : t('streak.milestone.shareText', { weeks: milestone })
     try {
       // Fonts are loaded by _layout boot; small RAF guards against a blank capture.
       await new Promise((r) => requestAnimationFrame(() => r(null)))
@@ -112,7 +114,7 @@ export default function StreakMilestone({
     } catch {
       // User cancelled the share sheet or capture failed — no-op.
     }
-  }, [milestone, referralCode, userName])
+  }, [milestone, referralCode, userName, t])
 
   if (phase === 'loading' || phase === 'hidden' || milestone === null) return null
 
@@ -133,10 +135,10 @@ export default function StreakMilestone({
               {milestone}
             </Text>
             <Text className="font-bebas text-2xl text-white tracking-widest mt-1">
-              DÍAS DE RACHA
+              {t('streak.milestone.unit')}
             </Text>
             <Text className="font-sans-medium text-sm text-zinc-400 text-center mt-2 px-4">
-              ¡{milestone} días seguidos entrenando! Sigue así 💪
+              {t('streak.milestone.body', { weeks: milestone })}
             </Text>
 
             {/* Share */}
