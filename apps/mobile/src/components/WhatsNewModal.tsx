@@ -37,6 +37,7 @@ import { Text } from '@/components/ui/text'
 import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 import { haptics } from '@/lib/haptics'
 import { syncStorage } from '@/lib/storage'
+import { isAnyOverlayOpen, setOverlayOpen } from '@/lib/overlay-gate'
 import {
   compareVersions,
   dotColorForType,
@@ -74,6 +75,10 @@ function PulseDot({ reduceMotion }: { reduceMotion: boolean }) {
 
 // ── Entry point: auto-decide visibilidad ───────────────────────────────────────
 
+// El inicio solo lo monta con al menos un entreno en la cuenta (#858): así,
+// como mucho una vez por versión y nunca antes del primer entreno.
+const OVERLAY_ID = 'whats_new'
+
 export default function WhatsNewModal() {
   const { i18n } = useTranslation()
   const reduceMotion = useReducedMotion()
@@ -97,20 +102,29 @@ export default function WhatsNewModal() {
 
   useEffect(() => {
     if (unseen.length === 0) return
-    const id = setTimeout(
-      () => {
-        setVisible(true)
-        haptics.selection()
-      },
-      reduceMotion ? 250 : 700,
-    )
+    // Nunca encima de otro modal automático (hito de racha): espera su turno.
+    let id: ReturnType<typeof setTimeout>
+    const attempt = () => {
+      if (isAnyOverlayOpen()) {
+        id = setTimeout(attempt, 1_000)
+        return
+      }
+      setOverlayOpen(OVERLAY_ID, true)
+      setVisible(true)
+      haptics.selection()
+    }
+    id = setTimeout(attempt, reduceMotion ? 250 : 700)
     return () => clearTimeout(id)
   }, [unseen.length, reduceMotion])
+
+  // Si el inicio lo desmonta con la hoja abierta, libera el turno.
+  useEffect(() => () => setOverlayOpen(OVERLAY_ID, false), [])
 
   const dismiss = useCallback(() => {
     // Marca la versión INSTALADA como vista (no la del changelog) para que la
     // detección quede coherente con compareVersions en el próximo arranque.
     syncStorage.setItem(WHATS_NEW_STORAGE_KEY, current)
+    setOverlayOpen(OVERLAY_ID, false)
     setVisible(false)
   }, [current])
 

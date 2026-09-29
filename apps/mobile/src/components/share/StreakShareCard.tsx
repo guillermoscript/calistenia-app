@@ -2,7 +2,10 @@
  * StreakShareCard — full-bleed shareable image for a streak milestone.
  * Mirrors WorkoutShareCard's brand styling (dark bg, lime accents, top glow):
  *   header → profile row + "RACHA EN LLAMAS" badge
- *   hero   → big 🔥 + streak count + "DÍAS DE RACHA" + tagline (fills frame)
+ *   hero   → big 🔥 + semanas de racha + tagline (fills frame)
+ *
+ * Desde #858 la racha es SEMANAL (semanas seguidas cumpliendo el objetivo) y
+ * los textos van por i18n.
  *   footer → brand footer
  *
  * Size defaults to 360×640 (9:16) but accepts width/height so the caller can
@@ -11,6 +14,8 @@
  */
 import React from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 const C = {
   bg: '#09090b',
@@ -26,6 +31,7 @@ const C = {
 const BASE_W = 360
 
 export interface StreakShareCardProps {
+  /** Semanas seguidas cumpliendo el objetivo. */
   streak: number
   userName?: string
   avatarUrl?: string | null
@@ -34,26 +40,26 @@ export interface StreakShareCardProps {
   height?: number
 }
 
-function formatDate(dateStr?: string): string {
+function formatDate(dateStr: string | undefined, lang: string): string {
   if (!dateStr) return ''
   try {
     const d = new Date(`${dateStr}T12:00:00`)
-    return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } catch {
     return dateStr
   }
 }
 
 /** Tagline scales with the milestone so bigger streaks feel bigger. */
-function streakTagline(streak: number): string {
-  if (streak >= 100) return '100 días. Eres imparable. 🐐'
-  if (streak >= 60) return 'Dos meses sin fallar. Élite.'
-  if (streak >= 30) return 'Un mes entero. Esto ya es identidad.'
-  if (streak >= 14) return 'Dos semanas seguidas. Imparable.'
-  return 'La constancia es tu superpoder.'
+function streakTagline(weeks: number, t: TFunction): string {
+  if (weeks >= 52) return t('home.streak.share.tagline52')
+  if (weeks >= 26) return t('home.streak.share.tagline26')
+  if (weeks >= 12) return t('home.streak.share.tagline12')
+  return t('home.streak.share.tagline')
 }
 
 function StreakShareCard({ streak, userName, avatarUrl, date, width = BASE_W, height = 640 }: StreakShareCardProps) {
+  const { t, i18n } = useTranslation()
   const s = makeStyles(width, height)
   const initials = (userName ?? '?')[0].toUpperCase()
 
@@ -74,17 +80,17 @@ function StreakShareCard({ streak, userName, avatarUrl, date, width = BASE_W, he
             )}
             <View style={s.profileText}>
               <Text className="font-sans-medium" style={s.userName}>
-                {userName ?? 'Atleta'}
+                {userName ?? t('race.athlete')}
               </Text>
               <Text className="font-mono" style={s.dateText}>
-                {formatDate(date)}
+                {formatDate(date, i18n.language)}
               </Text>
             </View>
           </View>
 
           <View style={s.badge}>
             <Text className="font-mono-semibold" style={s.badgeText}>
-              RACHA EN LLAMAS
+              {t('home.streak.share.badge')}
             </Text>
           </View>
         </View>
@@ -96,10 +102,10 @@ function StreakShareCard({ streak, userName, avatarUrl, date, width = BASE_W, he
             {streak}
           </Text>
           <Text className="font-bebas" style={s.streakLabel}>
-            DÍAS DE RACHA
+            {t('home.streak.share.label')}
           </Text>
           <Text className="font-sans-medium" style={s.tagline}>
-            {streakTagline(streak)}
+            {streakTagline(streak, t)}
           </Text>
         </View>
 

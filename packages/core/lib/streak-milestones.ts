@@ -8,7 +8,11 @@
  * y le pasa a `pickActiveMilestone` un predicado de "¿ya se enseñó?" (#468).
  */
 
-/** Días de racha que se celebran, de menor a mayor. */
+/**
+ * Días de racha que se celebran, de menor a mayor. Los hitos por SEMANAS
+ * (`WEEKLY_STREAK_MILESTONES` de `weeklyStreak.ts`) se pasan como tercer
+ * argumento de `pickActiveMilestone` (inicio móvil, #858).
+ */
 export const STREAK_MILESTONES = [7, 14, 30, 60, 100] as const
 
 /**
@@ -22,6 +26,7 @@ export const STREAK_MILESTONES = [7, 14, 30, 60, 100] as const
 export function pickActiveMilestone(
   streak: number,
   isShown: (milestone: number) => boolean,
+  milestones: readonly number[] = STREAK_MILESTONES,
 ): number | null {
-  return [...STREAK_MILESTONES].reverse().find((m) => streak >= m && !isShown(m)) ?? null
+  return [...milestones].reverse().find((m) => streak >= m && !isShown(m)) ?? null
 }
