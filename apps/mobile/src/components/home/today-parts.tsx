@@ -9,7 +9,7 @@
  */
 import type { ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
-import { ChevronRight, Play } from 'lucide-react-native'
+import { CalendarDays, ChevronRight, Play } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -49,9 +49,18 @@ export function TodayTitle({ children, size = 'md' }: { children: ReactNode; siz
   )
 }
 
-export function TodayMeta({ children }: { children: ReactNode }) {
+export function TodayMeta({ children, className, numberOfLines }: {
+  children: ReactNode
+  className?: string
+  numberOfLines?: number
+}) {
   return (
-    <Text className="font-mono text-[10px] uppercase tracking-[1px] text-muted-foreground">{children}</Text>
+    <Text
+      numberOfLines={numberOfLines}
+      className={cn('font-mono text-[10px] uppercase tracking-[1px] text-muted-foreground', className)}
+    >
+      {children}
+    </Text>
   )
 }
 
@@ -180,6 +189,25 @@ export function LinkRow({ kicker, title, hint, icon, onPress, bordered = true }:
         {hint ? <Text className="text-xs text-muted-foreground" numberOfLines={1}>{hint}</Text> : null}
       </View>
       <ChevronRight size={16} color={colors.mutedForeground} />
+    </Pressable>
+  )
+}
+
+/**
+ * «Cambiar día» del kicker: en color de texto y con icono, no en gris. En gris
+ * pasaba desapercibido y parecía que ya no se podía entrenar otro día (QA #858).
+ */
+export function ChangeDayAction({ label, onPress }: { label: string; onPress: () => void }) {
+  const colors = useThemeColors()
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      hitSlop={4}
+      className="min-h-11 flex-row items-center gap-1.5 pl-3 active:opacity-60"
+    >
+      <CalendarDays size={14} color={colors.lime} />
+      <Text className="font-mono text-[10px] uppercase tracking-[2px] text-foreground underline">{label}</Text>
     </Pressable>
   )
 }

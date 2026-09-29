@@ -36,6 +36,7 @@ import type { HomeActiveActivity, HomeDayRef, HomeState } from '@calistenia/core
 import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
 import type { Exercise, SessionDone } from '@calistenia/core/types'
 import {
+  ChangeDayAction,
   LinkRow,
   PrimaryAction,
   TextAction,
@@ -180,7 +181,7 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
           action={chosen
             ? <TextAction mono label={t('home.action.backToToday')} onPress={onBackToToday} className="pr-0" />
             : onChangeDay
-              ? <TextAction mono label={t('home.action.changeDay')} onPress={onChangeDay} className="pr-0" />
+              ? <ChangeDayAction label={t('home.action.changeDay')} onPress={onChangeDay} />
               : null}
         >
           {kicker}
@@ -213,16 +214,21 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
       )}
       {activeProgram && week != null ? (
         <View className="gap-1.5">
+          {/* El nombre del programa se recorta; la semana no se mueve. */}
           <View className="flex-row justify-between gap-3">
-            <TodayMeta>
+            <TodayMeta numberOfLines={1} className="flex-1">
               {t('home.training.programPhase', { program: activeProgram.name, phase: view.phase, phases: phaseCount })}
             </TodayMeta>
-            <TodayMeta>{t('home.training.programWeek', { week, weeks: programProgress.totalWeeks })}</TodayMeta>
+            <TodayMeta className="shrink-0">{t('home.training.programWeek', { week, weeks: programProgress.totalWeeks })}</TodayMeta>
           </View>
           <TodayBar percent={programProgress.percent} />
         </View>
       ) : null}
       <PrimaryAction label={primary} onPress={() => onPrimary(() => actions.startDay(day))} />
+      {/* Segunda entrada a «otro día», al alcance del pulgar (QA #858). */}
+      {!chosen && !header && onChangeDay ? (
+        <TextAction label={t('home.action.chooseOtherDay')} onPress={onChangeDay} className="-my-2 self-center" />
+      ) : null}
     </TodayCard>
   )
 }
