@@ -310,6 +310,9 @@ export function useProgressMutations(userId: string | null = null, activeProgram
           pr_pullups: updated.pr_pullups ?? null, pr_pushups: updated.pr_pushups ?? null,
           pr_lsit: updated.pr_lsit ?? null, pr_pistol: updated.pr_pistol ?? null,
           pr_handstand: updated.pr_handstand ?? null,
+          // Solo si se conoce: un dispositivo con settings viejos en caché no
+          // debe devolver a `false` el objetivo que el usuario fijó en otro (#853).
+          ...(typeof updated.weeklyGoalCustom === 'boolean' ? { weekly_goal_custom: updated.weeklyGoalCustom } : {}),
         }
         if (existingRes.items.length > 0) {
           await pb.collection('settings').update(existingRes.items[0].id, data)
@@ -322,6 +325,7 @@ export function useProgressMutations(userId: string | null = null, activeProgram
           pr_pullups: updated.pr_pullups ?? null, pr_pushups: updated.pr_pushups ?? null,
           pr_lsit: updated.pr_lsit ?? null, pr_pistol: updated.pr_pistol ?? null,
           pr_handstand: updated.pr_handstand ?? null,
+          ...(typeof updated.weeklyGoalCustom === 'boolean' ? { weekly_goal_custom: updated.weeklyGoalCustom } : {}),
         }).catch((e: any) => console.warn('PB settings create error:', e))
       }
     }

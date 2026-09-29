@@ -7,7 +7,6 @@
     "apps/mobile/src/app/cardio/[id].tsx": 2,
     "apps/mobile/src/app/friends.tsx": 6,
     "apps/mobile/src/app/health.tsx": 12,
-    "apps/mobile/src/app/leaderboard.tsx": 4,
     "apps/mobile/src/app/u/[id].tsx": 8,
     "apps/mobile/src/components/free-session/AISessionForm.tsx": 4,
     "apps/mobile/src/components/free-session/AISessionPreview.tsx": 5,

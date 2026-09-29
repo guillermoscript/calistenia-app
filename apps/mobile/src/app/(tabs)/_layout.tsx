@@ -95,6 +95,10 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
+      {/* Comunidad (#860) existe pero aún no sale en la barra: la meten las
+          5 pestañas de #859. Sin esta línea expo-router la pintaría como una
+          8.ª pestaña sin icono. Hasta entonces se llega desde ☰ → Comunidad. */}
+      <Tabs.Screen name="community" options={{ href: null }} />
     </Tabs>
     {/* Sesión de cardio en curso: barra flotante para volver a /cardio */}
     <ActiveCardioBar />

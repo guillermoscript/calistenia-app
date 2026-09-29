@@ -30,10 +30,11 @@ import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
-import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
+import { localDay, localHour, todayStr, diffDays, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
 import type { DayId, WeekDay } from '@calistenia/core/types'
-import { STREAK_WEEKLY_GOAL } from '@calistenia/core/lib/streak'
 
 const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
 
@@ -91,8 +92,8 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getStreakWeekDays, getTotalSessions, getDoneDates } = useWorkoutActions()
+  const { settings, activeProgram, weekDays, phases, programsReady, progress, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
+  const { getWorkout, isWorkoutDone, getLongestStreak, getCurrentStreak, getTotalSessions, getDoneDates } = useWorkoutActions()
   const session = useActiveSession()
   const { startCircuit } = useCircuitSession()
   const milestoneUser = useAuthUser()
@@ -100,6 +101,12 @@ export default function TodayScreen() {
   // Para el hint cardio_gps (#235): comparte query key con HomeActivity, cero fetch extra.
   const { sessions: cardioSessions, isLoading: cardioLoading } = useCardioSessions(milestoneUser?.id ?? null)
   const [showMilestone, setShowMilestone] = useState(true)
+  // «X de Y» de la semana de calendario, en días distintos (#853); suma el
+  // cardio libre, que esta pantalla ya carga para el hint cardio_gps.
+  const weeklyDone = useMemo(
+    () => getWeekDoneDays(todayStr(), progress, cardioSessions.map(c => utcToLocalDateStr(c.started_at))),
+    [progress, cardioSessions],
+  )
   const scrollRef = useRef<ScrollView>(null)
   // «Completa tu primer entreno» del checklist: sube al hero (está justo encima).
   const scrollToHero = useCallback(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), [])
@@ -453,16 +460,9 @@ export default function TodayScreen() {
 
         {/* Stats */}
         <View className="flex-row gap-3">
-          <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
-          {/* Racha viva, no el récord: el récord se queda en perfil (#229).
-              Semanal desde #801: debajo, lo que falta para cumplir esta semana. */}
-          <StatCard
-            label={t('profile.streak')}
-            value={getCurrentStreak()}
-            hint={getStreakWeekDays() >= STREAK_WEEKLY_GOAL
-              ? t('streak.weekKept')
-              : t('streak.weekProgress', { done: getStreakWeekDays(), goal: STREAK_WEEKLY_GOAL })}
-          />
+          <StatCard label={t('common.week')} value={`${weeklyDone}/${getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)}`} />
+          {/* Racha viva, no el récord: el récord se queda en perfil (#229) */}
+          <StatCard label={t('profile.streak')} value={getCurrentStreak()} />
           <StatCard label={t('profile.sessions')} value={getTotalSessions()} />
         </View>
 
@@ -518,7 +518,7 @@ function CommunityPill({ icon, label, onPress }: { icon: ReactNode; label: strin
   )
 }
 
-function StatCard({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
   const numeric = typeof value === 'number' ? value : null
   const count = useCountUp(numeric ?? 0)
   const display = numeric !== null ? String(count) : value
@@ -527,9 +527,6 @@ function StatCard({ label, value, hint }: { label: string; value: number | strin
       <CardContent className="items-center py-4">
         <Text className="font-bebas text-2xl leading-none text-foreground">{display}</Text>
         <Text className="mt-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
-        {hint ? (
-          <Text className="mt-1 font-mono text-[8px] uppercase tracking-[1px] text-lime" numberOfLines={1}>{hint}</Text>
-        ) : null}
       </CardContent>
     </Card>
   )

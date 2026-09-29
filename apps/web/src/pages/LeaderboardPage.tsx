@@ -13,9 +13,11 @@ type TimeFilter = 'week' | 'month'
 
 interface LeaderboardPageProps {
   userId: string
+  /** Dentro de la pestaña Ranking de Comunidad (#857): sin contenedor ni título propios. */
+  embedded?: boolean
 }
 
-export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
+export default function LeaderboardPage({ userId, embedded = false }: LeaderboardPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { entries, loading, error, load } = useLeaderboard(userId)
@@ -39,9 +41,9 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
   // Desacoplado de `load` (#578): un `leaderboard_viewed` por visita, no por render.
   useEffect(() => {
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.leaderboardViewed, {
-      surface: 'leaderboard', source: 'leaderboard_page',
+      surface: 'leaderboard', source: embedded ? 'community_tab' : 'leaderboard_page',
     })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
 
   // Map time filter to actual category for sessions
   const activeCategory: LeaderboardCategory =
@@ -52,9 +54,13 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
   const hasAnyFollows = Object.values(entries).some(arr => arr.length > 1)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('leaderboard.section')}</div>
-      <h1 className="font-bebas text-4xl md:text-5xl mb-6">{t('leaderboard.title')}</h1>
+    <div className={embedded ? undefined : 'max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8'}>
+      {!embedded && (
+        <>
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('leaderboard.section')}</div>
+          <h1 className="font-bebas text-4xl md:text-5xl mb-6">{t('leaderboard.title')}</h1>
+        </>
+      )}
 
       {/* Category pills */}
       <div id="tour-leaderboard-categories" className="flex gap-1.5 flex-wrap mb-4">
@@ -65,6 +71,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
             aria-pressed={category === cat.id}
             className={cn(
               'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              embedded && 'min-h-11', // 44 px de área pulsable en la pestaña de Comunidad
               category === cat.id
                 ? 'text-lime border-current bg-accent/50'
                 : 'text-muted-foreground border-transparent hover:text-foreground',
@@ -83,6 +90,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
             aria-pressed={timeFilter === 'week'}
             className={cn(
               'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              embedded && 'min-h-11', // 44 px de área pulsable en la pestaña de Comunidad
               timeFilter === 'week' ? 'text-amber-400 border-current bg-accent/50' : 'text-muted-foreground border-transparent hover:text-foreground',
             )}
           >
@@ -93,6 +101,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
             aria-pressed={timeFilter === 'month'}
             className={cn(
               'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              embedded && 'min-h-11', // 44 px de área pulsable en la pestaña de Comunidad
               timeFilter === 'month' ? 'text-amber-400 border-current bg-accent/50' : 'text-muted-foreground border-transparent hover:text-foreground',
             )}
           >

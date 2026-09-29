@@ -35,7 +35,7 @@ export function EmptyState({ icon: Icon, title, body, ctaLabel, onCtaPress }: Em
       {ctaLabel && onCtaPress ? (
         <Pressable
           onPress={onCtaPress}
-          className="rounded-full border border-lime/30 px-4 py-2 active:border-lime/60 active:bg-lime/10"
+          className="min-h-11 justify-center rounded-full border border-lime/30 px-4 active:border-lime/60 active:bg-lime/10"
           accessibilityRole="button"
         >
           <Text className="font-mono text-[10px] uppercase tracking-wide text-lime">{ctaLabel}</Text>

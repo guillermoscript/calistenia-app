@@ -67,6 +67,14 @@ export async function dismissOverlays(page) {
     }
     break
   }
+  // 1b. Encuesta de descubrimiento (#771): sale ~4 s después de entrar y tapa
+  // la página. Su clave lleva el uid, así que `suppressOverlays` no puede
+  // adelantarse antes del registro; se cierra con «Ahora no».
+  const surveyTitle = page.getByText(/^(Ayúdanos a mejorar Calistenia|Help us improve Calistenia)$/)
+  if (await surveyTitle.isVisible({ timeout: 300 }).catch(() => false)) {
+    await page.getByRole('button', { name: /^(Ahora no|Not now)$/i }).last().click().catch(() => {})
+    await page.waitForTimeout(200)
+  }
   // 2. Dismiss PWA install prompt via its X button (aria-label="Cerrar")
   const pwaClose = page.locator('button[aria-label="Cerrar"]').first()
   if (await pwaClose.isVisible({ timeout: 800 }).catch(() => false)) {

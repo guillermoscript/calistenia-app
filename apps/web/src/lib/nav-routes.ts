@@ -81,6 +81,8 @@ const NAV_ROUTES: NavRoute[] = [
   { path: '/referrals',          labelKey: 'nav.referrals',          icon: ReferralIcon,    section: 'social' },
 
   // Fuera del sidebar: se llega por la barra inferior, la campana o el avatar.
+  // Comunidad (#857) solo da nombre al breadcrumb hasta que #856 la haga pestaña.
+  { path: '/community',          labelKey: 'nav.community',     icon: FriendsIcon,  section: null },
   { path: '/feed',               labelKey: 'nav.activity',      icon: ActivityIcon, section: null, tab: { order: 2, labelKey: 'nav.activity' } },
   { path: '/notifications',      labelKey: 'nav.notifications', icon: BellIcon,     section: null },
   { path: '/profile',            labelKey: 'nav.profile',       icon: ProfileIcon,  section: null, tab: { order: 4, labelKey: 'nav.profile' } },

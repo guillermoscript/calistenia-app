@@ -203,6 +203,21 @@ export const CANONICAL_ANALYTICS_EVENTS = {
    * `sessions_count` (siempre 3), `days_since_signup` (0-6) y `program_id`.
    */
   activationReached: 'activation_reached',
+
+  // ── Nuevo inicio «qué hago hoy» (#852, contrato #854) ─────────────────────
+  // Las propiedades y los helpers tipados viven en `home-analytics.ts`. Web
+  // (#855) y móvil (#858) emiten SOLO por esos helpers, nunca con el nombre a
+  // pelo: el informe antes/después compara las dos plataformas.
+  /** Una vez por visita al inicio, con el estado ya resuelto. No en cada render. */
+  homeViewed: 'home_viewed',
+  /** Se pulsó el botón principal del bloque «Hoy». */
+  homePrimaryCta: 'home_primary_cta',
+  /** Se pulsó «Cambiar día». */
+  homeChangeDay: 'home_change_day',
+  /** Se pulsó una fila de «Para ti». */
+  homeParaTiTap: 'home_para_ti_tap',
+  /** Se pulsó una acción secundaria del estado (resumen, compartir, repetir…). */
+  homeSecondaryTap: 'home_secondary_tap',
 } as const
 
 export type CanonicalAnalyticsEvent = typeof CANONICAL_ANALYTICS_EVENTS[keyof typeof CANONICAL_ANALYTICS_EVENTS]

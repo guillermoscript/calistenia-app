@@ -169,6 +169,10 @@ export const qk = {
     ['invite-landing', code, challengeId] as const,
   leaderboard: (userId: string | null, weekStart: string, monthStart: string) =>
     ['leaderboard', userId, weekStart, monthStart] as const,
+  // Resumen semanal de Comunidad (#857): solo entrenos de la semana, sin el resto
+  // de categorías. Cuelga de 'leaderboard' para caer en la misma invalidación.
+  weeklyRanking: (userId: string | null, weekStart: string) =>
+    ['leaderboard', 'week', userId, weekStart] as const,
   // Filas de `sessions` del propio usuario en todos sus programas: el tramo del inicio simple (#808).
   lifetimeSessions: (userId: string | null) => ['lifetime-sessions', userId] as const,
   profileCompare: (userId: string | null, weekStart: string, monthYYYYMM: string) =>

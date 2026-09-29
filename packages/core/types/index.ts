@@ -218,7 +218,14 @@ export type ProgressMap = Record<string, ExerciseLog | SessionDone>
 export interface Settings {
   phase: number
   startDate: string | null
+  /**
+   * `settings.weekly_goal`. NO es el objetivo que se enseña: úsalo a través de
+   * `getEffectiveWeeklyGoal` (`lib/weeklyGoal.ts`), que lo ignora mientras
+   * `weeklyGoalCustom` no sea `true` (#853).
+   */
   weeklyGoal: number
+  /** `settings.weekly_goal_custom`: el usuario fijó `weeklyGoal` a mano. */
+  weeklyGoalCustom?: boolean
   pr_pullups?: number
   pr_pushups?: number
   pr_lsit?: number

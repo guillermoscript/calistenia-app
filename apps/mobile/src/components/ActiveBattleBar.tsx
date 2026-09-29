@@ -10,14 +10,12 @@
 import { View, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
-import { findMyActiveBattle } from '@calistenia/core/lib/battleApi'
-import { qk } from '@calistenia/core/lib/query-keys'
+import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
 
 export default function ActiveBattleBar() {
   const { t } = useTranslation()
@@ -25,20 +23,11 @@ export default function ActiveBattleBar() {
   const { isActive: sessionActive, workout } = useActiveSession()
   const { state: cardioState } = useCardioSessionContext()
 
-  const { data: battle } = useQuery({
-    queryKey: qk.battles.active(),
-    queryFn: findMyActiveBattle,
-    // Un fallo aquí no puede tumbar las tabs: sin dato, la barra simplemente no sale.
-    staleTime: 15_000,
-    // La batalla solo cambia por acciones propias, pero el usuario vuelve a las tabs
-    // desde la pantalla de batalla sin desmontar este layout, así que se refresca sola.
-    refetchInterval: 45_000,
-    retry: false,
-  })
+  // La barra lleva el sondeo de 45 s, y solo con Hoy o Comunidad a la vista (#860).
+  const { data: battle } = useActiveBattle({ poll: true })
 
-  if (!battle) return null
+  if (!isBattleOngoing(battle)) return null
   const status = battle.status
-  if (status !== 'lobby' && status !== 'ready' && status !== 'live') return null
 
   // Se coloca por encima de las barras que ya puedan estar visibles.
   const cardioVisible = cardioState === 'tracking' || cardioState === 'paused'

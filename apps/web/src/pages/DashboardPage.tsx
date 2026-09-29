@@ -35,12 +35,13 @@ import { useActivation } from '@calistenia/core/hooks/useActivation'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { ACTIVATION_TARGET_SESSIONS, homeShowAllKey, type HomeStage } from '@calistenia/core/lib/activation'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
-import { STREAK_WEEKLY_GOAL } from '@calistenia/core/lib/streak'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioSession } from '@calistenia/core/types'
 import type { CardioAggregateStats } from '@calistenia/core/hooks/useCardioStats'
 import { toast } from 'sonner'
 import { WhatsNewHomeButton } from '../components/WhatsNew'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 
 
 // ── Quick Action Card ────────────────────────────────────────────────────────
@@ -443,9 +444,9 @@ export default function DashboardPage({
   nutritionTotals, nutritionGoals,
   cardioWeeklyStats, cardioLastSession,
 }: DashboardPageProps) {
-  const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays, programProgress } = useWorkoutState()
+  const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays, programProgress, progress: progressMap, programsReady } = useWorkoutState()
   const {
-    getTotalSessions, getLongestStreak, getStreakWeekDays, getWeeklyDoneCount, getMonthActivity,
+    getTotalSessions, getLongestStreak, getMonthActivity,
     updateSettings, isWorkoutDone, getLastSessionDate, getDoneDates, selectProgram: onSelectProgram,
     duplicateProgram, setPhaseOverride,
   } = useWorkoutActions()
@@ -494,9 +495,10 @@ export default function DashboardPage({
     if (!userId || dismissedMilestone) return null
     return getActiveMilestone(streak, userId)
   }, [streak, userId, dismissedMilestone])
-  const weeklyDone = getWeeklyDoneCount()
-  // Racha semanal (#801): días distintos de esta semana hacia el mínimo que la mantiene.
-  const streakWeekDays = getStreakWeekDays()
+  // «X de Y» de la semana de calendario, en días distintos (#853). El cardio
+  // libre no se suma: aquí solo hay el agregado, no las fechas.
+  const weeklyDone = getWeekDoneDays(todayStr(), progressMap)
+  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const monthActivity = getMonthActivity()
   // #616: la fase sale del programa activo (o del override manual guardado en
   // `user_programs`), no del entero global `settings.phase`.
@@ -685,14 +687,9 @@ export default function DashboardPage({
             <div className="text-center">
               <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
               <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.bestStreak')}</div>
-              <div className="text-[9px] text-lime tracking-wide mt-0.5">
-                {streakWeekDays >= STREAK_WEEKLY_GOAL
-                  ? t('streak.weekKept')
-                  : t('streak.weekProgress', { done: streakWeekDays, goal: STREAK_WEEKLY_GOAL })}
-              </div>
             </div>
             <div className="text-center">
-              <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}<span className="text-lg text-muted-foreground">/{settings.weeklyGoal || 5}</span></div>
+              <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}{programsReady && <span className="text-lg text-muted-foreground">/{weeklyGoal}</span>}</div>
               <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.thisWeek')}</div>
             </div>
           </div>

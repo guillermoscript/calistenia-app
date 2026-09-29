@@ -1,0 +1,127 @@
+{
+  "$comment": "Casos de la racha semanal (#853). Los pasan el cliente (packages/core/lib/weeklyStreak.test.ts) y el servidor (user_stats, #801): si uno cambia, cambian los dos. Cada caso trae `goal` (número fijo) o `goalChanges` + `fallbackGoal` (historial de cambios de objetivo o de programa; el de una semana es el vigente en su último día: el domingo, o `today` en la semana en curso).",
+  "rules": [
+    "Semana de calendario, de lunes a domingo.",
+    "Cuentan días distintos con entreno de cualquier tipo; repetidos, inválidos y posteriores a `today` se ignoran.",
+    "Una semana se cumple si sus días con entreno llegan a su objetivo.",
+    "La semana en curso suma si ya se cumplió y no rompe la racha mientras no termine.",
+    "El objetivo de una semana es el vigente en su último día (domingo, o `today` si está en curso).",
+    "El objetivo se acota a 1-7."
+  ],
+  "cases": [
+    {
+      "name": "semana cumplida",
+      "today": "2026-09-30",
+      "goal": 3,
+      "doneDates": ["2026-09-14", "2026-09-16", "2026-09-18", "2026-09-21", "2026-09-23", "2026-09-25", "2026-09-28"],
+      "expected": { "current": 2, "best": 2, "thisWeek": { "weekStart": "2026-09-28", "done": 1, "goal": 3, "met": false, "remaining": 2 } }
+    },
+    {
+      "name": "semana fallida rompe la racha",
+      "today": "2026-09-30",
+      "goal": 3,
+      "doneDates": ["2026-09-07", "2026-09-08", "2026-09-09", "2026-09-14", "2026-09-15", "2026-09-16", "2026-09-22", "2026-09-24"],
+      "expected": { "current": 0, "best": 2, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 3, "met": false, "remaining": 3 } }
+    },
+    {
+      "name": "semana en curso cumplida suma",
+      "today": "2026-09-30",
+      "goal": 2,
+      "doneDates": ["2026-09-21", "2026-09-22", "2026-09-28", "2026-09-29"],
+      "expected": { "current": 2, "best": 2, "thisWeek": { "weekStart": "2026-09-28", "done": 2, "goal": 2, "met": true, "remaining": 0 } }
+    },
+    {
+      "name": "semana en curso sin cumplir no rompe la racha",
+      "today": "2026-09-30",
+      "goal": 2,
+      "doneDates": ["2026-09-14", "2026-09-20", "2026-09-21", "2026-09-27"],
+      "expected": { "current": 2, "best": 2, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 2, "met": false, "remaining": 2 } }
+    },
+    {
+      "name": "dos entrenos el mismo día cuentan uno",
+      "today": "2026-09-30",
+      "goal": 2,
+      "doneDates": ["2026-09-21", "2026-09-21", "2026-09-21", "2026-09-28"],
+      "expected": { "current": 0, "best": 0, "thisWeek": { "weekStart": "2026-09-28", "done": 1, "goal": 2, "met": false, "remaining": 1 } }
+    },
+    {
+      "name": "cambio de objetivo a mitad de semana: baja y se aplica a la semana entera",
+      "today": "2026-09-30",
+      "fallbackGoal": 4,
+      "goalChanges": [{ "from": "2026-01-01", "goal": 4 }, { "from": "2026-09-23", "goal": 2 }],
+      "doneDates": ["2026-09-14", "2026-09-15", "2026-09-16", "2026-09-17", "2026-09-21", "2026-09-22", "2026-09-28"],
+      "expected": { "current": 2, "best": 2, "thisWeek": { "weekStart": "2026-09-28", "done": 1, "goal": 2, "met": false, "remaining": 1 } }
+    },
+    {
+      "name": "cambio de objetivo a mitad de semana: sube y la semana ya no llega",
+      "today": "2026-09-30",
+      "fallbackGoal": 2,
+      "goalChanges": [{ "from": "2026-01-01", "goal": 2 }, { "from": "2026-09-24", "goal": 4 }],
+      "doneDates": ["2026-09-14", "2026-09-15", "2026-09-21", "2026-09-22", "2026-09-23", "2026-09-29"],
+      "expected": { "current": 0, "best": 1, "thisWeek": { "weekStart": "2026-09-28", "done": 1, "goal": 4, "met": false, "remaining": 3 } }
+    },
+    {
+      "name": "cambio de programa: de 4 días a 3 sin romper la racha",
+      "today": "2026-09-30",
+      "fallbackGoal": 4,
+      "goalChanges": [{ "from": "2026-08-01", "goal": 4 }, { "from": "2026-09-14", "goal": 3 }],
+      "doneDates": [
+        "2026-08-31", "2026-09-01", "2026-09-03", "2026-09-05",
+        "2026-09-07", "2026-09-08", "2026-09-10", "2026-09-12",
+        "2026-09-14", "2026-09-16", "2026-09-18",
+        "2026-09-21", "2026-09-23", "2026-09-25",
+        "2026-09-28", "2026-09-30"
+      ],
+      "expected": { "current": 4, "best": 4, "thisWeek": { "weekStart": "2026-09-28", "done": 2, "goal": 3, "met": false, "remaining": 1 } }
+    },
+    {
+      "name": "reentrada retroactiva: un entreno metido después con fecha pasada completa su semana",
+      "today": "2026-09-30",
+      "goal": 3,
+      "doneDates": ["2026-09-07", "2026-09-09", "2026-09-11", "2026-09-15", "2026-09-17", "2026-09-19", "2026-09-21", "2026-09-23", "2026-09-25"],
+      "expected": { "current": 3, "best": 3, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 3, "met": false, "remaining": 3 } }
+    },
+    {
+      "name": "reentrada retroactiva: la misma historia sin el entreno del 19 corta la racha",
+      "today": "2026-09-30",
+      "goal": 3,
+      "doneDates": ["2026-09-07", "2026-09-09", "2026-09-11", "2026-09-15", "2026-09-17", "2026-09-21", "2026-09-23", "2026-09-25"],
+      "expected": { "current": 1, "best": 1, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 3, "met": false, "remaining": 3 } }
+    },
+    {
+      "name": "fechas futuras e inválidas se ignoran",
+      "today": "2026-09-30",
+      "goal": 1,
+      "doneDates": ["2026-10-02", "2026-02-31", "no-es-fecha", "2026-09-22"],
+      "expected": { "current": 1, "best": 1, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 1, "met": false, "remaining": 1 } }
+    },
+    {
+      "name": "sin entrenos",
+      "today": "2026-09-30",
+      "goal": 3,
+      "doneDates": [],
+      "expected": { "current": 0, "best": 0, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 3, "met": false, "remaining": 3 } }
+    },
+    {
+      "name": "objetivo 0 se trata como 1",
+      "today": "2026-09-30",
+      "goal": 0,
+      "doneDates": ["2026-09-22"],
+      "expected": { "current": 1, "best": 1, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 1, "met": false, "remaining": 1 } }
+    },
+    {
+      "name": "el lunes empieza semana nueva y el domingo cuenta en la anterior",
+      "today": "2026-09-28",
+      "goal": 1,
+      "doneDates": ["2026-09-20", "2026-09-27", "2026-09-28"],
+      "expected": { "current": 3, "best": 3, "thisWeek": { "weekStart": "2026-09-28", "done": 1, "goal": 1, "met": true, "remaining": 0 } }
+    },
+    {
+      "name": "la mejor racha puede ser una pasada",
+      "today": "2026-09-30",
+      "goal": 1,
+      "doneDates": ["2026-08-03", "2026-08-10", "2026-08-17", "2026-08-24", "2026-09-22"],
+      "expected": { "current": 1, "best": 4, "thisWeek": { "weekStart": "2026-09-28", "done": 0, "goal": 1, "met": false, "remaining": 1 } }
+    }
+  ]
+}
