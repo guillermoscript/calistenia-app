@@ -1,19 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const track = vi.fn()
+const client = vi.hoisted(() => ({ platform: 'android' as 'android' | 'web' }))
 
 vi.mock('../platform', () => ({
   storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
   getPlatform: () => ({ analytics: { track, identify: vi.fn(), clear: vi.fn() } }),
-  getClientInfo: () => ({ version: '1.0.0', build: 0, platform: 'android' as const }),
+  getClientInfo: () => ({ version: '1.0.0', build: 0, platform: client.platform }),
 }))
 
 import { CANONICAL_ANALYTICS_EVENTS } from './analytics'
 import {
   HOME_ANALYTICS_STATES,
   HOME_PARA_TI_KINDS,
-  __resetHomeAnalyticsForTests,
+  HOME_VIEW_MAX_AGE_MS,
+  PARA_TI_KIND_ALIASES,
   homeAnalyticsModifiers,
+  resetHomeView,
   serializeHomeModifiers,
   toHomeParaTiKind,
   trackHomeChangeDay,
@@ -25,7 +28,8 @@ import {
 
 beforeEach(() => {
   track.mockClear()
-  __resetHomeAnalyticsForTests()
+  client.platform = 'android'
+  resetHomeView()
 })
 
 afterEach(() => {
@@ -40,8 +44,9 @@ describe('contrato de eventos del inicio (#854)', () => {
     }
   })
 
-  // Los mismos nueve `kind` que la tabla de `getHomeState` (#853), en su orden
-  // de precedencia. Si #853 añade uno, este test obliga a tocar el contrato.
+  // Fija la lista y el orden de la tabla de `getHomeState` (#853) tal como los
+  // recoge la issue. NO se compara con el `HomeState` real (vive en #864, aún
+  // sin mergear): esa comprobación llegará cuando #864 esté en main.
   it('los estados siguen la precedencia de getHomeState', () => {
     expect(HOME_ANALYTICS_STATES).toEqual([
       'in_progress', 'program_complete', 'no_program', 'first_workout', 'comeback',
@@ -90,12 +95,18 @@ describe('adaptadores desde HomeState / getParaTi (#853)', () => {
   })
 
   it('traduce los kind de getParaTi a los nombres del informe', () => {
-    expect(toHomeParaTiKind('challenge_progress')).toBe('challenge')
-    expect(toHomeParaTiKind('friends_today')).toBe('friends')
-    expect(toHomeParaTiKind('nutrition_today')).toBe('nutrition')
-    expect(toHomeParaTiKind('phase_photos')).toBe('photos')
-    expect(toHomeParaTiKind('battle')).toBe('battle')
-    expect(toHomeParaTiKind('featured_challenge')).toBe('featured_challenge')
+    // Todos los alias, leídos del propio mapa: uno nuevo queda cubierto solo.
+    const aliases = PARA_TI_KIND_ALIASES
+    expect(Object.keys(aliases).length).toBeGreaterThanOrEqual(4)
+    for (const [source, expected] of Object.entries(aliases)) {
+      expect(toHomeParaTiKind(source as keyof typeof aliases)).toBe(expected)
+      // Y lo que sale de la traducción es siempre un nombre del informe.
+      expect(HOME_PARA_TI_KINDS).toContain(expected)
+    }
+  })
+
+  it('los nombres que ya son del informe pasan tal cual', () => {
+    for (const kind of HOME_PARA_TI_KINDS) expect(toHomeParaTiKind(kind)).toBe(kind)
   })
 })
 
@@ -132,6 +143,64 @@ describe('helpers track*', () => {
     const [, props] = track.mock.calls[0]
     expect(props).not.toHaveProperty('ms_since_view')
     expect(props).toMatchObject({ surface: 'home' })
+  })
+
+  it('home_viewed y los toques llevan platform=web en la web', () => {
+    client.platform = 'web'
+    trackHomeViewed({ state: 'rest_day' })
+    trackHomeParaTiTap({ kind: 'phase_photos' })
+
+    expect(track).toHaveBeenNthCalledWith(1, 'home_viewed', expect.objectContaining({
+      platform: 'web',
+      surface: 'home',
+      state: 'rest_day',
+      modifiers: 'none',
+    }))
+    expect(track).toHaveBeenNthCalledWith(2, 'home_para_ti_tap', expect.objectContaining({
+      platform: 'web',
+      kind: 'photos',
+    }))
+  })
+
+  it('pasado el tope, el toque no lleva ms_since_view', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-29T10:00:00Z'))
+    trackHomeViewed({ state: 'training_day' })
+
+    // Justo en el tope todavía cuenta.
+    vi.setSystemTime(new Date('2026-09-29T10:00:00Z').getTime() + HOME_VIEW_MAX_AGE_MS)
+    trackHomePrimaryCta({ state: 'training_day' })
+    expect(track).toHaveBeenLastCalledWith('home_primary_cta', expect.objectContaining({
+      ms_since_view: HOME_VIEW_MAX_AGE_MS,
+    }))
+
+    // Un ms más y es otra sesión de uso: se omite en los tres tipos de toque.
+    vi.setSystemTime(new Date('2026-09-29T10:00:00Z').getTime() + HOME_VIEW_MAX_AGE_MS + 1)
+    trackHomePrimaryCta({ state: 'training_day' })
+    trackHomeChangeDay()
+    trackHomeParaTiTap({ kind: 'battle' })
+    trackHomeSecondaryTap({ target: 'share', state: 'done_today' })
+    for (const call of track.mock.calls.slice(-4)) {
+      expect(call[1]).not.toHaveProperty('ms_since_view')
+      expect(call[1]).toMatchObject({ surface: 'home' })
+    }
+  })
+
+  it('resetHomeView olvida la visita hasta el siguiente home_viewed', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-29T10:00:00Z'))
+    trackHomeViewed({ state: 'training_day' })
+    resetHomeView()
+
+    vi.setSystemTime(new Date('2026-09-29T10:00:05Z'))
+    trackHomeChangeDay()
+    expect(track.mock.calls.at(-1)?.[1]).not.toHaveProperty('ms_since_view')
+
+    // Al volver a enfocar, la visita nueva vuelve a medir desde cero.
+    trackHomeViewed({ state: 'training_day' })
+    vi.setSystemTime(new Date('2026-09-29T10:00:06Z'))
+    trackHomeChangeDay()
+    expect(track).toHaveBeenLastCalledWith('home_change_day', expect.objectContaining({ ms_since_view: 1000 }))
   })
 
   it('home_para_ti_tap y home_secondary_tap llevan kind / target', () => {

@@ -71,7 +71,7 @@ export type HomeParaTiKind = typeof HOME_PARA_TI_KINDS[number]
  * tabla de #854, que es el que leerá el informe. La traducción vive aquí para
  * que web y móvil no escriban cada una la suya.
  */
-const PARA_TI_KIND_ALIASES = {
+export const PARA_TI_KIND_ALIASES = {
   challenge_progress: 'challenge',
   friends_today: 'friends',
   nutrition_today: 'nutrition',
@@ -150,21 +150,49 @@ export function homeAnalyticsModifiers(state: HomeStateForAnalytics): HomeAnalyt
 }
 
 /**
+ * Pasado este tiempo desde `home_viewed`, un toque ya no es «tiempo hasta el
+ * primer toque» sino otra sesión de uso: se omite `ms_since_view` en vez de
+ * mandar un valor enorme que estropea las medias del informe.
+ */
+export const HOME_VIEW_MAX_AGE_MS = 30 * 60 * 1000
+
+/**
  * Momento del último `home_viewed`, para el «tiempo hasta el primer toque».
  * Variable de módulo por la misma razón que `analyticsProgramId`: solo se lee
  * al emitir y hay un único inicio a la vez.
  */
 let lastHomeViewedAt: number | null = null
 
-/** Milisegundos desde el último `home_viewed`, o `undefined` si no hubo. */
-function msSinceHomeViewed(): number | undefined {
-  return lastHomeViewedAt == null ? undefined : Math.max(0, Date.now() - lastHomeViewedAt)
+/**
+ * Olvida la visita actual: a partir de aquí los toques no llevan
+ * `ms_since_view` hasta el siguiente `home_viewed`.
+ *
+ * Web (#855) y móvil (#858) deben llamarlo al SALIR del inicio (blur de la
+ * pestaña / desmontaje de la ruta). En móvil la pestaña no se desmonta, así
+ * que sin esto un toque horas después mediría contra una visita antigua; el
+ * tope de `HOME_VIEW_MAX_AGE_MS` es solo la red de seguridad, no el mecanismo.
+ */
+export function resetHomeView(): void {
+  lastHomeViewedAt = null
 }
 
 /**
- * `home_viewed`: una vez por VISITA al inicio, con el estado ya resuelto (no
- * durante `loading`) y nunca en cada render. En web, al montar la ruta `/`; en
- * móvil, al enfocar la pestaña (la pestaña no se desmonta al salir).
+ * Milisegundos desde el último `home_viewed`, o `undefined` si no hubo visita
+ * o ya caducó (`HOME_VIEW_MAX_AGE_MS`).
+ */
+function msSinceHomeViewed(): number | undefined {
+  if (lastHomeViewedAt == null) return undefined
+  const elapsed = Math.max(0, Date.now() - lastHomeViewedAt)
+  return elapsed > HOME_VIEW_MAX_AGE_MS ? undefined : elapsed
+}
+
+/**
+ * `home_viewed`: una vez por VISITA al inicio (por foco), con el estado ya
+ * resuelto (no durante `loading`) y nunca en cada render ni en cada cambio de
+ * estado. En web, al montar la ruta `/`; en móvil, al enfocar la pestaña (la
+ * pestaña no se desmonta al salir). Cada llamada reinicia el reloj de
+ * `ms_since_view`, así que llamarla en cada render falsearía el «tiempo hasta
+ * el primer toque». Al salir de la pantalla, llamar a `resetHomeView`.
  */
 export function trackHomeViewed(properties: {
   state: HomeAnalyticsState
@@ -215,9 +243,4 @@ export function trackHomeSecondaryTap(properties: {
     state: properties.state,
     ms_since_view: msSinceHomeViewed(),
   })
-}
-
-/** Solo para tests: olvida el último `home_viewed`. */
-export function __resetHomeAnalyticsForTests(): void {
-  lastHomeViewedAt = null
 }
