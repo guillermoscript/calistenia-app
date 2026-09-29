@@ -71,7 +71,7 @@ test.describe('Offline → recuperación (#151)', () => {
     await blockPB(context)
     await page.reload()
 
-    await expect(page.locator('header nav')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByTestId('app-header')).toBeVisible({ timeout: 15000 })
     expect(page.url()).not.toMatch(/\/auth/)
     const after = await pbAuth(page)
     expect(after.token, 'el token se perdió al arrancar offline').toBeTruthy()
@@ -93,7 +93,7 @@ test.describe('Offline → recuperación (#151)', () => {
     // recibía 400 y la descartaba como poison = pérdida de datos).
     await blockPB(context)
     await page.reload()
-    await expect(page.locator('header nav')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByTestId('app-header')).toBeVisible({ timeout: 15000 })
     await page.getByRole('button', { name: '+200', exact: true }).click()
     await expect
       .poll(() => queueLength(page), { timeout: 8000, message: 'el create no se encoló' })

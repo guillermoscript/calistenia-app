@@ -28,21 +28,30 @@ interface SettingsRowProps {
   /** Solo para las filas que despliegan; las que navegan no la pasan. */
   open?: boolean
   onClick: () => void
+  /** Etiqueta corta junto al nombre, p. ej. «Nuevo». */
+  badge?: string
+  /** Punto lima: algo pendiente dentro. */
+  dot?: boolean
+  id?: string
   children?: React.ReactNode
 }
 
-export function SettingsRow({ label, value, open = false, onClick, children }: SettingsRowProps) {
+export function SettingsRow({ label, value, open = false, onClick, badge, dot, id, children }: SettingsRowProps) {
   const expandable = Boolean(children)
   return (
-    <div className="border-b border-border last:border-b-0">
+    <div id={id} className="border-b border-border last:border-b-0 scroll-mt-16">
       <button
         type="button"
         onClick={onClick}
         aria-expanded={expandable ? open : undefined}
         className="group flex w-full items-center justify-between gap-3 py-3.5 text-left"
       >
-        <span className={cn('text-[15px] transition-colors', open ? 'text-lime' : 'group-hover:text-lime')}>
+        <span className={cn('flex items-center gap-2 text-[15px] transition-colors', open ? 'text-lime' : 'group-hover:text-lime')}>
           {label}
+          {badge ? (
+            <span className="rounded-full bg-lime px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-lime-foreground">{badge}</span>
+          ) : null}
+          {dot ? <span className="size-2 rounded-full bg-lime" aria-hidden /> : null}
         </span>
         <span className="flex min-w-0 items-center gap-2">
           {value ? (

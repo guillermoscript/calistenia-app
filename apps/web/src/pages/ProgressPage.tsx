@@ -27,6 +27,7 @@ import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
 import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
 import BodyFatPanel from '../components/progress/BodyFatPanel'
 import ExportData from '../components/progress/ExportData'
+import { WeeklyStreakCard, MonthActivityMap, ProgressMoreRows } from '../components/progress/ProgressOverview'
 import BattleHistory from '../components/progress/BattleHistory'
 import { Input } from '../components/ui/input'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
@@ -77,6 +78,8 @@ function ChartsExerciseList({ exerciseLogs, exerciseNames, t }: { exerciseLogs: 
   )
 }
 
+const PROGRESS_TABS = ['resumen', 'estadisticas', 'graficas', 'cuerpo']
+
 interface SessionLog {
   date: string
   workoutKey: string
@@ -94,12 +97,15 @@ export default function ProgressPage() {
   const { getWorkout } = useWorkoutActions()
   const { userId } = useAuthState()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   // Deep-link a una tab concreta (p.ej. /progress?tab=cuerpo desde el CTA de
-  // primera medición post-onboarding, #227).
-  const initialTab = ['resumen', 'estadisticas', 'graficas', 'cuerpo'].includes(searchParams.get('tab') || '')
-    ? searchParams.get('tab')!
-    : 'resumen'
+  // primera medición post-onboarding, #227). Desde #856 la pestaña la manda la
+  // URL: las filas de fotos y peso del Resumen abren Cuerpo.
+  const tabParam = searchParams.get('tab') || ''
+  const activeTab = PROGRESS_TABS.includes(tabParam) ? tabParam : 'resumen'
+  const initialTab = activeTab
+  const changeTab = (tab: string) => setSearchParams(tab === 'resumen' ? {} : { tab }, { replace: true })
+  const openBody = () => { changeTab('cuerpo'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const { weights } = useWeight(userId || null)
   const { photos, getPhotosByPhase, uploadPhotos } = useBodyPhotos(userId || null)
   // #616: fase derivada del programa activo, no del entero global.
@@ -172,6 +178,12 @@ export default function ProgressPage() {
   // 4 semanas, no series planificadas de un mapa estático.
   const { stats: fourWeekStats } = useTrainingStats(progress, getWorkout, '4w')
 
+  const lastWeight = useMemo(() => {
+    if (weights.length === 0) return null
+    const last = [...weights].sort((a, b) => b.date.localeCompare(a.date))[0]
+    return { kg: last.weight_kg, date: relativeDate(last.date) }
+  }, [weights])
+
   return (
     <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <div className="flex items-end gap-4 mb-6 flex-wrap">
@@ -184,14 +196,17 @@ export default function ProgressPage() {
       </div>
 
       {allLogs.length === 0 ? (
-        <div className="text-center py-20 px-5 text-muted-foreground">
-          <div className="font-bebas text-3xl mb-2">{t('progress.noData')}</div>
-          <div className="text-sm leading-relaxed max-w-sm mx-auto">
-            {t('progress.noDataDesc')}
+        <>
+          <div className="text-center py-16 px-5 text-muted-foreground">
+            <div className="font-bebas text-3xl mb-2">{t('progress.noData')}</div>
+            <div className="text-sm leading-relaxed max-w-sm mx-auto">
+              {t('progress.noDataDesc')}
+            </div>
           </div>
-        </div>
+          <ProgressMoreRows onOpenBody={() => navigate('/progress?tab=cuerpo')} lastWeight={lastWeight} />
+        </>
       ) : (
-        <Tabs defaultValue={initialTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={changeTab} className="w-full">
           <TabsList className="w-full mb-6">
             <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
             <TabsTrigger value="estadisticas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.stats')}</TabsTrigger>
@@ -201,6 +216,13 @@ export default function ProgressPage() {
 
           {/* ── Tab 1: Resumen ── */}
           <TabsContent value="resumen">
+            {/* #856: racha semanal, mapa del mes y lo que salió del inicio. */}
+            <div className="flex flex-col gap-7 mb-8">
+              <WeeklyStreakCard />
+              <MonthActivityMap />
+              <ProgressMoreRows onOpenBody={openBody} lastWeight={lastWeight} />
+            </div>
+
             {/* Progress Summary */}
             <div id="tour-progress-summary">
               <ProgressSummary progress={progress} settings={settings} />
