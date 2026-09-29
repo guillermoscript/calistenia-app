@@ -837,7 +837,7 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
             <Link to="/legal#terms" className="underline underline-offset-4 hover:text-foreground">{t('nav.terms')}</Link>
           </div>
 
-          <Button variant="outline" className="self-start h-11" onClick={signOut}>
+          <Button variant="outline" className="self-start h-11" onClick={() => { window.scrollTo(0, 0); signOut() }}>
             {t('nav.signOut')}
           </Button>
         </SettingsRow>

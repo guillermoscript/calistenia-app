@@ -50,13 +50,13 @@ test.describe('Auth', () => {
     // Cerrar sesión vive en Perfil › Cuenta y privacidad (#856)
     await signOutFromProfile(page)
     // After logout, user lands on the public landing page (not /auth directly)
-    await expect(page.getByText(/get started|comenzar/i).first()).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('button', { name: /use the web app|usar en la web/i }).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('login con cuenta existente', async ({ page }) => {
     const email = await register(page)
     await signOutFromProfile(page)
-    await expect(page.getByText(/get started|comenzar/i).first()).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('button', { name: /use the web app|usar en la web/i }).first()).toBeVisible({ timeout: 8000 })
     await login(page, email)
     await expect(page.getByTestId('app-header')).toBeVisible()
   })
@@ -73,10 +73,13 @@ test.describe('Navegación principal', () => {
 
   test('sidebar has main navigation links', async ({ page }) => {
     // #856: los 5 destinos (iguales a la barra inferior) y los atajos.
+    // La encuesta de descubrimiento sale a los ~4 s y, como modal, esconde el
+    // sidebar del árbol de accesibilidad: se cierra si aparece.
+    await page.getByRole('button', { name: /^(ahora no|not now)$/i }).click({ timeout: 6000 }).catch(() => {})
     await expect(page.locator('[data-sidebar="trigger"]')).toBeVisible()
     await expect(page.getByTestId('app-header')).toBeVisible()
     const sidebar = page.locator('[data-sidebar="sidebar"]')
-    for (const name of [/^(hoy|today)$/i, /^(entrenar|train)$/i, /^(nutrición|nutrition)$/i, /^(progreso|progress)$/i, /^(comunidad|community)$/i]) {
+    for (const name of [/^(hoy|today)$/i, /^(entrenar|workout)$/i, /^(nutrición|nutrition)$/i, /^(progreso|progress)$/i, /^(comunidad|community)$/i]) {
       await expect(sidebar.getByRole('button', { name })).toBeVisible()
     }
     await expect(sidebar.getByRole('button', { name: /sesión libre|free session/i })).toBeVisible()
