@@ -117,52 +117,6 @@ export function computeWeeklyStreak(
   }
 }
 
-/** Una semana de la tira de «últimas N semanas» (Progreso, #859). */
-export interface WeekResult {
-  /** Lunes. */
-  weekStart: string
-  /** Días distintos con entreno. */
-  done: number
-  goal: number
-  met: boolean
-  /** Es la semana en curso: si no está cumplida, aún no cuenta como fallada. */
-  current: boolean
-}
-
-/**
- * Las últimas `count` semanas, de la más antigua a la en curso (la última),
- * con las mismas reglas que `computeWeeklyStreak`: días distintos, fechas
- * futuras ignoradas y el objetivo vigente en el último día de cada semana.
- */
-export function recentWeeks(
-  doneDates: Iterable<string>,
-  goalForWeek: GoalForWeek,
-  today: string,
-  count = 10,
-): WeekResult[] {
-  const currentWeek = mondayOf(today)
-  const firstWeek = shiftDay(currentWeek, -7 * (Math.max(1, count) - 1))
-  const daysByWeek = new Map<string, Set<string>>()
-  for (const day of doneDates) {
-    if (!isDayStr(day) || day > today) continue
-    const week = mondayOf(day)
-    if (week < firstWeek) continue
-    let set = daysByWeek.get(week)
-    if (!set) daysByWeek.set(week, (set = new Set()))
-    set.add(day)
-  }
-
-  const out: WeekResult[] = []
-  for (let week = firstWeek; week <= currentWeek; week = shiftDay(week, 7)) {
-    const current = week === currentWeek
-    const lastDay = current ? today : shiftDay(week, 6)
-    const goal = clampGoal(typeof goalForWeek === 'number' ? goalForWeek : goalForWeek(week, lastDay))
-    const done = daysByWeek.get(week)?.size ?? 0
-    out.push({ weekStart: week, done, goal, met: done >= goal, current })
-  }
-  return out
-}
-
 /** Un cambio de objetivo: desde `from` (incluido) el objetivo es `goal`. */
 export interface GoalChange {
   from: string

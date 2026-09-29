@@ -6,7 +6,6 @@ import {
   computeWeeklyStreak,
   crossedWeeklyStreakMilestone,
   goalForWeekFromChanges,
-  recentWeeks,
   WEEKLY_STREAK_MILESTONES,
   weeklyStreakHistory,
   type GoalChange,
@@ -54,47 +53,6 @@ describe('computeWeeklyStreak', () => {
     const r = computeWeeklyStreak(['2026-09-28'], 1, '2026-09-30')
     expect(r.current).toBe(1)
     expect(r.best).toBe(1)
-  })
-})
-
-describe('recentWeeks', () => {
-  // 2026-09-28 es lunes; hoy es el miércoles de esa semana.
-  const today = '2026-09-30'
-
-  it('devuelve N semanas de la más antigua a la en curso', () => {
-    const weeks = recentWeeks([], 3, today, 10)
-    expect(weeks).toHaveLength(10)
-    expect(weeks[9]).toMatchObject({ weekStart: '2026-09-28', current: true })
-    expect(weeks[0]).toMatchObject({ weekStart: '2026-07-27', current: false })
-    expect(weeks.filter(w => w.current)).toHaveLength(1)
-  })
-
-  it('cuenta días distintos e ignora el futuro y lo anterior a la ventana', () => {
-    const weeks = recentWeeks(
-      ['2026-09-21', '2026-09-21', '2026-09-23', '2026-10-01', '2026-01-05', 'basura'],
-      2,
-      today,
-      2,
-    )
-    expect(weeks).toEqual([
-      { weekStart: '2026-09-21', done: 2, goal: 2, met: true, current: false },
-      { weekStart: '2026-09-28', done: 0, goal: 2, met: false, current: true },
-    ])
-  })
-
-  it('coincide con computeWeeklyStreak en la semana en curso', () => {
-    const dates = ['2026-09-14', '2026-09-16', '2026-09-22', '2026-09-28', '2026-09-29']
-    const streak = computeWeeklyStreak(dates, 2, today)
-    const last = recentWeeks(dates, 2, today).at(-1)!
-    expect(last.done).toBe(streak.thisWeek.done)
-    expect(last.met).toBe(streak.thisWeek.met)
-  })
-
-  it('pide a la función el objetivo del último día de cada semana y lo acota a 1-7', () => {
-    const asked: string[] = []
-    const weeks = recentWeeks([], (_start, lastDay) => { asked.push(lastDay); return 0 }, today, 2)
-    expect(asked).toEqual(['2026-09-27', today])
-    expect(weeks.every(w => w.goal === 1)).toBe(true)
   })
 })
 

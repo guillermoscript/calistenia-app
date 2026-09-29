@@ -33,7 +33,7 @@ import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
 import { activityDaysFromProgress } from '@calistenia/core/lib/weekSummary'
-import { computeWeeklyStreak, recentWeeks, type WeekResult } from '@calistenia/core/lib/weeklyStreak'
+import { computeWeeklyStreak, weeklyStreakHistory, type WeekHistoryEntry } from '@calistenia/core/lib/weeklyStreak'
 import { mondayOf } from '@calistenia/core/lib/calendarWeek'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
@@ -127,7 +127,7 @@ export default function ProgressScreen() {
   // El objetivo es el efectivo de hoy para todas las semanas: el cliente no
   // guarda el historial de cambios de objetivo (eso lo hace el servidor, #801).
   const streak = useMemo(() => computeWeeklyStreak(activityDays, weeklyGoal, today), [activityDays, weeklyGoal, today])
-  const weeks = useMemo(() => recentWeeks(activityDays, weeklyGoal, today, STREAK_WEEKS), [activityDays, weeklyGoal, today])
+  const weeks = useMemo(() => weeklyStreakHistory(activityDays, weeklyGoal, today, STREAK_WEEKS), [activityDays, weeklyGoal, today])
 
   // Cardio de esta semana de calendario, para el subtítulo de su fila.
   const cardioWeek = useMemo(() => {
@@ -210,7 +210,7 @@ export default function ProgressScreen() {
           </View>
           <View className="gap-1.5">
             <View className="flex-row gap-[5px]">
-              {weeks.map(w => <WeekSquare key={w.weekStart} week={w} dark={dark} />)}
+              {weeks.map((w, i) => <WeekSquare key={w.weekStart} week={w} current={i === weeks.length - 1} dark={dark} />)}
             </View>
             <View className="flex-row justify-between">
               <Kicker className="text-[9px] tracking-[1px]">{t('progressTab.weeksAgo', { count: STREAK_WEEKS })}</Kicker>
@@ -319,21 +319,23 @@ export default function ProgressScreen() {
 }
 
 /** Un cuadro de la tira: cumplida en lima, fallada con filete, la en curso recuadrada. */
-function WeekSquare({ week, dark }: { week: WeekResult; dark: boolean }) {
+function WeekSquare({ week, current, dark }: { week: WeekHistoryEntry; current: boolean; dark: boolean }) {
   const { t } = useTranslation()
-  const label = week.current
+  // La semana en curso es la última de la tira; sale `met` si ya se cumplió.
+  const met = week.state === 'met'
+  const label = current
     ? t('progressTab.weekCurrentA11y', { done: week.done, goal: week.goal })
-    : t(week.met ? 'progressTab.weekMetA11y' : 'progressTab.weekMissedA11y', { done: week.done, goal: week.goal })
+    : t(met ? 'progressTab.weekMetA11y' : 'progressTab.weekMissedA11y', { done: week.done, goal: week.goal })
   return (
     <View
       accessible
       accessibilityLabel={label}
       className={cn(
         'h-7 flex-1 rounded-[5px]',
-        week.met ? 'bg-lime' : week.current ? 'bg-lime/20' : 'border border-border',
-        week.current && 'border-2',
+        met ? 'bg-lime' : current ? 'bg-lime/20' : 'border border-border',
+        current && 'border-2',
       )}
-      style={week.current ? { borderColor: dark ? '#fafafa' : '#0a0a0a' } : undefined}
+      style={current ? { borderColor: dark ? '#fafafa' : '#0a0a0a' } : undefined}
     />
   )
 }
