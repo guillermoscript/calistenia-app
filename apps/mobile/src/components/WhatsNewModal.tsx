@@ -10,7 +10,7 @@
  * versión instalada como vista, así no reaparece hasta la siguiente.
  *
  * Implementación: <Modal> NATIVO con animationType="slide" (mismo patrón que
- * QuickMenu / CommentsSheet) — robusto en Android edge-to-edge (MIUI). Se monta
+ * CommentsSheet / DiscoverSheet) — robusto en Android edge-to-edge (MIUI). Se monta
  * en la Home (primera pantalla tras login/onboarding), no a nivel raíz, para
  * aparecer solo cuando el usuario llega al inicio y nunca durante una sesión.
  */

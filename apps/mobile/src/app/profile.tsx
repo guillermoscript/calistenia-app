@@ -1,20 +1,23 @@
-// Carné de atleta: quién eres primero (nivel, cifras, skills, cuerpo) y los
-// ajustes al final, una sola fila por tema. Misma estructura que el perfil web:
-// lo que se edita se despliega aquí mismo, lo que es otra pantalla navega.
+// Perfil y ajustes (#859): pantalla de pila que se abre desde el avatar de
+// cada pestaña. Arriba quién eres (nivel, cifras); debajo los ajustes en tres
+// grupos —Entrenamiento, Cuerpo y App—, una fila por tema. Lo que se edita se
+// despliega aquí mismo, lo que es otra pantalla navega.
 import { useEffect, useState } from 'react'
-import { View, ScrollView, Linking, Switch, Alert } from 'react-native'
+import { View, ScrollView, Linking, Switch, Alert, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
 import { useQueryClient } from '@tanstack/react-query'
-import { LogOut, Trash2 } from 'lucide-react-native'
+import { ChevronRight, LogOut, Trash2 } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { BackButton } from '@/components/ui/back-button'
+import { QuickGuideSheet } from '@/components/profile/QuickGuideSheet'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
@@ -27,8 +30,10 @@ import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
-import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
+import { getEffectiveWeeklyGoal, trainableDaysPerWeek, DEFAULT_WEEKLY_GOAL } from '@calistenia/core/lib/weeklyGoal'
+import { activityDaysFromProgress } from '@calistenia/core/lib/weekSummary'
+import { computeWeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
+import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { usePrivateAccount } from '@calistenia/core/hooks/usePrivateAccount'
@@ -48,7 +53,14 @@ import { Sentry } from '@/lib/instrument'
 
 type SaveState = 'idle' | 'saving' | 'saved'
 /** Temas de ajuste que se despliegan en la lista del final. */
-type SettingsSection = 'body' | 'training' | 'prefs' | 'account'
+type SettingsSection = 'goal' | 'skills' | 'training' | 'body' | 'prefs' | 'account'
+
+function isSettingsSection(value: unknown): value is SettingsSection {
+  return typeof value === 'string' && ['goal', 'skills', 'training', 'body', 'prefs', 'account'].includes(value)
+}
+
+/** Objetivo semanal: de 1 a 7 entrenos (#853 lo acota igual). */
+const GOAL_OPTIONS = ['1', '2', '3', '4', '5', '6', '7'].map(value => ({ value, label: value }))
 
 // Pares `valor → clave de traducción` de los campos de una sola opción.
 const ACTIVITY_OPTIONS = [
@@ -86,6 +98,24 @@ const LEVEL_LABEL_KEYS: Record<string, string> = {
   avanzado: 'difficulty.advanced',
 }
 
+/** Enlace dentro de un panel desplegado: texto, pista opcional y chevron. */
+function PanelLink({ label, hint, onPress }: { label: string; hint?: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="min-h-12 flex-row items-center gap-3 border-b border-border/70 py-2 active:opacity-60"
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <View className="flex-1 gap-0.5">
+        <Text className="text-[15px] text-foreground">{label}</Text>
+        {hint ? <Text className="text-xs text-muted-foreground">{hint}</Text> : null}
+      </View>
+      <ChevronRight size={16} color="hsl(0 0% 45%)" />
+    </Pressable>
+  )
+}
+
 /** Cifra grande + etiqueta mono: las tres del carné. */
 function StatTile({ label, value, lime }: { label: string; value: string; lime?: boolean }) {
   return (
@@ -102,7 +132,10 @@ export default function ProfileScreen() {
   const user = useAuthUser()
   const { settings, activeProgram, programProgress, weekDays, progress } = useWorkoutState()
   const { colorScheme } = useColorScheme()
-  const { getTotalSessions, getLongestStreak } = useWorkoutActions()
+  const { getTotalSessions, updateSettings } = useWorkoutActions()
+  // `?section=goal` abre un panel directamente (el enlace «Objetivo» de Progreso).
+  const params = useLocalSearchParams<{ section?: string }>()
+  const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
 
   // Lime se aclara/oscurece según el tema (paridad con reminders.tsx); muted = chevron gris.
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
@@ -122,7 +155,10 @@ export default function ProfileScreen() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [discoverOpen, setDiscoverOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [openSection, setOpenSection] = useState<SettingsSection | null>(null)
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [openSection, setOpenSection] = useState<SettingsSection | null>(
+    isSettingsSection(params.section) ? params.section : null,
+  )
 
   // Cuerpo (#243 F4a): peso/altura/edad/sexo/actividad — alimentan el objetivo
   // nutricional 'auto', así que se pueden editar también desde el móvil.
@@ -168,10 +204,16 @@ export default function ProfileScreen() {
   // Carné: las mismas cifras que el dashboard y las mismas cinco skills que el
   // perfil público, para que nada discrepe entre pantallas.
   const totalSessions = getTotalSessions()
-  const streak = getLongestStreak()
-  // «X de Y» de la semana de calendario (#853). Sin cardio libre: esta pantalla no carga sus fechas.
-  const weeklyDone = getWeekDoneDays(todayStr(), progress)
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
+  // El objetivo que tendría sin fijarlo a mano: los días de su programa (#853).
+  const programGoal = (activeProgram && trainableDaysPerWeek(weekDays)) || DEFAULT_WEEKLY_GOAL
+  // Racha SEMANAL (#853), con la misma cuenta que Progreso: cualquier entreno,
+  // cardio libre incluido (misma query key, sin fetch extra).
+  const streak = computeWeeklyStreak(
+    [...activityDaysFromProgress(progress), ...cardioSessions.map(c => utcToLocalDateStr(c.started_at))],
+    weeklyGoal,
+    todayStr(),
+  )
   const skills = buildSkills(settings as unknown as Record<string, number>)
   // #616: con inscripción activa la semana sale del programa (`started_at`);
   // sin ella se conserva el cálculo sobre `settings.startDate`, que es lo
@@ -284,6 +326,21 @@ export default function ProfileScreen() {
     }
   }
 
+  // Objetivo semanal (#853): guardarlo lo marca como elegido a mano, y a
+  // partir de ahí manda sobre los días del programa.
+  const saveWeeklyGoal = (goal: number) => {
+    if (settings.weeklyGoalCustom && goal === settings.weeklyGoal) return
+    void updateSettings({ weeklyGoal: goal, weeklyGoalCustom: true })
+  }
+  const resetWeeklyGoal = () => {
+    void updateSettings({ weeklyGoal: programGoal, weeklyGoalCustom: false })
+  }
+
+  const bodySummary = [weight ? `${weight} kg` : '', height ? `${height} cm` : ''].filter(Boolean).join(' · ')
+  // Admin y editor solo existen en la web (`/admin`, `/editor`).
+  const role = user?.role as string | undefined
+  const staffPath = role === 'admin' ? 'admin' : role === 'editor' ? 'editor' : null
+
   const handleLogout = () => {
     logout()
     router.replace('/login')
@@ -292,10 +349,10 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-4 pb-8 gap-3">
-        {/* Header */}
-        <View className="pt-2">
-          <Kicker>{t('profile.accountLabel')}</Kicker>
-          <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{t('profile.title')}</Text>
+        {/* Pantalla de pila desde #859: se llega desde el avatar de cada pestaña. */}
+        <View className="flex-row items-center gap-1 pt-1">
+          <BackButton />
+          <Kicker>{t('profile.screenKicker')}</Kicker>
         </View>
 
         {/* Identidad: avatar, nombre y en qué punto del programa vas. */}
@@ -320,151 +377,89 @@ export default function ProfileScreen() {
           </CardContent>
         </Card>
 
-        {/* Cifras: tres, grandes, y la racha en lima porque es la que se cuida. */}
+        {/* Cifras: tres, grandes, y la racha (semanal, #853) en lima porque es la que se cuida. */}
         <View className="flex-row gap-3">
           <StatTile label={t('profile.sessions')} value={String(totalSessions)} />
-          <StatTile label={t('profile.streak')} value={String(streak)} lime />
-          <StatTile label={t('common.week')} value={`${weeklyDone}/${weeklyGoal}`} />
+          <StatTile label={t('profile.streak')} value={t('progressTab.weeksShort', { count: streak.current })} lime />
+          <StatTile label={t('common.week')} value={`${streak.thisWeek.done}/${streak.thisWeek.goal}`} />
         </View>
 
-        {/* Skills: lo desbloqueado en lima, lo que está en camino con su avance. */}
+        {/* Entrenamiento */}
         <View className="mt-3 gap-2">
-          <Kicker>{t('profile.skills')}</Kicker>
-          {skills.length > 0 ? (
-            <View className="flex-row flex-wrap gap-2">
-              {skills.map(s => (
-                <View
-                  key={s.key}
-                  className={cn(
-                    'rounded-full border px-3 py-1.5',
-                    s.achieved ? 'border-lime/40 bg-lime/10' : 'border-border',
-                  )}
-                >
-                  <Text className={cn(
-                    'font-mono text-[10px] uppercase tracking-widest',
-                    s.achieved ? 'text-lime' : 'text-muted-foreground',
-                  )}>
-                    {s.achieved
-                      ? t('profile.skillAchieved', { label: s.label, value: `${s.value}${s.unit === 's' ? 's' : ''}` })
-                      : t('profile.skillLocked', { label: s.label, pct: s.pct })}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text className="text-[13px] text-muted-foreground">{t('profile.skillsEmpty')}</Text>
-          )}
-        </View>
-
-        {/* Cuerpo: resumen legible; editar abre el panel de la lista de abajo. */}
-        <View className="mt-3 gap-2">
-          <Kicker>{t('profile.sectionBody')}</Kicker>
-          <Card>
-            <CardContent className="flex-row items-center justify-between gap-3 py-4">
-              <View className="flex-row gap-5">
-                <View>
-                  <Text className="font-bebas text-[26px] leading-none text-foreground">
-                    {weight || '—'}<Text className="text-[12px] text-muted-foreground"> kg</Text>
-                  </Text>
-                  <Kicker size="xs" className="mt-0.5">{t('profile.weightShort')}</Kicker>
-                </View>
-                <View>
-                  <Text className="font-bebas text-[26px] leading-none text-foreground">
-                    {height || '—'}<Text className="text-[12px] text-muted-foreground"> cm</Text>
-                  </Text>
-                  <Kicker size="xs" className="mt-0.5">{t('profile.heightShort')}</Kicker>
-                </View>
-                <View>
-                  <Text className="font-bebas text-[26px] leading-none text-foreground">{age || '—'}</Text>
-                  <Kicker size="xs" className="mt-0.5">{t('profile.age')}</Kicker>
-                </View>
-              </View>
-              <Button
-                variant="outline"
-                className="h-9 shrink-0 px-3"
-                onPress={() => setOpenSection('body')}
-              >
-                <Text className="font-mono text-[10px] uppercase tracking-widest text-foreground">
-                  {t('common.edit')}
-                </Text>
-              </Button>
-            </CardContent>
-          </Card>
-        </View>
-
-        {/* Ajustes: una fila por tema. Lo que se edita se despliega aquí mismo;
-            lo que es otra pantalla, navega. */}
-        <View className="mt-3 gap-2">
-          <Kicker>{t('profile.settings')}</Kicker>
+          <Kicker>{t('profile.groupTraining')}</Kicker>
           <Card className="gap-0 overflow-hidden py-1">
             <SettingsRow
-              // Sin valor a la derecha a propósito: la tarjeta «Cuerpo» de
-              // arriba ya enseña esas cifras y repetirlas a dos dedos parece
-              // un fallo.
-              label={t('profile.rowBodyGoals')}
-              open={openSection === 'body'}
-              onPress={() => toggleSection('body')}
+              label={t('profile.weeklyGoal')}
+              value={t('profile.weeklyGoalValue', { count: weeklyGoal })}
+              open={openSection === 'goal'}
+              onPress={() => toggleSection('goal')}
               bordered={false}
               muted={muted} lime={lime}
             >
-              <Field label={t('profile.name')}>
-                <UnitInput
-                  value={name}
-                  onChangeText={setName}
-                  placeholder={t('profile.namePlaceholder')}
-                  maxLength={60}
-                />
-              </Field>
-
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Field label={t('profile.weightShort')}>
-                    <UnitInput value={weight} onChangeText={setWeight} placeholder={t('profile.weightPlaceholder')} keyboardType="decimal-pad" unit="kg" />
-                  </Field>
-                </View>
-                <View className="flex-1">
-                  <Field label={t('profile.heightShort')}>
-                    <UnitInput value={height} onChangeText={setHeight} placeholder={t('profile.heightPlaceholder')} keyboardType="decimal-pad" unit="cm" />
-                  </Field>
-                </View>
-                <View className="flex-1">
-                  <Field label={t('profile.age')}>
-                    <UnitInput value={age} onChangeText={setAge} placeholder={t('profile.agePlaceholder')} keyboardType="number-pad" />
-                  </Field>
-                </View>
-              </View>
-
-              <Field label={t('profile.sex')}>
+              <Field
+                label={t('profile.weeklyGoalField')}
+                hint={settings.weeklyGoalCustom
+                  ? t('profile.weeklyGoalHintCustom')
+                  : t('profile.weeklyGoalHintProgram', { count: programGoal })}
+              >
                 <Segmented
-                  options={[
-                    { value: 'male', label: t('profile.male') },
-                    { value: 'female', label: t('profile.female') },
-                  ]}
-                  value={sex}
-                  onChange={setSex}
+                  allowClear={false}
+                  options={GOAL_OPTIONS}
+                  value={String(weeklyGoal)}
+                  onChange={(next) => { if (next) saveWeeklyGoal(Number(next)) }}
                 />
               </Field>
-
-              <Field label={t('onboarding.activityLevel')}>
-                <Segmented
-                  columns={2}
-                  options={ACTIVITY_OPTIONS.map(([value, key]) => ({ value, label: t(key) }))}
-                  value={activityLevel}
-                  onChange={setActivityLevel}
-                />
-              </Field>
-
-              <View className="border-t border-border/70 pt-4">
-                <Button
-                  className="h-11 bg-lime active:bg-lime/90"
-                  onPress={handleSaveBody}
-                  disabled={bodySaveState === 'saving' || !bodyLoaded}
-                >
-                  <Text className="font-bebas text-base tracking-wide text-lime-foreground">
-                    {bodySaveState === 'saving' ? t('profile.saving') : bodySaveState === 'saved' ? t('profile.saved') : t('common.save').toUpperCase()}
+              {settings.weeklyGoalCustom ? (
+                <Button variant="outline" className="h-10 self-start px-3" onPress={resetWeeklyGoal}>
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-foreground">
+                    {t('profile.weeklyGoalReset', { count: programGoal })}
                   </Text>
                 </Button>
-              </View>
+              ) : null}
+            </SettingsRow>
+
+            <SettingsRow
+              label={t('profile.programAndPhase')}
+              value={activeProgram ? activeProgram.name : undefined}
+              onPress={() => router.push('/programs')}
+              bordered
+              muted={muted} lime={lime}
+            />
+
+            <SettingsRow
+              label={t('profile.skillsAndRecords')}
+              open={openSection === 'skills'}
+              onPress={() => toggleSection('skills')}
+              bordered
+              muted={muted} lime={lime}
+            >
+              {skills.length > 0 ? (
+                <View className="flex-row flex-wrap gap-2">
+                  {skills.map(s => (
+                    <View
+                      key={s.key}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5',
+                        s.achieved ? 'border-lime/40 bg-lime/10' : 'border-border',
+                      )}
+                    >
+                      <Text className={cn(
+                        'font-mono text-[10px] uppercase tracking-widest',
+                        s.achieved ? 'text-lime' : 'text-muted-foreground',
+                      )}>
+                        {s.achieved
+                          ? t('profile.skillAchieved', { label: s.label, value: `${s.value}${s.unit === 's' ? 's' : ''}` })
+                          : t('profile.skillLocked', { label: s.label, pct: s.pct })}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text className="text-[13px] text-muted-foreground">{t('profile.skillsEmpty')}</Text>
+              )}
+              <Button variant="outline" className="h-10 self-start px-3" onPress={() => router.push('/stats')}>
+                <Text className="font-mono text-[10px] uppercase tracking-widest text-foreground">{t('profile.seeRecords')}</Text>
+              </Button>
             </SettingsRow>
 
             <SettingsRow
@@ -547,12 +542,104 @@ export default function ProfileScreen() {
               </View>
             </SettingsRow>
 
+            {/* Recordatorios y avisos: antes colgaban del ☰. Dos filas que
+                navegan, no un panel, para que sigan a dos toques del avatar. */}
+            <SettingsRow label={t('nav.reminders')} value={t('profile.remindersHint')} onPress={() => router.push('/reminders')} bordered muted={muted} lime={lime} />
+            <SettingsRow
+              label={t('nav.notificationSettings')}
+              value={t('profile.alertsHint')}
+              onPress={() => router.push('/notification-settings')}
+              bordered
+              muted={muted} lime={lime}
+            />
+          </Card>
+        </View>
+
+        {/* Cuerpo */}
+        <View className="mt-3 gap-2">
+          <Kicker>{t('profile.sectionBody')}</Kicker>
+          <Card className="gap-0 overflow-hidden py-1">
+            <SettingsRow
+              label={t('profile.rowBodyGoals')}
+              value={bodySummary || undefined}
+              open={openSection === 'body'}
+              onPress={() => toggleSection('body')}
+              bordered={false}
+              muted={muted} lime={lime}
+            >
+              <Field label={t('profile.name')}>
+                <UnitInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder={t('profile.namePlaceholder')}
+                  maxLength={60}
+                />
+              </Field>
+
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Field label={t('profile.weightShort')}>
+                    <UnitInput value={weight} onChangeText={setWeight} placeholder={t('profile.weightPlaceholder')} keyboardType="decimal-pad" unit="kg" />
+                  </Field>
+                </View>
+                <View className="flex-1">
+                  <Field label={t('profile.heightShort')}>
+                    <UnitInput value={height} onChangeText={setHeight} placeholder={t('profile.heightPlaceholder')} keyboardType="decimal-pad" unit="cm" />
+                  </Field>
+                </View>
+                <View className="flex-1">
+                  <Field label={t('profile.age')}>
+                    <UnitInput value={age} onChangeText={setAge} placeholder={t('profile.agePlaceholder')} keyboardType="number-pad" />
+                  </Field>
+                </View>
+              </View>
+
+              <Field label={t('profile.sex')}>
+                <Segmented
+                  options={[
+                    { value: 'male', label: t('profile.male') },
+                    { value: 'female', label: t('profile.female') },
+                  ]}
+                  value={sex}
+                  onChange={setSex}
+                />
+              </Field>
+
+              <Field label={t('onboarding.activityLevel')}>
+                <Segmented
+                  columns={2}
+                  options={ACTIVITY_OPTIONS.map(([value, key]) => ({ value, label: t(key) }))}
+                  value={activityLevel}
+                  onChange={setActivityLevel}
+                />
+              </Field>
+
+              <View className="border-t border-border/70 pt-4">
+                <Button
+                  className="h-11 bg-lime active:bg-lime/90"
+                  onPress={handleSaveBody}
+                  disabled={bodySaveState === 'saving' || !bodyLoaded}
+                >
+                  <Text className="font-bebas text-base tracking-wide text-lime-foreground">
+                    {bodySaveState === 'saving' ? t('profile.saving') : bodySaveState === 'saved' ? t('profile.saved') : t('common.save').toUpperCase()}
+                  </Text>
+                </Button>
+              </View>
+            </SettingsRow>
+            <SettingsRow label={t('profile.health')} onPress={() => router.push('/health')} bordered muted={muted} lime={lime} />
+          </Card>
+        </View>
+
+        {/* App */}
+        <View className="mt-3 gap-2">
+          <Kicker>{t('profile.groupApp')}</Kicker>
+          <Card className="gap-0 overflow-hidden py-1">
             <SettingsRow
               label={t('profile.rowPreferences')}
               value={`${currentLang.toUpperCase()} · ${currencyPrefs.defaultCurrency}`}
               open={openSection === 'prefs'}
               onPress={() => toggleSection('prefs')}
-              bordered
+              bordered={false}
               muted={muted} lime={lime}
             >
               <Field label={t('profile.language')}>
@@ -585,14 +672,14 @@ export default function ProfileScreen() {
                 />
               </Field>
             </SettingsRow>
-
             <SettingsRow
-              label={t('profile.reminders')}
-              onPress={() => router.push('/reminders')}
+              label={t('profile.whatsNew')}
+              value={`v${Constants.expoConfig?.version || '1.0.0'}`}
+              onPress={() => setHistoryOpen(true)}
               bordered
               muted={muted} lime={lime}
             />
-
+            <SettingsRow label={t('profile.discover')} onPress={() => setDiscoverOpen(true)} bordered muted={muted} lime={lime} />
             <SettingsRow
               label={t('profile.rowAccountPrivacy')}
               value={(user?.email as string) || undefined}
@@ -638,6 +725,15 @@ export default function ProfileScreen() {
                 />
               </View>
 
+              {/* Bloqueados y legal: antes eran filas sueltas de «Cuenta y comunidad». */}
+              <View>
+                <PanelLink label={t('blocks.manageEntry')} onPress={() => router.push('/blocked-users' as never)} />
+                <PanelLink
+                  label={t('account.privacyEntry')}
+                  onPress={() => { Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {}) }}
+                />
+              </View>
+
               {/* Zona de peligro: baja de cuenta (#300). Al final del todo y
                   separada del cierre de sesión para que no se confundan. */}
               <View className="gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -657,33 +753,17 @@ export default function ProfileScreen() {
                 </Button>
               </View>
             </SettingsRow>
-          </Card>
-        </View>
-
-        {/* Bienestar y progreso: todas navegan. */}
-        <View className="mt-3 gap-2">
-          <Kicker>{t('profile.wellbeing')}</Kicker>
-          <Card className="gap-0 overflow-hidden py-1">
-            <SettingsRow label={t('profile.health')} onPress={() => router.push('/health')} bordered={false} muted={muted} lime={lime} />
-            <SettingsRow label={t('progress.bodyPhotos.title')} onPress={() => router.push('/progress-photos')} bordered muted={muted} lime={lime} />
-            <SettingsRow label={t('progress.bodyMeasurements.title')} onPress={() => router.push('/body-measurements' as never)} bordered muted={muted} lime={lime} />
-          </Card>
-        </View>
-
-        {/* Cuenta y comunidad: todas navegan o abren una hoja. */}
-        <View className="mt-3 gap-2">
-          <Kicker>{t('profile.accountTools')}</Kicker>
-          <Card className="gap-0 overflow-hidden py-1">
-            <SettingsRow label={t('referrals.navLabel')} onPress={() => router.push('/referrals')} bordered={false} muted={muted} lime={lime} />
-            <SettingsRow label={t('profile.discover')} onPress={() => setDiscoverOpen(true)} bordered muted={muted} lime={lime} />
-            <SettingsRow label={t('profile.whatsNew')} onPress={() => setHistoryOpen(true)} bordered muted={muted} lime={lime} />
-            <SettingsRow label={t('blocks.manageEntry')} onPress={() => router.push('/blocked-users' as never)} bordered muted={muted} lime={lime} />
-            <SettingsRow
-              label={t('account.privacyEntry')}
-              onPress={() => { Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {}) }}
-              bordered
-              muted={muted} lime={lime}
-            />
+            <SettingsRow label={t('quickGuide.title')} onPress={() => setGuideOpen(true)} bordered muted={muted} lime={lime} />
+            {/* Admin y editor viven solo en la web: aquí es un enlace, y solo para esos roles. */}
+            {staffPath ? (
+              <SettingsRow
+                label={t('profile.staffPanel')}
+                value={t(staffPath === 'admin' ? 'nav.admin' : 'nav.editor')}
+                onPress={() => { Linking.openURL(`${WEB_BASE_URL}/${staffPath}`).catch(() => {}) }}
+                bordered
+                muted={muted} lime={lime}
+              />
+            ) : null}
           </Card>
         </View>
 
@@ -706,6 +786,7 @@ export default function ProfileScreen() {
 
       <ChangelogHistory visible={historyOpen} onClose={() => setHistoryOpen(false)} />
       <DiscoverSheet visible={discoverOpen} onClose={() => setDiscoverOpen(false)} />
+      <QuickGuideSheet visible={guideOpen} onClose={() => setGuideOpen(false)} />
       <DeleteAccountModal
         visible={deleteOpen}
         email={(user?.email as string) || null}

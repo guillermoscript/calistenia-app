@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
+import type { AppNotification, NotificationType } from '@calistenia/core/hooks/useNotifications'
 import { getNotifRoute, resolveNotifUrl } from '../notification-route'
+
+declare global {
+  interface ImportMeta {
+    /** Lo expande Vite (vitest) al compilar el test. */
+    glob(pattern: string): Record<string, () => Promise<unknown>>
+  }
+}
 
 function notification(over: Partial<AppNotification>): AppNotification {
   return {
@@ -74,5 +81,64 @@ describe('program deleted notification (#633)', () => {
   it('does not fall through to the unknown-type default', () => {
     // El `default` manda a /notifications, que es donde el usuario YA está.
     expect(getNotifRoute(notification({ type: 'program_deleted' }))).not.toBe('/notifications')
+  })
+})
+
+describe('five tabs and redirects (#859)', () => {
+  // Historial pasó a ser la pestaña Progreso: los push ya enviados con
+  // `/history` y los de racha tienen que aterrizar en ella.
+  it('opens Progreso for an old /history push and for /progress', () => {
+    expect(resolveNotifUrl('/history')).toBe('/progress')
+    expect(resolveNotifUrl('/progress')).toBe('/progress')
+  })
+
+  it('lands a streak notification on Progreso', () => {
+    expect(getNotifRoute(notification({ type: 'streak' }))).toBe('/progress')
+  })
+
+  it('keeps /profile working now that Perfil is a stack screen', () => {
+    expect(resolveNotifUrl('/profile')).toBe('/profile')
+    expect(getNotifRoute(notification({ type: 'achievement' }))).toBe('/profile')
+  })
+})
+
+describe('every notification route exists in the app (#859)', () => {
+  // Al mover pestañas a la pila es fácil dejar un push apuntando a una ruta
+  // que ya no existe: expo-router no falla, enseña «Unmatched route».
+  // Vitest lista los ficheros de rutas sin importarlos (glob perezoso). El
+  // tsc de la app no tiene los tipos de Node ni los de Vite.
+  const routeFiles = new Set(
+    Object.keys(import.meta.glob('../../app/**/*.tsx')).map(f => f.replace('../../app/', '')),
+  )
+
+  function routeExists(route: string): boolean {
+    const path = route.split('?')[0]
+    if (path === '/' || path === '/(tabs)') return true
+    const first = path.split('/')[1]
+    return [`${first}.tsx`, `${first}/index.tsx`, `${first}/[id].tsx`, `(tabs)/${first}.tsx`]
+      .some(candidate => routeFiles.has(candidate))
+  }
+
+  const types: NotificationType[] = [
+    'follow', 'follow_request', 'follow_accepted', 'reaction', 'comment', 'comment_reply',
+    'challenge_join', 'challenge_complete', 'achievement', 'streak', 'referral_signup',
+    'referral_bonus', 'friend_streak', 'friend_achievement', 'friend_workout', 'friend_joined',
+    'program_deleted', 'inactivity_24h', 'inactivity_72h', 'inactivity_7d', 'inactivity_14d',
+    'inactivity_new_start',
+  ]
+
+  it.each(types)('in-app %s notification opens an existing route', type => {
+    expect(routeExists(getNotifRoute(notification({ type, referenceId: 'x' })))).toBe(true)
+  })
+
+  it.each([
+    '/', '/feed', '/social', '/u/abc', '/workout', '/progress', '/history', '/profile',
+    '/notifications', '/challenges', '/challenges/abc', '/referrals', '/nutrition', '/unknown',
+  ])('push url %s opens an existing route', url => {
+    expect(routeExists(resolveNotifUrl(url) ?? '/')).toBe(true)
+  })
+
+  it('detects a route that does not exist', () => {
+    expect(routeExists('/no-such-screen')).toBe(false)
   })
 })

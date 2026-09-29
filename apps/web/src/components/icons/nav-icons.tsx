@@ -13,6 +13,15 @@ export function LayoutIcon({ className }: IconProps) {
   )
 }
 
+export function HomeIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+      <path d="M2 6.5 8 2l6 4.5V14H2z" />
+      <path d="M6.5 14v-4h3v4" />
+    </svg>
+  )
+}
+
 export function DumbbellIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">

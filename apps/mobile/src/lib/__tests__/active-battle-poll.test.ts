@@ -8,7 +8,7 @@ describe('shouldPollActiveBattle', () => {
   })
 
   it('no sondea en el resto de pestañas ni en pantallas sueltas', () => {
-    for (const path of ['/programs', '/library', '/history', '/calendar', '/nutrition', '/profile', '/battle-create', '/battle/abc', '/leaderboard']) {
+    for (const path of ['/train', '/progress', '/nutrition', '/programs', '/library', '/calendar', '/profile', '/battle-create', '/battle/abc', '/leaderboard']) {
       expect(shouldPollActiveBattle(path)).toBe(false)
     }
   })

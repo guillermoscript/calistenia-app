@@ -110,7 +110,7 @@ export async function register(page, { email, password, name } = {}) {
 
   // After registration, user may land on onboarding flow — skip it
   const skipBtn = page.getByText(/ya conozco la app|I already know|skip/i)
-  const headerNav = page.locator('header nav')
+  const headerNav = page.getByTestId('app-header')
   await expect(skipBtn.or(headerNav)).toBeVisible({ timeout: 15000 })
   if (await skipBtn.isVisible()) {
     await skipBtn.click()
@@ -167,7 +167,7 @@ export async function login(page, email, password = TEST_PASS) {
   await emailField.fill(email)
   await page.getByPlaceholder(/^password$|^contraseña$/i).fill(password)
   await page.getByRole('button', { name: /sign in|iniciar sesión/i }).click()
-  await expect(page.locator('header nav')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByTestId('app-header')).toBeVisible({ timeout: 10000 })
   await dismissOverlays(page)
 }
 
@@ -187,26 +187,28 @@ export async function navigateTo(page, path) {
 }
 
 /**
- * Selecciona un día en /workout. Desde #574 la página autoselecciona hoy (o
- * el siguiente entrenable) y el botón del día es un toggle: pulsarlo cuando ya
- * está seleccionado lo deselecciona. Solo hace clic si hace falta.
+ * Abre un día en /workout. Desde #856, `/workout` sin `?day` es la pestaña
+ * Entrenar: cada día entrenable es un enlace a `/workout?day=X`, que abre la
+ * vista del día con su botón ya pulsado (ya no se deselecciona al pulsarlo).
+ * Si ya estás en la vista del día, cambia a ese día con su botón.
  */
 export async function selectDay(page, name = /lun|mon/i) {
-  const btn = page.getByRole('button', { name }).first()
-  await expect(btn).toBeVisible({ timeout: 8000 })
-  // Con el día autoseleccionado, el tour de detalle (driver.js) salta a los
-  // 500 ms del montaje y tapa la página: descartarlo justo antes de pulsar.
-  // driver.js se importa en diferido, así que el overlay puede aparecer DESPUÉS
-  // del primer dismiss: reintentar el clic descartando overlays entre intentos.
-  for (let i = 0; i < 8; i++) {
-    await page.waitForTimeout(700)
+  const hubLink = page.locator('a[href^="/workout?day="]').filter({ hasText: name }).first()
+  const dayBtn = page.getByRole('button', { name }).first()
+  await expect(hubLink.or(dayBtn)).toBeVisible({ timeout: 8000 })
+  if (await hubLink.isVisible()) {
     await dismissOverlays(page)
-    if ((await btn.getAttribute('aria-pressed')) === 'true') return
-    try {
-      await btn.click({ timeout: 3000 })
-    } catch {
-      // tapado por un overlay: siguiente vuelta
-    }
+    await hubLink.click()
+    await expect(page).toHaveURL(/\/workout\?day=/, { timeout: 8000 })
   }
-  await expect(btn).toHaveAttribute('aria-pressed', 'true')
+  await expect(dayBtn).toBeVisible({ timeout: 8000 })
+  if ((await dayBtn.getAttribute('aria-pressed')) !== 'true') await dayBtn.click()
+  await expect(dayBtn).toHaveAttribute('aria-pressed', 'true')
+}
+
+/** Cierra sesión desde Perfil › Cuenta y privacidad (#856: salió del sidebar). */
+export async function signOutFromProfile(page) {
+  await navigateTo(page, '/profile')
+  await page.getByRole('button', { name: /cuenta y privacidad|account & privacy/i }).click()
+  await page.getByRole('button', { name: /cerrar sesión|sign out/i }).click()
 }

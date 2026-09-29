@@ -1,7 +1,7 @@
 import { View, Easing } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Home, ClipboardList, Library, History, User, Utensils, CalendarDays } from 'lucide-react-native'
+import { Home, Dumbbell, Apple, BarChart3, Users } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -9,7 +9,6 @@ import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
 import ActiveSessionBar from '@/components/ActiveSessionBar'
 import ActiveBattleBar from '@/components/ActiveBattleBar'
-import { QuickMenuProvider } from '@/components/QuickMenu'
 import { haptics } from '@/lib/haptics'
 
 export default function TabsLayout() {
@@ -24,7 +23,6 @@ export default function TabsLayout() {
   if (!isOnboardingDone(user.id)) return <Redirect href="/onboarding" />
 
   return (
-    <QuickMenuProvider>
     <View className="flex-1">
     <Tabs
       screenListeners={{ tabPress: () => haptics.selection() }}
@@ -43,62 +41,49 @@ export default function TabsLayout() {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
         },
-        tabBarLabelStyle: { fontSize: 9, fontFamily: 'JetBrainsMono_400Regular', letterSpacing: 0.5, textTransform: 'uppercase' },
+        // 5 pestañas (#859): 10 px como mínimo y poco espaciado, para que
+        // «COMUNIDAD» y «NUTRICIÓN» (9 letras mono ≈ 60 dp) quepan enteras a 360 dp
+        // (72 dp por pestaña). Sin escalado de fuente: con la letra del sistema
+        // grande se cortarían; el icono sigue identificando cada pestaña.
+        tabBarLabelStyle: { fontSize: 10, fontFamily: 'JetBrainsMono_400Regular', letterSpacing: 0.5, textTransform: 'uppercase' },
+        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: t('nav.home'),
+          title: t('nav.today'),
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="programs"
+        name="train"
         options={{
-          title: t('nav.programs'),
-          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="library"
-        options={{
-          title: t('nav.exercises'),
-          tabBarIcon: ({ color, size }) => <Library color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: t('nav.progress'),
-          tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: t('nav.calendar'),
-          tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} />,
+          title: t('nav.workout'),
+          tabBarIcon: ({ color, size }) => <Dumbbell color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="nutrition"
         options={{
           title: t('nav.nutrition'),
-          tabBarIcon: ({ color, size }) => <Utensils color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Apple color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="progress"
         options={{
-          title: t('nav.profile'),
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          title: t('nav.progress'),
+          tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={size} />,
         }}
       />
-      {/* Comunidad (#860) existe pero aún no sale en la barra: la meten las
-          5 pestañas de #859. Sin esta línea expo-router la pintaría como una
-          8.ª pestaña sin icono. Hasta entonces se llega desde ☰ → Comunidad. */}
-      <Tabs.Screen name="community" options={{ href: null }} />
+      <Tabs.Screen
+        name="community"
+        options={{
+          title: t('nav.community'),
+          tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
+        }}
+      />
     </Tabs>
     {/* Sesión de cardio en curso: barra flotante para volver a /cardio */}
     <ActiveCardioBar />
@@ -107,6 +92,5 @@ export default function TabsLayout() {
     {/* Batalla en curso: barra flotante para volver a /battle/[id] */}
     <ActiveBattleBar />
     </View>
-    </QuickMenuProvider>
   )
 }

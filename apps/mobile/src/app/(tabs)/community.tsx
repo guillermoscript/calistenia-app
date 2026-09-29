@@ -24,6 +24,7 @@ import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
+import { ProfileAvatarButton } from '@/components/ProfileAvatarButton'
 import CommunityActivity from '@/components/community/CommunityActivity'
 import ChallengesList from '@/components/community/ChallengesList'
 import CommunityBattles from '@/components/community/CommunityBattles'
@@ -68,14 +69,17 @@ export default function CommunityScreen() {
             <Kicker>{t('community.kicker')}</Kicker>
             <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.community')}</Text>
           </View>
-          <Pressable
-            onPress={() => router.push('/friends')}
-            className="size-11 items-center justify-center rounded-full border border-border active:bg-muted/40"
-            accessibilityRole="button"
-            accessibilityLabel={t('dashboard.findFriends')}
-          >
-            <UserPlus size={18} color="hsl(0 0% 55%)" />
-          </Pressable>
+          <View className="flex-row items-center gap-1.5">
+            <Pressable
+              onPress={() => router.push('/friends')}
+              className="size-10 items-center justify-center rounded-full border border-border active:bg-muted/40"
+              accessibilityRole="button"
+              accessibilityLabel={t('dashboard.findFriends')}
+            >
+              <UserPlus size={18} color="hsl(0 0% 55%)" />
+            </Pressable>
+            <ProfileAvatarButton />
+          </View>
         </View>
 
         <View
