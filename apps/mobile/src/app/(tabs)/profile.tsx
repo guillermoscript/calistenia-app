@@ -27,6 +27,8 @@ import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { usePrivateAccount } from '@calistenia/core/hooks/usePrivateAccount'
@@ -98,9 +100,9 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
-  const { settings, activeProgram, programProgress } = useWorkoutState()
+  const { settings, activeProgram, programProgress, weekDays, progress } = useWorkoutState()
   const { colorScheme } = useColorScheme()
-  const { getTotalSessions, getLongestStreak, getWeeklyDoneCount } = useWorkoutActions()
+  const { getTotalSessions, getLongestStreak } = useWorkoutActions()
 
   // Lime se aclara/oscurece según el tema (paridad con reminders.tsx); muted = chevron gris.
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
@@ -167,7 +169,9 @@ export default function ProfileScreen() {
   // perfil público, para que nada discrepe entre pantallas.
   const totalSessions = getTotalSessions()
   const streak = getLongestStreak()
-  const weeklyDone = getWeeklyDoneCount()
+  // «X de Y» de la semana de calendario (#853). Sin cardio libre: esta pantalla no carga sus fechas.
+  const weeklyDone = getWeekDoneDays(todayStr(), progress)
+  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const skills = buildSkills(settings as unknown as Record<string, number>)
   // #616: con inscripción activa la semana sale del programa (`started_at`);
   // sin ella se conserva el cálculo sobre `settings.startDate`, que es lo
@@ -320,7 +324,7 @@ export default function ProfileScreen() {
         <View className="flex-row gap-3">
           <StatTile label={t('profile.sessions')} value={String(totalSessions)} />
           <StatTile label={t('profile.streak')} value={String(streak)} lime />
-          <StatTile label={t('common.week')} value={`${weeklyDone}/${settings.weeklyGoal || 5}`} />
+          <StatTile label={t('common.week')} value={`${weeklyDone}/${weeklyGoal}`} />
         </View>
 
         {/* Skills: lo desbloqueado en lima, lo que está en camino con su avance. */}

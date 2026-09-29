@@ -5,6 +5,8 @@ import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms, type ActiveEnrollment } from '@calistenia/core/hooks/usePrograms'
 import { useWeekAwareGetWorkout, useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
 import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, CircuitDefinition, ExerciseTiming } from '@calistenia/core/types'
 
@@ -168,7 +170,9 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
       // Deja que el sync compare con su propio "hoy": así el widget pinta la
       // racha en lima solo si hoy ya cuenta, y apagada si se sostiene por ayer.
       lastSessionDate: getLastSessionDate(),
-      weeklyDone: getWeeklyDoneCount(),
+      // Semana de calendario en días distintos (#853), como el resto de «X de Y».
+      // Sin cardio libre: el proveedor no carga sus fechas.
+      weeklyDone: getWeekDoneDays(todayStr(), progress),
     })
   }, [programsReady, activeProgram, settings, programProgress.currentPhase, weekDays, progress, i18n.language]) // eslint-disable-line react-hooks/exhaustive-deps
 
