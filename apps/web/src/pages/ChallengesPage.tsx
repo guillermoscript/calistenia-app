@@ -21,9 +21,11 @@ type Filter = 'active' | 'past'
 
 interface ChallengesPageProps {
   userId: string
+  /** Dentro de la pestaña Retos de Comunidad (#857): sin contenedor ni título propios. */
+  embedded?: boolean
 }
 
-export default function ChallengesPage({ userId }: ChallengesPageProps) {
+export default function ChallengesPage({ userId, embedded = false }: ChallengesPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { active, past, loading, load, joinPreset } = useChallenges(userId)
@@ -79,10 +81,12 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('challenges.section')}</div>
-      <div className="flex items-end justify-between mb-6">
-        <h1 className="font-bebas text-4xl md:text-5xl">{t('challenges.title')}</h1>
+    <div className={embedded ? undefined : 'max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8'}>
+      {!embedded && (
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('challenges.section')}</div>
+      )}
+      <div className={cn('flex items-end mb-6', embedded ? 'justify-end' : 'justify-between')}>
+        {!embedded && <h1 className="font-bebas text-4xl md:text-5xl">{t('challenges.title')}</h1>}
         <Button
           id="tour-challenges-create"
           onClick={() => navigate('/challenges/new')}

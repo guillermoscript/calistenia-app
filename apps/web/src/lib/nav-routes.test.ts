@@ -15,7 +15,7 @@ describe('nav-routes', () => {
       '/progress', '/nutrition', '/sleep', '/calendar', '/reminders',
       '/programs', '/exercises',
       '/friends', '/challenges', '/community-programs', '/leaderboard', '/referrals',
-      '/feed', '/notifications', '/profile',
+      '/community', '/feed', '/notifications', '/profile',
     ])
     // `/log-workout` se queda fuera: `getBreadcrumbKey` lo nombra
     // `breadcrumb.logWorkout`, no `nav.logWorkout`.

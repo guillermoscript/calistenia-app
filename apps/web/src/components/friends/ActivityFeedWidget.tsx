@@ -12,29 +12,35 @@ interface ActivityFeedWidgetProps {
   onOpenSession: (item: FeedItem) => void
   /** Nombre/avatar → perfil del autor. */
   onOpenUser: (userId: string) => void
+  /** Cabecera; por defecto «Actividad reciente». */
+  title?: string
+  /** Filas que se enseñan (3 en el inicio, 4 en Comunidad). */
+  limit?: number
 }
 
 /**
- * Resumen de las últimas tres actividades de los seguidos.
+ * Resumen de las últimas actividades de los seguidos (tres por defecto).
  *
  * Decía "<nombre> completó <título>" para TODO, así que una carrera de un amigo
  * se leía como "Ana completó Carrera" y un reto como "Ana completó 100
  * flexiones al día". Ahora la frase la pone `describeFeedItem`, la misma que el
  * muro y la app nativa, y cada tipo dice lo suyo.
  */
-export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, onOpenUser }: ActivityFeedWidgetProps) {
+export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, onOpenUser, title, limit = 3 }: ActivityFeedWidgetProps) {
   const { t } = useTranslation()
   if (items.length === 0) return null
 
-  const recent = items.slice(0, 3)
+  const recent = items.slice(0, limit)
 
   return (
     <div className="p-4 bg-card border border-border rounded-xl border-l-[3px] border-l-sky-500">
       <div className="flex items-baseline justify-between gap-2 mb-3">
-        <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('widgets.recentActivity')}</div>
+        <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{title ?? t('widgets.recentActivity')}</div>
         <button
           onClick={onNavigate}
-          className="text-[10px] text-muted-foreground hover:text-lime transition-colors shrink-0"
+          // min-h-11 = 44 px pulsables; los márgenes negativos compensan para que la
+          // cabecera mida lo mismo que antes.
+          className="inline-flex items-center min-h-11 -my-3.5 -mx-2 px-2 text-[10px] text-muted-foreground hover:text-lime transition-colors shrink-0"
         >
           {t('dashboard.seeAll')}
         </button>

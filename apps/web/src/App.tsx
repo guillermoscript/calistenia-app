@@ -57,6 +57,7 @@ const ChallengesPage = lazy(() => import('./pages/ChallengesPage'))
 const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
 // Programas de COMUNIDAD (#353) — distintos de los programas de entrenamiento.
+const CommunityPage = lazy(() => import('./pages/CommunityPage'))
 const CommunityProgramsPage = lazy(() => import('./pages/CommunityProgramsPage'))
 const CommunityProgramDetailPage = lazy(() => import('./pages/CommunityProgramDetailPage'))
 const RoutineViewPage = lazy(() => import('./pages/RoutineViewPage'))
@@ -630,6 +631,7 @@ function AuthenticatedApp({
             {/* Detalle por id de sesión: sirve también para sesiones ajenas (muro, actividad). */}
             <Route path="/s/:id" element={<PublicSessionDetailPage />} />
             <Route path="/cardio/session/:id" element={<CardioSessionDetailPage />} />
+            <Route path="/community" element={<CommunityPage userId={userId!} />} />
             <Route path="/feed" element={<ActivityFeedPage userId={userId!} />} />
             <Route path="/community-programs" element={<CommunityProgramsPage userId={userId!} />} />
             <Route path="/community-programs/:id" element={<CommunityProgramDetailPage userId={userId!} />} />
