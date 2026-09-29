@@ -7,6 +7,7 @@ import {
   crossedWeeklyStreakMilestone,
   goalForWeekFromChanges,
   WEEKLY_STREAK_MILESTONES,
+  weeklyStreakHistory,
   type GoalChange,
   type WeeklyStreak,
 } from './weeklyStreak'
@@ -64,5 +65,46 @@ describe('crossedWeeklyStreakMilestone', () => {
     // Reentrada retroactiva que salta varios: el mayor.
     expect(crossedWeeklyStreakMilestone(3, 9)).toBe(8)
     expect(crossedWeeklyStreakMilestone(0, 0)).toBeNull()
+  })
+})
+
+describe('weeklyStreakHistory', () => {
+  // Hoy miércoles 30-09-2026: semana en curso desde el lunes 28-09.
+  const today = '2026-09-30'
+
+  it('devuelve `count` semanas de la más antigua a la en curso', () => {
+    const h = weeklyStreakHistory([], 3, today, 10)
+    expect(h).toHaveLength(10)
+    expect(h[0].weekStart).toBe('2026-07-27')
+    expect(h[9].weekStart).toBe('2026-09-28')
+  })
+
+  it('marca cumplidas, fallidas y la en curso sin romperla', () => {
+    const days = ['2026-09-14', '2026-09-15', '2026-09-21', '2026-09-28']
+    const h = weeklyStreakHistory(days, 2, today, 3)
+    expect(h.map(w => [w.weekStart, w.done, w.state])).toEqual([
+      ['2026-09-14', 2, 'met'],
+      ['2026-09-21', 1, 'missed'],
+      ['2026-09-28', 1, 'current'],
+    ])
+  })
+
+  it('la en curso sale cumplida en cuanto llega al objetivo', () => {
+    const h = weeklyStreakHistory(['2026-09-28', '2026-09-29'], 2, today, 1)
+    expect(h).toEqual([{ weekStart: '2026-09-28', done: 2, goal: 2, state: 'met' }])
+  })
+
+  it('cuenta días distintos e ignora fechas futuras e inválidas', () => {
+    const h = weeklyStreakHistory(['2026-09-28', '2026-09-28', '2026-10-02', 'ayer'], 1, today, 1)
+    expect(h[0].done).toBe(1)
+  })
+
+  it('coincide con computeWeeklyStreak en la semana en curso', () => {
+    const days = ['2026-09-21', '2026-09-23', '2026-09-29']
+    const goal = goalForWeekFromChanges([{ from: '2026-09-27', goal: 4 }], 2)
+    const h = weeklyStreakHistory(days, goal, today, 2)
+    const s = computeWeeklyStreak(days, goal, today)
+    expect(h[1]).toMatchObject({ done: s.thisWeek.done, goal: s.thisWeek.goal })
+    expect(h[0]).toMatchObject({ goal: 4, state: 'missed' })
   })
 })
