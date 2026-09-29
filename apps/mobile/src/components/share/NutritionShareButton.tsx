@@ -255,7 +255,7 @@ export default function NutritionShareButton({
         <Pressable style={styles.backdrop} onPress={closeModal}>
           {/* Bottom sheet container — prevent tap-through.
               paddingBottom uses the safe-area inset so the lime COMPARTIR
-              button always clears the Android nav bar (matches QuickMenu). */}
+              button always clears the Android nav bar (matches the other native sheets). */}
           <Pressable
             style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}
             onPress={(e) => e.stopPropagation()}

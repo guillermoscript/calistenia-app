@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronRight, BadgeCheck, Dumbbell, Plus, Search, X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
-import { MenuButton } from '@/components/QuickMenu'
+import { BackButton } from '@/components/ui/back-button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
@@ -104,9 +104,9 @@ export default function ProgramsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="gap-3 px-4 pb-3 pt-2">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center gap-1">
+          <BackButton />
           <Text className="font-bebas text-4xl leading-none text-foreground">{t('programs.title')}</Text>
-          <MenuButton />
         </View>
 
         {/* Búsqueda */}

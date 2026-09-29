@@ -119,7 +119,7 @@ export default function HomeActivity() {
 
   if (!userId) return null
 
-  const seeAllTarget = tab === 'amigos' ? '/social' : '/history'
+  const seeAllTarget = tab === 'amigos' ? '/social' : '/progress'
 
   return (
     <View className="gap-2.5">

@@ -159,7 +159,7 @@ export function PostWorkoutActions({
 
   const handleProgress = useCallback(() => {
     track('progress')
-    onNavigateAway('/(tabs)/history')
+    onNavigateAway('/progress')
   }, [onNavigateAway, track])
 
   const handleRepeat = useCallback(() => {
