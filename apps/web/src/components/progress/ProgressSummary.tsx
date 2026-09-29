@@ -4,6 +4,8 @@ import { cn } from '../../lib/utils'
 import { todayStr as todayStrFn, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { isFreeSession } from '@calistenia/core/lib/progressUtils'
 import type { ProgressMap, Settings, ExerciseLog } from '@calistenia/core/types'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { useWorkoutState } from '../../contexts/WorkoutContext'
 
 interface ProgressSummaryProps {
   progress: ProgressMap
@@ -14,6 +16,8 @@ interface ProgressSummaryProps {
 
 export default function ProgressSummary({ progress, settings, filter = 'all' }: ProgressSummaryProps) {
   const { t } = useTranslation()
+  const { activeProgram, weekDays } = useWorkoutState()
+  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const stats = useMemo(() => {
     const today = new Date()
     const todayStr = todayStrFn()
@@ -102,10 +106,10 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
       sessionsThisMonth,
       sessionsPrevMonth,
       setsThisWeek,
-      weeklyGoal: settings.weeklyGoal || 5,
+      weeklyGoal,
       freeSessionsThisWeek,
     }
-  }, [progress, settings, filter])
+  }, [progress, weeklyGoal, filter])
 
   const weekDiff = stats.sessionsThisWeek - stats.sessionsPrevWeek
   const monthDiff = stats.sessionsThisMonth - stats.sessionsPrevMonth

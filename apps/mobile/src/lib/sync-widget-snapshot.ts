@@ -1,4 +1,5 @@
 import { localDay, todayStr, getTimezone } from '@calistenia/core/lib/dateUtils'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
 import { buildWidgetSnapshot } from './widget-snapshot'
 import { writeWidgetSnapshot } from './widget-bridge'
 import type { Settings, WeekDay, Workout } from '@calistenia/core/types'
@@ -47,6 +48,6 @@ export function syncWidgetSnapshot(args: {
     streak: args.streak,
     lastSessionDate: args.lastSessionDate,
     weeklyDone: args.weeklyDone,
-    weeklyGoal: args.settings.weeklyGoal || 5,
+    weeklyGoal: getEffectiveWeeklyGoal(args.settings, args.programName ? { weekDays: args.weekDays } : null),
   }))
 }

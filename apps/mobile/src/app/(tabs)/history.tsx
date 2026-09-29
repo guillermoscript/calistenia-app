@@ -18,6 +18,7 @@ import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr } from '@calistenia/core/lib/dateUtils'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
@@ -43,7 +44,7 @@ export default function HistoryScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
-  const { progress, settings } = useWorkoutState()
+  const { progress, settings, activeProgram, weekDays } = useWorkoutState()
   const { getWorkout, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity } = useWorkoutActions()
   const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
   const { record: battleRecord } = useBattleHistory(user?.id ?? null)
@@ -97,6 +98,7 @@ export default function HistoryScreen() {
   // barridos en cada render de la pantalla (y la cabecera se reconstruía entera).
   const totalSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
   const weeklyDone = useMemo(() => getWeeklyDoneCount(), [getWeeklyDoneCount])
+  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const longestStreak = useMemo(() => getLongestStreak(), [getLongestStreak])
 
   // #636 §4: el historial no emitía nada, así que no se sabía si la gente
@@ -137,7 +139,7 @@ export default function HistoryScreen() {
         {/* Stats */}
         <View className="flex-row gap-3">
           <StatCard label={t('progress.recentSessions')} value={totalSessions} />
-          <StatCard label={t('common.week')} value={`${weeklyDone}/${settings.weeklyGoal || 5}`} />
+          <StatCard label={t('common.week')} value={`${weeklyDone}/${weeklyGoal}`} />
           <StatCard label="Racha" value={longestStreak} />
         </View>
 
@@ -245,7 +247,7 @@ export default function HistoryScreen() {
       totalSessions,
       weeklyDone,
       longestStreak,
-      settings.weeklyGoal,
+      weeklyGoal,
       user?.id,
       monthActivity,
       today,

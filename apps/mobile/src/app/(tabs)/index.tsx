@@ -31,6 +31,7 @@ import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
 import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
@@ -452,7 +453,7 @@ export default function TodayScreen() {
 
         {/* Stats */}
         <View className="flex-row gap-3">
-          <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
+          <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)}`} />
           {/* Racha viva, no el récord: el récord se queda en perfil (#229) */}
           <StatCard label={t('profile.streak')} value={getCurrentStreak()} />
           <StatCard label={t('profile.sessions')} value={getTotalSessions()} />

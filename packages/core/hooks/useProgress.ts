@@ -115,7 +115,8 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         const s: Settings = {
           phase: settingsRec.phase,
           startDate: settingsRec.start_date?.split(' ')[0] || null,
-          weeklyGoal: settingsRec.weekly_goal || 5,
+          weeklyGoal: settingsRec.weekly_goal || DEFAULT_SETTINGS.weeklyGoal,
+          weeklyGoalCustom: settingsRec.weekly_goal_custom === true,
           pr_pullups: settingsRec.pr_pullups || 0,
           pr_pushups: settingsRec.pr_pushups || 0,
           pr_lsit: settingsRec.pr_lsit || 0,
