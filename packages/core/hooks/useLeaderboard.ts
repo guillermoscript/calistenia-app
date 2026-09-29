@@ -32,6 +32,41 @@ const EMPTY_ENTRIES: Entries = {
 }
 
 /**
+ * Quién entra en un ranking entre seguidos: yo + los seguidos ACEPTADOS. Una
+ * solicitud pendiente a una cuenta privada (#422) no es un seguido, y sus views
+ * devolverían 0 filas en silencio.
+ */
+export async function fetchRankingUserIds(userId: string): Promise<{ allUserIds: string[]; followedIds: string[] }> {
+  const followsRes = await pb.collection('follows').getFullList({
+    filter: pb.filter('follower = {:uid}', { uid: userId }),
+    $autoCancel: false,
+  })
+  const followedIds = followsRes
+    .filter((r: any) => r.status !== 'pending')
+    .map((r: any) => r.following as string)
+  return { allUserIds: [...new Set([userId, ...followedIds])], followedIds }
+}
+
+/**
+ * Entrenos de `uid` desde `start` (fuerza + circuito + cardio). Sale de las
+ * views `public_*` (#386): las tablas base son owner-only y aquí se leen datos
+ * de otras personas.
+ */
+export async function countActivitySince(uid: string, start: string): Promise<number> {
+  const count = (collection: string, field: string) =>
+    pb.collection(collection).getList(1, 1, {
+      filter: pb.filter(`user = {:uid} && ${field} >= {:start}`, { uid, start }),
+      $autoCancel: false,
+    }).then((r: any) => r?.totalItems || 0).catch(() => 0)
+  const [strength, circuit, cardio] = await Promise.all([
+    count('public_sessions', 'completed_at'),
+    count('public_circuit_sessions', 'started_at'),
+    count('public_cardio_sessions', 'started_at'),
+  ])
+  return strength + circuit + cardio
+}
+
+/**
  * Leaderboard entre seguidos. Migrado a TanStack Query conservando la forma
  * pública { entries, loading, error, load }. Es LAZY: la query (9×N llamadas a
  * PB) no corre hasta que se llama `load()` la primera vez — `load` habilita la
@@ -59,19 +94,10 @@ export function useLeaderboard(userId: string | null) {
     staleTime: 30_000,
     queryFn: async (): Promise<Entries> => {
       // 1. A quién sigo
-      const followsRes = await pb.collection('follows').getFullList({
-        filter: pb.filter('follower = {:uid}', { uid: userId! }),
-        $autoCancel: false,
-      })
-      // Solo los aceptados: una solicitud pendiente a una cuenta privada (#422)
-      // no es un seguido, y sus views devolverían 0 filas en silencio.
-      const followedIds = followsRes
-        .filter((r: any) => r.status !== 'pending')
-        .map((r: any) => r.following as string)
-      const allUserIds = [...new Set([userId!, ...followedIds])]
+      const { allUserIds, followedIds } = await fetchRankingUserIds(userId!)
 
       // No sigo a nadie → leaderboard vacío.
-      if (allUserIds.length <= 1 && followedIds.length === 0) return EMPTY_ENTRIES
+      if (followedIds.length === 0) return EMPTY_ENTRIES
 
       // 2. Stats + PRs + conteos de sesiones por usuario (en paralelo).
       //    Todo sale de las views `public_*` (#386): las tablas base son
@@ -80,9 +106,7 @@ export function useLeaderboard(userId: string | null) {
       const userDataPromises = allUserIds.map(async (uid) => {
         const [
           userRes, statsRes, settingsRes,
-          weekSessionsRes, monthSessionsRes,
-          weekCircuitRes, monthCircuitRes,
-          weekCardioRes, monthCardioRes,
+          sessionsWeek, sessionsMonth,
         ] = await Promise.all([
           pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null),
           pb.collection('public_user_stats').getFirstListItem(
@@ -93,50 +117,21 @@ export function useLeaderboard(userId: string | null) {
             pb.filter('user = {:uid}', { uid }),
             { $autoCancel: false, fields: 'id,user,pr_pullups,pr_pushups,pr_lsit,pr_handstand' },
           ).catch(() => null),
-          pb.collection('public_sessions').getList(1, 1, {
-            filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start: weekStartStr }),
-            $autoCancel: false,
-          }).catch(() => ({ totalItems: 0 })),
-          pb.collection('public_sessions').getList(1, 1, {
-            filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start: monthStartStr }),
-            $autoCancel: false,
-          }).catch(() => ({ totalItems: 0 })),
-          pb.collection('public_circuit_sessions').getList(1, 1, {
-            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: weekStartStr }),
-            $autoCancel: false,
-          }).catch(() => ({ totalItems: 0 })),
-          pb.collection('public_circuit_sessions').getList(1, 1, {
-            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: monthStartStr }),
-            $autoCancel: false,
-          }).catch(() => ({ totalItems: 0 })),
-          pb.collection('public_cardio_sessions').getList(1, 1, {
-            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: weekStartStr }),
-            $autoCancel: false,
-          }).catch(() => ({ totalItems: 0 })),
-          pb.collection('public_cardio_sessions').getList(1, 1, {
-            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: monthStartStr }),
-            $autoCancel: false,
-          }).catch(() => ({ totalItems: 0 })),
+          countActivitySince(uid, weekStartStr),
+          countActivitySince(uid, monthStartStr),
         ])
 
         const displayName = (userRes as any)?.display_name || (userRes as any)?.email?.split('@')[0] || '?'
         const avatarUrl = userRes ? getUserAvatarUrl(userRes as any, '100x100') : null
         const isMe = uid === userId
 
-        const weekStrength = (weekSessionsRes as any)?.totalItems || 0
-        const weekCircuit = (weekCircuitRes as any)?.totalItems || 0
-        const weekCardio = (weekCardioRes as any)?.totalItems || 0
-        const monthStrength = (monthSessionsRes as any)?.totalItems || 0
-        const monthCircuit = (monthCircuitRes as any)?.totalItems || 0
-        const monthCardio = (monthCardioRes as any)?.totalItems || 0
-
         return {
           userId: uid,
           displayName,
           avatarUrl,
           isCurrentUser: isMe,
-          sessionsWeek: weekStrength + weekCircuit + weekCardio,
-          sessionsMonth: monthStrength + monthCircuit + monthCardio,
+          sessionsWeek,
+          sessionsMonth,
           streak: (statsRes as any)?.workout_streak_current || 0,
           streak_best: (statsRes as any)?.workout_streak_best || 0,
           total_sessions: (statsRes as any)?.total_sessions || 0,

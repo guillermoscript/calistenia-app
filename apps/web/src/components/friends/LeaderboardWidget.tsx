@@ -6,22 +6,27 @@ import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 interface LeaderboardWidgetProps {
   entries: LeaderboardEntry[]
   onNavigate: () => void
+  /** Cabecera; por defecto «Ranking semanal». */
+  title?: string
+  /** Mi fila cuando quedo fuera de los 3 primeros, con mi puesto real. */
+  me?: (LeaderboardEntry & { position: number }) | null
 }
 
-export default function LeaderboardWidget({ entries, onNavigate }: LeaderboardWidgetProps) {
+export default function LeaderboardWidget({ entries, onNavigate, title, me }: LeaderboardWidgetProps) {
   const { t } = useTranslation()
   if (entries.length === 0) return null
 
-  const top3 = entries.slice(0, 3)
+  const rows = entries.slice(0, 3).map((entry, i) => ({ entry, position: i + 1 }))
+  if (me) rows.push({ entry: me, position: me.position })
 
   return (
     <button
       onClick={onNavigate}
       className="text-left w-full p-4 bg-card border border-border rounded-xl border-l-[3px] border-l-amber-400 hover:border-amber-400/50 transition-colors"
     >
-      <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">{t('widgets.weeklyRanking')}</div>
+      <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">{title ?? t('widgets.weeklyRanking')}</div>
       <div className="flex flex-col gap-2">
-        {top3.map((entry, i) => (
+        {rows.map(({ entry, position }) => (
           <div
             key={entry.userId}
             className={cn(
@@ -30,7 +35,7 @@ export default function LeaderboardWidget({ entries, onNavigate }: LeaderboardWi
             )}
           >
             <span className="text-sm w-6 text-center shrink-0">
-              {RANK_MEDALS[i] || `${i + 1}`}
+              {RANK_MEDALS[position - 1] || `${position}`}
             </span>
             <span className={cn('text-sm flex-1 min-w-0 truncate', entry.isCurrentUser ? 'font-medium' : 'text-muted-foreground')}>
               {entry.displayName}
