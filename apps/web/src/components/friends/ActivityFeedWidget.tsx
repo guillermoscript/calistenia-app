@@ -38,7 +38,9 @@ export default function ActivityFeedWidget({ items, onNavigate, onOpenSession, o
         <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{title ?? t('widgets.recentActivity')}</div>
         <button
           onClick={onNavigate}
-          className="text-[10px] text-muted-foreground hover:text-lime transition-colors shrink-0"
+          // min-h-11 = 44 px pulsables; los márgenes negativos compensan para que la
+          // cabecera mida lo mismo que antes.
+          className="inline-flex items-center min-h-11 -my-3.5 -mx-2 px-2 text-[10px] text-muted-foreground hover:text-lime transition-colors shrink-0"
         >
           {t('dashboard.seeAll')}
         </button>

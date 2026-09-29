@@ -5220,5 +5220,7 @@
   "community.link.inviteTitle": "Invitar amigos",
   "community.link.inviteHint": "Tu enlace de invitación",
   "community.empty.title": "Entrena acompañado",
-  "community.empty.hint": "Sigue a tus amigos para ver sus entrenos, animarles y competir en el ranking de la semana."
+  "community.empty.hint": "Sigue a tus amigos para ver sus entrenos, animarles y competir en el ranking de la semana.",
+  "community.loadError": "No hemos podido cargar tu comunidad. Revisa la conexión e inténtalo de nuevo.",
+  "community.retry": "Reintentar"
 }

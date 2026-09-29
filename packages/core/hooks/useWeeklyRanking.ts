@@ -95,6 +95,10 @@ export function useWeeklyRanking(userId: string | null) {
   return {
     ranking: query.data ?? EMPTY,
     loading: query.isPending && !!userId,
-    error: query.error ? String((query.error as any)?.message ?? query.error) : null,
+    // Solo cuenta como error si no hay nada que enseñar: un refresco fallido con
+    // datos previos no debe tirar el resumen que ya se ve.
+    error: query.data ? null : query.error ? String((query.error as any)?.message ?? query.error) : null,
+    /** Reintenta la carga (el aviso de error de Comunidad). */
+    reload: () => { void query.refetch() },
   }
 }

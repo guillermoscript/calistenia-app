@@ -28,6 +28,8 @@ const row = (userId: string, value: number, position: number, isCurrentUser = fa
 const h = vi.hoisted(() => ({
   ranking: { followingCount: 0, top: [], me: null } as WeeklyRanking,
   rankingLoading: false,
+  rankingError: null as string | null,
+  reloadRanking: vi.fn(),
   feedItems: [] as unknown[],
   useLeaderboard: vi.fn(() => ({
     entries: { sessions_week: [], sessions_month: [] }, loading: false, error: null, load: async () => {},
@@ -36,7 +38,7 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('@calistenia/core/hooks/useWeeklyRanking', () => ({
-  useWeeklyRanking: () => ({ ranking: h.ranking, loading: h.rankingLoading, error: null }),
+  useWeeklyRanking: () => ({ ranking: h.ranking, loading: h.rankingLoading, error: h.rankingError, reload: h.reloadRanking }),
 }))
 vi.mock('@calistenia/core/hooks/useActivityFeed', () => ({
   useActivityFeed: () => ({ items: h.feedItems, loading: false, load: h.loadFeed }),
@@ -80,6 +82,8 @@ const selectedTab = () => screen.getByRole('tab', { selected: true }).textConten
 beforeEach(() => {
   h.ranking = { followingCount: 0, top: [], me: null }
   h.rankingLoading = false
+  h.rankingError = null
+  h.reloadRanking.mockClear()
   h.feedItems = []
   h.useLeaderboard.mockClear()
 })
@@ -89,6 +93,21 @@ describe('CommunityPage', () => {
     renderAt('/community?tab=nope')
     expect(selectedTab()).toBe('community.tab.activity')
     expect(screen.getByTestId('featured-challenge')).toBeTruthy()
+  })
+
+  it('cleans an unknown ?tab from the URL without adding a history entry', async () => {
+    const user = userEvent.setup()
+    renderAt('/community?tab=nope&x=1')
+    expect(selectedTab()).toBe('community.tab.activity')
+    expect(screen.getByTestId('search').textContent).toBe('?x=1')
+    // replace, no push: atrás no vuelve al enlace roto (no hay entrada previa).
+    await user.click(screen.getByRole('button', { name: 'back' }))
+    expect(screen.getByTestId('search').textContent).toBe('?x=1')
+  })
+
+  it('leaves a valid ?tab untouched', () => {
+    renderAt('/community?tab=ranking')
+    expect(screen.getByTestId('search').textContent).toBe('?tab=ranking')
   })
 
   it('opens the tab named in ?tab', () => {
@@ -155,6 +174,29 @@ describe('CommunityPage', () => {
     h.rankingLoading = true
     renderAt()
     expect(screen.queryByTestId('community-empty')).toBeNull()
+  })
+
+  it('shows a retry notice, not the empty state, when the ranking fails to load', async () => {
+    const user = userEvent.setup()
+    h.rankingError = 'boom'
+    h.feedItems = [{ id: 's1' }]
+    renderAt()
+    expect(screen.getByTestId('community-load-error')).toBeTruthy()
+    expect(screen.queryByTestId('community-empty')).toBeNull()
+    // El feed tiene su propia carga y se queda visible.
+    expect(screen.getByTestId('friends-feed')).toBeTruthy()
+    expect(screen.getByTestId('featured-challenge')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'community.retry' }))
+    expect(h.reloadRanking).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not claim nobody is followed nor "no friend activity" on error with an empty feed', () => {
+    h.rankingError = 'boom'
+    renderAt()
+    expect(screen.getByTestId('community-load-error')).toBeTruthy()
+    expect(screen.queryByTestId('community-empty')).toBeNull()
+    expect(screen.queryByText('community.noFriendActivity')).toBeNull()
   })
 
   it('links to community programs, races and referrals', () => {

@@ -5220,5 +5220,7 @@
   "community.link.inviteTitle": "Invite friends",
   "community.link.inviteHint": "Your invite link",
   "community.empty.title": "Train together",
-  "community.empty.hint": "Follow your friends to see their workouts, cheer them on and compete in this week's ranking."
+  "community.empty.hint": "Follow your friends to see their workouts, cheer them on and compete in this week's ranking.",
+  "community.loadError": "We couldn't load your community. Check your connection and try again.",
+  "community.retry": "Retry"
 }

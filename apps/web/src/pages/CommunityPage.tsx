@@ -44,8 +44,18 @@ export default function CommunityPage({ userId }: CommunityPageProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const tab = parseTab(searchParams.get('tab'))
+  const rawTab = searchParams.get('tab')
+  const tab = parseTab(rawTab)
   const tabRefs = useRef<Partial<Record<CommunityTab, HTMLButtonElement | null>>>({})
+
+  // `?tab=` desconocido: se cae a Actividad y se limpia la URL (replace, sin
+  // ensuciar el historial) para que no quede un enlace roto compartible.
+  useEffect(() => {
+    if (rawTab === null || TABS.includes(rawTab as CommunityTab)) return
+    const params = new URLSearchParams(searchParams)
+    params.delete('tab')
+    setSearchParams(params, { replace: true })
+  }, [rawTab, searchParams, setSearchParams])
 
   const selectTab = (next: CommunityTab) => {
     if (next === tab) return
@@ -128,15 +138,30 @@ function ActivityTab({ userId, onSeeRanking }: { userId: string; onSeeRanking: (
   const navigate = useNavigate()
   // Solo el resumen semanal: el ranking completo (9 consultas por persona) se
   // carga al abrir su pestaña.
-  const { ranking, loading: rankingLoading } = useWeeklyRanking(userId)
+  const { ranking, loading: rankingLoading, error: rankingError, reload: reloadRanking } = useWeeklyRanking(userId)
   const { items: feedItems, loading: feedLoading, load: loadFeed } = useActivityFeed(userId)
 
   useEffect(() => { void loadFeed() }, [loadFeed])
 
-  const followsNobody = !rankingLoading && ranking.followingCount === 0
+  // Con el ranking fallido no sabemos a cuánta gente sigue: NO es «no sigues a
+  // nadie». Se avisa con reintento y el feed (que carga aparte) se queda.
+  const followsNobody = !rankingLoading && !rankingError && ranking.followingCount === 0
 
   return (
     <div className="flex flex-col gap-6">
+      {rankingError && (
+        <section
+          role="alert"
+          data-testid="community-load-error"
+          className="rounded-xl border border-border bg-card p-4 text-center"
+        >
+          <p className="text-sm text-muted-foreground mb-3">{t('community.loadError')}</p>
+          <Button variant="outline" size="sm" className="h-11" onClick={reloadRanking}>
+            {t('community.retry')}
+          </Button>
+        </section>
+      )}
+
       {followsNobody && (
         <section
           data-testid="community-empty"
@@ -161,7 +186,7 @@ function ActivityTab({ userId, onSeeRanking }: { userId: string; onSeeRanking: (
           onOpenSession={(item) => navigate(feedItemHref(item, item.userId === userId) ?? `/u/${item.userId}`)}
           onOpenUser={(uid) => navigate(`/u/${uid}`)}
         />
-      ) : (
+      ) : !rankingError && (
         <section className="rounded-xl border border-border bg-card p-4">
           <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">{t('community.friendsTitle')}</div>
           <p className="text-sm text-muted-foreground">{t('community.noFriendActivity')}</p>

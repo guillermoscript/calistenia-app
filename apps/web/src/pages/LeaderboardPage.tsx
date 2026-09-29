@@ -71,6 +71,7 @@ export default function LeaderboardPage({ userId, embedded = false }: Leaderboar
             aria-pressed={category === cat.id}
             className={cn(
               'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              embedded && 'min-h-11', // 44 px de área pulsable en la pestaña de Comunidad
               category === cat.id
                 ? 'text-lime border-current bg-accent/50'
                 : 'text-muted-foreground border-transparent hover:text-foreground',
@@ -89,6 +90,7 @@ export default function LeaderboardPage({ userId, embedded = false }: Leaderboar
             aria-pressed={timeFilter === 'week'}
             className={cn(
               'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              embedded && 'min-h-11', // 44 px de área pulsable en la pestaña de Comunidad
               timeFilter === 'week' ? 'text-amber-400 border-current bg-accent/50' : 'text-muted-foreground border-transparent hover:text-foreground',
             )}
           >
@@ -99,6 +101,7 @@ export default function LeaderboardPage({ userId, embedded = false }: Leaderboar
             aria-pressed={timeFilter === 'month'}
             className={cn(
               'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              embedded && 'min-h-11', // 44 px de área pulsable en la pestaña de Comunidad
               timeFilter === 'month' ? 'text-amber-400 border-current bg-accent/50' : 'text-muted-foreground border-transparent hover:text-foreground',
             )}
           >
