@@ -8,7 +8,6 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { View, Pressable } from 'react-native'
-import { Image } from 'expo-image'
 import { useRouter, type Href } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Users, Dumbbell, Apple, Activity } from 'lucide-react-native'
@@ -17,19 +16,17 @@ import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import FriendActivityRow from '@/components/social/FriendActivityRow'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
-import { describeFeedItem } from '@calistenia/core/lib/feed-item'
-import { feedItemHref, openFeedItem } from '@/lib/feed-routes'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { timeAgo, relativeDate } from '@calistenia/core/lib/dateUtils'
 import type { SessionDone } from '@calistenia/core/types'
 
 const LIME = 'hsl(74 90% 45%)'
-const MUTED = 'hsl(0 0% 55%)'
 
 type Tab = 'amigos' | 'tu'
 
@@ -157,59 +154,8 @@ export default function HomeActivity() {
           />
         ) : (
           <View className="gap-2">
-            {/* La fila abre el detalle de la sesión; el avatar y el nombre van al
-                perfil del autor (Pressables anidados: el interior gana el toque). */}
             {friends.map(item => (
-              <Pressable
-                key={item.id}
-                // `openFeedItem` respeta que no todo tiene destino: un circuito
-                // ajeno o una batalla que no jugaste no se pueden abrir. Antes
-                // esto mandaba CUALQUIER tipo a `/s/[id]`, así que un reto o una
-                // carrera aterrizaban en un detalle de sesión inexistente.
-                onPress={() => openFeedItem(router, item, item.userId === userId)}
-                disabled={feedItemHref(item, item.userId === userId) === null}
-                className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 active:opacity-70"
-                accessibilityRole="button"
-                accessibilityLabel={`${item.displayName} · ${describeFeedItem(item).title}`}
-              >
-                <Pressable
-                  onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
-                  className="size-9 items-center justify-center overflow-hidden rounded-full bg-accent active:opacity-60"
-                  accessibilityRole="button"
-                  accessibilityLabel={item.displayName}
-                >
-                  {item.avatarUrl ? (
-                    <Image
-                      source={{ uri: item.avatarUrl }}
-                      style={{ width: '100%', height: '100%' }}
-                      contentFit="cover"
-                      transition={150}
-                      cachePolicy="memory-disk"
-                      recyclingKey={item.userId}
-                      accessibilityLabel={item.displayName}
-                    />
-                  ) : (
-                    <Text className="font-mono text-xs text-foreground">{(item.displayName[0] ?? '?').toUpperCase()}</Text>
-                  )}
-                </Pressable>
-                <View className="flex-1">
-                  <Pressable
-                    onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
-                    className="self-start active:opacity-60"
-                    accessibilityRole="button"
-                    accessibilityLabel={item.displayName}
-                    hitSlop={4}
-                  >
-                    <Text className="font-sans-medium text-sm text-foreground" numberOfLines={1}>
-                      {item.displayName}
-                    </Text>
-                  </Pressable>
-                  <Text className="font-mono text-[10px] text-muted-foreground" numberOfLines={1}>
-                    {describeFeedItem(item).title} · {timeAgo(item.completedAt)}
-                  </Text>
-                </View>
-                <ChevronRight size={16} color={MUTED} />
-              </Pressable>
+              <FriendActivityRow key={item.id} item={item} meId={userId} />
             ))}
           </View>
         )

@@ -144,7 +144,7 @@ function FeaturedChallengeInner({ userId }: { userId: string }) {
         <Pressable
           onPress={handleJoin}
           disabled={joining}
-          className={cn('items-center rounded-lg bg-lime py-2.5 active:opacity-80', joining && 'opacity-50')}
+          className={cn('min-h-11 items-center justify-center rounded-lg bg-lime active:opacity-80', joining && 'opacity-50')}
           accessibilityRole="button"
         >
           <Text className="font-mono text-[11px] uppercase tracking-widest text-lime-foreground">
@@ -154,7 +154,7 @@ function FeaturedChallengeInner({ userId }: { userId: string }) {
       ) : (
         <Pressable
           onPress={open}
-          className="items-center rounded-lg border border-lime/40 py-2.5 active:bg-lime/10"
+          className="min-h-11 items-center justify-center rounded-lg border border-lime/40 active:bg-lime/10"
           accessibilityRole="button"
         >
           <Text className="font-mono text-[11px] uppercase tracking-widest text-lime">{ctaLabel}</Text>
