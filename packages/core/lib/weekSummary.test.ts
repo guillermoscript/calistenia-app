@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activityDaysFromProgress, getWeekSummary } from './weekSummary'
+import { activityDaysFromProgress, getWeekDoneDays, getWeekSummary } from './weekSummary'
 import type { DayId, DayType, ProgressMap, WeekDay } from '../types'
 
 const day = (id: DayId, type: DayType): WeekDay => ({ id, name: id, focus: id, type, color: '#fff' })
@@ -34,8 +34,14 @@ describe('getWeekSummary', () => {
     expect(s.done).toBe(3)
   })
 
+  it('no cuenta como hechas las fechas posteriores a hoy', () => {
+    const s = getWeekSummary({ today: TODAY, activityDays: ['2026-09-29', '2026-10-01', '2026-10-03'], weekDays: WEEK })
+    expect(s.done).toBe(1)
+    expect(s.cells.find(c => c.day === '2026-10-01')?.state).not.toBe('done')
+  })
+
   it('ignora actividad fuera de la semana y fechas inválidas', () => {
-    const s = getWeekSummary({ today: TODAY, activityDays: ['2026-09-27', '2026-10-05', 'x', '2026-10-01'], weekDays: WEEK })
+    const s = getWeekSummary({ today: TODAY, activityDays: ['2026-09-27', '2026-10-05', 'x', '2026-09-29'], weekDays: WEEK })
     expect(s.done).toBe(1)
   })
 
@@ -81,5 +87,16 @@ describe('getWeekSummary', () => {
   it('hoy en día de descanso sigue siendo today', () => {
     const s = getWeekSummary({ today: '2026-09-29', activityDays: [], weekDays: WEEK })
     expect(s.cells[1]).toMatchObject({ state: 'today', trainable: false })
+  })
+})
+
+describe('getWeekDoneDays', () => {
+  it('suma el progreso y las fechas extra (cardio libre) sin repetir días', () => {
+    const progress: ProgressMap = {
+      'done_2026-09-28_p1_lun': { done: true, date: '2026-09-28', workoutKey: 'p1_lun', note: '' },
+      'done_2026-09-29_p1_mie': { done: true, date: '2026-09-29', workoutKey: 'p1_mie', note: '', cardioSessionId: 'c1' },
+    }
+    expect(getWeekDoneDays(TODAY, progress)).toBe(2)
+    expect(getWeekDoneDays(TODAY, progress, ['2026-09-29', '2026-09-30', '2026-10-02'])).toBe(3)
   })
 })

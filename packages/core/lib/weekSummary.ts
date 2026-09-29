@@ -45,7 +45,8 @@ export interface WeekSummaryInput {
   today: string
   /**
    * Días con al menos una actividad de cualquier tipo, `YYYY-MM-DD` local.
-   * Repetidos y fechas inválidas se ignoran. Ver `activityDaysFromProgress`.
+   * Repetidos, fechas inválidas y fechas posteriores a `today` se ignoran.
+   * Ver `activityDaysFromProgress`.
    */
   activityDays: Iterable<string>
   /** Semana tipo del programa activo; `[]` sin programa. */
@@ -77,7 +78,9 @@ export function getWeekSummary(input: WeekSummaryInput): WeekSummary {
   const weekStart = mondayOf(today)
   const days = weekDaysFrom(weekStart)
   const activity = new Set<string>()
-  for (const d of input.activityDays) if (isDayStr(d)) activity.add(d)
+  // Las fechas posteriores a `today` no cuentan (reloj desajustado, sesión
+  // registrada a mano): `computeWeeklyStreak` (#801) también las ignora.
+  for (const d of input.activityDays) if (isDayStr(d) && d <= today) activity.add(d)
 
   const trainableIds = new Set(weekDays.filter(isTrainableDay).map(d => d.id))
   const validSignup = isDayStr(signupDay) ? signupDay : null
@@ -124,4 +127,24 @@ export function activityDaysFromProgress(progress: ProgressMap): string[] {
     if (isDayStr(day)) out.add(day)
   }
   return [...out].sort()
+}
+
+/**
+ * Atajo para el «X» de un «X de Y»: días distintos con entreno esta semana de
+ * calendario (`getWeekSummary(...).done`), sin necesitar el programa.
+ *
+ * @param extraActivityDays fechas `YYYY-MM-DD` que no viven en el
+ *   `ProgressMap`, sobre todo las sesiones de cardio LIBRE. Pásalas solo si la
+ *   pantalla ya las tiene cargadas: no hace falta una consulta nueva.
+ */
+export function getWeekDoneDays(
+  today: string,
+  progress: ProgressMap,
+  extraActivityDays: Iterable<string> = [],
+): number {
+  return getWeekSummary({
+    today,
+    activityDays: [...activityDaysFromProgress(progress), ...extraActivityDays],
+    weekDays: [],
+  }).done
 }
