@@ -44,15 +44,13 @@ export default function CommunityActivity({ onSeeRanking }: { onSeeRanking: () =
       <ActiveBattleRow />
 
       {!followsLoading && !hasFriends ? (
-        <View className="rounded-xl border border-border bg-card">
-          <EmptyState
-            icon={Users}
-            title={t('community.emptyTitle')}
-            body={t('community.emptyBody')}
-            ctaLabel={t('dashboard.findFriends')}
-            onCtaPress={() => router.push('/friends')}
-          />
-        </View>
+        <EmptyState
+          icon={Users}
+          title={t('community.emptyTitle')}
+          body={t('community.emptyBody')}
+          ctaLabel={t('dashboard.findFriends')}
+          onCtaPress={() => router.push('/friends')}
+        />
       ) : null}
 
       <FeaturedChallengeCard userId={userId} />
