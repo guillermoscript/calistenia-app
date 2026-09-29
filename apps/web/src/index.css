@@ -49,6 +49,10 @@
     /* Casi-negro (no blanco): blanco sobre --lime en claro da 2,33:1 y suspende
        WCAG AA. Con 0 0% 7% (mismo valor que en oscuro) da ~7,6:1. Ver #548. */
     --lime-foreground: 0 0% 7%;
+    /* Texto lima PEQUEÑO (kickers, etiquetas): en claro el --lime (#8fb80a) da
+       ~2:1 sobre blanco; este oliva (#4d6600) pasa de 4,5:1. El --lime queda
+       para bordes y rellenos. En oscuro es el mismo lima. #855. */
+    --lime-text: 75 100% 20%;
 
     /* Chart colors (hex for Recharts) */
     --chart-axis: #71717a;
@@ -100,6 +104,7 @@
     /* Lime accent */
     --lime: 74 90% 57%;
     --lime-foreground: 0 0% 7%;
+    --lime-text: 74 90% 57%;
 
     /* Chart colors (hex for Recharts) */
     --chart-axis: #a1a1aa;

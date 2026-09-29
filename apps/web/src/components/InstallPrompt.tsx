@@ -43,7 +43,12 @@ function manualGuideKey(browser: BrowserInfo): string {
   return 'install.guideGeneric'
 }
 
-export default function InstallPrompt() {
+interface InstallPromptProps {
+  /** `false` lo retiene sin perder el `beforeinstallprompt` capturado. */
+  enabled?: boolean
+}
+
+export default function InstallPrompt({ enabled = true }: InstallPromptProps) {
   const { t } = useTranslation()
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
   const [showPrompt, setShowPrompt] = useState(false)
@@ -99,7 +104,7 @@ export default function InstallPrompt() {
     setShowPrompt(false)
   }
 
-  if (!showPrompt) return null
+  if (!showPrompt || !enabled) return null
 
   const browser = getBrowserInfo()
 

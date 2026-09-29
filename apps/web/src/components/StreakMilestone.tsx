@@ -1,3 +1,9 @@
+/**
+ * Hito de racha SEMANAL en el inicio (#855, épica #852): 4, 8, 12, 26 y 52
+ * semanas seguidas cumpliendo el objetivo (`WEEKLY_STREAK_MILESTONES`, #853).
+ * Sustituye al hito de días (7/14/30/60/100). Cada hito se enseña una vez por
+ * usuario y dispositivo.
+ */
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
@@ -5,95 +11,78 @@ import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
-import { pickActiveMilestone } from '@calistenia/core/lib/streak-milestones'
+import { WEEKLY_STREAK_MILESTONES } from '@calistenia/core/lib/weeklyStreak'
 
-const MILESTONE_KEY_PREFIX = 'calistenia_streak_milestone'
+const MILESTONE_KEY_PREFIX = 'calistenia_weekly_milestone'
 
-function milestoneKey(days: number, userId: string): string {
-  return `${MILESTONE_KEY_PREFIX}_${days}_${userId}`
+function milestoneKey(weeks: number, userId: string): string {
+  return `${MILESTONE_KEY_PREFIX}_${weeks}_${userId}`
 }
 
-export function isMilestoneShown(days: number, userId: string): boolean {
-  return localStorage.getItem(milestoneKey(days, userId)) === 'true'
+function isMilestoneShown(weeks: number, userId: string): boolean {
+  try {
+    return localStorage.getItem(milestoneKey(weeks, userId)) === 'true'
+  } catch {
+    return true
+  }
 }
 
-export function markMilestoneShown(days: number, userId: string): void {
-  localStorage.setItem(milestoneKey(days, userId), 'true')
+function markMilestoneShown(weeks: number, userId: string): void {
+  try {
+    localStorage.setItem(milestoneKey(weeks, userId), 'true')
+  } catch {
+    // Sin storage se vuelve a enseñar en la próxima visita; no pasa nada.
+  }
 }
 
-/** Find the highest reached milestone that hasn't been shown yet */
-export function getActiveMilestone(streak: number, userId: string): number | null {
-  return pickActiveMilestone(streak, m => isMilestoneShown(m, userId))
+/** El hito más alto alcanzado que aún no se ha enseñado, o `null`. */
+export function getActiveWeeklyMilestone(weeks: number, userId: string): number | null {
+  const reached = WEEKLY_STREAK_MILESTONES.filter(m => weeks >= m)
+  const top = reached[reached.length - 1]
+  return top && !isMilestoneShown(top, userId) ? top : null
 }
 
 interface StreakMilestoneProps {
-  streak: number
+  weeks: number
   userId: string
-  userName: string
   referralCode?: string | null
   onDismiss: () => void
 }
 
-export default function StreakMilestone({ streak, userId, userName, referralCode, onDismiss }: StreakMilestoneProps) {
+export default function StreakMilestone({ weeks, userId, referralCode, onDismiss }: StreakMilestoneProps) {
   const { t, i18n } = useTranslation()
-
-  const subtitleKey = `streak.milestone.subtitle${streak}` as const
 
   const handleShare = useCallback(async () => {
     await shareContent({
-      title: t('streak.milestone.title', { days: streak }),
-      text: t('streak.milestone.shareText', { days: streak }),
+      title: t('home.streak.milestone', { count: weeks }),
+      text: t('home.streak.milestoneShareText', { count: weeks }),
       url: referralCode ? localizedWebUrl(`/invite/${referralCode}`, i18n.language) : localizedWebUrl('/', i18n.language),
     })
-  }, [streak, t, i18n.language, referralCode])
+  }, [weeks, t, i18n.language, referralCode])
 
   const handleDismiss = useCallback(() => {
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
-      surface: 'streak', source: 'streak_card', days: streak,
+      surface: 'streak', source: 'streak_card', weeks,
     })
-    markMilestoneShown(streak, userId)
+    markMilestoneShown(weeks, userId)
     onDismiss()
-  }, [streak, userId, onDismiss])
+  }, [weeks, userId, onDismiss])
 
   return (
-    <div
-      className="relative border-l-4 border-lime bg-card rounded-lg p-4 mb-5 shadow-sm"
-      style={{ animation: 'fadeUp 0.4s ease-out both' }}
-    >
-      <style>{`
-        @keyframes fadeUp {
-          from { transform: translateY(12px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-      `}</style>
-
-      {/* Dismiss */}
+    <div className="relative rounded-xl border border-lime/40 bg-card p-4 motion-safe:animate-fade-in" role="status">
       <button
+        type="button"
         onClick={handleDismiss}
-        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Dismiss"
+        className="absolute right-1 top-1 flex size-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+        aria-label={t('common.close')}
       >
         <X className="size-4" />
       </button>
-
-      <div className="flex items-start gap-3 pr-6">
-        <span className="text-2xl flex-shrink-0">🔥</span>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-foreground text-sm">
-            {t('streak.milestone.title', { days: streak })}
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {t(subtitleKey)}
-          </div>
-          <Button
-            variant="lime"
-            size="sm"
-            onClick={handleShare}
-            className="mt-3 text-[10px] font-mono tracking-wider h-8"
-          >
-            {t('streak.milestone.share')}
-          </Button>
-        </div>
+      <div className="flex flex-col gap-3 pr-10">
+        <div className="text-sm font-medium text-foreground">{t('home.streak.milestone', { count: weeks })}</div>
+        <Button variant="outline" onClick={handleShare} className="h-11 self-start rounded-[10px] text-[13px]">
+          {t('streak.milestone.share')}
+        </Button>
       </div>
     </div>
   )
