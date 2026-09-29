@@ -8,7 +8,7 @@
  * sala o entrenando contra ti ahora mismo.
  */
 import { View, Pressable } from 'react-native'
-import { useRouter } from 'expo-router'
+import { usePathname, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
@@ -16,6 +16,7 @@ import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
+import { isHomeTabPath } from '@/lib/home-active-activity'
 
 export default function ActiveBattleBar() {
   const { t } = useTranslation()
@@ -26,7 +27,11 @@ export default function ActiveBattleBar() {
   // La barra lleva el sondeo de 45 s, y solo con Hoy o Comunidad a la vista (#860).
   const { data: battle } = useActiveBattle({ poll: true })
 
-  if (!isBattleOngoing(battle)) return null
+  // El sondeo sigue en Hoy: el bloque «Hoy» lee la misma consulta.
+  // Pero la barra no sale: el bloque «Hoy» ya enseña «Continuar» (#858).
+  const onHome = isHomeTabPath(usePathname())
+
+  if (!isBattleOngoing(battle) || onHome) return null
   const status = battle.status
 
   // Se coloca por encima de las barras que ya puedan estar visibles.

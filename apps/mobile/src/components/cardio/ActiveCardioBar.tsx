@@ -3,11 +3,12 @@
  * por las tabs — equivalente móvil del ActiveCardioBar web. Vuelve a /cardio.
  */
 import { View, Pressable } from 'react-native'
-import { useRouter } from 'expo-router'
+import { usePathname, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
+import { isHomeTabPath } from '@/lib/home-active-activity'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 
@@ -16,7 +17,10 @@ export default function ActiveCardioBar() {
   const router = useRouter()
   const { state, activityType, duration, distance } = useCardioSessionContext()
 
-  if (state !== 'tracking' && state !== 'paused') return null
+  // En Hoy no sale: el bloque «Hoy» ya enseña «Continuar» (#858).
+  const onHome = isHomeTabPath(usePathname())
+
+  if ((state !== 'tracking' && state !== 'paused') || onHome) return null
 
   return (
     <Pressable
