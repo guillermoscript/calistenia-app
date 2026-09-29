@@ -9,6 +9,7 @@ import { Kicker } from '../components/ui/kicker'
 import { cn } from '../lib/utils'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
@@ -99,11 +100,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency(user?.id ?? null)
   // Cifras del carné: las mismas que el dashboard, leídas del contexto de
   // entreno para que no puedan discrepar de lo que ve el usuario en portada.
-  const { settings, activeProgram, programProgress, weekDays } = useWorkoutState()
-  const { getTotalSessions, getLongestStreak, getWeeklyDoneCount } = useWorkoutActions()
+  const { settings, activeProgram, programProgress, weekDays, progress, programsReady } = useWorkoutState()
+  const { getTotalSessions, getLongestStreak } = useWorkoutActions()
   const totalSessions = getTotalSessions()
   const streak = getLongestStreak()
-  const weeklyDone = getWeeklyDoneCount()
+  // «X de Y» de la semana de calendario (#853). Sin cardio libre: no hay sus fechas a mano.
+  const weeklyDone = getWeekDoneDays(todayStr(), progress)
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
 
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
@@ -423,7 +425,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           <Kicker className="mt-1">{t('profile.streak')}</Kicker>
         </div>
         <div className="rounded-lg border border-border p-3 md:p-4">
-          <div className="font-bebas text-[34px] leading-none">{weeklyDone}/{weeklyGoal}</div>
+          <div className="font-bebas text-[34px] leading-none">{weeklyDone}{programsReady && `/${weeklyGoal}`}</div>
           <Kicker className="mt-1">{t('common.week')}</Kicker>
         </div>
       </div>

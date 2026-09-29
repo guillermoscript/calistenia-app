@@ -30,8 +30,9 @@ import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
-import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
+import { localDay, localHour, todayStr, diffDays, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
@@ -91,8 +92,8 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions, getDoneDates } = useWorkoutActions()
+  const { settings, activeProgram, weekDays, phases, programsReady, progress, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
+  const { getWorkout, isWorkoutDone, getLongestStreak, getCurrentStreak, getTotalSessions, getDoneDates } = useWorkoutActions()
   const session = useActiveSession()
   const { startCircuit } = useCircuitSession()
   const milestoneUser = useAuthUser()
@@ -100,6 +101,12 @@ export default function TodayScreen() {
   // Para el hint cardio_gps (#235): comparte query key con HomeActivity, cero fetch extra.
   const { sessions: cardioSessions, isLoading: cardioLoading } = useCardioSessions(milestoneUser?.id ?? null)
   const [showMilestone, setShowMilestone] = useState(true)
+  // «X de Y» de la semana de calendario, en días distintos (#853); suma el
+  // cardio libre, que esta pantalla ya carga para el hint cardio_gps.
+  const weeklyDone = useMemo(
+    () => getWeekDoneDays(todayStr(), progress, cardioSessions.map(c => utcToLocalDateStr(c.started_at))),
+    [progress, cardioSessions],
+  )
   const scrollRef = useRef<ScrollView>(null)
   // «Completa tu primer entreno» del checklist: sube al hero (está justo encima).
   const scrollToHero = useCallback(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), [])
@@ -453,7 +460,7 @@ export default function TodayScreen() {
 
         {/* Stats */}
         <View className="flex-row gap-3">
-          <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)}`} />
+          <StatCard label={t('common.week')} value={`${weeklyDone}/${getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)}`} />
           {/* Racha viva, no el récord: el récord se queda en perfil (#229) */}
           <StatCard label={t('profile.streak')} value={getCurrentStreak()} />
           <StatCard label={t('profile.sessions')} value={getTotalSessions()} />

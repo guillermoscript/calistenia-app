@@ -5,6 +5,7 @@ import { todayStr as todayStrFn, toLocalDateStr } from '@calistenia/core/lib/dat
 import { isFreeSession } from '@calistenia/core/lib/progressUtils'
 import type { ProgressMap, Settings, ExerciseLog } from '@calistenia/core/types'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { useWorkoutState } from '../../contexts/WorkoutContext'
 
 interface ProgressSummaryProps {
@@ -16,7 +17,7 @@ interface ProgressSummaryProps {
 
 export default function ProgressSummary({ progress, settings, filter = 'all' }: ProgressSummaryProps) {
   const { t } = useTranslation()
-  const { activeProgram, weekDays } = useWorkoutState()
+  const { activeProgram, weekDays, programsReady } = useWorkoutState()
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const stats = useMemo(() => {
     const today = new Date()
@@ -62,13 +63,25 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
       return filter === 'free' ? isFreeSession(wk) : !isFreeSession(wk)
     })
 
-    const sessionsThisWeek = doneKeys.filter(k =>
-      thisWeekDates.some(d => k.includes(d))
-    ).length
+    // Con «X de Y» (todo salvo el filtro `free`, que no tiene objetivo) el
+    // número es la misma cuenta que el inicio (#853): días distintos con
+    // entreno de cualquier tipo. Solo sale del ProgressMap, que ya recibe; el
+    // cardio libre no se suma. El filtro `free` y los demás bloques siguen
+    // contando sesiones.
+    const weekProgress: ProgressMap = filter === 'all' ? progress : Object.fromEntries(
+      Object.entries(progress).filter(([k]) => {
+        if (!k.startsWith('done_')) return false
+        const wk = k.split('_').slice(2).join('_')
+        return !isFreeSession(wk)
+      }),
+    )
+    const sessionsThisWeek = filter === 'free'
+      ? doneKeys.filter(k => thisWeekDates.some(d => k.includes(d))).length
+      : getWeekDoneDays(todayStr, weekProgress)
 
-    const sessionsPrevWeek = doneKeys.filter(k =>
-      prevWeekDates.some(d => k.includes(d))
-    ).length
+    const sessionsPrevWeek = filter === 'free'
+      ? doneKeys.filter(k => prevWeekDates.some(d => k.includes(d))).length
+      : getWeekDoneDays(prevWeekDates[6], weekProgress)
 
     const sessionsThisMonth = doneKeys.filter(k => {
       const date = k.split('_')[1]
@@ -122,9 +135,9 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
       <div>
         <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-lime')}>
           {stats.sessionsThisWeek}
-          {filter !== 'free' && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
+          {filter !== 'free' && programsReady && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
         </div>
-        {filter !== 'free' && (
+        {filter !== 'free' && programsReady && (
           <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-2 max-w-[80px]">
             <div
               className={cn('h-full rounded-full transition-all duration-500', goalMet ? 'bg-emerald-500' : 'bg-lime')}

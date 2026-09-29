@@ -17,8 +17,9 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
-import { relativeDate, todayStr } from '@calistenia/core/lib/dateUtils'
+import { relativeDate, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
@@ -45,7 +46,7 @@ export default function HistoryScreen() {
   const router = useRouter()
   const user = useAuthUser()
   const { progress, settings, activeProgram, weekDays } = useWorkoutState()
-  const { getWorkout, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity } = useWorkoutActions()
+  const { getWorkout, getTotalSessions, getLongestStreak, getMonthActivity } = useWorkoutActions()
   const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
   const { record: battleRecord } = useBattleHistory(user?.id ?? null)
 
@@ -97,7 +98,12 @@ export default function HistoryScreen() {
   // Cada uno de estos barre `progress` entero. Sin memo se repetían los cuatro
   // barridos en cada render de la pantalla (y la cabecera se reconstruía entera).
   const totalSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
-  const weeklyDone = useMemo(() => getWeeklyDoneCount(), [getWeeklyDoneCount])
+  // «X de Y» de la semana de calendario, en días distintos (#853); suma el
+  // cardio libre, cuyas fechas ya están cargadas para la lista.
+  const weeklyDone = useMemo(
+    () => getWeekDoneDays(today, progress, cardioSessions.map(c => utcToLocalDateStr(c.started_at))),
+    [today, progress, cardioSessions],
+  )
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const longestStreak = useMemo(() => getLongestStreak(), [getLongestStreak])
 
