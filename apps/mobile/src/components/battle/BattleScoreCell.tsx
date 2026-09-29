@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 
 /** El historial pinta más pequeño que el marcador en vivo. */
 const SIZES = {
-  sm: { value: 'text-[11px]', unit: 'text-[9px]' },
+  sm: { value: 'text-[11px]', unit: 'text-[10px]' },
   md: { value: 'text-xs', unit: 'text-[10px]' },
 } as const
 

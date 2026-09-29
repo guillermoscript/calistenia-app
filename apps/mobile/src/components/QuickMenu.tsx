@@ -86,7 +86,7 @@ const SECTIONS: MenuSection[] = [
     titleKey: 'nav.sectionSocial',
     accent: ACCENT.social,
     items: [
-      { labelKey: 'nav.community', href: '/social', icon: Globe },
+      { labelKey: 'nav.community', href: '/community', icon: Globe },
       { labelKey: 'nav.friends', href: '/friends', icon: Users },
       { labelKey: 'nav.leaderboard', href: '/leaderboard', icon: Trophy },
       { labelKey: 'nav.challenges', href: '/challenges', icon: Flag },

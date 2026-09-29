@@ -35,7 +35,7 @@ const FILES = [
   'apps/web/src/components/friends/LeaderboardWidget.tsx',
   'apps/web/src/pages/ChallengeDetailPage.tsx',
   'apps/web/src/pages/features/ChallengesVisuals.tsx',
-  'apps/mobile/src/app/leaderboard.tsx',
+  'apps/mobile/src/components/community/LeaderboardList.tsx',
   'apps/mobile/src/app/challenges/[id].tsx',
 ]
 
