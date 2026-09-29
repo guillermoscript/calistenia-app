@@ -12,10 +12,11 @@
  *   - `settings.weekly_goal_log` (json): `[{from: "YYYY-MM-DD", goal}]`, los
  *     cambios del objetivo efectivo. Lo escribe el cliente (`useWorkoutStreak`)
  *     y lo leen cliente y servidor (`pb_hooks/utils/weekly_streak.js`).
- *   - Fuera `user_stats.streak_week_start` / `streak_week_mask`, del primer
- *     borrador de #801 (PR #849, nunca en produccion). Solo existen en copias
- *     locales donde se probo ese borrador.
  *   `id` FIJO e idempotente (feedback_migration_safety).
+ *   Los `user_stats.streak_week_start` / `streak_week_mask` del primer borrador
+ *   de #801 (PR #849, nunca en produccion) NO se borran aqui: solo existen en
+ *   copias locales donde se probo ese borrador, nadie los lee, y borrar campos
+ *   lo para el guardarrail de migraciones que rompen clientes instalados.
  *
  * DATOS. Cambia el SIGNIFICADO del campo, asi que se recomputa todo desde el
  * historial (no se resetea a nadie). Nadie tiene historial de objetivos
@@ -38,8 +39,6 @@
  */
 
 const GOAL_LOG_FIELD_ID = "json_settings_weekly_goal_log"
-const OLD_WEEK_START_FIELD_ID = "text_user_stats_streak_week_start"
-const OLD_WEEK_MASK_FIELD_ID = "number_user_stats_streak_week_mask"
 const HISTORICAL_GOAL = 3
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -122,16 +121,6 @@ migrate((app) => {
     }))
     app.save(settings)
   }
-
-  const stats = app.findCollectionByNameOrId("user_stats")
-  let dropped = false
-  for (const id of [OLD_WEEK_START_FIELD_ID, OLD_WEEK_MASK_FIELD_ID]) {
-    if (stats.fields.getById(id)) {
-      stats.fields.removeById(id)
-      dropped = true
-    }
-  }
-  if (dropped) app.save(stats)
 
   try {
     // Una sola pasada por las tres colecciones, agrupada por (usuario, dia).
