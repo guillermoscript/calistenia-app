@@ -12,9 +12,11 @@
  * genérica. Espeja `getNotificationRoute` de la web
  * (`apps/web/src/pages/NotificationsPage.tsx`), adaptado a las rutas nativas.
  *
- * Rutas nativas existentes (expo-router): `/` (home), `/social`, `/u/[id]`,
- * `/challenges`, `/challenges/[id]`, `/friends`, `/history`, `/profile`,
- * `/nutrition`, `/notifications`, `/referrals`, `/cardio/[id]`, `/program/[id]`.
+ * Rutas nativas existentes (expo-router): `/` (Hoy), `/progress`, `/train`,
+ * `/community`, `/social`, `/u/[id]`, `/challenges`, `/challenges/[id]`,
+ * `/friends`, `/profile`, `/programs`, `/nutrition`, `/notifications`,
+ * `/referrals`, `/cardio/[id]`, `/program/[id]`. `/history` sigue existiendo
+ * solo como redirección a `/progress` (#859), para los push ya enviados.
  * Aún NO existe una vista de post individual, así que ese caso cae al feed
  * (ver comentario en `reaction`/`comment`/`comment_reply`).
  */
@@ -55,8 +57,8 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
       return '/profile'
 
     case 'streak':
-      // No hay /progress en nativo; historial es el equivalente más cercano.
-      return '/history'
+      // La racha vive en la pestaña Progreso (#859).
+      return '/progress'
 
     case 'referral_signup':
     case 'referral_bonus':
@@ -108,7 +110,8 @@ export function resolveNotifUrl(url: string | undefined | null): NotifRoute | nu
   // `autostart=1`: (tabs)/index.tsx arranca el entreno de hoy en cuanto carga
   // en vez de dejar al usuario en la lista de notificaciones.
   if (path === '/workout') return '/(tabs)?autostart=1'
-  if (path === '/progress' || path === '/history') return '/history'
+  // El servidor manda `/progress`; `/history` es de pushes antiguos (#859).
+  if (path === '/progress' || path === '/history') return '/progress'
   if (path === '/profile') return '/profile'
   if (path === '/notifications') return '/notifications'
   if (path.startsWith('/challenges/')) return `${path}${query}`

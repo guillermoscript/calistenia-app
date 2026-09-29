@@ -28,7 +28,7 @@ import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import SleepCard from '@/components/sleep/SleepCard'
 import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
-import { MenuButton } from '@/components/QuickMenu'
+import { ProfileAvatarButton } from '@/components/ProfileAvatarButton'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
@@ -247,8 +247,8 @@ export default function TodayScreen() {
               {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
             </Text>
           </View>
-          {/* Cabecera: solo la campana (con badge ambiental) + ☰. Comunidad ya
-              está en el menú ☰ y en los pills de abajo — sin botón redundante. */}
+          {/* Cabecera: la campana (con badge ambiental) y el avatar, que abre
+              Perfil desde que dejó de ser pestaña (#859). */}
           <View className="flex-row items-center gap-1.5 pt-1">
             <Pressable
               onPress={() => router.push('/notifications')}
@@ -259,7 +259,7 @@ export default function TodayScreen() {
               <Bell size={18} color="hsl(0 0% 55%)" />
               <NotificationBadge count={unreadCount} />
             </Pressable>
-            <MenuButton />
+            <ProfileAvatarButton />
           </View>
         </View>
 

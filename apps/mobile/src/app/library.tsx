@@ -8,7 +8,7 @@ import { ChevronRight, SearchX } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/empty-state'
-import { MenuButton } from '@/components/QuickMenu'
+import { BackButton } from '@/components/ui/back-button'
 import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { useExerciseSearch } from '@/lib/use-exercise-search'
@@ -86,9 +86,9 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="gap-3 px-4 pb-2 pt-2">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center gap-1">
+          <BackButton />
           <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.exercises')}</Text>
-          <MenuButton />
         </View>
         <Input
           value={query}

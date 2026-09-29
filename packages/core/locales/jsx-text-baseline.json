@@ -3,7 +3,6 @@
     "apps/web/src/pages/LegalPage.tsx": "Política de privacidad y términos. Es texto legal publicado y aceptado en español; traducirlo cambia lo que el usuario acepta, así que no pasa por i18n mientras la app solo tenga versión legal en español."
   },
   "pending": {
-    "apps/mobile/src/app/(tabs)/history.tsx": 1,
     "apps/mobile/src/app/cardio/[id].tsx": 2,
     "apps/mobile/src/app/friends.tsx": 6,
     "apps/mobile/src/app/health.tsx": 12,

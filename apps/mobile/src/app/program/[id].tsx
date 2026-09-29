@@ -138,7 +138,7 @@ export default function ProgramDetailScreen() {
           setBusy(false)
           if (ok) {
             haptics.success()
-            router.replace('/(tabs)/programs')
+            router.dismissTo('/programs')
           } else {
             haptics.error()
             Alert.alert(t('programDetail.abandonError'))
@@ -161,7 +161,7 @@ export default function ProgramDetailScreen() {
           setBusy(false)
           if (ok) {
             haptics.success()
-            router.replace('/(tabs)/programs')
+            router.dismissTo('/programs')
           } else {
             haptics.error()
             Alert.alert(t('programs.deleteError'))

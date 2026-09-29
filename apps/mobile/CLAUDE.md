@@ -31,9 +31,12 @@ barra de navegación de Android; la ventana del Modal nativo queda por encima.
 
 ## Mapa de directorios (`apps/mobile/src/`)
 
-- `app/` — rutas de expo-router (file-based). Grupo `(tabs)/`
-  (`index`, `history`, `library`, `nutrition`, `profile`, `programs`) y rutas
-  apiladas (`cardio`, `session`, `social`, `friends`, `race`, `reminders`, …).
+- `app/` — rutas de expo-router (file-based). Grupo `(tabs)/` con las 5 pestañas
+  (`index` = Hoy, `train`, `nutrition`, `progress`, `community`; #859) y rutas
+  apiladas (`profile`, `programs`, `library`, `calendar`, `cardio`, `session`,
+  `social`, `friends`, `race`, `reminders`, …). Perfil se abre desde el avatar
+  de la cabecera; `history.tsx` solo redirige a `/progress`. Los grupos no salen
+  en la URL: mover una pantalla de `(tabs)/` a la pila conserva su ruta.
   `app/_layout.tsx` es la raíz.
 - `components/` — componentes UI. Subcarpetas: `ui/` (primitivos), `training/`
   (piezas de entreno sin dominio), `cardio/`, `home/`, `nutrition/`, `session/`,
@@ -151,12 +154,12 @@ copy (i18n es/en in `packages/core/locales`).
   (`bg-background` 3.9%, `bg-card` 7% in dark). Thin 1px `border-border` hairlines
   structure the UI (matrices/dividers), not drop-shadowed cards.
 - Header idiom across screens: mono kicker + Bebas title (e.g. Home date+greeting,
-  Profile "CUENTA"/"PERFIL", the QuickMenu "ACCESO RÁPIDO"/"MENÚ").
+  Entrenar "TU PROGRAMA"/program name, Progreso "TU HISTORIAL"/"PROGRESO").
 
 **Anti-references (do NOT do):** glassmorphism/blur, gradients (esp. gradient
 text), rounded cards with generic drop shadows, nested cards, AI cyan/purple
 neon, rainbow per-item icon colors (group color by meaning instead — e.g. the
-QuickMenu uses 3 section hues: lime=training, sky=social, neutral=utility),
+the old ☰ menu used 3 section hues: lime=training, sky=social, neutral=utility),
 bounce/elastic easing. Light mode exists but is secondary — note `card` (100%)
 and `background` (97%) are nearly identical, so don't rely on bg contrast alone;
 use hairlines + accent.
