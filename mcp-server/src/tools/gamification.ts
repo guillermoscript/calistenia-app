@@ -17,7 +17,6 @@ import {
 } from "../data/achievements.js";
 import type PocketBase from "pocketbase";
 import { getSettings, getUserStats, upsertUserStats } from "../api/repos/index.js";
-import { liveWorkoutStreak, type WeeklyStreakRow } from "../lib/weekly-streak.js";
 
 // ── Sync engine ─────────────────────────────────────────────────────────────
 
@@ -126,11 +125,14 @@ async function computeAllStats(pb: PocketBase, userId: string, tz?: string): Pro
   const sessionDates = sessions.map((s) => toDateStr(s.completed_at as string, tz));
   const nutritionDates = nutritionEntries.map((n) => toDateStr(n.logged_at as string, tz));
 
-  // The workout streak is weekly and PocketBase keeps it up to date on every
-  // session (all three session types). Recomputing it here from `sessions`
-  // alone undercounted and wiped the hook's week state, so we only read it and
-  // apply the "still alive" rule (#801).
-  const workoutStreak = liveWorkoutStreak(storedStats as unknown as WeeklyStreakRow | null, today(tz));
+  // The workout streak is weekly and PocketBase owns it: it recomputes it from
+  // all three session types and the weekly-goal history on every workout, on
+  // every goal change, and in the Monday rollover (#801). Recomputing it here
+  // from `sessions` alone would undercount, so we only read it.
+  const workoutStreak = {
+    current: Number(storedStats?.workout_streak_current) || 0,
+    best: Number(storedStats?.workout_streak_best) || 0,
+  };
   const nutritionStreak = computeStreak(nutritionDates, tz);
   const weeklyGoal = (settings?.weekly_goal as number) ?? 0;
   const weeklyGoalsHit = computeWeeklyGoalStreak(sessionDates, weeklyGoal);
@@ -321,7 +323,7 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
           `- Meals logged: **${stats.total_nutrition_logs}** | Lumbar checks: **${stats.total_lumbar_checks}** | Weight logs: **${stats.total_weight_logs}**`,
           ``,
           `## Streaks`,
-          `- Workout: **${stats.workout_streak_current}** weeks in a row with 2+ training days (best: ${stats.workout_streak_best})`,
+          `- Workout: **${stats.workout_streak_current}** weeks in a row meeting the weekly goal (best: ${stats.workout_streak_best})`,
           `- Nutrition: **${stats.nutrition_streak_current}** days (best: ${stats.nutrition_streak_best})`,
           `- Weekly goals hit: **${stats.weekly_goals_hit}** consecutive weeks`,
           ``,

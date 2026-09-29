@@ -46,7 +46,7 @@ function formatDate(dateStr?: string): string {
 
 /**
  * Tagline scales with the milestone so bigger streaks feel bigger. The streak
- * is in WEEKS since #801 (milestones 2, 4, 8, 12, 26, 52).
+ * is in WEEKS since #801 (milestones 4, 8, 12, 26, 52).
  */
 function streakTagline(streak: number): string {
   if (streak >= 52) return 'Un año sin fallar una semana. 🐐'

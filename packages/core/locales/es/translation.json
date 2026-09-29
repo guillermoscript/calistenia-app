@@ -3130,7 +3130,6 @@
   "pr.seconds": "{{count}} s",
 
   "streak.milestone.title": "¡Racha de {{weeks}} semanas!",
-  "streak.milestone.subtitle2": "¡Dos semanas seguidas! El hábito empieza aquí.",
   "streak.milestone.subtitle4": "Un mes sin fallar una semana.",
   "streak.milestone.subtitle8": "Dos meses de constancia.",
   "streak.milestone.subtitle12": "Tres meses. Esto ya es un hábito.",
@@ -3140,9 +3139,6 @@
   "streak.milestone.shareText": "Llevo {{weeks}} semanas entrenando seguidas en Calistenia App!",
   "streak.milestone.unit": "SEMANAS DE RACHA",
   "streak.milestone.body": "¡{{weeks}} semanas seguidas entrenando! Sigue así 💪",
-  "streak.weekProgress": "{{done}}/{{goal}} días esta semana",
-  "streak.weekKept": "Semana cumplida",
-
 
   "postWorkout.kicker": "Y AHORA QUÉ",
   "postWorkout.share": "COMPARTIR RESULTADO",

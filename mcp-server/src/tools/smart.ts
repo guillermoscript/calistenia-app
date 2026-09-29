@@ -12,6 +12,7 @@ import { pickLocale, readiness as readinessMsg } from "../lib/tool-i18n.js";
 import { calculateMacroDetails, calculateMacros } from "@calistenia/core/lib/nutritionGoal";
 import {
   getSettings,
+  getUserStats,
   getNutritionGoals,
   upsertNutritionGoals,
   getLatestLumbarCheck,
@@ -1176,13 +1177,14 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const weekStart = startOfWeek(tz);
 
         // Parallel: nutrition + sessions + lumbar + settings + active program
-        const [nutritionEntries, nutritionGoals, weekSessions, lastLumbar, settings, current] = await Promise.all([
+        const [nutritionEntries, nutritionGoals, weekSessions, lastLumbar, settings, current, userStats] = await Promise.all([
           listTodayNutritionEntries(pb, userId, todayStr),
           getNutritionGoals(pb, userId),
           listSessions(pb, userId, { from: weekStart }),
           getLatestLumbarCheck(pb, userId),
           getSettings(pb, userId),
           getCurrentProgram(pb, userId),
+          getUserStats(pb, userId),
         ]);
 
         // Nutrition totals
@@ -1266,7 +1268,9 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
           }
         }
 
-        const streak = (settings?.sessions_streak as number) ?? 0;
+        // Racha SEMANAL de `user_stats`, la que mantiene PocketBase (#801). Antes
+        // se leía `settings.sessions_streak`, un campo que no existe: siempre 0.
+        const streak = Number(userStats?.workout_streak_current) || 0;
 
         return viewResult(
           {

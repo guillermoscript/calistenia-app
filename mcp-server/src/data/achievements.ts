@@ -120,7 +120,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     key: "workout_streak_7",
     name: "Iron Week",
-    description: "Keep your weekly streak (2+ training days a week) for 7 weeks",
+    description: "Meet your weekly goal 7 weeks in a row",
     category: "consistency",
     icon: "🔗",
     tier: "silver",
@@ -132,7 +132,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     key: "workout_streak_30",
     name: "Unstoppable",
-    description: "Keep your weekly streak (2+ training days a week) for 30 weeks",
+    description: "Meet your weekly goal 30 weeks in a row",
     category: "consistency",
     icon: "🦾",
     tier: "diamond",

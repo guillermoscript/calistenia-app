@@ -49,7 +49,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
 
   const handleDismiss = useCallback(() => {
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
-      surface: 'streak', source: 'streak_card', days: streak,
+      surface: 'streak', source: 'streak_card', weeks: streak,
     })
     markMilestoneShown(streak, userId)
     onDismiss()

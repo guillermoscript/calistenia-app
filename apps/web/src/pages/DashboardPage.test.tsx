@@ -68,7 +68,6 @@ vi.mock('../contexts/WorkoutContext', () => ({
   useWorkoutActions: () => ({
     getTotalSessions: () => h.programSessions ?? h.sessions,
     getLongestStreak: () => 0,
-    getStreakWeekDays: () => 0,
     getWeeklyDoneCount: () => 0,
     getMonthActivity: () => ({}),
     updateSettings: vi.fn(),

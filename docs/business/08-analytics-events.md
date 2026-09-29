@@ -224,7 +224,7 @@ GPS coordinates, or unnecessary personal data.
 | `leaderboard_viewed` | Leaderboard screen opens | `surface=leaderboard`, `source` | Web + mobile | Once per visit. Deliberately decoupled from the data load: tying it to the query re-fired it on every render (#578) |
 | `cardio_detail_viewed` | A cardio session detail opens | `surface=cardio`, `source`, `own` | Web + mobile | Once per visit, after the session resolves. `own` distinguishes looking at your own session from looking at someone else's |
 | `exercise_searched` | A catalogue search settles | `surface=exercise_catalog`, `source`, `query`, `result_count` | Web + mobile | Debounced 1500 ms on both platforms and only for queries of 2+ characters, so the report counts searches and not the prefixes typed on the way to one. `result_count` is mobile-only for now |
-| `streak_milestone` | A streak milestone notice is dismissed | `surface=streak`, `source`, `days` | Web + mobile | Fires on dismissal, not on render, so it counts milestones a user actually saw. `days` is the milestone reached, which is not always the current streak |
+| `streak_milestone` | A streak milestone notice is dismissed | `surface=streak`, `source`, `weeks` | Web + mobile | Fires on dismissal, not on render, so it counts milestones a user actually saw. `weeks` is the milestone reached (4, 8, 12, 26 or 52 weeks), which is not always the current streak. Before #801 the prop was `days` and counted days |
 | `page_error` | An error reaches the app boundary | `surface=app`, `source`, `error_type`, `message` | Web + mobile | Web emits from the React root handlers (`uncaught`, `caught`, `recoverable`); mobile from core's `reportError`, which every shared-package failure passes through. Sentry remains the place to debug one — this only puts the count in the same funnel |
 | `program_editor_saved` | A user program is saved in the editor | `surface=program_editor`, `source`, `program_id`, `is_new`, `visibility`, `day_count` | Web + mobile core | Emitted from the shared `saveProgram`, so it cannot drift again. Before v5 only mobile emitted it and half of all saves went uncounted |
 | `feed_viewed` | The activity feed opens | `surface=feed`, `source`, `deep_link` | Web + mobile | Once per visit. `deep_link` marks arrivals from a comment or reaction notification |
@@ -622,7 +622,7 @@ Added in v5 (all mobile, all previously unmeasured):
 - Open the social tab, react, un-react and comment; confirm the three feed
   events and that no comment text appears in any property.
 - Reach a streak milestone and dismiss the notice; confirm one
-  `streak_milestone` with `days` equal to the milestone.
+  `streak_milestone` with `weeks` equal to the milestone (`days` before #801).
 - Open the login screen, fail a login, then cancel the Google dialog; confirm
   `auth_viewed`, `login_started` + `login_failed`, and that the cancellation
   emits **no** `login_failed`.

@@ -3,6 +3,11 @@
  * (fuerza, circuito y cardio), no solo con circuitos, y la fila se crea sola si
  * no existe. Issue #412.
  *
+ * La racha es SEMANAL (#801): semanas de calendario (lunes a domingo) con al
+ * menos `objetivo` dias distintos de entreno (3 por defecto; el historial
+ * `settings.weekly_goal_log` lo cambia). Cada entreno recalcula la racha desde
+ * TODO el historial, asi que las fechas de los tests son relativas a hoy.
+ *
  * La cobertura de circuitos vive en `workout-fanout.test.mjs` desde antes de
  * mover el hook: sirve de red para la refactorizacion, asi que aqui no se
  * duplica — se cubre lo que antes no existia.
@@ -10,8 +15,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  createUser, createAs, create, update, getOne, list, listAs, waitFor,
-  localDateString, expectNotifications,
+  createUser, createAs, create, update, list, listAs, waitFor,
+  localDateString, expectNotifications, pushesFor,
 } from "./helpers/client.mjs"
 
 /** Una sesion de fuerza completada el dia indicado (offset en dias sobre hoy). */
@@ -38,20 +43,42 @@ function strengthSessionOn(user, day, key) {
   })
 }
 
-/** Lunes de la semana de `day` ("YYYY-MM-DD"). */
+/** Lunes de la semana de `day` ("YYYY-MM-DD"), con aritmetica UTC. */
 function mondayOf(day) {
   const d = new Date(`${day}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7))
   return d.toISOString().slice(0, 10)
 }
 
-/** Bit del dia en la mascara semanal (lunes = 1 ... domingo = 64). */
-function weekdayBit(day) {
-  return 1 << ((new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7)
+/** `day` desplazado `n` dias. */
+function shiftDay(day, n) {
+  const d = new Date(`${day}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
 }
 
-// Semanas fijas del pasado para que los tests no dependan del dia en que corren.
-// 2026-08-03, 08-10, 08-17 y 08-24 son lunes.
+/**
+ * Dia `dow` (0 = lunes ... 6 = domingo) de la semana `weeks` semanas respecto a
+ * la actual. Todo relativo a HOY (fecha local, como el servidor) para que los
+ * tests pasen cualquier dia de la semana. Semana -1 = la pasada, -2 = la anterior.
+ */
+function weekDay(weeks, dow) {
+  return shiftDay(mondayOf(localDateString(0)), weeks * 7 + dow)
+}
+
+/** Espera a `total_sessions` exacto y a la racha esperada. */
+function waitForStreak(userId, total, current, best, msg) {
+  return waitFor(async () => {
+    const [s] = await list("user_stats", `user='${userId}'`)
+    if (!s || s.total_sessions !== total) return null
+    return s.workout_streak_current === current && s.workout_streak_best === best ? s : null
+  }, msg)
+}
+
+/** Crea sesiones de fuerza una a una (en orden) en los dias dados. */
+async function seedDays(user, days, tag = "s") {
+  for (let i = 0; i < days.length; i++) await strengthSessionOn(user, days[i], `${tag}${i}`)
+}
 
 /** Espera a que exista la fila de user_stats del usuario y la devuelve. */
 function waitForStats(userId, predicate, msg) {
@@ -75,149 +102,88 @@ test("sessions crea la fila de user_stats si no existe y cuenta la sesion", asyn
     (s) => s.total_sessions === 1,
     "la primera sesion de fuerza crea la fila con total 1",
   )
-  // Racha semanal (#801): un solo dia no cumple la semana (hacen falta 2).
+  // Racha semanal (#801): un solo dia no cumple la semana (el objetivo es 3).
   assert.equal(stats.workout_streak_current, 0, "un dia no cumple la semana")
   assert.equal(stats.workout_streak_best, 0)
-  assert.equal(stats.streak_week_start, mondayOf(localDateString(0)))
-  assert.equal(stats.streak_week_mask, weekdayBit(localDateString(0)))
   assert.equal(stats.last_workout_date, localDateString(0))
   assert.equal(stats.level, 1, "nivel 1, no 0")
 })
 
-test("racha semanal: sigue con la semana cumplida, sube al segundo dia y se rompe al saltarse una", async () => {
-  const user = await createUser("Fuerza Racheado")
-  const stats = await create("user_stats", {
-    user: user.id,
-    total_sessions: 5,
-    workout_streak_current: 3,
-    workout_streak_best: 3,
-    last_workout_date: "2026-08-05",
-    streak_week_start: "2026-08-03",
-    streak_week_mask: 1 | 4, // lunes y miercoles: semana cumplida
-  })
-  const read = () => getOne("user_stats", stats.id)
+test("racha semanal: objetivo 3 por defecto; 3 dias distintos la semana pasada → 1, y la anterior → 2", async () => {
+  const user = await createUser("Racha Semanal")
+  await seedDays(user, [weekDay(-1, 0), weekDay(-1, 2), weekDay(-1, 4)], "a")
+  await waitForStreak(user.id, 3, 1, 1, "semana pasada cumplida → racha 1 (la actual aun no cuenta)")
 
-  // Lunes de la semana siguiente: la semana nueva se abre, la racha se mantiene.
-  await strengthSessionOn(user, "2026-08-10", "w1")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 6 ? s : null
-  }, "total 6").then((s) => {
-    assert.equal(s.workout_streak_current, 3, "semana nueva sin cumplir: la racha sigue en 3")
-    assert.equal(s.streak_week_start, "2026-08-10")
-    assert.equal(s.streak_week_mask, 1)
-    assert.equal(s.last_workout_date, "2026-08-10")
-  })
-
-  // Otra sesion el mismo lunes: suma al total, no cuenta como segundo dia.
-  await strengthSessionOn(user, "2026-08-10", "w2")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 7 ? s : null
-  }, "total 7").then((s) => {
-    assert.equal(s.workout_streak_current, 3, "el mismo dia no cumple la semana")
-    assert.equal(s.streak_week_mask, 1)
-  })
-
-  // Jueves: segundo dia distinto → semana cumplida → 3 → 4.
-  await strengthSessionOn(user, "2026-08-13", "w3")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 8 ? s : null
-  }, "total 8").then((s) => {
-    assert.equal(s.workout_streak_current, 4, "segundo dia: racha 4")
-    assert.equal(s.workout_streak_best, 4, "best acompaña a current")
-    assert.equal(s.streak_week_mask, 1 | 8)
-  })
-
-  // Tercer dia de la misma semana: ya estaba cumplida, no suma otra vez.
-  await strengthSessionOn(user, "2026-08-15", "w4")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 9 ? s : null
-  }, "total 9").then((s) => {
-    assert.equal(s.workout_streak_current, 4, "una semana suma una sola vez")
-  })
-
-  // Se salta la semana del 17 entera y entrena el 27: racha rota, best aguanta.
-  await strengthSessionOn(user, "2026-08-27", "w5")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 10 ? s : null
-  }, "total 10").then((s) => {
-    assert.equal(s.workout_streak_current, 0, "semana saltada → 0")
-    assert.equal(s.workout_streak_best, 4, "best no retrocede")
-    assert.equal(s.streak_week_start, "2026-08-24")
-  })
+  await seedDays(user, [weekDay(-2, 1), weekDay(-2, 3), weekDay(-2, 5)], "b")
+  await waitForStreak(user.id, 6, 2, 2, "dos semanas seguidas → racha 2")
 })
 
-test("racha semanal: una semana con un solo dia rompe la racha aunque la siguiente sea contigua", async () => {
-  const user = await createUser("Fuerza Semana Floja")
-  const stats = await create("user_stats", {
-    user: user.id,
-    total_sessions: 9,
-    workout_streak_current: 5,
-    workout_streak_best: 5,
-    last_workout_date: "2026-08-04",
-    streak_week_start: "2026-08-03",
-    streak_week_mask: 2, // solo el martes: semana NO cumplida
-  })
-
-  await strengthSessionOn(user, "2026-08-10", "w1")
-  await waitFor(async () => {
-    const s = await getOne("user_stats", stats.id)
-    return s.total_sessions === 10 ? s : null
-  }, "total 10").then((s) => {
-    assert.equal(s.workout_streak_current, 0, "la semana del 3 no se cumplio → 0")
-    assert.equal(s.workout_streak_best, 5)
-  })
+test("racha semanal: una semana con solo 2 dias rompe la racha; best se conserva", async () => {
+  const user = await createUser("Racha Rota")
+  // -3 y -2 cumplidas (3 dias), -1 floja (2 dias): current 0, best 2.
+  await seedDays(user, [
+    weekDay(-3, 0), weekDay(-3, 2), weekDay(-3, 4),
+    weekDay(-2, 0), weekDay(-2, 2), weekDay(-2, 4),
+    weekDay(-1, 1), weekDay(-1, 3),
+  ])
+  await waitForStreak(user.id, 8, 0, 2, "la semana pasada con 2 dias rompe la racha")
 })
 
-test("una sesion retroactiva dentro de la semana cuenta su dia una sola vez", async () => {
-  const user = await createUser("Fuerza Retroactivo")
-  const stats = await create("user_stats", {
-    user: user.id,
-    total_sessions: 10,
-    workout_streak_current: 2, // termina en la semana del 3
-    workout_streak_best: 6,
-    last_workout_date: "2026-08-13",
-    streak_week_start: "2026-08-10",
-    streak_week_mask: 8, // solo el jueves 13: semana aun sin cumplir
-  })
-  const read = () => getOne("user_stats", stats.id)
+test("racha semanal: varias sesiones el mismo dia cuentan como un solo dia", async () => {
+  const user = await createUser("Racha Mismo Dia")
+  const day = weekDay(-1, 2)
+  await seedDays(user, [day, day, day])
+  await waitForStreak(user.id, 3, 0, 0, "3 sesiones en 1 dia no cumplen el objetivo de 3")
+})
 
-  // Registrada a mano para el martes 11 (antes del ultimo entreno): completa la
-  // semana → 2 → 3, sin mover last_workout_date hacia atras.
-  await strengthSessionOn(user, "2026-08-11", "retro1")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 11 ? s : null
-  }, "total 11").then((s) => {
-    assert.equal(s.workout_streak_current, 3, "el dia retroactivo completa la semana")
-    assert.equal(s.streak_week_mask, 2 | 8)
-    assert.equal(s.last_workout_date, "2026-08-13", "last_workout_date no retrocede")
-  })
+test("racha semanal: una sesion retroactiva recalcula TODO el historial", async () => {
+  const user = await createUser("Racha Retroactiva")
+  // Semana -2 con 2 dias (floja) y semana -1 con 3 (cumplida): solo cuenta la pasada.
+  await seedDays(user, [
+    weekDay(-2, 0), weekDay(-2, 2),
+    weekDay(-1, 0), weekDay(-1, 2), weekDay(-1, 4),
+  ])
+  await waitForStreak(user.id, 5, 1, 1, "solo la semana pasada cumple")
 
-  // El mismo martes otra vez: su bit ya estaba, no duplica.
-  await strengthSessionOn(user, "2026-08-11", "retro2")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 12 ? s : null
-  }, "total 12").then((s) => {
-    assert.equal(s.workout_streak_current, 3, "el mismo dia retroactivo no duplica")
-  })
+  // Se registra a mano un tercer dia de la semana -2: ahora cumple → 2 seguidas.
+  await strengthSessionOn(user, weekDay(-2, 4), "retro")
+  const s = await waitForStreak(user.id, 6, 2, 2, "el dia retroactivo completa la semana -2")
+  assert.equal(s.last_workout_date, weekDay(-1, 4), "last_workout_date no retrocede")
+})
 
-  // Una semana anterior a la guardada: suma al total, no reescribe la racha.
-  await strengthSessionOn(user, "2026-08-05", "retro3")
-  await waitFor(async () => {
-    const s = await read()
-    return s.total_sessions === 13 ? s : null
-  }, "total 13").then((s) => {
-    assert.equal(s.workout_streak_current, 3, "la racha no cambia")
-    assert.equal(s.workout_streak_best, 6, "el best tampoco")
-    assert.equal(s.streak_week_start, "2026-08-10", "la semana guardada no retrocede")
-    assert.equal(s.streak_week_mask, 2 | 8)
+test("racha semanal: cambiar weekly_goal_log recalcula sin ningun entreno nuevo", async () => {
+  const user = await createUser("Racha Objetivo")
+  await seedDays(user, [weekDay(-1, 1), weekDay(-1, 4)])
+  await waitForStreak(user.id, 2, 0, 0, "2 dias con objetivo 3 (por defecto) → 0")
+
+  const settings = await create("settings", { user: user.id, phase: 1 })
+  // Objetivo 2 desde hace 30 dias: la semana pasada pasa a cumplirse.
+  await update("settings", settings.id, {
+    weekly_goal_log: [{ from: localDateString(-30), goal: 2 }],
   })
+  await waitForStreak(user.id, 2, 1, 1, "el hook de settings recalcula: 0 → 1")
+
+  // Y a la inversa: subir el objetivo a 4 la vuelve a romper.
+  await update("settings", settings.id, {
+    weekly_goal_log: [{ from: localDateString(-30), goal: 4 }],
+  })
+  await waitForStreak(user.id, 2, 0, 0, "objetivo 4: la semana ya no cumple")
+})
+
+test("racha semanal: cuentan sesiones, circuitos y cardio en dias distintos", async () => {
+  const user = await createUser("Racha Mixta")
+  await strengthSessionOn(user, weekDay(-1, 0), "mix")
+  await createAs(user, "circuit_sessions", {
+    user: user.id, mode: "rounds", rounds_completed: 3,
+    started_at: `${weekDay(-1, 2)}T12:00:00.000Z`,
+    finished_at: `${weekDay(-1, 2)}T12:30:00.000Z`,
+  })
+  await createAs(user, "cardio_sessions", {
+    user: user.id, activity_type: "run", distance_km: 5, duration_seconds: 1800,
+    started_at: `${weekDay(-1, 4)}T12:00:00.000Z`,
+    finished_at: `${weekDay(-1, 4)}T12:30:00.000Z`,
+  })
+  await waitForStreak(user.id, 3, 1, 1, "3 tipos en 3 dias distintos → racha 1")
 })
 
 test("cardio_sessions tambien actualiza total y racha, creando la fila", async () => {
@@ -239,7 +205,6 @@ test("cardio_sessions tambien actualiza total y racha, creando la fila", async (
   )
   assert.equal(stats.workout_streak_current, 0, "un dia no cumple la semana")
   assert.equal(stats.workout_streak_best, 0)
-  assert.ok(stats.streak_week_mask > 0, "abre la semana")
 })
 
 test("los tres tipos de sesion se acumulan en el mismo contador", async () => {
@@ -262,13 +227,9 @@ test("los tres tipos de sesion se acumulan en el mismo contador", async () => {
   const stats = await waitForStats(user.id, (s) => s.total_sessions === 3, "cardio → 3")
 
   // El cardio lleva fecha UTC y la fuerza/circuito la local (ver la nota de
-  // FECHAS en utils/workout_stats.js): de noche en America el cardio ya es "mañana"
-  // y cuenta como otro dia. Lo que se comprueba es que tres sesiones no son tres dias.
-  const local = localDateString(0)
-  const utc = new Date().toISOString().slice(0, 10)
-  const sameWeekTwoDays = local !== utc && mondayOf(local) === mondayOf(utc)
-  assert.equal(stats.workout_streak_current, sameWeekTwoDays ? 1 : 0, "tres sesiones no son tres dias")
-  if (local === utc) assert.equal(stats.streak_week_mask, weekdayBit(local))
+  // FECHAS en utils/workout_stats.js): como mucho son 2 dias distintos, asi que
+  // tres sesiones nunca cumplen el objetivo de 3 dias.
+  assert.equal(stats.workout_streak_current, 0, "tres sesiones no son tres dias")
 })
 
 test("EL SINTOMA DEL ISSUE: otra cuenta ve los numeros reales en el perfil ajeno", async () => {
@@ -278,19 +239,17 @@ test("EL SINTOMA DEL ISSUE: otra cuenta ve los numeros reales en el perfil ajeno
   const atleta = await createUser("Atleta Perfil")
   const curioso = await createUser("Curioso Perfil")
 
-  // Dos dias de la misma semana: cumple la semana → racha 1 (#801).
-  await strengthSessionOn(atleta, "2026-08-03", "lunes")
-  await strengthSessionOn(atleta, "2026-08-05", "miercoles")
+  // Tres dias de la semana pasada: cumple la semana → racha 1 (#801).
+  await seedDays(atleta, [weekDay(-1, 0), weekDay(-1, 2), weekDay(-1, 4)], "p")
 
   const stats = await waitFor(async () => {
     const [row] = await listAs(curioso, "public_user_stats", `user='${atleta.id}'`)
-    return row && row.total_sessions === 2 ? row : null
-  }, "el perfil ajeno ve 2 sesiones, no 0")
+    return row && row.total_sessions === 3 && row.workout_streak_current === 1 ? row : null
+  }, "el perfil ajeno ve 3 sesiones y racha 1, no 0")
 
-  assert.equal(stats.workout_streak_current, 1, "y la racha de 1 semana")
   assert.equal(stats.workout_streak_best, 1)
-  assert.equal(stats.last_workout_date, "2026-08-05")
-  assert.equal(stats.streak_week_mask, undefined, "el estado interno de la racha no se expone")
+  assert.equal(stats.last_workout_date, weekDay(-1, 4))
+  assert.equal(stats.streak_week_mask, undefined, "el estado interno de la racha ya no existe")
   // La view sigue tapando lo que debe tapar.
   assert.equal(stats.total_nutrition_logs, undefined, "nutricion sigue oculta")
 })
@@ -317,32 +276,17 @@ test("varias sesiones a la vez no pierden cuenta ni duplican la fila", async () 
   assert.equal(stats.workout_streak_current, 0, "quince sesiones el mismo dia no cumplen la semana")
 })
 
-test("sesiones en paralelo en dos dias de la misma semana suman la semana UNA vez", async () => {
-  // La variante semanal de la carrera: si dos UPDATE vieran la mascara vieja a
-  // la vez, los dos creerian ser el segundo dia y la racha subiria 2.
+test("sesiones en paralelo en dias distintos de la semana pasada: total exacto y racha 1", async () => {
+  // Cada escritura recalcula la racha entera dentro de una transaccion: 6 a la
+  // vez no pueden perder sesiones ni dejar una racha a medias.
   const user = await createUser("Atleta Concurrente Semanal")
-  await create("user_stats", {
-    user: user.id,
-    workout_streak_current: 1,
-    workout_streak_best: 1,
-    last_workout_date: "2026-08-05",
-    streak_week_start: "2026-08-03",
-    streak_week_mask: 1 | 4,
-  })
+  const days = [weekDay(-1, 0), weekDay(-1, 2), weekDay(-1, 4)]
 
   await Promise.all(
-    Array.from({ length: 16 }, (_, i) =>
-      strengthSessionOn(user, i % 2 ? "2026-08-11" : "2026-08-12", `par${i}`)
-    )
+    Array.from({ length: 6 }, (_, i) => strengthSessionOn(user, days[i % 3], `par${i}`))
   )
 
-  const stats = await waitFor(async () => {
-    const [row] = await list("user_stats", `user='${user.id}'`)
-    return row && row.total_sessions === 16 ? row : null
-  }, "las 16 sesiones contadas")
-
-  assert.equal(stats.workout_streak_current, 2, "1 → 2, ni mas ni menos")
-  assert.equal(stats.streak_week_mask, 2 | 4)
+  await waitForStreak(user.id, 6, 1, 1, "6 sesiones contadas y racha 1")
 })
 
 test("un cardio sin fechas no rompe nada: cae al dia del servidor", async () => {
@@ -362,22 +306,25 @@ test("un cardio sin fechas no rompe nada: cae al dia del servidor", async () => 
   assert.equal(stats.last_workout_date, localDateString(0), "usa el dia del servidor")
 })
 
-test("la racha de fuerza dispara el milestone de 2 semanas", async () => {
+test("la racha de fuerza dispara el hito de 4 semanas (una sola vez, con push)", async () => {
   const user = await createUser("Atleta Milestone")
-  await create("user_stats", {
-    user: user.id,
-    total_sessions: 3,
-    workout_streak_current: 1,
-    workout_streak_best: 1,
-    last_workout_date: "2026-08-04",
-    streak_week_start: "2026-08-03",
-    streak_week_mask: 1 | 2,
-  })
+  // Semana -1 con 2 dias y las semanas -2..-4 completas: la racha sigue en 0
+  // porque la pasada no cumple. El 3er dia de la semana -1, lo ultimo, las une:
+  // 0 → 4 semanas.
+  await seedDays(user, [weekDay(-1, 0), weekDay(-1, 2)], "u")
+  await seedDays(user, [weekDay(-2, 0), weekDay(-2, 2), weekDay(-2, 4)], "v")
+  await seedDays(user, [weekDay(-3, 0), weekDay(-3, 2), weekDay(-3, 4)], "w")
+  await seedDays(user, [weekDay(-4, 0), weekDay(-4, 2), weekDay(-4, 4)], "x")
+  await waitForStreak(user.id, 11, 0, 3, "3 semanas cumplidas pero la pasada floja: racha 0, best 3")
+  await expectNotifications(user.id, "streak", 0, "aun sin hito")
 
-  await strengthSessionOn(user, "2026-08-10", "lunes")
-  await strengthSessionOn(user, "2026-08-12", "miercoles")
+  await strengthSessionOn(user, weekDay(-1, 4), "cierre")
+  await waitForStreak(user.id, 12, 4, 4, "racha 4")
+  const [notif] = await expectNotifications(user.id, "streak", 1, "el hito de 4 semanas se notifica una vez")
+  assert.equal(notif.data.weeks, 4)
 
-  await waitForStats(user.id, (s) => s.workout_streak_current === 2, "racha 1→2 semanas")
-  const [notif] = await expectNotifications(user.id, "streak", 1, "el hook de milestones se entera")
-  assert.equal(notif.data.weeks, 2)
+  await waitFor(async () => {
+    const sent = await pushesFor(user.id)
+    return sent.some((p) => JSON.stringify(p.body).includes("4 semanas"))
+  }, "push de 4 semanas seguidas")
 })

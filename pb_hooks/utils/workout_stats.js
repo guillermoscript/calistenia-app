@@ -115,99 +115,26 @@ function findOrCreateStats(userId) {
 }
 
 /**
- * RACHA SEMANAL (#801). `workout_streak_current` cuenta semanas naturales
- * (lunes a domingo) seguidas en las que el usuario entreno al menos
- * `STREAK_WEEKLY_GOAL` dias distintos. La diaria mandaba la racha a 1 con un
- * solo dia de descanso, y los programas oficiales tienen descansos fijos.
- * Misma regla que `packages/core/lib/streak.ts`; si cambia una, cambia la otra.
- *
- * Estado en la fila, ademas de la racha:
- *   - `streak_week_start`: lunes ("YYYY-MM-DD") de la ultima semana con entreno.
- *   - `streak_week_mask`:  dias de esa semana con entreno, como bits
- *                          (lunes = 1, martes = 2 ... domingo = 64).
- *
- * La mascara es lo que deja hacer todo en el UPDATE atomico sin releer el
- * historial: una sesion retroactiva dentro de la misma semana hace OR de un bit
- * que quiza ya estaba puesto, asi que el mismo dia nunca cuenta dos veces.
- */
-var STREAK_WEEKLY_GOAL = 2
-
-/** Dias distintos (bits a 1) de una mascara semanal, en SQL. */
-function popcountSql(expr) {
-  var terms = []
-  for (var i = 0; i < 7; i++) terms.push("((" + expr + " >> " + i + ") & 1)")
-  return "(" + terms.join(" + ") + ")"
-}
-
-var OLD_MASK = "COALESCE(streak_week_mask, 0)"
-var NO_WEEK = "(streak_week_start IS NULL OR streak_week_start = '')"
-
-/**
- * Racha resultante, en SQL. Se evalua contra los valores ANTERIORES de la fila
- * (SQLite calcula todos los SET sobre la fila original), asi que sirve tanto
- * para `workout_streak_current` como, dentro de un MAX(), para el `best`.
- *
- *   - primera vez (sin semana)     → 0 (un dia no cumple la semana)
- *   - misma semana                 → +1 solo si este dia la hace llegar al
- *                                    objetivo; si ya lo tenia, igual
- *   - semana nueva                 → la racha sigue si la semana guardada
- *                                    cumplio Y es justo la anterior; si no, 0.
- *                                    El dia nuevo abre la semana (no la cumple)
- *   - semana anterior (retroactiva) → se queda igual. Recalcularla hacia atras
- *     exigiria releer todo el historial en cada create; el recomputo completo
- *     es trabajo del backfill (migracion 1790440000).
- */
-var NEW_STREAK_SQL = `
-  CASE
-    WHEN ${NO_WEEK} THEN {:opens}
-    WHEN {:week} = streak_week_start THEN
-      COALESCE(workout_streak_current, 0) +
-      CASE
-        WHEN ${popcountSql(OLD_MASK)} < ${STREAK_WEEKLY_GOAL}
-         AND ${popcountSql("(" + OLD_MASK + " | {:bit})")} >= ${STREAK_WEEKLY_GOAL}
-          THEN 1
-        ELSE 0
-      END
-    WHEN {:week} > streak_week_start THEN
-      CASE
-        WHEN streak_week_start = {:prevWeek}
-         AND ${popcountSql(OLD_MASK)} >= ${STREAK_WEEKLY_GOAL}
-          THEN COALESCE(workout_streak_current, 0)
-        ELSE 0
-      END + {:opens}
-    ELSE COALESCE(workout_streak_current, 0)
-  END`
-
-/** "YYYY-MM-DD" → lunes de su semana, "YYYY-MM-DD". */
-function weekStartOf(day) {
-  var parts = day.split("-")
-  var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])))
-  // getUTCDay: domingo = 0. Lunes → 0 dias atras, domingo → 6.
-  return shiftDay(day, -((d.getUTCDay() + 6) % 7))
-}
-
-/** "YYYY-MM-DD" → bit de su dia en la mascara semanal (lunes = 1 ... domingo = 64). */
-function weekdayBit(day) {
-  var parts = day.split("-")
-  var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])))
-  return 1 << ((d.getUTCDay() + 6) % 7)
-}
-
-/**
  * Registra un entrenamiento completado el dia `day` ("YYYY-MM-DD"):
- * incrementa `total_sessions` y actualiza la racha. `workout_streak_best` nunca
- * retrocede.
+ * incrementa `total_sessions`, mueve `last_workout_date` y recalcula la racha
+ * SEMANAL desde el historial (`utils/weekly_streak.js`, #801).
  *
- * TODO EN UN SOLO UPDATE, A PROPOSITO. Leer el record, sumarle 1 y guardarlo
- * (lo que hacia el hook viejo de circuitos) pierde incrementos cuando entran
- * varias sesiones a la vez: la cola de reintentos de cardio vaciandose, o un
- * doble toque. Con 15 creates en paralelo el contador se quedaba corto de
- * verdad — hay un test que lo cubre. Un UPDATE atomico no puede perderlos.
+ * `total_sessions` sigue siendo un `+ 1` en SQL, nunca "leer, sumar, guardar":
+ * eso perdia incrementos con varias sesiones a la vez (la cola de reintentos de
+ * cardio vaciandose, un doble toque). Hay un test con 15 creates en paralelo.
  *
- * El precio es que el SQL no dispara `onRecordAfterUpdateSuccess`, asi que el
- * hito de racha hay que notificarlo aqui a mano (misma funcion que usa el hook,
- * no una copia). `user_stats` no tiene suscripciones realtime, comprobado, asi
- * que saltarse la API de records no deja a nadie sin enterarse.
+ * La racha ya no se puede llevar en un UPDATE incremental: una sesion metida
+ * con fecha pasada puede completar una semana vieja y un cambio de objetivo se
+ * aplica a la semana entera. Se recalcula entera en cada entreno, y el
+ * incremento y el recalculo van en UNA transaccion. PocketBase serializa las
+ * transacciones de escritura en una sola conexion, asi que la lectura de dias
+ * ve todas las sesiones ya guardadas y ninguna escritura con datos mas viejos
+ * puede pisar a esta. El historial de un usuario son unos cientos de filas.
+ *
+ * El SQL no dispara `onRecordAfterUpdateSuccess`, asi que el hito de racha se
+ * notifica aqui a mano (misma funcion que usa el hook, no una copia).
+ * `user_stats` no tiene suscripciones realtime, comprobado, asi que saltarse la
+ * API de records no deja a nadie sin enterarse.
  */
 function recordWorkout(userId, day) {
   if (!userId) return
@@ -217,47 +144,41 @@ function recordWorkout(userId, day) {
   if (!stats) return
 
   var statsId = stats.getString("id")
-  var oldStreak = stats.getInt("workout_streak_current") || 0
-  var week = weekStartOf(day)
-  var bit = weekdayBit(day)
+  var weekly = require(`${__hooks}/utils/weekly_streak.js`)
+  var oldStreak = 0
+  var newStreak = 0
 
-  $app.db().newQuery(`
-    UPDATE user_stats SET
-      total_sessions = COALESCE(total_sessions, 0) + 1,
-      workout_streak_current = ${NEW_STREAK_SQL},
-      workout_streak_best = MAX(COALESCE(workout_streak_best, 0), ${NEW_STREAK_SQL}),
-      streak_week_mask = CASE
-        WHEN ${NO_WEEK} OR {:week} > streak_week_start THEN {:bit}
-        WHEN {:week} = streak_week_start THEN ${OLD_MASK} | {:bit}
-        ELSE ${OLD_MASK}
-      END,
-      streak_week_start = CASE
-        WHEN ${NO_WEEK} OR {:week} > streak_week_start THEN {:week}
-        ELSE streak_week_start
-      END,
-      last_workout_date = CASE
-        WHEN last_workout_date IS NULL OR last_workout_date = '' OR {:day} > last_workout_date
-          THEN {:day}
-        ELSE last_workout_date
-      END,
-      updated_at = {:stamp}
-    WHERE id = {:id}
-  `).bind({
-    day: day,
-    week: week,
-    prevWeek: shiftDay(week, -7),
-    bit: bit,
-    // Una semana recien abierta con un solo dia cumple el objetivo solo si
-    // el objetivo fuera 1. Hoy siempre 0, pero la regla no depende de ello.
-    opens: STREAK_WEEKLY_GOAL <= 1 ? 1 : 0,
-    stamp: new Date().toISOString().replace("T", " "),
-    id: statsId,
-  }).execute()
+  $app.runInTransaction(function (txApp) {
+    // Se lee dentro de la transaccion: fuera, otra sesion en paralelo podria
+    // cambiarla entre la lectura y el recalculo y el hito saldria dos veces.
+    var rows = arrayOf(new DynamicModel({ current: 0 }))
+    txApp.db().newQuery(
+      "SELECT COALESCE(workout_streak_current, 0) AS current FROM user_stats WHERE id = {:id}"
+    ).bind({ id: statsId }).all(rows)
+    oldStreak = rows.length > 0 ? Number(rows[0].current) || 0 : 0
+
+    txApp.db().newQuery(`
+      UPDATE user_stats SET
+        total_sessions = COALESCE(total_sessions, 0) + 1,
+        last_workout_date = CASE
+          WHEN last_workout_date IS NULL OR last_workout_date = '' OR {:day} > last_workout_date
+            THEN {:day}
+          ELSE last_workout_date
+        END,
+        updated_at = {:stamp}
+      WHERE id = {:id}
+    `).bind({
+      day: day,
+      stamp: new Date().toISOString().replace("T", " "),
+      id: statsId,
+    }).execute()
+
+    newStreak = weekly.recomputeStreak(txApp, userId, serverToday()).current
+  })
 
   try {
-    var fresh = $app.findRecordById("user_stats", statsId)
     var notifications = require(`${__hooks}/utils/notifications.js`)
-    notifications.checkStreakMilestone(userId, oldStreak, fresh.getInt("workout_streak_current") || 0)
+    notifications.checkStreakMilestone(userId, oldStreak, newStreak)
   } catch (err) {
     console.log("[workout_stats] milestone de racha fallido para " + userId + ":", err)
   }
@@ -268,9 +189,6 @@ module.exports = {
   dayFromTimestamp: dayFromTimestamp,
   workoutDayOf: workoutDayOf,
   shiftDay: shiftDay,
-  weekStartOf: weekStartOf,
-  weekdayBit: weekdayBit,
-  STREAK_WEEKLY_GOAL: STREAK_WEEKLY_GOAL,
   findOrCreateStats: findOrCreateStats,
   recordWorkout: recordWorkout,
 }

@@ -4,22 +4,22 @@ import { STREAK_MILESTONES, pickActiveMilestone } from './streak-milestones'
 const nadaEnseñado = () => false
 
 describe('STREAK_MILESTONES', () => {
-  it('celebra 2, 4, 8, 12, 26 y 52 semanas, en orden (#801)', () => {
-    expect([...STREAK_MILESTONES]).toEqual([2, 4, 8, 12, 26, 52])
+  it('celebra 4, 8, 12, 26 y 52 semanas, en orden (#801)', () => {
+    expect([...STREAK_MILESTONES]).toEqual([4, 8, 12, 26, 52])
   })
 })
 
 describe('pickActiveMilestone', () => {
   it('por debajo del primer hito no hay nada que celebrar', () => {
-    expect(pickActiveMilestone(1, nadaEnseñado)).toBeNull()
+    expect(pickActiveMilestone(3, nadaEnseñado)).toBeNull()
   })
 
   it('justo al llegar al hito, lo celebra', () => {
-    expect(pickActiveMilestone(2, nadaEnseñado)).toBe(2)
+    expect(pickActiveMilestone(4, nadaEnseñado)).toBe(4)
   })
 
   it('devuelve el hito MÁS ALTO alcanzado, no el primero', () => {
-    // Quien vuelve tras meses fuera ve el de 52, no una cola de 2→4→8.
+    // Quien vuelve tras meses fuera ve el de 52, no una cola de 4→8→12.
     expect(pickActiveMilestone(60, nadaEnseñado)).toBe(52)
   })
 

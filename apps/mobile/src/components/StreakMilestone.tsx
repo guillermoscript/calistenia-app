@@ -83,11 +83,11 @@ export default function StreakMilestone({
 
   const handleDismiss = useCallback(() => {
     // En el cierre y no al mostrarlo, igual que web (#636 §5): así el evento
-    // mide que el usuario VIO el hito, no que el componente se montó. `days` es
+    // mide que el usuario VIO el hito, no que el componente se montó. `weeks` es
     // el hito alcanzado, no la racha actual, que puede ser mayor.
     if (milestone) {
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
-        surface: 'streak', source: 'streak_card', days: milestone,
+        surface: 'streak', source: 'streak_card', weeks: milestone,
       })
     }
     setPhase('hidden')
@@ -106,7 +106,7 @@ export default function StreakMilestone({
       if (uri) {
         await shareCardImage(uri, { message, title: 'Compartir racha' }, {
           ...MOBILE_SHARE_CARD_CONTEXTS.streak,
-          streak_days: milestone,
+          streak_weeks: milestone,
         })
       } else {
         await shareText({ message, url: WEB_BASE_URL })

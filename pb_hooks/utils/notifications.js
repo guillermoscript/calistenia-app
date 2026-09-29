@@ -489,10 +489,10 @@ function checkReferralBonus(userId) {
   }
 }
 
-// En SEMANAS desde #801: la racha cuenta semanas seguidas con al menos 2 dias
-// de entreno (ver utils/workout_stats.js). Mismos hitos que el cliente
-// (packages/core/lib/streak-milestones.ts).
-var STREAK_MILESTONES = [2, 4, 8, 12, 26, 52]
+// En SEMANAS desde #801: la racha cuenta semanas seguidas cumpliendo el
+// objetivo semanal (ver utils/weekly_streak.js). Mismos hitos que el cliente
+// (`WEEKLY_STREAK_MILESTONES` en packages/core/lib/weeklyStreak.ts).
+var STREAK_MILESTONES = [4, 8, 12, 26, 52]
 
 /**
  * Notifica el hito de racha si `newStreak` acaba de cruzar uno.
