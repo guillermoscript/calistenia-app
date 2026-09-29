@@ -170,7 +170,7 @@ export default function HomeParaTi({ userId, homeKind, accountSessions }: HomePa
               trackHomeParaTiTap({ kind: row.kind })
               navigate(row.to)
             }}
-            className="flex min-h-14 w-full items-center gap-3 border-b border-border py-2 text-left hover:bg-muted/40"
+            className="flex min-h-[52px] w-full items-center gap-3 border-b border-border py-1.5 text-left hover:bg-muted/40"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground" aria-hidden="true">
               {row.icon}

@@ -29,6 +29,9 @@ import { paraTiEnabled } from '@calistenia/core/lib/paraTi'
 import { homeAnalyticsModifiers, resetHomeView, trackHomeViewed } from '@calistenia/core/lib/home-analytics'
 import type { CardioSession } from '@calistenia/core/types'
 
+/** Olvido de la visita pendiente (ver el efecto de `resetHomeView`). */
+let pendingHomeReset: ReturnType<typeof setTimeout> | null = null
+
 function greetingKey(): string {
   const h = localHour()
   if (h < 12) return 'home.greeting.morning'
@@ -67,7 +70,19 @@ export default function DashboardPage({ cardioLastSession }: DashboardPageProps)
     viewed.current = true
     trackHomeViewed({ state: state.kind, modifiers: homeAnalyticsModifiers(state) })
   }, [state])
-  useEffect(() => () => resetHomeView(), [])
+  // Al salir se olvida la visita, un tick después: el desmontaje simulado de
+  // StrictMode (dev) remonta al instante y cancela el olvido, así que no se
+  // pierde el `ms_since_view` ni se emite `home_viewed` dos veces.
+  useEffect(() => {
+    if (pendingHomeReset) clearTimeout(pendingHomeReset)
+    pendingHomeReset = null
+    return () => {
+      pendingHomeReset = setTimeout(() => {
+        pendingHomeReset = null
+        resetHomeView()
+      }, 0)
+    }
+  }, [])
 
   const [milestoneDismissed, setMilestoneDismissed] = useState(false)
   const milestone = useMemo(
@@ -108,7 +123,7 @@ export default function DashboardPage({ cardioLastSession }: DashboardPageProps)
   )
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-5 px-4 pb-6 pt-4 md:px-6 lg:gap-6 lg:px-12 lg:py-7">
+    <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-4 px-4 pb-2 pt-3 md:px-6 lg:gap-6 lg:px-12 lg:py-7">
       <header className="flex flex-col gap-0.5 lg:gap-1">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{todayLabel}</span>
         <h1 className="m-0 font-bebas text-[34px] leading-none lg:text-[52px]">{t(greetingKey())}</h1>
@@ -123,11 +138,11 @@ export default function DashboardPage({ cardioLastSession }: DashboardPageProps)
         />
       )}
 
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
-        <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+        <div className="flex flex-col gap-4">
           <HomeTodayCard home={home} cardioLastSession={cardioLastSession} />
         </div>
-        <div className="flex flex-col gap-5 lg:gap-6">{aside}</div>
+        <div className="flex flex-col gap-4 lg:gap-6">{aside}</div>
       </div>
     </div>
   )

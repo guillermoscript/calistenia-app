@@ -54,7 +54,7 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
   const locale = i18n.language
 
   return (
-    <section id="tour-weekly-plan" aria-labelledby="home-week-title" className="flex flex-col gap-2.5">
+    <section id="tour-weekly-plan" aria-labelledby="home-week-title" className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
         <h2 id="home-week-title" className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           {t('home.week.title')}
@@ -84,7 +84,7 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
                 role="img"
                 aria-label={label}
                 className={cn(
-                  'flex aspect-square w-full max-w-11 items-center justify-center rounded-lg',
+                  'flex aspect-square w-full max-w-10 items-center justify-center rounded-lg',
                   cell.state === 'done' && 'border border-lime/40 bg-lime/10',
                   cell.state === 'done' && cell.isToday && 'border-2 border-foreground',
                   cell.state === 'in_progress' && 'border-2 border-lime',

@@ -102,7 +102,7 @@ test.describe('Navegación principal', () => {
 
   test('Dashboard muestra stats', async ({ page }) => {
     await navigateTo(page, '/')
-    await expect(page.getByText(/racha|streak|sesiones|sessions|objetivo|goal/i).first()).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('[data-testid="home-today"]')).toBeVisible({ timeout: 5000 })
   })
 
 })
@@ -276,7 +276,7 @@ test.describe('SessionView - nota y celebración', () => {
     await page.getByRole('button', { name: /^(SALTAR|SKIP)$/i }).click()
     await expect(page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i })).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i }).click()
-    await expect(page.getByText(/racha|streak|sesiones|sessions|objetivo|goal/i).first()).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('[data-testid="home-today"]')).toBeVisible({ timeout: 5000 })
   })
 
 })

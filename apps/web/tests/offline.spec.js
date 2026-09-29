@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { register, navigateTo, showFullHome } from './helpers.js'
+import { register, navigateTo } from './helpers.js'
 
 /**
  * Regresión de los 3 bugs de datos offline del #151 (fix en PR #195, 29d96ea):
@@ -21,7 +21,7 @@ import { register, navigateTo, showFullHome } from './helpers.js'
  * se disparan con eventos `online` sintéticos (los handlers de
  * setupAutoSync/OfflineBanner escuchan el evento, no navigator.onLine).
  *
- * La escritura encolada es agua en el Dashboard (+200): un click, sin
+ * La escritura encolada es agua en /nutrition (+200): un click, sin
  * diálogos, sin depender de nutrition_goals, y pasa por persistOrQueue →
  * colección water_entries. Complementa (no duplica) los unit tests de
  * packages/core/lib/offlineQueue.test.ts, que ya cubren la cola con mocks:
@@ -29,6 +29,31 @@ import { register, navigateTo, showFullHome } from './helpers.js'
  */
 const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090'
 const QUEUE_KEY = 'calistenia_offline_queue'
+
+/**
+ * El «+200» del agua vive solo en /nutrition desde #855 y esa página pide
+ * objetivos (`nutrition_goals`) antes de pintar el tracker: se siembran por
+ * REST. La encuesta «¿cómo conociste la app?» (#586) se descarta para que no
+ * tape la página.
+ */
+async function seedNutritionGoals(page, request) {
+  const auth = await pbAuth(page)
+  const res = await request.post(`${PB_URL}/api/collections/nutrition_goals/records`, {
+    headers: { Authorization: auth.token },
+    data: {
+      user: auth.userId, daily_calories: 2200, daily_protein: 150,
+      daily_carbs: 220, daily_fat: 70, goal: 'maintain', weight: 75,
+      height: 175, age: 30, sex: 'male', activity_level: 'active',
+    },
+  })
+  expect(res.ok(), 'no se pudo sembrar nutrition_goals').toBeTruthy()
+  await page.evaluate((uid) => {
+    localStorage.setItem(`calistenia_discovery_survey_v1_${uid}`, 'dismissed')
+    // El caché persistido de React Query daría por fresco el «sin objetivos»
+    // de antes de sembrarlos.
+    localStorage.removeItem('calistenia_rq_cache')
+  }, auth.userId)
+}
 
 async function pbAuth(page) {
   return page.evaluate(() => {
@@ -83,9 +108,9 @@ test.describe('Offline → recuperación (#151)', () => {
   test('(b) escritura sin red se encola y drena al volver, sin pérdida ni logout', async ({ page, context, request }) => {
     test.setTimeout(90_000)
     await register(page)
-    // El «+200» del agua solo está en el inicio completo (#808).
-    await showFullHome(page)
-    await navigateTo(page, '/')
+    // El «+200» del agua vive solo en /nutrition desde #855.
+    await seedNutritionGoals(page, request)
+    await navigateTo(page, '/nutrition')
     const auth = await pbAuth(page)
 
     // La secuencia real del incidente #151: ARRANCAR sin red (pre-fix esto
@@ -94,7 +119,7 @@ test.describe('Offline → recuperación (#151)', () => {
     await blockPB(context)
     await page.reload()
     await expect(page.locator('header nav')).toBeVisible({ timeout: 15000 })
-    await page.getByRole('button', { name: '+200', exact: true }).click()
+    await page.getByRole('button', { name: /^\+\s*200\s*ml$/i }).click()
     await expect
       .poll(() => queueLength(page), { timeout: 8000, message: 'el create no se encoló' })
       .toBe(1)
@@ -119,12 +144,12 @@ test.describe('Offline → recuperación (#151)', () => {
   test('(c) drenajes concurrentes NO duplican la escritura', async ({ page, context, request }) => {
     test.setTimeout(90_000)
     await register(page)
-    await showFullHome(page)
-    await navigateTo(page, '/')
+    await seedNutritionGoals(page, request)
+    await navigateTo(page, '/nutrition')
     const auth = await pbAuth(page)
 
     await blockPB(context)
-    await page.getByRole('button', { name: '+200', exact: true }).click()
+    await page.getByRole('button', { name: /^\+\s*200\s*ml$/i }).click()
     await expect.poll(() => queueLength(page), { timeout: 8000 }).toBe(1)
     await unblockPB(context)
 

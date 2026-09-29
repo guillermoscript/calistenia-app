@@ -107,7 +107,7 @@ function Shell({ label, accent, children, testState }: { label: string; accent: 
       data-testid="home-today"
       data-state={testState}
       className={cn(
-        'flex flex-col gap-3.5 rounded-xl border bg-card p-[18px] lg:gap-[18px] lg:rounded-[14px] lg:px-7 lg:py-[26px]',
+        'flex flex-col gap-3 rounded-xl border bg-card p-4 lg:gap-[18px] lg:rounded-[14px] lg:px-7 lg:py-[26px]',
         accent ? 'border-lime/40' : 'border-border',
       )}
     >
@@ -148,7 +148,7 @@ function ExerciseList({ workout, compactOnly = false }: { workout: Workout | nul
     <>
       <ul className={cn('m-0 flex list-none flex-col p-0', !compactOnly && 'lg:hidden')}>
         {main.slice(0, 3).map((ex, i) => (
-          <li key={`${ex.id}-${i}`} className={cn('flex h-[34px] items-center justify-between gap-3 border-t border-border text-sm', i === Math.min(main.length, 3) - 1 && 'border-b')}>
+          <li key={`${ex.id}-${i}`} className={cn('flex h-8 items-center justify-between gap-3 border-t border-border text-sm', i === Math.min(main.length, 3) - 1 && 'border-b')}>
             <span className="truncate">{ex.name}</span>
             <Meta className="shrink-0 text-[11px]">{setsReps(ex)}</Meta>
           </li>
@@ -509,7 +509,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
           </div>
           <ul className="m-0 flex list-none flex-col p-0">
             {workout.exercises.map((ex, i) => (
-              <li key={ex.id} className={cn('flex h-[34px] items-center justify-between gap-3 border-t border-border text-sm', i === workout.exercises.length - 1 && 'border-b')}>
+              <li key={ex.id} className={cn('flex h-8 items-center justify-between gap-3 border-t border-border text-sm', i === workout.exercises.length - 1 && 'border-b')}>
                 <span className="truncate">{ex.name}</span>
                 <Meta className="shrink-0">{setsReps(ex)}</Meta>
               </li>
@@ -728,7 +728,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
           ) : circuitCfg ? (
             <ul className="m-0 flex list-none flex-col p-0">
               {circuitCfg.exercises.slice(0, 3).map((ex, i) => (
-                <li key={`${ex.exerciseId}-${i}`} className="flex h-[34px] items-center justify-between gap-3 border-t border-border text-sm last:border-b">
+                <li key={`${ex.exerciseId}-${i}`} className="flex h-8 items-center justify-between gap-3 border-t border-border text-sm last:border-b">
                   <span className="truncate">{localize(ex.name, locale)}</span>
                   <Meta className="shrink-0">{ex.workSecondsOverride ? `${ex.workSecondsOverride} s` : ex.reps ?? ''}</Meta>
                 </li>
@@ -744,8 +744,8 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
                 : t('home.deload.bodyLastPhase', { phase: programProgress.currentPhase })}
             </p>
           )}
-          <div className="flex flex-col gap-3.5 lg:flex-row-reverse lg:items-center lg:gap-6">
-            <div className="lg:flex-1">{programLine}</div>
+          <div className="flex flex-col gap-3.5">
+            {programLine}
             <PrimaryAction onClick={primary(() => startDay(day))}>{startLabel}</PrimaryAction>
           </div>
         </Shell>
