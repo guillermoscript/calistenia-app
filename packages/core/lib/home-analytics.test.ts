@@ -13,7 +13,9 @@ import {
   HOME_ANALYTICS_STATES,
   HOME_PARA_TI_KINDS,
   __resetHomeAnalyticsForTests,
+  homeAnalyticsModifiers,
   serializeHomeModifiers,
+  toHomeParaTiKind,
   trackHomeChangeDay,
   trackHomeParaTiTap,
   trackHomePrimaryCta,
@@ -64,6 +66,39 @@ describe('serializeHomeModifiers', () => {
   })
 })
 
+describe('adaptadores desde HomeState / getParaTi (#853)', () => {
+  const base = { inactiveDays: null, firstWeek: null, offline: false, unsynced: false }
+
+  it('sin nada que añadir no hay modificadores', () => {
+    expect(homeAnalyticsModifiers({ kind: 'rest_day', modifiers: base })).toEqual([])
+  })
+
+  it('recoge descarga, primera semana, inactividad y conexión', () => {
+    expect(homeAnalyticsModifiers({
+      kind: 'training_day',
+      deload: true,
+      day: { dayType: 'strength' },
+      modifiers: { inactiveDays: 4, firstWeek: { done: 1 }, offline: true, unsynced: true },
+    }).sort()).toEqual(['deload', 'first_week', 'inactive', 'offline', 'unsynced'])
+  })
+
+  it('cardio solo en el día de cardio y en su variante de «hecho»', () => {
+    expect(homeAnalyticsModifiers({ kind: 'training_day', deload: false, day: { dayType: 'cardio' }, modifiers: base })).toEqual(['cardio'])
+    expect(homeAnalyticsModifiers({ kind: 'done_today', variant: 'cardio', day: { dayType: 'cardio' }, modifiers: base })).toEqual(['cardio'])
+    // La vuelta tras un parón no es un tablero de cardio aunque el día lo sea.
+    expect(homeAnalyticsModifiers({ kind: 'comeback', day: { dayType: 'cardio' }, modifiers: base })).toEqual([])
+  })
+
+  it('traduce los kind de getParaTi a los nombres del informe', () => {
+    expect(toHomeParaTiKind('challenge_progress')).toBe('challenge')
+    expect(toHomeParaTiKind('friends_today')).toBe('friends')
+    expect(toHomeParaTiKind('nutrition_today')).toBe('nutrition')
+    expect(toHomeParaTiKind('phase_photos')).toBe('photos')
+    expect(toHomeParaTiKind('battle')).toBe('battle')
+    expect(toHomeParaTiKind('featured_challenge')).toBe('featured_challenge')
+  })
+})
+
 describe('helpers track*', () => {
   it('home_viewed lleva estado, modificadores serializados, surface y plataforma', () => {
     trackHomeViewed({ state: 'training_day', modifiers: ['deload'] })
@@ -100,7 +135,7 @@ describe('helpers track*', () => {
   })
 
   it('home_para_ti_tap y home_secondary_tap llevan kind / target', () => {
-    trackHomeParaTiTap({ kind: 'friends' })
+    trackHomeParaTiTap({ kind: 'friends_today' })
     trackHomeSecondaryTap({ target: 'share', state: 'done_today' })
 
     expect(track).toHaveBeenCalledWith('home_para_ti_tap', expect.objectContaining({ kind: 'friends' }))

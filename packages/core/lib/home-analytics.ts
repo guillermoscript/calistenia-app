@@ -66,6 +66,28 @@ export const HOME_PARA_TI_KINDS = [
 export type HomeParaTiKind = typeof HOME_PARA_TI_KINDS[number]
 
 /**
+ * `getParaTi` (#853) nombra algunas filas por lo que enseñan
+ * (`friends_today`, `phase_photos`…). En analítica va el nombre corto de la
+ * tabla de #854, que es el que leerá el informe. La traducción vive aquí para
+ * que web y móvil no escriban cada una la suya.
+ */
+const PARA_TI_KIND_ALIASES = {
+  challenge_progress: 'challenge',
+  friends_today: 'friends',
+  nutrition_today: 'nutrition',
+  phase_photos: 'photos',
+} as const satisfies Record<string, HomeParaTiKind>
+
+/** Lo que devuelve `getParaTi`, o ya el nombre de analítica. */
+export type HomeParaTiSourceKind = HomeParaTiKind | keyof typeof PARA_TI_KIND_ALIASES
+
+export function toHomeParaTiKind(kind: HomeParaTiSourceKind): HomeParaTiKind {
+  return kind in PARA_TI_KIND_ALIASES
+    ? PARA_TI_KIND_ALIASES[kind as keyof typeof PARA_TI_KIND_ALIASES]
+    : kind as HomeParaTiKind
+}
+
+/**
  * Acciones secundarias de los estados. La lista es abierta en la issue
  * («…»): si un tablero trae una acción nueva, se añade aquí antes de emitirla,
  * nunca con un string suelto desde la app.
@@ -90,6 +112,41 @@ export type HomeSecondaryTarget = typeof HOME_SECONDARY_TARGETS[number]
 export function serializeHomeModifiers(modifiers: readonly HomeAnalyticsModifier[]): string {
   const unique = [...new Set(modifiers)].sort()
   return unique.length ? unique.join(',') : 'none'
+}
+
+/**
+ * Forma mínima de `HomeState` (#853) que hace falta para los modificadores.
+ * Es estructural a propósito: el contrato no depende de `homeState.ts`, y
+ * cualquier `HomeState` encaja tal cual.
+ */
+export interface HomeStateForAnalytics {
+  kind: HomeAnalyticsState
+  modifiers: {
+    inactiveDays: number | null
+    firstWeek: unknown
+    offline: boolean
+    unsynced: boolean
+  }
+  /** Solo en `training_day`. */
+  deload?: boolean
+  /** Solo en `done_today`. */
+  variant?: string
+  day?: { dayType?: string } | null
+}
+
+/** Modificadores de analítica de un `HomeState`, para `trackHomeViewed`. */
+export function homeAnalyticsModifiers(state: HomeStateForAnalytics): HomeAnalyticsModifier[] {
+  const out: HomeAnalyticsModifier[] = []
+  if (state.deload) out.push('deload')
+  if (state.modifiers.firstWeek) out.push('first_week')
+  if (state.modifiers.inactiveDays != null) out.push('inactive')
+  if (state.modifiers.offline) out.push('offline')
+  if (state.modifiers.unsynced) out.push('unsynced')
+  const isCardio = state.kind === 'done_today'
+    ? state.variant === 'cardio'
+    : state.kind === 'training_day' && state.day?.dayType === 'cardio'
+  if (isCardio) out.push('cardio')
+  return out
 }
 
 /**
@@ -138,11 +195,11 @@ export function trackHomeChangeDay(): unknown {
   })
 }
 
-/** `home_para_ti_tap`: una fila de «Para ti». */
-export function trackHomeParaTiTap(properties: { kind: HomeParaTiKind }): unknown {
+/** `home_para_ti_tap`: una fila de «Para ti». Acepta el `kind` de `getParaTi` tal cual. */
+export function trackHomeParaTiTap(properties: { kind: HomeParaTiSourceKind }): unknown {
   return trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.homeParaTiTap, {
     surface: 'home',
-    kind: properties.kind,
+    kind: toHomeParaTiKind(properties.kind),
     ms_since_view: msSinceHomeViewed(),
   })
 }
