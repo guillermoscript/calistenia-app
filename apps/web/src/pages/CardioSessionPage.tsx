@@ -208,7 +208,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           )}
 
           {/* Activity selector */}
-          <div id="tour-cardio-activity" className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label={t('cardio.activityType')}>
+          <div className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label={t('cardio.activityType')}>
             {ACTIVITIES.map(act => (
               <button
                 key={act.id}
@@ -231,7 +231,6 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
           {/* Start button */}
           <Button
-            id="tour-cardio-start"
             onClick={() => {
               op.track('cardio_started', { activity_type: selectedActivity })
               start(selectedActivity, urlProgram || undefined, urlDayKey || undefined)
@@ -299,7 +298,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           <RacePRsPanel userId={userId} />
 
           {/* History */}
-          <div id="tour-cardio-history">
+          <div>
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
             <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession}
               error={historyError} onRetry={() => setHistoryRetry(c => c + 1)} />
@@ -307,7 +306,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
           {/* Stats section */}
           {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
-            <div id="tour-cardio-stats">
+            <div>
               <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.statistics')}</div>
               <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} weeklyTrend={weeklyTrend} />
             </div>

@@ -109,7 +109,7 @@ describe('WorkoutPage sin ?day=: pestaña Entrenar (#856)', () => {
   it('no abre ningún día: enseña la semana, otras formas de entrenar y explorar', () => {
     mount()
     expect(screen.queryByText('Ejercicio lun')).toBeNull()
-    expect(document.querySelector('#tour-start-session')).toBeNull()
+    expect(screen.queryByTestId('start-session')).toBeNull()
     expect(screen.getByText('train.thisWeek')).toBeTruthy()
     expect(screen.getByText('train.otherWays')).toBeTruthy()
     expect(screen.getByText('train.explore')).toBeTruthy()
@@ -164,7 +164,7 @@ describe('WorkoutPage con ?day=', () => {
   it('abre ese día con sus ejercicios y EMPEZAR', () => {
     mount('/workout?day=vie')
     expect(screen.getByText('Ejercicio vie')).toBeTruthy()
-    expect(document.querySelector('#tour-start-session')).not.toBeNull()
+    expect(screen.queryByTestId('start-session')).not.toBeNull()
   })
 
   it('en un día de descanso ofrece "entrenar de todas formas"', async () => {
@@ -232,7 +232,7 @@ describe('WorkoutPage en un día de circuito (#625)', () => {
     expect(screen.getByText('circuit.summary:4,2')).toBeTruthy()
     // La UI de fuerza no debe aparecer: ni sus ejercicios ni el botón EMPEZAR.
     expect(screen.queryByText('Ejercicio lun')).toBeNull()
-    expect(document.querySelector('#tour-start-session')).toBeNull()
+    expect(screen.queryByTestId('start-session')).toBeNull()
   })
 
   it('lista los ejercicios del circuito', () => {

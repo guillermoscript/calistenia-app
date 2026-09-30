@@ -129,7 +129,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       )}
 
       {!loading && items.length > 0 && (
-        <div id="tour-feed-list" className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {items.map((item, i) => {
             const isOwnPost = item.userId === userId
             // `null` = esta actividad no tiene destino abrible para quien mira

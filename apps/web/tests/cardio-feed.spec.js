@@ -51,14 +51,8 @@ test('cardio session shows in a friend feed as a commentable activity item', asy
   expect(followRes.status(), JSON.stringify(await followRes.json())).toBe(200)
 
   // ── Bob opens the activity feed → Alice's cardio appears as a card ──────────
-  // (register() already marked tours seen; goto directly to avoid the flaky
-  //  PWA-prompt dismissal in the shared dismissOverlays helper.)
-  // register()'s tour list omits 'feed' — seed it so the feed tour popover
-  // doesn't cover the comment button.
-  await pageB.evaluate((uid) => {
-    localStorage.setItem('calistenia_tour_feed', 'true')
-    localStorage.setItem(`calistenia_tour_feed_${uid}`, 'true')
-  }, B.id)
+  // (goto directly to avoid the flaky PWA-prompt dismissal in the shared
+  //  dismissOverlays helper.)
   await pageB.goto('/feed')
   await pageB.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await expect(pageB.getByText(/Hizo cardio/i).first()).toBeVisible({ timeout: 12000 })

@@ -57,7 +57,7 @@ test.describe('Nutrition Quality Scoring via Image Analysis', () => {
 
     // 2. Set up nutrition goals if needed
     const goalSetup = page.getByText(/nutrition goals|objetivos nutricionales/i).first()
-    const dashboardEl = page.locator('[id="tour-nutrition-dashboard"]').first()
+    const dashboardEl = page.locator('[data-testid="nutrition-dashboard"]').first()
     await expect(goalSetup.or(dashboardEl)).toBeVisible({ timeout: 10000 })
 
     if (await goalSetup.isVisible().catch(() => false)) {

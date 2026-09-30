@@ -212,7 +212,6 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
         <Input
           ref={searchInputRef}
-          id="tour-friends-search"
           aria-label={t('friends.searchAriaLabel')}
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -338,7 +337,6 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
           {/* [H4 fix] Tabs with arrow key navigation (WAI-ARIA Tabs pattern) */}
           <div
             ref={tabsRef}
-            id="tour-friends-tabs"
             role="tablist"
             aria-label={t('friends.tabsAriaLabel')}
             className="flex gap-1.5 mb-6"

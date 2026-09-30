@@ -232,7 +232,7 @@ export default function CalendarPage() {
       <div className="font-bebas text-4xl md:text-5xl mb-6">{t('calendar.title')}</div>
 
       {/* Month navigation */}
-      <div id="tour-calendar-nav" className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6">
         <Button variant="outline" size="sm" onClick={prevMonth} aria-label={t('calendar.prevMonth')} className="h-8 px-3 text-xs">
           ‹
         </Button>
@@ -253,7 +253,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar grid */}
-      <Card id="tour-calendar-grid" className="mb-6">
+      <Card data-testid="calendar-grid" className="mb-6">
         <CardContent className="p-4 md:p-6">
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
@@ -330,7 +330,7 @@ export default function CalendarPage() {
 
       {/* Selected day detail */}
       {selectedDate && (
-        <Card id="tour-calendar-detail">
+        <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
