@@ -226,6 +226,12 @@ export interface Settings {
   weeklyGoal: number
   /** `settings.weekly_goal_custom`: el usuario fijó `weeklyGoal` a mano. */
   weeklyGoalCustom?: boolean
+  /**
+   * `settings.weekly_goal_log`: cambios del objetivo EFECTIVO, `[{from, goal}]`.
+   * Lo mantiene `useWorkoutStreak` y lo leen la racha del cliente y la del
+   * servidor (#801). `undefined` = aún no se ha leído de PocketBase.
+   */
+  weeklyGoalLog?: { from: string; goal: number }[]
   pr_pullups?: number
   pr_pushups?: number
   pr_lsit?: number

@@ -38,7 +38,11 @@ interface ComputedStats {
   achievements_unlocked: number;
 }
 
-/** Compute streaks from an array of date strings (YYYY-MM-DD), sorted asc. */
+/**
+ * Compute DAILY streaks from an array of date strings (YYYY-MM-DD), sorted asc.
+ * Only the nutrition streak is daily; the workout streak is weekly and owned by
+ * PocketBase (see lib/weekly-streak.ts, #801).
+ */
 function computeStreak(dates: string[], tz?: string): { current: number; best: number } {
   if (dates.length === 0) return { current: 0, best: 0 };
 
@@ -108,19 +112,27 @@ function computeWeeklyGoalStreak(sessionDates: string[], weeklyGoal: number): nu
 async function computeAllStats(pb: PocketBase, userId: string, tz?: string): Promise<ComputedStats> {
   // Fetch all source data in parallel
   const userFilter = pb.filter('user = {:userId}', { userId });
-  const [sessions, sets, nutritionEntries, lumbarChecks, weightEntries, settings] = await Promise.all([
+  const [sessions, sets, nutritionEntries, lumbarChecks, weightEntries, settings, storedStats] = await Promise.all([
     pb.collection("sessions").getFullList({ filter: userFilter, sort: "completed_at", fields: "completed_at", requestKey: null }),
     pb.collection("sets_log").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
     pb.collection("nutrition_entries").getFullList({ filter: userFilter, sort: "logged_at", fields: "logged_at", requestKey: null }),
     pb.collection("lumbar_checks").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
     pb.collection("weight_entries").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
     getSettings(pb, userId),
+    getUserStats(pb, userId),
   ]);
 
   const sessionDates = sessions.map((s) => toDateStr(s.completed_at as string, tz));
   const nutritionDates = nutritionEntries.map((n) => toDateStr(n.logged_at as string, tz));
 
-  const workoutStreak = computeStreak(sessionDates, tz);
+  // The workout streak is weekly and PocketBase owns it: it recomputes it from
+  // all three session types and the weekly-goal history on every workout, on
+  // every goal change, and in the Monday rollover (#801). Recomputing it here
+  // from `sessions` alone would undercount, so we only read it.
+  const workoutStreak = {
+    current: Number(storedStats?.workout_streak_current) || 0,
+    best: Number(storedStats?.workout_streak_best) || 0,
+  };
   const nutritionStreak = computeStreak(nutritionDates, tz);
   const weeklyGoal = (settings?.weekly_goal as number) ?? 0;
   const weeklyGoalsHit = computeWeeklyGoalStreak(sessionDates, weeklyGoal);
@@ -293,8 +305,11 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
         const finalAch = await checkAchievements(pb, userId, stats);
         stats.achievements_unlocked = finalAch.total_unlocked;
 
-        // 5. Upsert user_stats
-        await upsertUserStats(pb, userId, stats as unknown as Record<string, unknown>);
+        // 5. Upsert user_stats. The workout streak is left out on purpose:
+        // PocketBase owns it together with its week state (#801), and writing
+        // it from here could only undo what the hook already knows.
+        const { workout_streak_current: _cur, workout_streak_best: _best, ...toStore } = stats;
+        await upsertUserStats(pb, userId, toStore as unknown as Record<string, unknown>);
 
         const nextLevelXp = xpForLevel(stats.level + 1);
         const xpToNext = nextLevelXp - stats.xp;
@@ -308,7 +323,7 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
           `- Meals logged: **${stats.total_nutrition_logs}** | Lumbar checks: **${stats.total_lumbar_checks}** | Weight logs: **${stats.total_weight_logs}**`,
           ``,
           `## Streaks`,
-          `- Workout: **${stats.workout_streak_current}** days (best: ${stats.workout_streak_best})`,
+          `- Workout: **${stats.workout_streak_current}** weeks in a row meeting the weekly goal (best: ${stats.workout_streak_best})`,
           `- Nutrition: **${stats.nutrition_streak_current}** days (best: ${stats.nutrition_streak_best})`,
           `- Weekly goals hit: **${stats.weekly_goals_hit}** consecutive weeks`,
           ``,
@@ -412,7 +427,7 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
             `${bar} ${progressPct}% → Level ${(stats.level as number) + 1} (${xpToNext} XP needed)`,
             ``,
             `## Streaks 🔥`,
-            `- Workout: **${stats.workout_streak_current}** days ${stats.workout_streak_current === stats.workout_streak_best ? "(PB!)" : `(best: ${stats.workout_streak_best})`}`,
+            `- Workout: **${stats.workout_streak_current}** weeks ${stats.workout_streak_current === stats.workout_streak_best ? "(PB!)" : `(best: ${stats.workout_streak_best})`}`,
             `- Nutrition: **${stats.nutrition_streak_current}** days ${stats.nutrition_streak_current === stats.nutrition_streak_best ? "(PB!)" : `(best: ${stats.nutrition_streak_best})`}`,
             `- Weekly goals hit: **${stats.weekly_goals_hit}** consecutive weeks`,
             ``,

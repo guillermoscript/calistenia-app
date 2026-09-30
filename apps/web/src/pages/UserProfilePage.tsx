@@ -267,8 +267,8 @@ export default function UserProfilePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatBox label={t('profile.sessions')} value={profile.totalSessions} compareValue={comparing ? currentUserSessions : undefined} accent="text-[hsl(var(--lime))]" />
-        <StatBox label={t('profile.currentStreak')} value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit={t('profile.days')} />
-        <StatBox label={t('profile.bestStreak')} value={profile.bestStreak} accent="text-amber-400" unit={t('profile.days')} />
+        <StatBox label={t('profile.currentStreak')} value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit={t('profile.weeks')} />
+        <StatBox label={t('profile.bestStreak')} value={profile.bestStreak} accent="text-amber-400" unit={t('profile.weeks')} />
         <StatBox label={t('profile.level')} value={profile.level} accent="text-pink-500" />
       </div>
 

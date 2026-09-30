@@ -180,6 +180,11 @@ export const qk = {
   // Lista cruda de sesiones cardio (por usuario). Fuente única que comparten
   // useCardioStats, useCardioSessions y las invalidaciones tras guardar/borrar.
   cardioSessions: (userId: string | null) => ['cardio-sessions', userId] as const,
+  // Días con entreno de las tres colecciones, para la racha semanal (#801).
+  // `stamp` cambia al marcar un entreno y fuerza la relectura; invalidar
+  // `streakDays(uid)` (sin stamp) alcanza a todas por prefijo.
+  streakDays: (userId: string | null, stamp?: string) =>
+    (stamp === undefined ? ['streak-days', userId] : ['streak-days', userId, stamp]) as readonly unknown[],
 
   // — Retos —
   challenges: (userId: string | null) => ['challenges', userId] as const,

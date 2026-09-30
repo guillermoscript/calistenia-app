@@ -265,6 +265,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         await saveCardioRoute(saved.id, userId, routePoints)
         // Refresca historial, stats y actividad reciente de inmediato.
         void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+        // El cardio libre no está en el ProgressMap: la racha semanal se entera aquí (#801).
+        void queryClient.invalidateQueries({ queryKey: qk.streakDays(userId) })
       } catch (e) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
         enqueue(saveData)

@@ -5,42 +5,42 @@ import { WEEKLY_STREAK_MILESTONES } from './weeklyStreak'
 const nadaEnseñado = () => false
 
 describe('STREAK_MILESTONES', () => {
-  it('celebra 7, 14, 30, 60 y 100 días, en orden', () => {
-    expect([...STREAK_MILESTONES]).toEqual([7, 14, 30, 60, 100])
+  it('celebra 4, 8, 12, 26 y 52 semanas, en orden (#801)', () => {
+    expect([...STREAK_MILESTONES]).toEqual([4, 8, 12, 26, 52])
   })
 })
 
 describe('pickActiveMilestone', () => {
   it('por debajo del primer hito no hay nada que celebrar', () => {
-    expect(pickActiveMilestone(6, nadaEnseñado)).toBeNull()
+    expect(pickActiveMilestone(3, nadaEnseñado)).toBeNull()
   })
 
   it('justo al llegar al hito, lo celebra', () => {
-    expect(pickActiveMilestone(7, nadaEnseñado)).toBe(7)
+    expect(pickActiveMilestone(4, nadaEnseñado)).toBe(4)
   })
 
   it('devuelve el hito MÁS ALTO alcanzado, no el primero', () => {
-    // Quien vuelve tras meses fuera ve el de 100, no una cola de 7→14→30.
-    expect(pickActiveMilestone(120, nadaEnseñado)).toBe(100)
+    // Quien vuelve tras meses fuera ve el de 52, no una cola de 4→8→12.
+    expect(pickActiveMilestone(60, nadaEnseñado)).toBe(52)
   })
 
   it('salta los que ya se enseñaron y baja al siguiente pendiente', () => {
-    const enseñados = [100, 60]
-    expect(pickActiveMilestone(120, (m) => enseñados.includes(m))).toBe(30)
+    const enseñados = [52, 26]
+    expect(pickActiveMilestone(60, (m) => enseñados.includes(m))).toBe(12)
   })
 
   it('con todos enseñados no vuelve a celebrar nada', () => {
-    expect(pickActiveMilestone(120, () => true)).toBeNull()
+    expect(pickActiveMilestone(60, () => true)).toBeNull()
   })
 
   it('entre dos hitos se queda en el de abajo', () => {
-    expect(pickActiveMilestone(59, nadaEnseñado)).toBe(30)
+    expect(pickActiveMilestone(25, nadaEnseñado)).toBe(12)
   })
 
   it('corta en el primer hito que sirve: no consulta los de más abajo', () => {
     // Importa porque en web cada consulta es una lectura de localStorage.
     const isShown = vi.fn(() => false)
-    expect(pickActiveMilestone(120, isShown)).toBe(100)
+    expect(pickActiveMilestone(60, isShown)).toBe(52)
     expect(isShown).toHaveBeenCalledTimes(1)
   })
 

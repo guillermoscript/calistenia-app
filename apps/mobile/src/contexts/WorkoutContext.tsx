@@ -5,6 +5,9 @@ import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms, type ActiveEnrollment } from '@calistenia/core/hooks/usePrograms'
 import { useWeekAwareGetWorkout, useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
 import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
+import { useWorkoutStreak } from '@calistenia/core/hooks/useWorkoutStreak'
+import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
+import type { WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
 import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
@@ -49,8 +52,12 @@ interface WorkoutActions {
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
   getWeeklyDoneCount: () => number
   getTotalSessions: () => number
+  /** Mejor racha semanal de la historia, en semanas (#801). */
   getLongestStreak: () => number
+  /** Racha semanal viva, en semanas: la misma que `user_stats` (#801). */
   getCurrentStreak: () => number
+  /** La racha semanal entera, con la semana en curso (`thisWeek`). */
+  getWeeklyStreak: () => WeeklyStreak
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
   /** Días con sesión completada, 'YYYY-MM-DD' ascendente (#800). */
@@ -106,9 +113,20 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     progress, settings, usePB, pbReady,
     logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
-    getLongestStreak, getCurrentStreak, updateSettings, getMonthActivity,
+    updateSettings, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
   } = useProgress(userId, activeProgram?.id ?? null)
+
+  // Racha semanal (#801) con el objetivo efectivo (#853). Sin programa hay que
+  // pasar `null`: `weekDays` trae entonces los días del programa de reserva.
+  const weeklyStreak = useWorkoutStreak({
+    userId, progress, settings, updateSettings,
+    effectiveGoal: getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null),
+    goalReady: pbReady && programsReady,
+  })
+  const getWeeklyStreak = useCallback(() => weeklyStreak, [weeklyStreak])
+  const getLongestStreak = useCallback(() => weeklyStreak.best, [weeklyStreak])
+  const getCurrentStreak = useCallback(() => weeklyStreak.current, [weeklyStreak])
 
   const { programProgress, setPhaseOverride } = useProgramProgress({
     userId, activeProgram, activeEnrollment, phases, weekDays, progress,
@@ -138,13 +156,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
-    getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
+    getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
-    getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
+    getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
   ])
@@ -174,7 +192,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
       // Sin cardio libre: el proveedor no carga sus fechas.
       weeklyDone: getWeekDoneDays(todayStr(), progress),
     })
-  }, [programsReady, activeProgram, settings, programProgress.currentPhase, weekDays, progress, i18n.language]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [programsReady, activeProgram, settings, programProgress.currentPhase, weekDays, progress, weeklyStreak.current, i18n.language]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = useMemo(() => ({ state, actions }), [state, actions])
 

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { todayStr, startOfWeekStr, addDays } from '../lib/dateUtils'
-import { computeCurrentStreak, computeLongestStreak } from '../lib/streak'
+import { parseGoalLog } from '../lib/weeklyStreak'
 import { qk } from '../lib/query-keys'
 import {
   buildProgressMap, pendingProgressRows,
@@ -33,8 +33,6 @@ interface UseProgressReturn {
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
   getWeeklyDoneCount: () => number
   getTotalSessions: () => number
-  getLongestStreak: () => number
-  getCurrentStreak: () => number
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
@@ -117,6 +115,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           startDate: settingsRec.start_date?.split(' ')[0] || null,
           weeklyGoal: settingsRec.weekly_goal || DEFAULT_SETTINGS.weeklyGoal,
           weeklyGoalCustom: settingsRec.weekly_goal_custom === true,
+          weeklyGoalLog: parseGoalLog(settingsRec.weekly_goal_log),
           pr_pullups: settingsRec.pr_pullups || 0,
           pr_pushups: settingsRec.pr_pushups || 0,
           pr_lsit: settingsRec.pr_lsit || 0,
@@ -223,17 +222,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       logs.sort((a: any, b: any) => b.date?.localeCompare(a.date))
     }
 
-    // Rachas calculadas una sola vez al derivar (funciones puras testeadas en
-    // lib/streak.ts). `longestStreak` es el récord histórico; `currentStreak`
-    // es la racha viva, la que se enseña a diario.
+    // La racha ya no se deriva de aquí: es semanal y cuenta TODAS las sesiones,
+    // no solo las del programa activo que carga este hook (#801,
+    // `useWorkoutStreak`).
     const sortedDoneDates = [...doneDateSet].sort()
-    const longestStreak = computeLongestStreak(doneDateSet)
-    const currentStreak = computeCurrentStreak(doneDateSet, todayStr())
 
     // Última fecha de sesión
     const lastSessionDate = sortedDoneDates.length > 0 ? sortedDoneDates[sortedDoneDates.length - 1] : null
 
-    return { exerciseLogsByIdMap, doneDateSet, doneCountByDate, totalSessions, longestStreak, currentStreak, lastSessionDate, sortedDoneDates }
+    return { exerciseLogsByIdMap, doneDateSet, doneCountByDate, totalSessions, lastSessionDate, sortedDoneDates }
   }, [progress])
 
   // ─── Selectores ──────────────────────────────────────────────────────────
@@ -262,16 +259,6 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   // Lectura directa del valor precalculado: O(1)
   const getTotalSessions = useCallback((): number =>
     derivedProgress.totalSessions,
-  [derivedProgress])
-
-  // Lectura directa del valor precalculado: O(1)
-  const getLongestStreak = useCallback((): number =>
-    derivedProgress.longestStreak,
-  [derivedProgress])
-
-  // Racha viva (termina hoy o ayer), no el récord histórico. Lectura O(1).
-  const getCurrentStreak = useCallback((): number =>
-    derivedProgress.currentStreak,
   [derivedProgress])
 
   // Construye el mapa mes-actual con lookup O(1) en el Set de fechas
@@ -303,7 +290,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     progress, settings, usePB, pbReady,
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
-    getLongestStreak, getCurrentStreak, updateSettings, getMonthActivity,
+    updateSettings, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
   }
 }
