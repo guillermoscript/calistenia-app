@@ -1,858 +1,149 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+/**
+ * Inicio «qué hago hoy» (#855, épica #852).
+ *
+ * Una sola acción principal que cambia según el estado del usuario
+ * (`getHomeState`, #853) y, debajo, la semana y como mucho 2 «Para ti» (3 en
+ * escritorio). Todo lo demás vive en su pantalla: accesos rápidos en Entrenar,
+ * estadísticas en Progreso, agua y comida en Nutrición, lo social en
+ * Comunidad y los ajustes en Perfil.
+ *
+ * Móvil web: una columna. Escritorio (≥1024 px): «Hoy» a la izquierda y la
+ * semana + «Para ti» en una columna de 360 px (tablero Web-Escritorio).
+ *
+ * La campana y el avatar ya están en la cabecera del shell (#856 la rehace):
+ * aquí no se repiten.
+ */
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PHASES as FALLBACK_PHASES } from '@calistenia/core/data/workouts'
-import WeekPlanWidget from '../components/WeekPlanWidget'
-import ProgramSelectorModal from '../components/ProgramSelectorModal'
-import TodayWorkoutHero from '../components/dashboard/TodayWorkoutHero'
-import ActivationCard from '../components/dashboard/ActivationCard'
-import { cn } from '../lib/utils'
-import { todayStr, localHour, diffDays } from '@calistenia/core/lib/dateUtils'
-import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { Card, CardContent } from '../components/ui/card'
-import { Button } from '../components/ui/button'
-import { Progress } from '../components/ui/progress'
-import { Input } from '../components/ui/input'
-import { Badge } from '../components/ui/badge'
-import WaterTracker from '../components/WaterTracker'
-import StreakMilestone, { getActiveMilestone, markMilestoneShown } from '../components/StreakMilestone'
-import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
-import CardioWidget from '../components/cardio/CardioWidget'
-import SleepDashboardWidget from '../components/sleep/SleepDashboardWidget'
-import type { SleepLastEntry } from '../components/sleep/SleepDashboardWidget'
-import LeaderboardWidget from '../components/friends/LeaderboardWidget'
-import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
-import FeaturedChallengeCard from '../components/FeaturedChallengeCard'
-import CommunityProgramHomeCard from '../components/CommunityProgramHomeCard'
-import PhasePhotoBanner from '../components/progress/PhasePhotoBanner'
-import InsightsCard from '../components/insights/InsightsCard'
-import InsightsHistory from '../components/insights/InsightsHistory'
-import { useWater } from '@calistenia/core/hooks/useWater'
-import { useSleep } from '@calistenia/core/hooks/useSleep'
-import { useLeaderboard } from '@calistenia/core/hooks/useLeaderboard'
-import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
-import { useActivation } from '@calistenia/core/hooks/useActivation'
-import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
-import { ACTIVATION_TARGET_SESSIONS, homeShowAllKey, type HomeStage } from '@calistenia/core/lib/activation'
-import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import HomeTodayCard from '../components/dashboard/HomeTodayCard'
+import HomeWeekStrip, { FirstWeekGoal } from '../components/dashboard/HomeWeekStrip'
+import HomeParaTi from '../components/dashboard/HomeParaTi'
+import { useHomeToday } from '../components/dashboard/useHomeToday'
+import StreakMilestone, { getActiveWeeklyMilestone } from '../components/StreakMilestone'
+import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
+import { localHour } from '@calistenia/core/lib/dateUtils'
+import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
+import { homeShowAllKey } from '@calistenia/core/lib/activation'
+import { paraTiEnabled } from '@calistenia/core/lib/paraTi'
+import { homeAnalyticsModifiers, resetHomeView, trackHomeViewed } from '@calistenia/core/lib/home-analytics'
 import type { CardioSession } from '@calistenia/core/types'
-import type { CardioAggregateStats } from '@calistenia/core/hooks/useCardioStats'
-import { toast } from 'sonner'
-import { WhatsNewHomeButton } from '../components/WhatsNew'
-import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
 
+/** Olvido de la visita pendiente (ver el efecto de `resetHomeView`). */
+let pendingHomeReset: ReturnType<typeof setTimeout> | null = null
 
-// ── Quick Action Card ────────────────────────────────────────────────────────
-
-interface QuickActionProps {
-  icon: React.ReactNode
-  label: string
-  description: string
-  accent: string
-  onClick: () => void
-}
-
-function QuickAction({ icon, label, description, accent, onClick }: QuickActionProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'group text-left p-3 sm:p-4 bg-card border border-border rounded-xl min-h-[56px]',
-        'hover:border-current transition-all duration-200',
-        'hover:shadow-sm active:scale-[0.98]',
-        accent,
-      )}
-    >
-      <div className="flex items-center sm:items-start gap-2.5 sm:gap-3">
-        <div className={cn(
-          'size-9 sm:size-10 rounded-lg flex items-center justify-center shrink-0 text-lg',
-          'bg-current/10 transition-colors',
-        )}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="text-[13px] sm:text-sm font-medium text-foreground group-hover:text-current transition-colors">{label}</div>
-          <div className="text-[11px] text-muted-foreground leading-snug mt-0.5 hidden sm:block">{description}</div>
-        </div>
-      </div>
-    </button>
-  )
-}
-
-
-// ── Goal Card ────────────────────────────────────────────────────────────────
-
-interface GoalDef {
-  label: string
-  key: string
-  unit: string
-  goal: number
-  accent: string
-  border: string
-  labelKey?: string
-}
-
-const GOALS: GoalDef[] = [
-  { label: 'Pull-ups seguidas',  key: 'pr_pullups',   unit: 'reps', goal: 20, accent: 'text-sky-500',  border: 'border-l-sky-500', labelKey: 'dashboard.goal.pullups' },
-  { label: 'Push-ups',           key: 'pr_pushups',   unit: 'reps', goal: 50, accent: 'text-lime',     border: 'border-l-lime', labelKey: 'dashboard.goal.pushups' },
-  { label: 'L-sit',              key: 'pr_lsit',      unit: 's',    goal: 30, accent: 'text-amber-400',border: 'border-l-amber-400', labelKey: 'dashboard.goal.lsit' },
-  { label: 'Pistol Squat',       key: 'pr_pistol',    unit: 'reps', goal: 1,  accent: 'text-pink-500', border: 'border-l-pink-500', labelKey: 'dashboard.goal.pistol' },
-  { label: 'Handstand libre',    key: 'pr_handstand', unit: 's',    goal: 60, accent: 'text-red-500',  border: 'border-l-red-500', labelKey: 'dashboard.goal.handstand' },
-]
-
-interface GoalCardProps {
-  goal: GoalDef
-  current: number
-  onUpdate: (val: number) => void
-}
-
-function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
-  const { t } = useTranslation()
-  const [editing, setEditing] = useState(false)
-  const [inputVal, setInputVal] = useState('')
-  const pct = Math.min(100, ((current || 0) / goal.goal) * 100)
-  const reached = pct >= 100
-
-  const handleSubmit = () => {
-    const n = parseFloat(inputVal)
-    if (!isNaN(n) && n >= 0) onUpdate(n)
-    setEditing(false)
-    setInputVal('')
-  }
-
-  return (
-    <div className={cn('px-4 py-3.5 bg-card rounded-lg border border-border border-l-[3px]', goal.border, reached && 'border-lime/30')}>
-      <div className="flex justify-between items-center mb-2.5">
-        <div className={cn('text-[13px]', reached ? 'text-lime' : 'text-foreground')}>{goal.labelKey ? t(goal.labelKey) : goal.label}</div>
-        <div className="text-[11px] text-muted-foreground">
-          <span className={cn(reached ? 'text-emerald-500' : goal.accent)}>{current || 0}</span>
-          <span className="text-muted-foreground"> / {goal.goal}{goal.unit}</span>
-        </div>
-      </div>
-      <Progress value={pct} className="h-1.5 mb-2.5" />
-      {editing ? (
-        <div className="flex gap-2 items-center">
-          <Input
-            autoFocus
-            type="number"
-            min="0"
-            value={inputVal}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputVal(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') setEditing(false) }}
-            placeholder={t('dashboard.goalExample', { value: current || goal.goal })}
-            className="flex-1 h-8 text-xs"
-            aria-label={goal.label}
-          />
-          <Button size="sm" onClick={handleSubmit} className="h-8 px-3 text-xs">{t('common.save').toUpperCase()}</Button>
-          <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="h-8 px-2 text-xs">✕</Button>
-        </div>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setEditing(true)}
-          className="h-9 sm:h-7 px-3 sm:px-2.5 text-[11px] tracking-wide hover:border-lime hover:text-lime"
-        >
-          {t('dashboard.registerPR')}
-        </Button>
-      )}
-    </div>
-  )
-}
-
-
-// ── Greeting helper ──────────────────────────────────────────────────────────
-
-function getGreetingKey(): string {
+function greetingKey(): string {
   const h = localHour()
-  if (h < 12) return 'dashboard.greeting.morning'
-  if (h < 19) return 'dashboard.greeting.afternoon'
-  return 'dashboard.greeting.evening'
+  if (h < 12) return 'home.greeting.morning'
+  if (h < 20) return 'home.greeting.afternoon'
+  return 'home.greeting.evening'
 }
-
-
-// ── Early home message (#808) ────────────────────────────────────────────────
-
-interface EarlyHomeMessageProps {
-  stage: Exclude<HomeStage, 'full'>
-  /** Entrenos conocidos (`useHomeStage`). */
-  sessions: number
-  /** ActivationCard está a la vista: ya cuenta el progreso y trae su propio CTA. */
-  activationVisible: boolean
-  onStart: () => void
-}
-
-/**
- * Ocupa el hueco del aviso «llevas X días sin entrenar» antes del 3.er
- * entreno. Nunca repite lo que ya dice ActivationCard: con la primera semana
- * abierta el progreso lo cuenta la tarjeta y aquí solo queda la bienvenida;
- * con la semana cerrada, el progreso hacia el 3.º va aquí.
- */
-function EarlyHomeMessage({ stage, sessions, activationVisible, onStart }: EarlyHomeMessageProps) {
-  const { t } = useTranslation()
-  if (stage === 'early' && activationVisible) return null
-
-  const first = stage === 'first'
-  const remaining = Math.max(1, ACTIVATION_TARGET_SESSIONS - sessions)
-
-  return (
-    <section
-      className="mb-6 p-4 md:p-5 bg-lime/5 border border-lime/30 rounded-xl flex flex-col gap-4 sm:flex-row sm:items-center"
-      aria-labelledby="home-stage-title"
-    >
-      <div className="flex-1 min-w-0">
-        <div className="text-[10px] text-lime tracking-widest mb-1 uppercase">
-          {first ? t('dashboard.welcome.kicker') : t('dashboard.earlyGoal.kicker')}
-        </div>
-        <h2 id="home-stage-title" className="font-bebas text-2xl leading-none">
-          {first ? t('dashboard.welcome.title') : t('dashboard.earlyGoal.title', { count: remaining })}
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {first ? t('dashboard.welcome.desc') : t('dashboard.earlyGoal.desc')}
-        </p>
-      </div>
-      {!activationVisible && (
-        <Button
-          onClick={onStart}
-          className="w-full shrink-0 bg-lime font-bebas text-lg tracking-wide text-lime-foreground hover:bg-lime/90 sm:w-auto"
-        >
-          {first ? t('dashboard.welcome.cta') : t('dashboard.earlyGoal.cta')}
-        </Button>
-      )}
-    </section>
-  )
-}
-
-
-// ── Full home sections ───────────────────────────────────────────────────────
-
-interface FullHomeSectionsProps {
-  userId: string | null
-  nutritionTotals?: DashboardPageProps['nutritionTotals']
-  nutritionGoals?: DashboardPageProps['nutritionGoals']
-  cardioWeeklyStats?: CardioAggregateStats
-  cardioLastSession?: CardioSession | null
-  onGoToWorkout: () => void
-  onGoToNutrition: () => void
-  onGoToCardio: () => void
-}
-
-/**
- * Accesos rápidos, reto, comunidad, snapshot del día, insights y lo social:
- * lo que el inicio simplificado (#808) se ahorra antes del 3.er entreno. Los
- * hooks de agua, sueño, ranking y actividad viven aquí dentro para que ese
- * inicio no pague sus queries — mismo criterio que `GettingStartedCard` en
- * móvil.
- */
-function FullHomeSections({
-  userId, nutritionTotals, nutritionGoals, cardioWeeklyStats, cardioLastSession,
-  onGoToWorkout, onGoToNutrition, onGoToCardio,
-}: FullHomeSectionsProps) {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const { todayTotal: waterTotal, goal: waterGoal, addWater, adding: waterAdding } = useWater(userId)
-  const { entries: leaderboardEntries, load: loadLeaderboard } = useLeaderboard(userId)
-  const { items: feedItems, load: loadFeed } = useActivityFeed(userId)
-  const { entries: sleepEntries } = useSleep(userId)
-  const sleepLastEntry: SleepLastEntry | null = useMemo(() => {
-    if (sleepEntries.length === 0) return null
-    const e = sleepEntries[0] // already sorted by date desc
-    return { date: e.date, duration_minutes: e.duration_minutes, quality: e.quality, bedtime: e.bedtime, wake_time: e.wake_time, awake_minutes: e.awake_minutes }
-  }, [sleepEntries])
-  useEffect(() => { if (userId) { loadLeaderboard(); loadFeed() } }, [userId, loadLeaderboard, loadFeed])
-  const weeklyLeaderboard = leaderboardEntries.sessions_week
-
-  return (
-    <>
-      {/* ═══ QUICK ACTIONS ═══════════════════════════════════════════════════ */}
-      <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <QuickAction
-            icon={<svg className="size-5 text-lime" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="6" width="3" height="4" rx="0.5" /><rect x="12" y="6" width="3" height="4" rx="0.5" /><line x1="4" y1="8" x2="12" y2="8" /><rect x="2.5" y="5" width="2" height="6" rx="0.5" /><rect x="11.5" y="5" width="2" height="6" rx="0.5" /></svg>}
-            label={t('dashboard.quickAction.workout')}
-            description={t('dashboard.quickAction.workoutDesc')}
-            accent="text-lime"
-            onClick={onGoToWorkout}
-          />
-          <QuickAction
-            icon={<svg className="size-5 text-amber-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 1v4a3 3 0 006 0V1" /><line x1="8" y1="8" x2="8" y2="15" /><line x1="5" y1="1" x2="5" y2="5" /><line x1="8" y1="1" x2="8" y2="4" /><line x1="11" y1="1" x2="11" y2="5" /></svg>}
-            label={t('dashboard.quickAction.nutrition')}
-            description={t('dashboard.quickAction.nutritionDesc')}
-            accent="text-amber-400"
-            onClick={() => navigate('/nutrition')}
-          />
-          <QuickAction
-            icon={<svg className="size-5 text-sky-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="10" cy="3" r="1.5" /><path d="M5 16l2-5 3 2v5" /><path d="M8 8l-3 3 1.5 1" /><path d="M8 8l2-2 3 1" /></svg>}
-            label={t('dashboard.quickAction.cardio')}
-            description={t('dashboard.quickAction.cardioDesc')}
-            accent="text-sky-500"
-            onClick={() => navigate('/cardio')}
-          />
-          <QuickAction
-            icon={<svg className="size-5 text-pink-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="12" height="12" rx="2" /><line x1="5" y1="6" x2="11" y2="6" /><line x1="5" y1="8.5" x2="11" y2="8.5" /><line x1="5" y1="11" x2="9" y2="11" /><polyline points="10,3 12,5 14,1" strokeWidth="2" /></svg>}
-            label={t('dashboard.quickAction.freeSession')}
-            description={t('dashboard.quickAction.freeSessionDesc')}
-            accent="text-pink-500"
-            onClick={() => navigate('/free-session')}
-          />
-          <QuickAction
-            icon={<svg className="size-5 text-red-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="8" y1="1" x2="8" y2="15" /><rect x="5" y="3" width="6" height="2.5" rx="0.5" /><rect x="5" y="6.75" width="6" height="2.5" rx="0.5" /><rect x="5" y="10.5" width="6" height="2.5" rx="0.5" /></svg>}
-            label={t('dashboard.quickAction.lumbar')}
-            description={t('dashboard.quickAction.lumbarDesc')}
-            accent="text-red-500"
-            onClick={() => navigate('/lumbar')}
-          />
-          <QuickAction
-            icon={<svg className="size-5 text-purple-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6" /><line x1="1" y1="14" x2="15" y2="14" /></svg>}
-            label={t('dashboard.quickAction.progress')}
-            description={t('dashboard.quickAction.progressDesc')}
-            accent="text-purple-500"
-            onClick={() => navigate('/progress')}
-          />
-          <QuickAction
-            icon={<svg className="size-5 text-teal-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="1" width="12" height="14" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="8" y2="11"/><path d="M10.5 10l1 1 2-2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-            label={t('dashboard.quickAction.logWorkout')}
-            description={t('dashboard.quickAction.logWorkoutDesc')}
-            accent="text-teal-400"
-            onClick={() => navigate('/log-workout')}
-          />
-        </div>
-      </div>
-
-      {/* ═══ RETO DESTACADO ══════════════════════════════════════════════════ */}
-      <div className="mb-6">
-        <FeaturedChallengeCard userId={userId} onNavigate={navigate} />
-      </div>
-
-      {/* ═══ PROGRAMA DE COMUNIDAD (#353) ════════════════════════════════════ */}
-      <div className="mb-6">
-        <CommunityProgramHomeCard userId={userId} onNavigate={navigate} />
-      </div>
-
-      {/* ═══ TODAY'S SNAPSHOT ═════════════════════════════════════════════════ */}
-      <div className={cn('grid grid-cols-1 gap-4 mb-6', 'sm:grid-cols-2 lg:grid-cols-3')}>
-        {onGoToNutrition && (
-          <button onClick={onGoToNutrition} className="text-left p-4 bg-card border border-border rounded-xl hover:border-lime/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="relative size-11 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% ${t('dashboard.nutritionCaloriesLabel')}`}>
-                <svg width="44" height="44" viewBox="0 0 44 44">
-                  <circle cx="22" cy="22" r="17" fill="none" stroke="currentColor" className="text-muted" strokeWidth="4" />
-                  <circle
-                    cx="22" cy="22" r="17"
-                    fill="none" stroke="currentColor"
-                    className={cn(
-                      nutritionGoals && nutritionTotals && nutritionTotals.calories > nutritionGoals.dailyCalories
-                        ? 'text-red-500' : 'text-lime'
-                    )}
-                    strokeWidth="4" strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 17}
-                    strokeDashoffset={2 * Math.PI * 17 * (1 - Math.min((nutritionTotals?.calories || 0) / (nutritionGoals?.dailyCalories || 1), 1))}
-                    transform="rotate(-90 22 22)"
-                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[9px] font-bold">
-                    {nutritionGoals ? `${Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100)}%` : '—'}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('dashboard.nutrition')}</div>
-                {nutritionGoals ? (
-                  <div className="text-sm">
-                    <span className="text-foreground font-medium">{Math.round(nutritionTotals?.calories || 0)}</span>
-                    <span className="text-muted-foreground"> / {nutritionGoals.dailyCalories} kcal</span>
-                  </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground">{t('dashboard.defineGoal')}</div>
-                )}
-              </div>
-            </div>
-          </button>
-        )}
-        <div className={cn(!onGoToNutrition && 'col-span-full')}>
-          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} adding={waterAdding} compact />
-        </div>
-        {onGoToCardio && cardioWeeklyStats && (
-          <CardioWidget
-            weeklyStats={cardioWeeklyStats}
-            lastSession={cardioLastSession ?? null}
-            onNavigate={onGoToCardio}
-          />
-        )}
-        <SleepDashboardWidget
-          lastEntry={sleepLastEntry}
-          onRegister={() => navigate('/sleep')}
-        />
-      </div>
-
-      {/* ═══ CROSS-METRIC INSIGHTS ═══════════════════════════════════════════ */}
-      <div className="mb-6 space-y-4">
-        <InsightsCard userId={userId} />
-        <InsightsHistory userId={userId} />
-      </div>
-
-      {/* Leaderboard widget — only if following someone */}
-      {/* Social widgets — only if following someone */}
-      {(weeklyLeaderboard.length > 1 || feedItems.length > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          {weeklyLeaderboard.length > 1 && (
-            <LeaderboardWidget
-              entries={weeklyLeaderboard}
-              onNavigate={() => navigate('/leaderboard')}
-            />
-          )}
-          {feedItems.length > 0 && (
-            <ActivityFeedWidget
-              items={feedItems}
-              onNavigate={() => navigate('/feed')}
-              onOpenSession={(item) => navigate(
-                item.type === 'cardio' ? `/cardio/session/${item.id}` : `/s/${item.id}`,
-              )}
-              onOpenUser={(uid) => navigate(`/u/${uid}`)}
-            />
-          )}
-        </div>
-      )}
-    </>
-  )
-}
-
-
-// ── Dashboard Page ───────────────────────────────────────────────────────────
 
 interface DashboardPageProps {
-  nutritionTotals?: { calories: number; protein: number; carbs: number; fat: number }
-  nutritionGoals?: { dailyCalories: number } | null
-  cardioWeeklyStats?: CardioAggregateStats
+  /** Última sesión de cardio (App.tsx ya la carga): para «Hecho» en día de cardio y la semana. */
   cardioLastSession?: CardioSession | null
 }
 
-function readShowAll(userId: string | null | undefined): boolean {
-  if (!userId) return false
-  try {
-    return localStorage.getItem(homeShowAllKey(userId)) === 'true'
-  } catch {
-    return false
-  }
-}
-
-export default function DashboardPage({
-  nutritionTotals, nutritionGoals,
-  cardioWeeklyStats, cardioLastSession,
-}: DashboardPageProps) {
-  const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays, programProgress, progress: progressMap, programsReady } = useWorkoutState()
-  const {
-    getTotalSessions, getLongestStreak, getMonthActivity,
-    updateSettings, isWorkoutDone, getLastSessionDate, getDoneDates, selectProgram: onSelectProgram,
-    duplicateProgram, setPhaseOverride,
-  } = useWorkoutActions()
-  const { userId, user } = useAuthState()
-  const displayName = user?.display_name || user?.name || ''
+export default function DashboardPage({ cardioLastSession }: DashboardPageProps) {
   const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
-  const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
-  const onGoToNutrition = useCallback(() => navigate('/nutrition'), [navigate])
-  const onGoToCardio = useCallback(() => navigate('/cardio'), [navigate])
-  const onCreateProgram = useCallback(() => navigate('/programs/new'), [navigate])
-  const onEditProgram = useCallback((id: string) => navigate(`/programs/${id}/edit`), [navigate])
-  const onDuplicateProgram = useCallback(async (id: string) => {
-    const newId = await duplicateProgram(id)
-    if (newId) navigate(`/programs/${newId}/edit`)
-  }, [duplicateProgram, navigate])
-  const PHASES = phasesProp || FALLBACK_PHASES
-  const [showProgramModal, setShowProgramModal] = useState(false)
-  const totalSessions = getTotalSessions()
-  const doneDates = getDoneDates()
+  const { activeProgram, weekDays } = useWorkoutState()
+  const { userId, user } = useAuthState()
+  const home = useHomeToday(cardioLastSession)
+  const { state, week, goal, streak, accountSessions } = home
 
-  // #808: hasta el 3.er entreno el inicio se queda en lo básico. `stage` sale
-  // del mayor entre el contador del programa y el de toda la cuenta, así que
-  // cambiar de programa no devuelve al inicio simple a quien ya entrena.
-  // `stagePending`: el de la cuenta aún no ha llegado y el del programa no
-  // basta para decidir; no se pinta nada propio del tramo hasta saberlo.
-  const { stage, sessions: knownSessions, pending: stagePending } = useHomeStage(userId, totalSessions)
-  const [showAll, setShowAll] = useState(() => readShowAll(userId))
-  const showFull = stage === 'full' || showAll
-  const toggleShowAll = useCallback(() => {
-    const next = !showAll
-    setShowAll(next)
+  // #808 dejaba un «ver todo el inicio» por usuario; ya no hay nada que ver.
+  // `calistenia_home_full_<uid>` NO se toca: lo sigue usando `useHomeStage` de
+  // core como «ya llegó a 3» sin red.
+  useEffect(() => {
     if (!userId) return
     try {
-      if (next) localStorage.setItem(homeShowAllKey(userId), 'true')
-      else localStorage.removeItem(homeShowAllKey(userId))
+      localStorage.removeItem(homeShowAllKey(userId))
     } catch {
-      // Sin storage la preferencia dura lo que dure la visita.
+      // Sin storage no hay nada que limpiar.
     }
-  }, [showAll, userId])
-  // Mismos datos que ActivationCard: solo para saber si la tarjeta está a la vista.
-  const activation = useActivation(user?.created, doneDates)
-  const streak = getLongestStreak()
-  const [dismissedMilestone, setDismissedMilestone] = useState(false)
-  const activeMilestone = useMemo(() => {
-    if (!userId || dismissedMilestone) return null
-    return getActiveMilestone(streak, userId)
-  }, [streak, userId, dismissedMilestone])
-  // «X de Y» de la semana de calendario, en días distintos (#853). El cardio
-  // libre no se suma: aquí solo hay el agregado, no las fechas.
-  const weeklyDone = getWeekDoneDays(todayStr(), progressMap)
-  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
-  const monthActivity = getMonthActivity()
-  // #616: la fase sale del programa activo (o del override manual guardado en
-  // `user_programs`), no del entero global `settings.phase`.
-  const phase = PHASES.find(p => p.id === programProgress.currentPhase) || PHASES[0]
-  const phaseAccent = PHASE_COLORS[phase.id] || PHASE_COLORS[1]
-  const today_str = todayStr()
-  // La semana y el porcentaje salen del programa cuando lo hay (#616). El
-  // cálculo viejo sobre `settings.startDate` —la fecha en que el usuario empezó
-  // a usar la app, no el programa— se queda solo para quien no está inscrito.
-  const daysElapsed = settings.startDate ? diffDays(today_str, settings.startDate) : 0
-  const hasProgramProgress = programProgress.totalWeeks > 0
-  const totalWeeks = hasProgramProgress ? programProgress.totalWeeks : (activeProgram?.duration_weeks || 26)
-  const weekElapsed = hasProgramProgress
-    ? (programProgress.currentWeek ?? 1)
-    : Math.floor(daysElapsed / 7) + 1
-  const progress = hasProgramProgress
-    ? programProgress.percent
-    : Math.min(100, (daysElapsed / (totalWeeks * 7)) * 100)
-  const calDays = Object.entries(monthActivity)
+  }, [userId])
 
-  /**
-   * Elegir fase a mano. #616: el override se guarda en `user_programs`
-   * (por programa), no en `settings` (global del usuario). Sin programa activo
-   * `setPhaseOverride` no tiene dónde escribir, así que ahí seguimos usando
-   * `settings.phase` — que es de donde la lee el fallback del hook.
-   */
-  const handleSelectPhase = useCallback(async (phaseId: number) => {
-    const saved = await setPhaseOverride(phaseId)
-    if (!saved) await updateSettings({ phase: phaseId })
-  }, [setPhaseOverride, updateSettings])
+  // home_viewed: una vez por visita y con el estado ya resuelto (#854).
+  const viewed = useRef(false)
+  useEffect(() => {
+    if (viewed.current || state.modifiers.loading) return
+    viewed.current = true
+    trackHomeViewed({ state: state.kind, modifiers: homeAnalyticsModifiers(state) })
+  }, [state])
+  // Al salir se olvida la visita, un tick después: el desmontaje simulado de
+  // StrictMode (dev) remonta al instante y cancela el olvido, así que no se
+  // pierde el `ms_since_view` ni se emite `home_viewed` dos veces.
+  useEffect(() => {
+    if (pendingHomeReset) clearTimeout(pendingHomeReset)
+    pendingHomeReset = null
+    return () => {
+      pendingHomeReset = setTimeout(() => {
+        pendingHomeReset = null
+        resetHomeView()
+      }, 0)
+    }
+  }, [])
 
-  const daysSinceLastSession = useMemo(() => {
-    const last = getLastSessionDate ? getLastSessionDate() : null
-    if (!last) return null
-    return diffDays(today_str, last)
-  }, [getLastSessionDate, today_str])
+  const [milestoneDismissed, setMilestoneDismissed] = useState(false)
+  const milestone = useMemo(
+    () => (userId && !milestoneDismissed ? getActiveWeeklyMilestone(streak.current, userId) : null),
+    [userId, milestoneDismissed, streak],
+  )
 
-  const showNudge = daysSinceLastSession !== null && daysSinceLastSession >= 3
+  const todayLabel = new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })
+  const showParaTi = !!userId && paraTiEnabled({ homeKind: state.kind, accountSessions }) && !state.modifiers.loading
+  const deload = state.kind === 'training_day' && state.deload
+  const firstWorkout = state.kind === 'first_workout'
 
-  const [showConfig, setShowConfig] = useState(false)
+  const dayInfo = (dayId: string) => {
+    const workout = home.workoutFor(dayId)
+    return {
+      title: workout?.title || null,
+      minutes: workout?.exercises?.length ? calculateWorkoutDuration(workout.exercises) : null,
+    }
+  }
 
-  // Build display name from userId or fallback
-  const greeting = t(getGreetingKey())
-  const todayFormatted = new Date().toLocaleDateString(i18n.language, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  const aside = (
+    <>
+      {firstWorkout ? (
+        state.showActivationGoal && state.modifiers.firstWeek ? <FirstWeekGoal firstWeek={state.modifiers.firstWeek} /> : null
+      ) : (
+        <HomeWeekStrip
+          week={week}
+          goal={activeProgram ? goal : null}
+          streak={streak}
+          firstWeek={state.modifiers.firstWeek}
+          deload={deload}
+          weekDays={activeProgram ? weekDays : []}
+          dayInfo={dayInfo}
+        />
+      )}
+      {showParaTi && <HomeParaTi userId={userId!} homeKind={state.kind} accountSessions={accountSessions} />}
+    </>
+  )
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
+    <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-4 px-4 pb-2 pt-3 md:px-6 lg:gap-6 lg:px-12 lg:py-7">
+      <header className="flex flex-col gap-0.5 lg:gap-1">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{todayLabel}</span>
+        <h1 className="m-0 font-bebas text-[34px] leading-none lg:text-[52px]">{t(greetingKey())}</h1>
+      </header>
 
-      {/* ═══ WELCOME HEADER ═══════════════════════════════════════════════════ */}
-      <div className="mb-6">
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase mb-1">
-          {todayFormatted}
-        </div>
-        <h1 className="font-bebas leading-none mb-1 text-4xl md:text-5xl">
-          {greeting}
-        </h1>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="text-sm text-muted-foreground">
-            {t('common.week')} <strong className="text-foreground">{Math.min(weekElapsed, totalWeeks)}</strong> {t('common.of')} {totalWeeks}
-            {activeProgram && (
-              <span className="text-lime"> · {activeProgram.name}</span>
-            )}
-          </div>
-          <Badge variant={usePB ? 'outline' : 'secondary'} className={cn('text-[9px]', usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10')}>
-            {usePB ? t('dashboard.synced') : t('dashboard.localOnly')}
-          </Badge>
-          <WhatsNewHomeButton />
-        </div>
-      </div>
-
-      {/* Antes del 3.er entreno, bienvenida o progreso hacia el 3.º (#808) */}
-      {stage !== 'full' && !stagePending && (
-        <EarlyHomeMessage
-          stage={stage}
-          sessions={knownSessions}
-          activationVisible={activation.mode !== 'hidden'}
-          onStart={onGoToWorkout}
-        />
-      )}
-
-      {/* Nudge — prominent when present */}
-      {stage === 'full' && showNudge && (
-        <div className="mb-6 p-4 md:p-5 bg-amber-500/5 border border-amber-500/30 rounded-xl flex items-center gap-4 flex-wrap">
-          <div className="flex-1">
-            <div className="text-[10px] text-amber-600 dark:text-amber-400 tracking-widest mb-1 uppercase">
-              {t('dashboard.nudge.title', { days: daysSinceLastSession })}
-            </div>
-            <div className="text-sm text-muted-foreground">{t('dashboard.nudge.subtitle')}</div>
-          </div>
-          <Button
-            onClick={onGoToWorkout}
-            className="bg-amber-500 hover:bg-amber-400 text-white font-bebas text-lg tracking-wide w-full sm:w-auto"
-          >
-            {t('dashboard.nudge.cta')}
-          </Button>
-        </div>
-      )}
-
-      {/* Progress bar */}
-      <div id="tour-progress" className="mb-6">
-        <div className="flex justify-between mb-2">
-          <span className={cn('text-[11px]', phaseAccent.text)}>{phase.nameKey ? t(phase.nameKey) : phase.name} · {t('dashboard.phaseWeeks', { weeks: phase.weeks })}</span>
-          <span className="text-[11px] text-muted-foreground">{Math.round(progress)}%</span>
-        </div>
-        <Progress value={progress} className="h-1.5" />
-      </div>
-
-      {/* Phase Photo Nudge Banner */}
-      {showFull && (
-        <PhasePhotoBanner
-          currentPhase={phase.id}
-          userId={userId || null}
-          hasCompletedWorkoutInPhase={totalSessions > 0}
-        />
-      )}
-
-      {/* ═══ TODAY'S WORKOUT HERO ══════════════════════════════════════════ */}
-      <TodayWorkoutHero
-        weekDays={weekDays}
-        phase={programProgress.currentPhase}
-        activeProgram={activeProgram}
-        programProgress={programProgress}
-        isWorkoutDone={isWorkoutDone}
-        today_str={today_str}
-        onStart={(dayId) => navigate(`/workout?day=${dayId}`)}
-      />
-
-      {/* Objetivo de activación: 3 entrenos en los primeros 7 días (#800) */}
-      <ActivationCard
-        userId={userId ?? null}
-        created={user?.created}
-        doneDates={doneDates}
-        onStart={onGoToWorkout}
-      />
-
-      {showFull && (
-        <FullHomeSections
-          userId={userId ?? null}
-          nutritionTotals={nutritionTotals}
-          nutritionGoals={nutritionGoals}
-          cardioWeeklyStats={cardioWeeklyStats}
-          cardioLastSession={cardioLastSession}
-          onGoToWorkout={onGoToWorkout}
-          onGoToNutrition={onGoToNutrition}
-          onGoToCardio={onGoToCardio}
-        />
-      )}
-
-      {/* Active Program + Weekly Plan */}
-      <div id="tour-weekly-plan" className="mb-6">
-        {activeProgram && (
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase shrink-0">{t('dashboard.program')}</div>
-              <span className="font-bebas text-lg text-[hsl(var(--lime))] truncate">{activeProgram.name}</span>
-            </div>
-            {programs && programs.length > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowProgramModal(true)}
-                className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-8 shrink-0"
-              >
-                {t('dashboard.changeProgram')}
-              </Button>
-            )}
-          </div>
-        )}
-        <WeekPlanWidget selectedPhase={programProgress.currentPhase} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
-      </div>
-
-      {/* ═══ STATS + ACTIVITY ════════════════════════════════════════════════ */}
-      {/* #808: la racha aparece con el primer entreno. Mira también el programa
-          activo: recién cambiado, sus contadores siguen a 0 y solo pintaría ceros. */}
-      {(showFull || (stage === 'early' && totalSessions > 0)) && (
-        <div className="mb-6">
-          <div id="tour-stats" className="grid grid-cols-3 gap-3 mb-5">
-            <div className="text-center">
-              <div className="font-bebas text-3xl md:text-4xl text-lime leading-none">{totalSessions}</div>
-              <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.total')}</div>
-            </div>
-            <div className="text-center">
-              <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
-              <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.bestStreak')}</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}{programsReady && <span className="text-lg text-muted-foreground">/{weeklyGoal}</span>}</div>
-              <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.thisWeek')}</div>
-            </div>
-          </div>
-
-          {/* Activity heatmap */}
-          <div className="flex gap-1 flex-wrap" role="img" aria-label={t('dashboard.activeDaysLabel', { count: Object.values(monthActivity).filter(Boolean).length })}>
-            {calDays.map(([date, active]) => (
-              <div
-                key={date}
-                title={date}
-                className={cn(
-                  'size-5 rounded-sm',
-                  active
-                    ? 'bg-lime'
-                    : date === today_str
-                      ? 'bg-lime/15 border border-lime/40'
-                      : 'bg-muted border border-transparent'
-                )}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ STREAK MILESTONE ═══════════════════════════════════════════════ */}
-      {activeMilestone && userId && (
+      {milestone && userId && (
         <StreakMilestone
-          streak={activeMilestone}
-          userId={userId ?? undefined}
-          userName={displayName}
+          weeks={milestone}
+          userId={userId}
           referralCode={user?.referral_code}
-          onDismiss={() => setDismissedMilestone(true)}
+          onDismiss={() => setMilestoneDismissed(true)}
         />
       )}
 
-      {/* ═══ VER TODO EL INICIO (#808) ══════════════════════════════════════ */}
-      {stage !== 'full' && !stagePending && (
-        <button
-          onClick={toggleShowAll}
-          aria-expanded={showAll}
-          className="flex items-center justify-between w-full py-3 mb-2 group border-t border-border"
-        >
-          <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase group-hover:text-foreground transition-colors">
-            {showAll ? t('dashboard.showLess') : t('dashboard.showAll')}
-          </div>
-          <svg
-            className={cn('size-4 text-muted-foreground transition-transform', showAll && 'rotate-180')}
-            viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <polyline points="4,6 8,10 12,6" />
-          </svg>
-        </button>
-      )}
-
-      {/* ═══ CONFIGURATION (collapsed) ═══════════════════════════════════════ */}
-      {showFull && (
-        <div className="pt-4">
-          <button
-            onClick={() => setShowConfig(c => !c)}
-            className="flex items-center justify-between w-full mb-4 group"
-          >
-            <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase group-hover:text-foreground transition-colors">
-              {t('dashboard.config')}
-            </div>
-            <svg
-              className={cn('size-4 text-muted-foreground transition-transform', showConfig && 'rotate-180')}
-              viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            >
-              <polyline points="4,6 8,10 12,6" />
-            </svg>
-          </button>
-
-          {showConfig && (
-            <div className="space-y-5 motion-safe:animate-fade-in">
-              {/* Active program */}
-              {activeProgram && (
-                <div id="tour-active-program" className="flex items-center gap-3 flex-wrap">
-                  <div className="flex-1">
-                    <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('dashboard.program')}</div>
-                    <div className="font-bebas text-xl text-lime">{activeProgram.name}</div>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    {programs && programs.length > 1 && (
-                      <Button variant="outline" size="sm" onClick={() => setShowProgramModal(true)}
-                        className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-10 sm:h-8">
-                        {t('dashboard.changeProgramFull')}
-                      </Button>
-                    )}
-                    {onCreateProgram && (
-                      <Button variant="outline" size="sm" onClick={onCreateProgram}
-                        className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 h-10 sm:h-8">
-                        {t('dashboard.createProgram')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Phase + Goals side by side */}
-              <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
-                <Card className={cn('border-l-[3px]', phaseAccent.border)}>
-                  <CardContent className="p-5">
-                    <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>{t('dashboard.currentPhase')}</div>
-                    <div className="font-bebas text-2xl mb-1">{t('dashboard.phaseLabel', { id: phase.id, name: phase.nameKey ? t(phase.nameKey) : phase.name })}</div>
-                    <div className="text-xs text-muted-foreground mb-3">{t('dashboard.phaseWeeks', { weeks: phase.weeks })}</div>
-                    <div className="flex gap-2 flex-wrap">
-                      {PHASES.map(p => {
-                        const pa = PHASE_COLORS[p.id] || PHASE_COLORS[1]
-                        const isSelected = programProgress.currentPhase === p.id
-                        return (
-                          <Button key={p.id} variant="outline" size="sm"
-                            onClick={() => handleSelectPhase(p.id)} aria-pressed={isSelected}
-                            className={cn('h-9 sm:h-7 px-4 sm:px-3 text-[11px] sm:text-[10px] tracking-wide transition-all', isSelected && cn('border-current', pa.text))}>
-                            F{p.id}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-5">
-                    <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">{t('dashboard.goals6m')}</div>
-                    <div className="flex flex-col gap-2.5">
-                      {GOALS.map(goal => (
-                        <GoalCard key={goal.key} goal={goal}
-                          current={(settings as unknown as Record<string, number>)[goal.key] || 0}
-                          onUpdate={val => updateSettings({ [goal.key]: val })} />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Workout Reminders */}
-              <WorkoutReminderWidget userId={userId} />
-            </div>
-          )}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+        <div className="flex flex-col gap-4">
+          <HomeTodayCard home={home} cardioLastSession={cardioLastSession} />
         </div>
-      )}
-
-      {showProgramModal && (
-        <ProgramSelectorModal
-          programs={programs}
-          activeProgram={activeProgram}
-          onSelect={async (id: string) => {
-            const ok = await onSelectProgram(id)
-            if (ok) {
-              toast.success(t('programs.switchSuccess', { defaultValue: 'Programa cambiado correctamente' }))
-              setShowProgramModal(false)
-            } else {
-              toast.error(t('programs.switchError', { defaultValue: 'Error al cambiar de programa. Intenta de nuevo.' }))
-            }
-            return ok
-          }}
-          onClose={() => setShowProgramModal(false)}
-          onDuplicate={onDuplicateProgram ? (id: string) => { setShowProgramModal(false); onDuplicateProgram(id) } : undefined}
-          onEdit={onEditProgram ? (id: string) => { setShowProgramModal(false); onEditProgram(id) } : undefined}
-          userId={userId ?? undefined}
-        />
-      )}
+        <div className="flex flex-col gap-4 lg:gap-6">{aside}</div>
+      </div>
     </div>
   )
 }

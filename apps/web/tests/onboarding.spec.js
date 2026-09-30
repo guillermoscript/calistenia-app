@@ -134,7 +134,7 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await dismissOverlays(page)
   await expect(
-    page.locator('#tour-weekly-plan').getByText(/Balance Total/i),
+    page.locator('[data-testid="home-today"]').getByText(/Balance Total/i),
   ).toBeVisible({ timeout: 15000 })
 
   // onboarding marcado como completado para este usuario

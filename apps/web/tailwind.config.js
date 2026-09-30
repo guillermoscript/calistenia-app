@@ -72,6 +72,7 @@ export default {
         lime: {
           DEFAULT: 'hsl(var(--lime))',
           foreground: 'hsl(var(--lime-foreground))',
+          text: 'hsl(var(--lime-text))',
         },
       },
       fontFamily: {

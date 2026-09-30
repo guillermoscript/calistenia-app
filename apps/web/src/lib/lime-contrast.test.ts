@@ -102,3 +102,21 @@ describe('contraste lime/lime-foreground (#548)', () => {
     expect(contrastRatio(lime, foreground)).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
   })
 })
+
+/**
+ * `--lime-text` (#855): texto lima PEQUEÑO (kickers del inicio) sobre la
+ * tarjeta y el fondo. En claro el `--lime` da ~2:1 sobre blanco; este token
+ * tiene que pasar AA sobre `--card` y `--background` en los dos temas.
+ */
+describe('contraste lime-text sobre card/background (#855)', () => {
+  const css = () => readFileSync(path.resolve(__dirname, '../index.css'), 'utf-8')
+  for (const block of ['root', 'dark'] as const) {
+    for (const surface of ['card', 'background']) {
+      it(`web: ${block === 'root' ? 'claro' : 'oscuro'} sobre --${surface}`, () => {
+        const text = parseToken(css(), block, 'lime-text')
+        const bg = parseToken(css(), block, surface)
+        expect(contrastRatio(text, bg)).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+      })
+    }
+  }
+})

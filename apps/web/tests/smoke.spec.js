@@ -99,7 +99,7 @@ test('signup → primera sesión completada y persistida en PocketBase', async (
   // 7. Volver al dashboard
   await page.getByRole('button', { name: /IR AL DASHBOARD|GO TO DASHBOARD/i }).click()
   await expect(
-    page.getByText(/racha|streak|sesiones|sessions|objetivo|goal/i).first(),
+    page.locator('[data-testid="home-today"]'),
   ).toBeVisible({ timeout: 8000 })
 })
 

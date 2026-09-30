@@ -434,21 +434,19 @@ interface AuthenticatedAppProps {
   onboardingDone: boolean
   setOnboardingDone: (v: boolean) => void
   nutritionGoals: { dailyCalories: number; weight?: number } | null
-  cardioWeeklyStats: import('@calistenia/core/hooks/useCardioStats').CardioAggregateStats
   cardioLastSession: import('@calistenia/core/types').CardioSession | null
-  nutritionTotals: { calories: number; protein: number; carbs: number; fat: number }
 }
 
 function AuthenticatedApp({
   dark, toggleDark, onboardingDone, setOnboardingDone,
-  nutritionGoals, cardioWeeklyStats, cardioLastSession, nutritionTotals,
+  nutritionGoals, cardioLastSession,
 }: AuthenticatedAppProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, userId, userRole } = useAuthState()
   const { signOut } = useAuthActions()
   const { pbReady, programs, activeProgram, programsReady, programProgress } = useWorkoutState()
-  const { selectProgram } = useWorkoutActions()
+  const { selectProgram, getDoneDates } = useWorkoutActions()
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
 
   // Recover lost localStorage flag: if the user already has an enrolled
@@ -512,10 +510,7 @@ function AuthenticatedApp({
           <Suspense fallback={<AppLoader />}>
           <Routes>
             <Route path="/" element={
-              <DashboardPage
-                nutritionTotals={nutritionTotals} nutritionGoals={nutritionGoals}
-                cardioWeeklyStats={cardioWeeklyStats} cardioLastSession={cardioLastSession}
-              />
+              <DashboardPage cardioLastSession={cardioLastSession} />
             } />
             <Route path="/workout" element={<WorkoutPage />} />
             <Route path="/lumbar" element={<LumbarPage user={user!} />} />
@@ -576,15 +571,17 @@ function AuthenticatedApp({
     </SidebarProvider>
     </NotificationsProvider>
     )}
-    <ActiveCardioBar />
-    <ActiveSessionBubble />
+    {/* En el inicio el bloque «Hoy» ya enseña «Continuar» (#855). */}
+    {location.pathname !== '/' && <ActiveCardioBar />}
+    {location.pathname !== '/' && <ActiveSessionBubble />}
     <SessionRestoreNavigator />
     <CircuitRestoreNavigator />
     </ActiveSessionProvider>
     </CircuitSessionProvider>
     </CardioSessionProvider>
     </BackgroundJobsProvider>
-    <InstallPrompt />
+    {/* No tapa el botón principal del inicio: espera al 2.º día de entreno (#855). */}
+    <InstallPrompt enabled={getDoneDates().length >= 2} />
     <Toaster position="bottom-center" richColors closeButton />
     </>
   )
@@ -641,9 +638,8 @@ function AppInner() {
     setDark(d => { const next = !d; document.documentElement.classList.toggle('dark', next); localStorage.setItem('calistenia_dark_mode', String(next)); return next })
   }, [])
 
-  const { goals: nutritionGoals, getDailyTotals: getNutritionDailyTotals } = useNutrition(userId)
-  const nutritionTotals = useMemo(() => getNutritionDailyTotals(), [getNutritionDailyTotals])
-  const { weeklyStats: cardioWeeklyStats, lastSession: cardioLastSession, loadStats: loadCardioStats } = useCardioStats(userId)
+  const { goals: nutritionGoals } = useNutrition(userId)
+  const { lastSession: cardioLastSession, loadStats: loadCardioStats } = useCardioStats(userId)
 
   useEffect(() => { if (userId) loadCardioStats() }, [userId, loadCardioStats])
 
@@ -708,8 +704,7 @@ function AppInner() {
       <AuthenticatedApp
         dark={dark} toggleDark={toggleDark}
         onboardingDone={onboardingDone} setOnboardingDone={setOnboardingDone}
-        nutritionGoals={nutritionGoals} cardioWeeklyStats={cardioWeeklyStats}
-        cardioLastSession={cardioLastSession} nutritionTotals={nutritionTotals}
+        nutritionGoals={nutritionGoals} cardioLastSession={cardioLastSession}
       />
     </WorkoutProvider>
   )
