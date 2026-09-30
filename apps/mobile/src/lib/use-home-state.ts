@@ -24,7 +24,7 @@ import { resolveHomeActiveActivity } from '@/lib/home-active-activity'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
-import { todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { onTimezoneChange, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getHomeState, type HomeState } from '@calistenia/core/lib/homeState'
 import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
@@ -68,6 +68,8 @@ export function useHomeView(): HomeView {
   // La pestaña no se desmonta: sin esto, pasada la medianoche seguiría en ayer.
   const [today, setToday] = useState(todayStr)
   useDayRollover(next => setToday(next))
+  // setTimezone() corre tras el login/refresh: `today` calculado antes con otra zona sería de otro día.
+  useEffect(() => onTimezoneChange(() => setToday(todayStr())), [])
 
   const signupDay = user?.created ? utcToLocalDateStr(String(user.created).replace(' ', 'T')) || null : null
   const activation = useActivation(user?.created as string | undefined, getDoneDates())

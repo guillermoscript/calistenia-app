@@ -1,5 +1,8 @@
 /**
- * Timezone-aware date utilities powered by dayjs.
+ * Timezone-aware date utilities powered by dayjs + Intl.
+ *
+ * NO se usa `dayjs.tz`: en Hermes (Android) devuelve UTC (#880); la conversión
+ * de zona vive en `tzDate.ts` (Intl formatToParts).
  *
  * All date strings produced here respect the user's configured timezone
  * instead of UTC, so "today" means today in the user's wall-clock time.
@@ -7,17 +10,15 @@
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import relativeTimePlugin from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/es'
 import 'dayjs/locale/en'
 import i18n from 'i18next'
-import { addDaysIn, diffDaysIn, localMidnightAsUTCIn, todayStrIn, utcToLocalDateStrIn } from './tzDate'
+import { addDaysIn, diffDaysIn, localMidnightAsUTCIn, todayStrIn, utcToLocalDateStrIn, wallClock, zonedParts } from './tzDate'
 import { safeLocale } from './i18n-safe'
 
 dayjs.extend(utc)
-dayjs.extend(timezone)
 dayjs.extend(isoWeek)
 dayjs.extend(relativeTimePlugin)
 
@@ -43,7 +44,18 @@ let _tz: string = sanitizeTz(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
 /** Set the active timezone (call on login / profile save). */
 export function setTimezone(tz: string): void {
-  _tz = sanitizeTz(tz)
+  const next = sanitizeTz(tz)
+  if (next === _tz) return
+  _tz = next
+  tzListeners.forEach(cb => cb(next))
+}
+
+const tzListeners = new Set<(tz: string) => void>()
+
+/** Subscribe to timezone changes (e.g. login applies `users.timezone`). Returns unsubscribe. */
+export function onTimezoneChange(cb: (tz: string) => void): () => void {
+  tzListeners.add(cb)
+  return () => { tzListeners.delete(cb) }
 }
 
 /** Get the active timezone. */
@@ -51,14 +63,14 @@ export function getTimezone(): string {
   return _tz
 }
 
-/** Get a dayjs instance in the user's timezone. */
+/** Wall clock of the user's timezone as a UTC-mode dayjs (fields = local time). */
 function now() {
-  return dayjs().tz(_tz)
+  return wallClock(_tz)
 }
 
 /** Format a Date as YYYY-MM-DD in the user's timezone. */
 export function toLocalDateStr(date: Date = new Date()): string {
-  return dayjs(date).tz(_tz).format('YYYY-MM-DD')
+  return wallClock(_tz, date.getTime()).format('YYYY-MM-DD')
 }
 
 /** Today as YYYY-MM-DD in the user's timezone. */
@@ -116,7 +128,7 @@ export function localMinutesSinceMidnight(): number {
  */
 export function formatTimeHHmm(pbTimestamp: string): string {
   const d = dayjs.utc(pbTimestamp.replace(' ', 'T'))
-  return d.isValid() ? d.tz(_tz).format('HH:mm') : ''
+  return d.isValid() ? wallClock(_tz, d.valueOf()).format('HH:mm') : ''
 }
 
 /**
@@ -126,7 +138,7 @@ export function formatTimeHHmm(pbTimestamp: string): string {
 export function localHMFromPB(pbTimestamp: string): { hour: string; minute: string } | null {
   const d = dayjs.utc(pbTimestamp.replace(' ', 'T'))
   if (!d.isValid()) return null
-  const local = d.tz(_tz)
+  const local = wallClock(_tz, d.valueOf())
   return { hour: local.format('HH'), minute: local.format('mm') }
 }
 
@@ -190,9 +202,9 @@ export function timeAgo(dateStr: string): string {
   const d = parsed.isAfter(now) ? now : parsed
   const diffDaysVal = now.diff(d, 'day')
   if (diffDaysVal > 7) {
-    return d.tz(_tz).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short' })
+    return d.toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short', timeZone: _tz })
   }
-  return d.tz(_tz).from(now)
+  return d.from(now)
 }
 
 /**
@@ -214,7 +226,7 @@ export function timeAgoShort(dateStr: string): string {
   const diffD = Math.floor(diffH / 24)
   if (diffD === 1) return i18n.t('feed.yesterday')
   if (diffD <= 7) return i18n.t('feed.daysAgo', { count: diffD })
-  return d.tz(_tz).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short' })
+  return d.toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short', timeZone: _tz })
 }
 
 /** Human-friendly relative date label (Today, Yesterday, N days ago, or short date). */
@@ -223,9 +235,10 @@ export function relativeDate(dateStr: string): string {
   if (dateStr === today) return i18n.t('common.today')
   const yesterday = daysAgoStr(1)
   if (dateStr === yesterday) return i18n.t('common.yesterday')
-  const diff = dayjs.tz(today, _tz).diff(dayjs.tz(dateStr, _tz), 'day')
+  const diff = diffDays(today, dateStr)
   if (diff >= 2 && diff <= 7) return i18n.t('common.daysAgo', { count: diff })
-  return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short' })
+  // Fecha de calendario: se formatea en UTC para no correrla de día.
+  return dayjs.utc(dateStr).toDate().toLocaleDateString(safeLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' })
 }
 
 /**
@@ -268,7 +281,7 @@ export function formatDateRange(startTs: string, endTs: string): string {
   const end = parsePBTimestamp(endTs)
   if (!start.isValid() || !end.isValid()) return ''
 
-  const currentYear = now().year()
+  const currentYear = zonedParts(Date.now(), _tz).year
   const withYear = start.year() !== currentYear || end.year() !== currentYear
   const fmt = rangeFormatter(withYear)
 

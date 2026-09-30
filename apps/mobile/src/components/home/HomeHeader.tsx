@@ -15,7 +15,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { withCacheToken } from '@/lib/avatar'
 import { useThemeColors } from '@/lib/theme'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
-import { localHour } from '@calistenia/core/lib/dateUtils'
+import { getTimezone, localHour } from '@calistenia/core/lib/dateUtils'
 
 export default function HomeHeader({ unreadCount }: { unreadCount: number }) {
   const { t, i18n } = useTranslation()
@@ -25,7 +25,7 @@ export default function HomeHeader({ unreadCount }: { unreadCount: number }) {
 
   const hour = localHour()
   const greeting = hour < 12 ? t('home.greeting.morning') : hour < 19 ? t('home.greeting.afternoon') : t('home.greeting.evening')
-  const date = new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'short' })
+  const date = new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'short', timeZone: getTimezone() })
   const avatarUrl = user ? withCacheToken(getUserAvatarUrl(user, '200x200'), user.updated as string) : null
   const name = (user?.display_name as string) || (user?.name as string) || ''
   const initial = name.trim().charAt(0).toUpperCase() || '·'
