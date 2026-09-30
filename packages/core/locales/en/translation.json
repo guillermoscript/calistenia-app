@@ -1936,6 +1936,7 @@
   "progress.tab.charts": "Charts",
   "progress.tab.body": "Body",
   "progress.tab.stats": "Stats",
+  "progress.tab.statsShort": "Stats",
   "stats.title": "Statistics",
   "stats.rowDesc": "Muscles, exercises, records and trend",
   "stats.period.4w": "4 wk",
