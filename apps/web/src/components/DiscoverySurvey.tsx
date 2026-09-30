@@ -24,9 +24,6 @@ import {
   DialogTitle,
 } from './ui/dialog'
 
-/** driver.js pone esta clase en `<body>` mientras un tour está abierto. */
-const isTourRunning = () => document.body.classList.contains('driver-active')
-
 /**
  * Encuesta de descubrimiento: opcional y una sola vez por usuario. Las reglas
  * de cuándo sale y qué se manda a analítica viven en `core/lib/discovery-survey`.
@@ -46,7 +43,7 @@ export default function DiscoverySurvey({ userId }: { userId: string }) {
     if (!userId) return
     let timer: number | undefined
     const attempt = () => {
-      if (!canShowDiscoverySurvey(userId) || isTourRunning()) {
+      if (!canShowDiscoverySurvey(userId)) {
         timer = window.setTimeout(attempt, DISCOVERY_SURVEY_RETRY_MS)
         return
       }

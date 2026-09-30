@@ -9,7 +9,7 @@ test.describe('Calendar Journey', () => {
 
   test('shows calendar page with month grid', async ({ page }) => {
     await expect(page.getByText(/^CALENDARIO$|^CALENDAR$/i).first()).toBeVisible({ timeout: 8000 })
-    await expect(page.locator('#tour-calendar-grid, [class*="grid-cols-7"]').first()).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('[data-testid="calendar-grid"]').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('shows current year', async ({ page }) => {

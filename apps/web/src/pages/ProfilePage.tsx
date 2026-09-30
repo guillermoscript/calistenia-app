@@ -478,7 +478,7 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
 
       {/* Cuerpo: resumen legible; editar abre el formulario de abajo. */}
       <Kicker className="mb-2 mt-6">{t('profile.sectionBody')}</Kicker>
-      <div id="tour-personal-info" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4 md:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4 md:px-5">
         <div className="flex gap-6 md:gap-8">
           <div>
             <div className="font-bebas text-[28px] leading-none">
@@ -557,7 +557,7 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
           open={openSection === 'training'}
           onClick={() => toggleSection('training')}
         >
-          <div id="tour-level-selector">
+          <div>
             <Field label={t('profile.level')}>
               <Segmented
                 allowClear={false}

@@ -30,7 +30,7 @@ export function CaptureStep({ model }: StepProps) {
           <MealTypeSelector model={model} />
 
           {/* ── Main input area ── */}
-          <div id="tour-meallog-input" className="space-y-3">
+          <div className="space-y-3">
             {/* AI text input — write meal description, AI fills macros */}
             <form
               onSubmit={e => { e.preventDefault(); handleAnalyzeText() }}
@@ -133,7 +133,6 @@ export function CaptureStep({ model }: StepProps) {
 
             {/* Barcode scanner button */}
             <button
-              id="tour-meallog-barcode"
               onClick={startScan}
               className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
             >

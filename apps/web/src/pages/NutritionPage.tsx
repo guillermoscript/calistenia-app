@@ -315,7 +315,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
       {/* Date picker — solo en HOY (PLANIFICAR siempre trabaja sobre el día en curso); oculto en edición de metas */}
       {(!isReady || !goals || (activeTab === 'today' && !showGoalSetup)) && (
-        <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
+        <div data-testid="nutrition-date" className="flex items-center gap-3 mb-6">
           <button
             onClick={() => setSelectedDate(addDays(selectedDate, -1))}
             className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
@@ -601,7 +601,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
           {/* Daily dashboard */}
           {activeTab === 'today' && (
-          <div id="tour-nutrition-dashboard">
+          <div data-testid="nutrition-dashboard">
             <NutritionDashboard
               dailyTotals={dailyTotals}
               goals={goals}
@@ -720,7 +720,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               generar, que es lima igual que él: dos botones lima, uno registra lo
               que ya comiste y el otro planifica lo que vas a comer. */}
           {activeTab === 'today' && (
-          <div id="tour-meal-logger">
+          <div>
             <MealLogger
               onAnalyze={handleAnalyze}
               onSave={handleSaveEntry}

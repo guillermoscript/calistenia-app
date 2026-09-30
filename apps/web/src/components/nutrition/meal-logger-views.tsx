@@ -28,7 +28,7 @@ export function ErrorBanner({ error }: { error: string }) {
 export function MealTypeSelector({ model }: ModelProps) {
   const { t, mealType, setMealType, mealOptions } = model
   return (
-    <div id="tour-meallog-type" className="flex gap-1.5 p-1 bg-muted/50 rounded-xl">
+    <div className="flex gap-1.5 p-1 bg-muted/50 rounded-xl">
       {mealOptions.map(opt => (
         <button
           key={opt.id}

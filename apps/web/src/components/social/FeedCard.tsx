@@ -83,7 +83,7 @@ export default function FeedCard({
       <FeedCardBody item={item} view={view} onOpen={onOpen} openLabel={t('feed.openDetail')} />
 
       {/* Reacciones + comentarios + compartir */}
-      <div id="tour-feed-reaction" className="mt-2.5 flex flex-wrap items-center gap-2">
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
         <EmojiPicker reactions={reactions} onToggle={onReact} />
         <button
           onClick={(e) => { e.stopPropagation(); onComment() }}

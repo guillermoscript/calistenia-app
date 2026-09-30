@@ -387,7 +387,6 @@ export default function ProgramsPage() {
         </div>
         <Button
           variant="limeSolid"
-          id="tour-create-program"
           onClick={onCreateProgram}
           className="font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10 w-full sm:w-auto shrink-0"
         >
@@ -410,7 +409,7 @@ export default function ProgramsPage() {
       )}
 
       {/* Search bar */}
-      <div id="tour-programs-search" className="relative mb-6">
+      <div className="relative mb-6">
         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <input
           type="text"

@@ -443,7 +443,7 @@ export default function ExerciseLibraryPage() {
       </div>
 
       {/* ── Search ──────────────────────────────────────────────────────── */}
-      <div id="tour-exercises-search" className="relative mb-6">
+      <div className="relative mb-6">
         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <input
           type="text"
@@ -470,7 +470,7 @@ export default function ExerciseLibraryPage() {
       </div>
 
       {/* ── Category pills (always visible) + Favorites toggle ──────────── */}
-      <div id="tour-category-filters" className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
         <button
           onClick={() => setShowFavoritesOnly(v => !v)}
           className={cn(
@@ -641,7 +641,7 @@ export default function ExerciseLibraryPage() {
 
       {/* ── Exercise grid ───────────────────────────────────────────────── */}
       {!loading && filtered.length > 0 && (
-        <div id="tour-exercise-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-testid="exercise-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visible.map(ex => {
             const catStyle = getCategoryStyle(ex.category)
             const muscleList = l(ex.muscles).split(',').map(m => m.trim()).filter(Boolean)

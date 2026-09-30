@@ -49,7 +49,7 @@ function ChartsExerciseList({ exerciseLogs, exerciseNames, t }: { exerciseLogs: 
   const showSearch = entries.length > 6
 
   return (
-    <div id="tour-exercise-charts" className="mb-8">
+    <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('progress.chartsByExercise')}</div>
         {showSearch && (
@@ -224,7 +224,7 @@ export default function ProgressPage() {
             </div>
 
             {/* Progress Summary */}
-            <div id="tour-progress-summary">
+            <div>
               <ProgressSummary progress={progress} settings={settings} />
             </div>
 

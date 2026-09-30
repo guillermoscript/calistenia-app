@@ -54,7 +54,7 @@ export function isUserGoalId(value: unknown): value is UserGoalId {
 
 /** Espera tras entrar en la app antes del primer intento de mostrarla. */
 export const DISCOVERY_SURVEY_DELAY_MS = 4_000
-/** Espera entre reintentos cuando algo la bloquea (onboarding, entreno en curso, tour). */
+/** Espera entre reintentos cuando algo la bloquea (onboarding, entreno en curso). */
 export const DISCOVERY_SURVEY_RETRY_MS = 15_000
 
 export type DiscoverySurveyStatus = 'pending' | 'answered' | 'dismissed'

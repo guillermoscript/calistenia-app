@@ -244,7 +244,6 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
           {!isComplete && (
             <button
-              id={isFirst ? 'tour-edit-set' : undefined}
               onClick={() => setShowEditForm(v => !v)}
               title={t('exercise.editReps')}
               className={cn(

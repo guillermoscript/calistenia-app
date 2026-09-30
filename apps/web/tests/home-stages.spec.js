@@ -79,7 +79,7 @@ test('el inicio cambia de estado con los entrenos y nunca pide agua ni sueño (#
   await expect(page.locator('[data-testid="home-primary"]')).toBeVisible()
   await expect(page.locator('[data-testid="home-first-week"]')).toBeVisible()
   await expect(page.locator('[data-testid="home-para-ti"]')).toHaveCount(0)
-  await expect(page.locator('#tour-weekly-plan')).toHaveCount(0)
+  await expect(page.locator('[data-testid="home-week-plan"]')).toHaveCount(0)
   expect(forbidden, 'el inicio pidió agua/sueño/insights/ranking con 0 entrenos').toEqual([])
   expect(paraTi, '«Para ti» consultó antes del 3.er entreno').toEqual([])
 

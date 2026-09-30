@@ -379,7 +379,7 @@ export default function CircuitBuilder({ id, initialPreset, onStart }: CircuitBu
   return (
     <div id={id} className="space-y-5">
       {/* Mode selector */}
-      <div id="tour-circuit-mode" className="flex gap-1 p-1 bg-muted/50 rounded-xl">
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
         {(['circuit', 'timed'] as const).map((m) => (
           <button
             key={m}
@@ -398,7 +398,7 @@ export default function CircuitBuilder({ id, initialPreset, onStart }: CircuitBu
       </div>
 
       {/* Config */}
-      <div id="tour-circuit-config" className="p-3 rounded-xl bg-muted/20 border border-border space-y-0.5">
+      <div className="p-3 rounded-xl bg-muted/20 border border-border space-y-0.5">
         <NumberStepper
           label={t('circuit.rounds')}
           value={rounds}
@@ -476,7 +476,7 @@ export default function CircuitBuilder({ id, initialPreset, onStart }: CircuitBu
       </div>
 
       {/* Add exercise — search with catalog dropdown */}
-      <div id="tour-circuit-add" ref={searchRef} className="relative">
+      <div ref={searchRef} className="relative">
         <div className="flex gap-2">
           <input
             type="text"
@@ -529,7 +529,7 @@ export default function CircuitBuilder({ id, initialPreset, onStart }: CircuitBu
       </div>
 
       {/* Start button — sticky bottom */}
-      <div id="tour-circuit-start" className="sticky bottom-0 pt-3 pb-2 -mx-1 px-1 bg-gradient-to-t from-background via-background to-transparent">
+      <div className="sticky bottom-0 pt-3 pb-2 -mx-1 px-1 bg-gradient-to-t from-background via-background to-transparent">
         <Button
           className="w-full"
           size="lg"

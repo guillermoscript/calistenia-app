@@ -88,7 +88,6 @@ export default function ChallengesPage({ userId, embedded = false }: ChallengesP
       <div className={cn('flex items-end mb-6', embedded ? 'justify-end' : 'justify-between')}>
         {!embedded && <h1 className="font-bebas text-4xl md:text-5xl">{t('challenges.title')}</h1>}
         <Button
-          id="tour-challenges-create"
           onClick={() => navigate('/challenges/new')}
           size="sm"
           variant="limeSolid"
@@ -121,7 +120,7 @@ export default function ChallengesPage({ userId, embedded = false }: ChallengesP
       )}
 
       {/* Filter tabs */}
-      <div id="tour-challenges-filters" role="tablist" aria-label={t('challenges.filterAriaLabel')} className="flex gap-1.5 mb-6">
+      <div role="tablist" aria-label={t('challenges.filterAriaLabel')} className="flex gap-1.5 mb-6">
         {FILTERS.map(f => (
           <button
             key={f.id}
@@ -176,7 +175,7 @@ export default function ChallengesPage({ userId, embedded = false }: ChallengesP
 
         {/* Challenge cards */}
         {!loading && items.length > 0 && (
-          <div id="tour-challenges-list" className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             {items.map((ch, i) => (
               <div
                 key={ch.id}

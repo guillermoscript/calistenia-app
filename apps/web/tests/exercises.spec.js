@@ -38,7 +38,7 @@ test.describe('Exercise Library Journey', () => {
   test('clicking an exercise navigates to detail page', async ({ page }) => {
     await expect(page.getByText(/^EJERCICIOS$|^EXERCISES$/i).first()).toBeVisible({ timeout: 8000 })
     // Exercise cards are <button> elements inside the grid
-    const firstCard = page.locator('#tour-exercise-grid button').first()
+    const firstCard = page.locator('[data-testid="exercise-grid"] button').first()
     await expect(firstCard).toBeVisible({ timeout: 5000 })
     await firstCard.click()
     await expect(page).toHaveURL(/\/exercises\//, { timeout: 8000 })

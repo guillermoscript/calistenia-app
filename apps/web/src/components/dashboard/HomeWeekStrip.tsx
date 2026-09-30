@@ -54,7 +54,7 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
   const locale = i18n.language
 
   return (
-    <section id="tour-weekly-plan" aria-labelledby="home-week-title" className="flex flex-col gap-2">
+    <section data-testid="home-week-plan" aria-labelledby="home-week-title" className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
         <h2 id="home-week-title" className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           {t('home.week.title')}

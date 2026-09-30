@@ -145,7 +145,7 @@ function WorkoutDayView({ dayId }: { dayId: DayId }) {
       </Link>
 
       {/* Phase Selector */}
-      <div id="tour-phase-selector" className="mb-7">
+      <div className="mb-7">
         <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">{t('workout.phase')}</div>
         <div className="relative md:overflow-visible"
           style={{ maskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)' }}
@@ -176,7 +176,7 @@ function WorkoutDayView({ dayId }: { dayId: DayId }) {
       </div>
 
       {/* Day Selector */}
-      <div id="tour-day-selector" className="mb-7">
+      <div className="mb-7">
         <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">{t('workout.trainingDay')}</div>
         {/* Mobile: horizontal scroll strip with fade — Desktop: 7-col grid */}
         <div className="relative md:overflow-visible"
@@ -281,7 +281,7 @@ function WorkoutDayView({ dayId }: { dayId: DayId }) {
       })() : workout ? (
         <div>
           {/* Workout header */}
-          <div id="tour-workout-header" className={cn(
+          <div className={cn(
             'p-4 md:px-6 md:py-5 bg-card rounded-xl border border-border mb-5 border-l-4',
             DAY_TYPE_COLORS[selectedDayType as DayType]?.border || 'border-l-border'
           )}>
@@ -304,7 +304,7 @@ function WorkoutDayView({ dayId }: { dayId: DayId }) {
               <div className="flex gap-2.5 flex-wrap w-full md:w-auto">
                 {!isDone && (
                   <Button
-                    id="tour-start-session"
+                    data-testid="start-session"
                     onClick={handleStartSession}
                     variant="limeSolid"
                     className="w-full md:w-auto font-bebas text-xl tracking-wide"
@@ -339,9 +339,9 @@ function WorkoutDayView({ dayId }: { dayId: DayId }) {
           </div>
 
           {/* Exercise cards */}
-          <div id="tour-exercise-list" className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
             {workout.exercises.map((ex, idx) => (
-              <div key={ex.id} {...(idx === 0 ? { id: 'tour-first-exercise' } : {})}>
+              <div key={ex.id}>
                 <ExerciseCard exercise={ex} workoutKey={workoutKey!}
                   onLogSet={onLogSet} onStartRest={(s: number) => { setRestTime(getRestForExercise(ex.id, s)); setRestExerciseId(ex.id) }} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} isFirst={idx === 0} userInjuries={userInjuries} />
               </div>
@@ -401,7 +401,6 @@ function WorkoutDayView({ dayId }: { dayId: DayId }) {
             if (!nextDay) return null
             return (
               <Button
-                id="tour-train-anyway"
                 variant="outline"
                 className="mt-6"
                 onClick={() => chooseDay(nextDay.id)}

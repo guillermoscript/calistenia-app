@@ -20,7 +20,7 @@ test.describe('Nutrition Page Journey', () => {
   test('shows date navigation controls', async ({ page }) => {
     await expect(page.getByText(/nutrición|nutrition/i).first()).toBeVisible({ timeout: 8000 })
     await expect(
-      page.locator('input[type="date"], [id="tour-nutrition-date"]').first()
+      page.locator('input[type="date"], [data-testid="nutrition-date"]').first()
     ).toBeVisible({ timeout: 8000 })
   })
 })

@@ -3,13 +3,6 @@ import { expect } from '@playwright/test'
 export const TEST_PASS = 'TestPass123!'
 export const TEST_NAME = 'PW Tester'
 
-/** Páginas con tour de Driver.js; se marcan como vistas antes de arrancar la app. */
-const TOUR_PAGES = [
-  'dashboard', 'workout', 'workout-detail', 'progress', 'nutrition', 'calendar', 'sleep',
-  'programs', 'exercises', 'free-session', 'cardio', 'friends', 'leaderboard',
-  'challenges', 'notifications', 'profile', 'lumbar',
-]
-
 /**
  * Desactiva los overlays ANTES de que la app monte, escribiendo sus claves de
  * localStorage con `addInitScript` (corre en cada navegación, antes de los
@@ -26,47 +19,24 @@ const TOUR_PAGES = [
  */
 export async function suppressOverlays(page) {
   await page.addInitScript(
-    ([dismissKey, tourPages]) => {
+    (dismissKey) => {
       // El init script también corre en `about:blank`, donde tocar localStorage
       // lanza SecurityError: sin el try/catch, la excepción se propaga y la
       // navegación real se queda sin las claves.
       try {
         localStorage.setItem(dismissKey, Date.now().toString())
-        tourPages.forEach((p) => localStorage.setItem(`calistenia_tour_${p}`, 'true'))
       } catch {
         /* origen sin storage disponible: se reintenta en la siguiente navegación */
       }
     },
-    ['calistenia_install_dismiss', TOUR_PAGES],
+    'calistenia_install_dismiss',
   )
 }
 
 /**
- * Dismiss any overlays that might block interaction (app tour, PWA install prompt, etc.)
+ * Dismiss any overlays that might block interaction (PWA install prompt, discovery survey, etc.)
  */
 export async function dismissOverlays(page) {
-  // 1. Dismiss app tour overlay first (Driver.js) — it blocks everything underneath
-  for (let i = 0; i < 15; i++) {
-    const doneBtn = page.locator('.driver-popover-close-btn[data-button="done"]').first()
-    const nextBtn = page.locator('.driver-popover-next-btn').first()
-    const closeBtn = page.locator('.driver-popover-close-btn').first()
-    if (await doneBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-      await doneBtn.click()
-      await page.waitForTimeout(200)
-      break
-    }
-    if (await nextBtn.isVisible({ timeout: 300 }).catch(() => false)) {
-      await nextBtn.click()
-      await page.waitForTimeout(200)
-      continue
-    }
-    if (await closeBtn.isVisible({ timeout: 300 }).catch(() => false)) {
-      await closeBtn.click()
-      await page.waitForTimeout(200)
-      break
-    }
-    break
-  }
   // 1b. Encuesta de descubrimiento (#771): sale ~4 s después de entrar y tapa
   // la página. Su clave lleva el uid, así que `suppressOverlays` no puede
   // adelantarse antes del registro; se cierra con «Ahora no».
@@ -117,26 +87,6 @@ export async function register(page, { email, password, name } = {}) {
   }
   await expect(headerNav).toBeVisible({ timeout: 10000 })
 
-  // Mark all tours as seen to prevent tour overlays from blocking tests
-  await page.evaluate(() => {
-    // Get the user ID from PocketBase auth store
-    let userId = ''
-    try {
-      const pbAuth = localStorage.getItem('pocketbase_auth')
-      if (pbAuth) {
-        const parsed = JSON.parse(pbAuth)
-        userId = parsed?.record?.id || parsed?.model?.id || ''
-      }
-    } catch {}
-    const pages = ['dashboard','workout','workout-detail','progress','nutrition','calendar','sleep',
-      'programs','exercises','free-session','cardio','friends','leaderboard',
-      'challenges','notifications','profile','lumbar']
-    pages.forEach(p => {
-      localStorage.setItem(`calistenia_tour_${p}`, 'true')
-      if (userId) localStorage.setItem(`calistenia_tour_${p}_${userId}`, 'true')
-    })
-  })
-
   // Dismiss any overlays that appeared after login
   await dismissOverlays(page)
   return _email
@@ -164,10 +114,10 @@ export async function login(page, email, password = TEST_PASS) {
 export async function navigateTo(page, path) {
   await page.goto(path)
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
-  // Wait for potential delayed overlays (tours start after a brief delay)
+  // Wait for potential delayed overlays (install prompt, survey)
   await page.waitForTimeout(800)
   await dismissOverlays(page)
-  // Check again — some tours/prompts appear after the first dismiss
+  // Check again — some prompts appear after the first dismiss
   await page.waitForTimeout(300)
   await dismissOverlays(page)
 }

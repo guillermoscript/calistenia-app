@@ -330,7 +330,7 @@ describe('DashboardPage · un bloque por estado', () => {
     expect(state('first_workout')).toBe(true)
     expect(screen.getByText('home.firstWorkout.title')).toBeInTheDocument()
     expect(screen.getByTestId('home-first-week')).toBeInTheDocument()
-    expect(document.getElementById('tour-weekly-plan')).toBeNull()
+    expect(screen.queryByTestId('home-week-plan')).toBeNull()
   })
 
   it('first_workout sin ventana: ni meta ni semana', () => {
@@ -598,8 +598,8 @@ describe('DashboardPage · semana y racha', () => {
   it('enseña el recuento de la semana y 7 celdas con etiqueta accesible', () => {
     mount()
     expect(screen.getByTestId('home-week-count')).toHaveTextContent('home.week.count')
-    expect(document.getElementById('tour-weekly-plan')).not.toBeNull()
-    const cells = within(document.getElementById('tour-weekly-plan')!).getAllByRole('img')
+    expect(screen.queryByTestId('home-week-plan')).not.toBeNull()
+    const cells = within(screen.getByTestId('home-week-plan')).getAllByRole('img')
     expect(cells).toHaveLength(7)
     cells.forEach(cell => expect(cell.getAttribute('aria-label')).toBeTruthy())
   })

@@ -61,15 +61,9 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   const startBtn = page.getByRole('button', { name: /^EMPEZAR$|^START$/i })
   await expect(startBtn).toBeVisible({ timeout: 15000 })
 
-  // Ya autenticados: marcar los tours por usuario antes de llegar al dashboard
+  // Ya autenticados: el uid se usa más abajo para leer el programa activo
   const { userId } = await readAuth(page)
   expect(userId, 'no hay userId tras el signup').toBeTruthy()
-  await page.evaluate((uid) => {
-    ;['dashboard', 'workout', 'programs'].forEach((p) => {
-      localStorage.setItem(`calistenia_tour_${p}`, 'true')
-      localStorage.setItem(`calistenia_tour_${p}_${uid}`, 'true')
-    })
-  }, userId)
 
   await startBtn.click()
 
@@ -120,16 +114,6 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
 
   // ── Aterrizaje en la app con el programa ACTIVO (no fallback) ────────────
   await expect(page.getByTestId('app-header')).toBeVisible({ timeout: 15000 })
-  // El enlace cae en /workout, donde conviven dos tours (página + detalle)
-  // cuyos popovers se tapan entre sí y el helper no puede cerrarlos. Los
-  // tours van por usuario (`calistenia_tour_<page>_<uid>`), así que se marcan
-  // hechos ya con el uid conocido y el resto se comprueba desde el dashboard.
-  const { userId: tourUid } = await readAuth(page)
-  await page.evaluate((uid) => {
-    for (const p of ['dashboard', 'workout', 'workout-detail', 'programs']) {
-      localStorage.setItem(`calistenia_tour_${p}_${uid}`, 'true')
-    }
-  }, tourUid)
   await page.goto('/')
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await dismissOverlays(page)

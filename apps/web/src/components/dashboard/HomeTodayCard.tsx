@@ -282,7 +282,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
   }
 
   const programLine = activeProgram && programProgress.totalWeeks > 0 ? (
-    <div id="tour-progress" className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5">
       <div className="flex justify-between gap-3">
         <Meta className="truncate text-[10px]">
           {t('home.training.programPhase', { program: activeProgram.name, phase: programProgress.currentPhase, phases: phases.length || 1 })}

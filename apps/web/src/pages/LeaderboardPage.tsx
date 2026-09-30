@@ -63,7 +63,7 @@ export default function LeaderboardPage({ userId, embedded = false }: Leaderboar
       )}
 
       {/* Category pills */}
-      <div id="tour-leaderboard-categories" className="flex gap-1.5 flex-wrap mb-4">
+      <div className="flex gap-1.5 flex-wrap mb-4">
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
@@ -135,7 +135,7 @@ export default function LeaderboardPage({ userId, embedded = false }: Leaderboar
 
       {/* Ranking list */}
       {!loading && !error && currentEntries.length > 0 && (
-        <div id="tour-leaderboard-list" className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           {currentEntries.map((entry, i) => (
             <div
               key={entry.userId}
