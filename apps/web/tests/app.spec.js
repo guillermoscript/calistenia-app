@@ -192,15 +192,15 @@ test.describe('SessionView - modo sesión', () => {
     await expect(page.getByText(/discard session|descartar sesión/i).first()).toBeVisible({ timeout: 3000 })
     // "DISCARD SESSION" / "DESCARTAR SESIÓN" button
     await expect(page.getByRole('button', { name: /discard session|descartar sesión/i })).toBeVisible()
-    // "CONTINUAR ENTRENANDO" button (hardcoded Spanish)
-    await expect(page.getByRole('button', { name: /CONTINUAR ENTRENANDO/i })).toBeVisible()
+    // "CONTINUAR ENTRENANDO" / "CONTINUE TRAINING" button
+    await expect(page.getByRole('button', { name: /continuar entrenando|continue training/i })).toBeVisible()
   })
 
   test('continuar cierra el overlay y vuelve a la sesión', async ({ page }) => {
     await startSession(page)
     await page.locator('[aria-label*="Descartar" i], [aria-label*="Discard" i]').click({ force: true })
-    await expect(page.getByRole('button', { name: /CONTINUAR ENTRENANDO/i })).toBeVisible({ timeout: 3000 })
-    await page.getByRole('button', { name: /CONTINUAR ENTRENANDO/i }).click()
+    await expect(page.getByRole('button', { name: /continuar entrenando|continue training/i })).toBeVisible({ timeout: 3000 })
+    await page.getByRole('button', { name: /continuar entrenando|continue training/i }).click()
     await expect(page.getByRole('button', { name: /SERIE COMPLETADA|COMPLETED SET/i })).toBeVisible({ timeout: 5000 })
   })
 
@@ -209,6 +209,9 @@ test.describe('SessionView - modo sesión', () => {
 // ─── SessionView - pantalla de nota y celebración ────────────────────────────
 
 test.describe('SessionView - nota y celebración', () => {
+
+  // completeAllSets recorre todas las series del día (20-25 s); el timeout global de 30 s se queda corto
+  test.setTimeout(90_000)
 
   test.beforeEach(async ({ page }) => {
     await register(page)
@@ -251,7 +254,7 @@ test.describe('SessionView - nota y celebración', () => {
     await startSession(page)
     const reached = await completeAllSets(page)
     expect(reached).toBe('note')
-    await expect(page.getByText(/último set listo/i)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/último set listo|last set done/i)).toBeVisible({ timeout: 5000 })
     await expect(page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /^(SALTAR|SKIP)$/i })).toBeVisible()
   })
@@ -260,7 +263,7 @@ test.describe('SessionView - nota y celebración', () => {
     await startSession(page)
     await completeAllSets(page)
     await expect(page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i })).toBeVisible({ timeout: 5000 })
-    await page.getByPlaceholder(/Dominadas|Ej:/i).fill('Todo bien hoy')
+    await page.getByPlaceholder(/Dominadas|Pull-ups|Ej:|E\.g\.:/i).fill('Todo bien hoy')
     await page.getByRole('button', { name: /^(GUARDAR|SAVE)$/i }).click()
     await expect(page.getByText(/SESIÓN COMPLETADA|SESSION COMPLETED/i)).toBeVisible({ timeout: 5000 })
   })
