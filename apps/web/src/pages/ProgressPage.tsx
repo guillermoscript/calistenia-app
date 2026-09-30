@@ -208,10 +208,10 @@ export default function ProgressPage() {
       ) : (
         <Tabs value={activeTab} onValueChange={changeTab} className="w-full">
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
-            <TabsTrigger value="estadisticas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.stats')}</TabsTrigger>
-            <TabsTrigger value="graficas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.charts')}</TabsTrigger>
-            <TabsTrigger value="cuerpo" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.body')}</TabsTrigger>
+            <TabsTrigger value="resumen" className="flex-1 px-1.5 text-xs tracking-[0.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
+            <TabsTrigger value="estadisticas" className="flex-1 px-1.5 text-xs tracking-[0.5px] uppercase">{t('progress.tab.statsShort')}</TabsTrigger>
+            <TabsTrigger value="graficas" className="flex-1 px-1.5 text-xs tracking-[0.5px] uppercase">{t('progress.tab.charts')}</TabsTrigger>
+            <TabsTrigger value="cuerpo" className="flex-1 px-1.5 text-xs tracking-[0.5px] uppercase">{t('progress.tab.body')}</TabsTrigger>
           </TabsList>
 
           {/* ── Tab 1: Resumen ── */}
