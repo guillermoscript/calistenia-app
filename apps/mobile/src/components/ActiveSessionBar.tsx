@@ -4,20 +4,23 @@
  * /session. Se apila sobre la de cardio si ambas están activas.
  */
 import { View, Pressable } from 'react-native'
-import { useRouter } from 'expo-router'
+import { usePathname, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
+import { isHomeTabPath } from '@/lib/home-active-activity'
 
 export default function ActiveSessionBar() {
   const { t } = useTranslation()
   const router = useRouter()
   const { isActive, workout, exerciseCount } = useActiveSession()
   const { state: cardioState } = useCardioSessionContext()
+  // En Hoy no sale: el bloque «Hoy» ya enseña «Continuar» (#858).
+  const onHome = isHomeTabPath(usePathname())
 
-  if (!isActive || !workout) return null
+  if (!isActive || !workout || onHome) return null
 
   // Si la barra de cardio también está visible, esta se coloca encima
   const cardioVisible = cardioState === 'tracking' || cardioState === 'paused'

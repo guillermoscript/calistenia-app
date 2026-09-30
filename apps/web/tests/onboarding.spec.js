@@ -119,7 +119,7 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   await page.getByRole('button', { name: /Ahora no, ir al inicio|Not now, go to home/i }).click()
 
   // ── Aterrizaje en la app con el programa ACTIVO (no fallback) ────────────
-  await expect(page.locator('header nav')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByTestId('app-header')).toBeVisible({ timeout: 15000 })
   // El enlace cae en /workout, donde conviven dos tours (página + detalle)
   // cuyos popovers se tapan entre sí y el helper no puede cerrarlos. Los
   // tours van por usuario (`calistenia_tour_<page>_<uid>`), así que se marcan

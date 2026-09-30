@@ -1,576 +1,235 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useCountUp } from '@/lib/use-count-up'
-import { View, ScrollView, Pressable } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useTranslation } from 'react-i18next'
-import { Play, Check, Moon, MapPin, Users, Bell, Trophy, Flag, Timer } from 'lucide-react-native'
-
-import { Text } from '@/components/ui/text'
-import { Kicker } from '@/components/ui/kicker'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
-import { useActiveSession } from '@/contexts/ActiveSessionContext'
-import { useCircuitSession } from '@/contexts/CircuitSessionContext'
-import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
-import { useAuthUser } from '@/lib/use-auth-user'
-import { useNotifications } from '@calistenia/core/hooks/useNotifications'
-import StreakMilestone from '@/components/StreakMilestone'
-import HomeActivity from '@/components/home/HomeActivity'
-import FeaturedChallengeCard from '@/components/home/FeaturedChallengeCard'
-import CommunityProgramCard from '@/components/home/CommunityProgramCard'
-import ActivationCard from '@/components/home/ActivationCard'
-import GettingStartedCard, { isChecklistDismissed } from '@/components/home/GettingStartedCard'
-import { OneShotHint } from '@/components/ui/one-shot-hint'
-import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
-import SleepCard from '@/components/sleep/SleepCard'
-import InsightsCard from '@/components/insights/InsightsCard'
-import WhatsNewModal from '@/components/WhatsNewModal'
-import { MenuButton } from '@/components/QuickMenu'
-import { NotificationBadge } from '@/components/social/NotificationBadge'
-import { localDay, localHour, todayStr, diffDays, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
-import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { getWeekDoneDays } from '@calistenia/core/lib/weekSummary'
-import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
-import type { DayId, WeekDay } from '@calistenia/core/types'
-
-const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
-
 /**
- * Días NO entrenables como sesión de fuerza en el MVP móvil. Igual que la web,
- * cualquier otro tipo (incluido day_type vacío en programas antiguos) es fuerza.
- *
- * `cardio` y `circuit` siguen aquí a propósito: NO son sesiones de fuerza, y
- * este `Set` también gobierna `OtherDays`, que lista días para arrancar el
- * runner de fuerza. Cada uno tiene su propio camino en el hero (#625).
+ * Inicio «qué hago hoy» (#858, épica #852). Mismo esqueleto que la web (#855):
+ * cabecera, bloque «Hoy» según `getHomeState` (#853), la semana y como mucho
+ * dos filas de «Para ti». Lo que salía antes (stats, sueño, retos, actividad,
+ * accesos rápidos…) vive en Progreso, Comunidad (#860) o Perfil (#859).
  */
-const NON_STRENGTH_TYPES = new Set(['rest', 'cardio', 'yoga', 'circuit'])
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ScrollView } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
-const LIME = 'hsl(74 90% 45%)'
-
-function WeekStrip({ weekDays, todayId, isDone, phase }: {
-  weekDays: WeekDay[]
-  todayId: DayId
-  isDone: (key: string) => boolean
-  phase: number
-}) {
-  const { t } = useTranslation()
-  return (
-    <View className="flex-row gap-1.5">
-      {weekDays.map(day => {
-        const isToday = day.id === todayId
-        const done = isDone(`p${phase}_${day.id}`)
-        return (
-          <View
-            key={day.id}
-            className={cn(
-              'flex-1 items-center rounded-lg border py-2',
-              isToday ? 'border-lime/40 bg-lime/10' : 'border-border bg-card',
-            )}
-          >
-            <Text className={cn('font-mono text-[9px] uppercase tracking-[1px]', isToday ? 'text-lime' : 'text-muted-foreground')}>
-              {t(`day.${day.id}`).slice(0, 3)}
-            </Text>
-            <View className="mt-1 h-4 items-center justify-center">
-              {done ? (
-                <Check size={14} color={LIME} />
-              ) : day.type === 'rest' ? (
-                <Moon size={12} color="#888899" />
-              ) : (
-                <View className="size-2 rounded-full" style={{ backgroundColor: day.color }} />
-              )}
-            </View>
-          </View>
-        )
-      })}
-    </View>
-  )
-}
+import { OptionSheet } from '@/components/ui/option-sheet'
+import HomeHeader from '@/components/home/HomeHeader'
+import TodayBlock from '@/components/home/TodayBlock'
+import WeekRow, { FirstWeekGoal } from '@/components/home/WeekRow'
+import ParaTi from '@/components/home/ParaTi'
+import StreakMilestone from '@/components/StreakMilestone'
+import WhatsNewModal from '@/components/WhatsNewModal'
+import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
+import { useAuthUser } from '@/lib/use-auth-user'
+import { useHomeView } from '@/lib/use-home-state'
+import { useHomeActions } from '@/lib/use-home-actions'
+import { setAccountHasTrained } from '@/lib/overlay-gate'
+import { useNotifications } from '@calistenia/core/hooks/useNotifications'
+import { dayIdFromDateStr } from '@calistenia/core/lib/programProgress'
+import { homeDayType, type HomeDayRef } from '@calistenia/core/lib/homeState'
+import { paraTiEnabled } from '@calistenia/core/lib/paraTi'
+import { WEEK_ORDER, isTrainableDay } from '@calistenia/core/lib/training-day'
+import { plannedSetCount, trackWorkoutDayViewed } from '@calistenia/core/lib/session-funnel'
+import {
+  homeAnalyticsModifiers,
+  resetHomeView,
+  trackHomeChangeDay,
+  trackHomeParaTiTap,
+  trackHomePrimaryCta,
+  trackHomeSecondaryTap,
+  trackHomeViewed,
+  type HomeSecondaryTarget,
+} from '@calistenia/core/lib/home-analytics'
+import type { ParaTiKind } from '@calistenia/core/lib/paraTi'
+import type { DayId } from '@calistenia/core/types'
 
 export default function TodayScreen() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const router = useRouter()
-  const { settings, activeProgram, weekDays, phases, programsReady, progress, cardioDayConfigs, circuitDayConfigs, programProgress } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getLongestStreak, getCurrentStreak, getTotalSessions, getDoneDates } = useWorkoutActions()
-  const session = useActiveSession()
-  const { startCircuit } = useCircuitSession()
-  const milestoneUser = useAuthUser()
-  const { unreadCount, loadNotifications } = useNotifications(milestoneUser?.id ?? null)
-  // Para el hint cardio_gps (#235): comparte query key con HomeActivity, cero fetch extra.
-  const { sessions: cardioSessions, isLoading: cardioLoading } = useCardioSessions(milestoneUser?.id ?? null)
-  const [showMilestone, setShowMilestone] = useState(true)
-  // «X de Y» de la semana de calendario, en días distintos (#853); suma el
-  // cardio libre, que esta pantalla ya carga para el hint cardio_gps.
-  const weeklyDone = useMemo(
-    () => getWeekDoneDays(todayStr(), progress, cardioSessions.map(c => utcToLocalDateStr(c.started_at))),
-    [progress, cardioSessions],
-  )
-  const scrollRef = useRef<ScrollView>(null)
-  // «Completa tu primer entreno» del checklist: sube al hero (está justo encima).
-  const scrollToHero = useCallback(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), [])
+  const user = useAuthUser()
+  const { activeProgram, weekDays, programsReady } = useWorkoutState()
+  const { getWorkout, isWorkoutDone } = useWorkoutActions()
+  const { unreadCount, loadNotifications } = useNotifications(user?.id ?? null)
+  const view = useHomeView()
+  const { state, today, phase, accountSessions, dayHasContent } = view
+  const actions = useHomeActions(phase)
+  const loading = state.modifiers.loading
 
   useEffect(() => {
-    if (milestoneUser?.id) loadNotifications()
-  }, [milestoneUser?.id, loadNotifications])
+    if (user?.id) loadNotifications()
+  }, [user?.id, loadNotifications])
 
-  const todayId = DAY_IDS[localDay()]
-  // #616: la fase sale del programa activo (semana derivada de `started_at`),
-  // ya no del entero global `settings.phase`.
-  const phase = programProgress.currentPhase || 1
-  const todayMeta = weekDays.find(d => d.id === todayId)
-  const workout = useMemo(() => getWorkout(phase, todayId), [getWorkout, phase, todayId])
-  const workoutKey = `p${phase}_${todayId}`
-  const doneToday = isWorkoutDone(workoutKey)
+  // Ni la encuesta de descubrimiento ni las novedades antes del primer entreno.
+  const hasTrained = accountSessions > 0 && !loading
+  useEffect(() => setAccountHasTrained(hasTrained), [hasTrained])
 
-  // Denominador del embudo (#636 §3). En móvil el «día de entreno» es el hero
-  // de hoy, no un selector de días como en web, así que `source` los separa:
-  // sin él, los dos volúmenes se sumarían como si midieran lo mismo.
-  useEffect(() => {
-    if (!workout || workout.exercises.length === 0) return
-    trackWorkoutDayViewed({
-      workoutKey,
-      source: 'program',
-      exerciseCount: workout.exercises.length,
-      plannedSets: plannedSetCount(workout.exercises),
-      alreadyDone: doneToday,
-    })
-    // `doneToday` fuera de las deps: marcar el día como hecho no es una vista
-    // nueva del día.
-  }, [workoutKey]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por día
+  // ── Días del programa que se pueden elegir con «Cambiar día» ──
+  const dayRefs = useMemo(() => {
+    if (!activeProgram) return []
+    const trainable = WEEK_ORDER
+      .map(id => weekDays.find(d => d.id === id))
+      .filter((d): d is NonNullable<typeof d> => isTrainableDay(d))
+    return trainable
+      .filter(dayHasContent)
+      .map((d): HomeDayRef => ({
+        dayId: d.id,
+        date: today,
+        workoutKey: `p${phase}_${d.id}`,
+        dayType: homeDayType(d.type),
+        index: trainable.findIndex(x => x.id === d.id) + 1,
+        of: trainable.length,
+      }))
+  }, [activeProgram, weekDays, dayHasContent, phase, today])
 
-  const hour = localHour()
-  const greeting = hour < 12 ? t('dashboard.greeting.morning') : hour < 19 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')
-  const phaseMeta = phases.find(p => p.id === phase)
+  const [chosenDay, setChosenDay] = useState<HomeDayRef | null>(null)
+  const [changeDayOpen, setChangeDayOpen] = useState(false)
+  const shownDayId = chosenDay?.dayId
+    ?? (state.kind === 'training_day' || state.kind === 'comeback' ? state.day?.dayId : null)
+  const canChangeDay = dayRefs.length > 1
 
-  const todayFormatted = new Date().toLocaleDateString(i18n.language, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
-  const totalWeeks = activeProgram?.duration_weeks || 26
-  const daysElapsed = settings.startDate ? diffDays(todayStr(), settings.startDate) : 0
-  const weekElapsed = Math.min(Math.floor(daysElapsed / 7) + 1, totalWeeks)
-
-  const isStrengthDay = !!todayMeta && !NON_STRENGTH_TYPES.has(todayMeta.type)
-  const canTrainToday = isStrengthDay && !!workout && workout.exercises.length > 0
-  const isResume = session.isActive && session.workoutKey === workoutKey
-
-  // Día de cardio del programa: la card abre /cardio con los targets configurados
-  const isCardioDay = todayMeta?.type === 'cardio'
-  const cardioConfig = cardioDayConfigs[workoutKey]
-  const handleStartCardio = () => {
-    router.push({
-      pathname: '/cardio',
-      params: {
-        ...(activeProgram ? { program: activeProgram.id, dayKey: workoutKey } : {}),
-        ...(cardioConfig?.activityType ? { activity: cardioConfig.activityType } : {}),
-        ...(cardioConfig?.targetDistanceKm ? { targetKm: String(cardioConfig.targetDistanceKm) } : {}),
-        ...(cardioConfig?.targetDurationMin ? { targetMin: String(cardioConfig.targetDurationMin) } : {}),
-      },
-    })
-  }
-
-  // Día de circuito del programa: arranca el motor de circuitos con la config
-  // de ESTA fase y abre el runner nativo (#625). Antes ni se ofrecía: `circuit`
-  // está en NON_STRENGTH_TYPES y no tenía atajo propio como el cardio.
-  const isCircuitDay = todayMeta?.type === 'circuit'
-  const circuitConfig = circuitDayConfigs[workoutKey]
-  const canStartCircuit = isCircuitDay && !!circuitConfig && circuitConfig.exercises.length > 0
-  const handleStartCircuit = () => {
-    if (!circuitConfig) return
-    // `workoutKey` es `p{fase}_{día}`: el mismo formato que guarda el cardio en
-    // `program_day_key`, y el único que casa con los consumidores del progreso.
-    startCircuit(circuitConfig, 'program', activeProgram?.id, workoutKey)
-    router.push('/circuit')
-  }
-
-  const handleStart = () => {
-    if (!workout) return
-    // Si hay una sesión activa de este mismo workout, retomarla; si es de otro
-    // día se descarta (mismo comportamiento que la web al empezar otra).
-    //
-    // Sin `endSession()` delante: `startSession` ya resetea todo el estado, y
-    // pasando por el cierre la sesión a medias se contaba como una salida
-    // deliberada en vez de como un entreno reemplazado — la misma acción salía
-    // con un desenlace distinto en cada plataforma (#636). De paso se ahorra el
-    // borrado del registro remoto que el push siguiente vuelve a crear.
-    if (!session.isActive || session.workoutKey !== workoutKey) {
-      session.startSession(workout, workoutKey, 'program')
+  // ── Analítica (#854): una vista por foco, con el estado ya resuelto ──
+  const [focused, setFocused] = useState(false)
+  const viewedRef = useRef(false)
+  useFocusEffect(useCallback(() => {
+    setFocused(true)
+    return () => {
+      setFocused(false)
+      viewedRef.current = false
+      resetHomeView()
+      // Al volver, el bloque enseña otra vez el día de hoy.
+      setChosenDay(null)
     }
-    router.push('/session')
-  }
+  }, []))
+  useEffect(() => {
+    if (!focused || loading || viewedRef.current) return
+    viewedRef.current = true
+    trackHomeViewed({ state: state.kind, modifiers: homeAnalyticsModifiers(state) })
+  }, [focused, loading, state])
 
-  // Deep-link `autostart=1` (#695): tocar el push de recordatorio/inactividad
-  // (`/workout` → `resolveNotifUrl`) arranca el entreno de hoy sin que el
-  // usuario tenga que buscar el botón. Misma prioridad que el Pressable del
-  // hero: fuerza > cardio > circuito. `autostartFiredFor` evita relanzar en
-  // cada render mientras `programsReady` sigue resolviendo (el efecto vuelve
-  // a correr con cada cambio de esas deps hasta que puede decidir).
+  const onPrimary = useCallback((run: () => void) => {
+    trackHomePrimaryCta({ state: state.kind })
+    run()
+  }, [state.kind])
+  const onSecondary = useCallback((target: HomeSecondaryTarget, run: () => void) => {
+    trackHomeSecondaryTap({ target, state: state.kind })
+    run()
+  }, [state.kind])
+  const onParaTi = useCallback((kind: ParaTiKind, run: () => void) => {
+    trackHomeParaTiTap({ kind })
+    run()
+  }, [])
+  const openChangeDay = useCallback(() => {
+    trackHomeChangeDay()
+    setChangeDayOpen(true)
+  }, [])
+  const chooseDay = useCallback((day: HomeDayRef) => {
+    // Desde «Siguiente» / «Ver entreno»: el día se enseña, no se arranca.
+    onSecondary('next_day', () => setChosenDay(day))
+  }, [onSecondary])
+
+  // ── Denominador del embudo (#636 §3): el entreno de hoy del programa ──
+  const todayId = dayIdFromDateStr(today) as DayId
+  const todayKey = `p${phase}_${todayId}`
+  const todayWorkout = useMemo(() => getWorkout(phase, todayId), [getWorkout, phase, todayId])
+  useEffect(() => {
+    if (!todayWorkout || todayWorkout.exercises.length === 0) return
+    trackWorkoutDayViewed({
+      workoutKey: todayKey,
+      source: 'program',
+      exerciseCount: todayWorkout.exercises.length,
+      plannedSets: plannedSetCount(todayWorkout.exercises),
+      alreadyDone: isWorkoutDone(todayKey),
+    })
+  }, [todayKey]) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por día
+
+  // ── Push con `autostart=1` (#695, #807): arranca el entreno de hoy ──
+  // Se deja como estaba: quien toca el aviso ya decidió entrenar. El cardio
+  // del programa se abre aunque ya esté hecho (antes también).
   const { autostart } = useLocalSearchParams<{ autostart?: string }>()
   const autostartFiredFor = useRef<string | null>(null)
   useEffect(() => {
     if (autostart !== '1') {
-      // El param se limpia tras disparar; al desaparecer se rearma el guard
-      // para que un segundo push más tarde (misma vida de la app) sí arranque.
       autostartFiredFor.current = null
       return
     }
     if (!programsReady) return
     if (autostartFiredFor.current === autostart) return
     autostartFiredFor.current = autostart
-    if (canTrainToday && !doneToday) {
-      handleStart()
-    } else if (isCardioDay) {
-      handleStartCardio()
-    } else if (canStartCircuit && !doneToday) {
-      handleStartCircuit()
-    }
-    // Sin esto, volver a esta pestaña (o refrescar la vista) relanzaría el
-    // entreno cada vez: el query param sigue vivo hasta que se limpia aquí.
+    const ref = dayRefs.find(d => d.dayId === todayId)
+    if (ref && (ref.dayType === 'cardio' || !isWorkoutDone(ref.workoutKey))) actions.startDay(ref)
     router.setParams({ autostart: undefined })
-  }, [autostart, programsReady, canTrainToday, doneToday, isCardioDay, canStartCircuit]) // eslint-disable-line react-hooks/exhaustive-deps -- handlers recreados cada render, no deps útiles
+  }, [autostart, programsReady]) // eslint-disable-line react-hooks/exhaustive-deps -- handlers recreados cada render
+
+  const dayName = (id: DayId) => t(`day.${id}`)
+  const changeDayOptions = dayRefs
+    .filter(d => d.dayId !== shownDayId)
+    .map(d => {
+      const w = getWorkout(phase, d.dayId)
+      const focus = weekDays.find(x => x.id === d.dayId)?.focus
+      const title = d.dayType === 'cardio' ? t('cardio.title') : w?.title || focus
+      return {
+        key: d.dayId,
+        label: title ? `${dayName(d.dayId)} · ${title}` : dayName(d.dayId),
+        onPress: () => setChosenDay(d.dayId === todayId && state.kind === 'training_day' ? null : d),
+      }
+    })
+
+  const showParaTi = !!user?.id && !loading && paraTiEnabled({ homeKind: state.kind, accountSessions })
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <ScrollView ref={scrollRef} contentContainerClassName="px-4 pb-8 gap-4">
-        {/* ── Welcome header — mismo patrón que DashboardPage web ── */}
-        <View className="flex-row items-start justify-between pt-2">
-          <View className="flex-1">
-            <Kicker>
-              {todayFormatted}
-            </Kicker>
-            <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
-            <Text className="mt-1 text-sm text-muted-foreground">
-              {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
-              {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
-            </Text>
-          </View>
-          {/* Cabecera: solo la campana (con badge ambiental) + ☰. Comunidad ya
-              está en el menú ☰ y en los pills de abajo — sin botón redundante. */}
-          <View className="flex-row items-center gap-1.5 pt-1">
-            <Pressable
-              onPress={() => router.push('/notifications')}
-              className="size-10 items-center justify-center rounded-full bg-card border border-border active:opacity-70"
-              accessibilityRole="button"
-              accessibilityLabel={t('nav.notifications')}
-            >
-              <Bell size={18} color="hsl(0 0% 55%)" />
-              <NotificationBadge count={unreadCount} />
-            </Pressable>
-            <MenuButton />
-          </View>
-        </View>
+      <ScrollView contentContainerClassName="gap-5 px-5 pb-8 pt-2">
+        <HomeHeader unreadCount={unreadCount} />
 
-        {/* Plan semanal */}
-        {activeProgram && weekDays.length > 0 && (
-          <WeekStrip weekDays={weekDays} todayId={todayId} isDone={isWorkoutDone} phase={phase} />
-        )}
-
-        {/* ── Hero: workout de hoy — card clicable como la web ── */}
-        {!programsReady ? (
-          <Card><CardContent className="items-center py-10"><Text className="text-muted-foreground">{t('common.loading')}</Text></CardContent></Card>
-        ) : !activeProgram ? (
-          <Card>
-            <CardContent className="items-center gap-3 py-8">
-              <Text className="text-center font-bebas text-2xl text-foreground">{t('programs.chooseToStart')}</Text>
-              <Button onPress={() => router.push('/programs')}>
-                <Text>{t('nav.programs')}</Text>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Pressable
-            onPress={
-              canTrainToday && !doneToday ? handleStart
-              : isCardioDay ? handleStartCardio
-              : canStartCircuit && !doneToday ? handleStartCircuit
-              : undefined
-            }
-            className={cn(
-              'rounded-xl border-2 p-5',
-              doneToday
-                ? 'border-emerald-500/30 bg-emerald-500/5'
-                : canTrainToday
-                  ? 'border-lime/30 bg-lime/5 active:scale-[0.99]'
-                  : isCardioDay
-                    ? 'border-emerald-400/30 bg-emerald-400/5 active:scale-[0.99]'
-                    : canStartCircuit
-                      ? 'border-orange-500/30 bg-orange-500/5 active:scale-[0.99]'
-                      : 'border-border bg-card',
-            )}
-            accessibilityRole={(canTrainToday || isCardioDay || canStartCircuit) && !doneToday ? 'button' : undefined}
-          >
-            <View className="flex-row items-center justify-between gap-4">
-              <View className="flex-1">
-                <Text className="mb-1 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-                  {todayMeta?.type === 'rest' ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
-                </Text>
-                <Text
-                  className={cn(
-                    'font-bebas text-3xl leading-none',
-                    doneToday ? 'text-emerald-500'
-                    : canTrainToday ? 'text-lime'
-                    : isCardioDay ? 'text-emerald-400'
-                    : canStartCircuit ? 'text-orange-500'
-                    : 'text-muted-foreground',
-                  )}
-                >
-                  {doneToday
-                    ? t('dashboard.completed')
-                    : todayMeta?.type === 'rest'
-                      ? t('dashboard.restDay')
-                      : isCardioDay
-                        ? `${t('cardio.title')} · ${t(`cardio.${cardioConfig?.activityType ?? 'running'}`)}`
-                        : isCircuitDay
-                          ? (circuitConfig?.mode === 'timed' ? 'HIIT' : t('circuit.modes.circuit'))
-                          : workout?.title || todayMeta?.focus || t('dashboard.train')}
-                </Text>
-                <Text className="mt-1.5 text-xs text-muted-foreground">
-                  {activeProgram.name}{phaseMeta ? ` · ${t('workout.phaseLabel', { phase })}` : ''}
-                  {canTrainToday && !doneToday ? ` · ${t('workout.exerciseCount', { count: workout!.exercises.length })}` : ''}
-                </Text>
-                {/* #716: el día ya viene con la mitad de series (`workout.deload`). */}
-                {!!workout?.deload && canTrainToday && !doneToday && (
-                  <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-lime">
-                    {t('programProgress.deloadWeek')} · {t('programProgress.deloadHint')}
-                  </Text>
-                )}
-                {isResume && !doneToday && (
-                  <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-lime">
-                    {t('warmupCooldown.transitions.continue')}
-                  </Text>
-                )}
-              </View>
-
-              {doneToday ? (
-                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                  <Check size={22} color="#10b981" />
-                </View>
-              ) : todayMeta?.type === 'rest' ? (
-                <Text className="text-3xl">😴</Text>
-              ) : canTrainToday ? (
-                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-lime/10">
-                  <Play size={22} color={LIME} fill={LIME} />
-                </View>
-              ) : isCardioDay ? (
-                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-emerald-400/10">
-                  <MapPin size={22} color="#34d399" />
-                </View>
-              ) : canStartCircuit ? (
-                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-orange-500/10">
-                  <Timer size={22} color="#f97316" />
-                </View>
-              ) : null}
-            </View>
-
-            {/* Ya entrenaste hoy → permitir repetir (paridad con "REPETIR" de la web) */}
-            {doneToday && canTrainToday && (
-              <View className="mt-4">
-                <RepeatTrainingButton tone="primary" onPress={handleStart} />
-              </View>
-            )}
-
-            {isCardioDay && !doneToday && (cardioConfig?.targetDistanceKm || cardioConfig?.targetDurationMin) && (
-              <Text className="mt-3 font-mono text-[10px] uppercase tracking-[2px] text-emerald-400">
-                {[
-                  cardioConfig?.targetDistanceKm ? t('cardio.targetKm', { km: cardioConfig.targetDistanceKm }) : null,
-                  cardioConfig?.targetDurationMin ? t('cardio.targetMin', { min: cardioConfig.targetDurationMin }) : null,
-                ].filter(Boolean).join(' · ')}
-              </Text>
-            )}
-
-            {isCircuitDay && !doneToday && circuitConfig && (
-              <Text className="mt-3 font-mono text-[10px] uppercase tracking-[2px] text-orange-500">
-                {t('circuit.summary', { rounds: circuitConfig.rounds, exercises: circuitConfig.exercises.length })}
-              </Text>
-            )}
-
-            {!doneToday && !canTrainToday && !isCardioDay && !canStartCircuit && todayMeta?.type !== 'rest' && (
-              <Text className="mt-3 text-sm text-muted-foreground">
-                {todayMeta?.focus} — {t('programs.contentComingSoon')}
-              </Text>
-            )}
-          </Pressable>
-        )}
-
-        {/* Objetivo «3 entrenos en tus primeros 7 días» (#800). El 0/3 lo
-            enseña FirstWorkoutCard; esta toma el relevo desde la 1.ª sesión. */}
-        <ActivationCard
-          userId={milestoneUser?.id ?? null}
-          created={milestoneUser?.created}
-          doneDates={getDoneDates()}
+        <TodayBlock
+          view={view}
+          chosenDay={chosenDay}
+          actions={actions}
+          onChangeDay={canChangeDay ? openChangeDay : null}
+          onBackToToday={() => setChosenDay(null)}
+          onChooseDay={chooseDay}
+          onPrimary={onPrimary}
+          onSecondary={onSecondary}
         />
 
-        {/* Checklist «Primeros pasos» — activación de usuarios nuevos (#233).
-            Arriba para quien empieza, sin tapar el hero. */}
-        <GettingStartedCard
-          userId={milestoneUser?.id ?? null}
-          hasActiveProgram={!!activeProgram}
-          totalSessions={getTotalSessions()}
-          programsReady={programsReady}
-          onWorkoutTap={scrollToHero}
-        />
+        {state.kind === 'first_workout' ? (
+          state.showActivationGoal && state.modifiers.firstWeek ? (
+            <FirstWeekGoal goal={state.modifiers.firstWeek} start />
+          ) : null
+        ) : !loading ? (
+          <WeekRow view={view} />
+        ) : null}
 
-        {/* Otro día: entrena el que quieras — siempre disponible, aunque hoy
-            tenga (o ya hayas hecho) su propio entrenamiento. */}
-        {activeProgram && (
-          <OtherDays phase={phase} todayId={todayId} weekDays={weekDays} />
-        )}
-
-        {/* Hint one-shot: cardio GPS (#235). Cede ante el checklist «Primeros
-            pasos» (regla de saturación: máximo un elemento de descubrimiento). */}
-        {!isCardioDay && (
-          <OneShotHint
-            id="cardio_gps"
-            userId={milestoneUser?.id ?? null}
-            icon={MapPin}
-            text={t('hints.cardioGps')}
-            onPress={() => router.push('/cardio')}
-            visible={
-              isChecklistDismissed(milestoneUser?.id ?? null) &&
-              !cardioLoading &&
-              cardioSessions.length === 0 &&
-              getTotalSessions() >= 2
-            }
+        {showParaTi ? (
+          <ParaTi
+            userId={user!.id}
+            homeKind={state.kind}
+            accountSessions={accountSessions}
+            today={today}
+            onTap={onParaTi}
           />
-        )}
-
-        {/* Acceso directo a cardio GPS (también fuera de días de cardio del programa) */}
-        {!isCardioDay && (
-          <Pressable
-            onPress={() => router.push('/cardio')}
-            className="flex-row items-center justify-between rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
-          >
-            <View className="flex-row items-center gap-3">
-              <View className="size-9 items-center justify-center rounded-full bg-emerald-400/10">
-                <MapPin size={16} color="#34d399" />
-              </View>
-              <View>
-                <Text className="font-sans-medium text-foreground">{t('cardio.title')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {t('cardio.gpsTracking')}
-                </Text>
-              </View>
-            </View>
-            <Play size={16} color="hsl(0 0% 55%)" />
-          </Pressable>
-        )}
-
-        {/* Stats */}
-        <View className="flex-row gap-3">
-          <StatCard label={t('common.week')} value={`${weeklyDone}/${getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)}`} />
-          {/* Racha viva, no el récord: el récord se queda en perfil (#229) */}
-          <StatCard label={t('profile.streak')} value={getCurrentStreak()} />
-          <StatCard label={t('profile.sessions')} value={getTotalSessions()} />
-        </View>
-
-        {/* ¿Cómo dormiste? — paridad con SleepDashboardWidget del DashboardPage web (#244) */}
-        <SleepCard userId={milestoneUser?.id ?? null} />
-
-        {/* Reto comunitario destacado (#351) — un único reto curado, si hay alguno vivo/reciente */}
-        <FeaturedChallengeCard userId={milestoneUser?.id ?? null} />
-
-        {/* Programa de comunidad (#353) — cohorte con hitos semanales, si hay alguno publicado */}
-        <CommunityProgramCard userId={milestoneUser?.id ?? null} />
-
-        {/* Accesos rápidos comunidad */}
-        <View className="flex-row gap-2">
-          <CommunityPill icon={<Users size={15} color="hsl(0 0% 55%)" />} label={t('nav.friends')} onPress={() => router.push('/friends')} />
-          <CommunityPill icon={<Trophy size={15} color="hsl(0 0% 55%)" />} label={t('nav.leaderboard')} onPress={() => router.push('/leaderboard')} />
-          <CommunityPill icon={<Flag size={15} color="hsl(0 0% 55%)" />} label={t('nav.challenges')} onPress={() => router.push('/challenges')} />
-        </View>
-
-        <InsightsCard userId={milestoneUser?.id ?? null} />
-
-        {/* Actividad reciente — amigos / tú */}
-        <HomeActivity />
-
-        <Text className="text-center font-mono text-[9px] tracking-[2px] text-muted-foreground/50">{todayStr()}</Text>
+        ) : null}
       </ScrollView>
 
-      {showMilestone && milestoneUser && getLongestStreak() > 0 && (
+      <OptionSheet
+        visible={changeDayOpen}
+        kicker={t('home.action.changeDay')}
+        title={t('home.changeDay.title')}
+        options={changeDayOptions}
+        cancelLabel={t('common.cancel')}
+        onClose={() => setChangeDayOpen(false)}
+      />
+
+      {/* Hito de racha SEMANAL: nunca encima de una actividad en curso. */}
+      {user && hasTrained && state.kind !== 'in_progress' && view.streak.current > 0 ? (
         <StreakMilestone
-          streak={getLongestStreak()}
-          userId={milestoneUser.id}
-          userName={(milestoneUser.display_name as string) || (milestoneUser.name as string) || t('race.athlete')}
-          referralCode={(milestoneUser.referral_code as string) || null}
-          onDismiss={() => setShowMilestone(false)}
+          weeks={view.streak.current}
+          userId={user.id}
+          userName={(user.display_name as string) || (user.name as string) || t('race.athlete')}
+          referralCode={(user.referral_code as string) || null}
         />
-      )}
+      ) : null}
 
-      {/* Novedades: se auto-muestra una vez al llegar a Home tras actualizar. */}
-      <WhatsNewModal />
+      {/* Novedades: como mucho una vez por versión y nunca antes del primer entreno. */}
+      {hasTrained ? <WhatsNewModal /> : null}
     </SafeAreaView>
-  )
-}
-
-function CommunityPill({ icon, label, onPress }: { icon: ReactNode; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-border bg-card py-2.5 active:opacity-70"
-    >
-      {icon}
-      <Text className="font-mono text-[10px] uppercase tracking-[1px] text-muted-foreground">{label}</Text>
-    </Pressable>
-  )
-}
-
-function StatCard({ label, value }: { label: string; value: number | string }) {
-  const numeric = typeof value === 'number' ? value : null
-  const count = useCountUp(numeric ?? 0)
-  const display = numeric !== null ? String(count) : value
-  return (
-    <Card className="flex-1">
-      <CardContent className="items-center py-4">
-        <Text className="font-bebas text-2xl leading-none text-foreground">{display}</Text>
-        <Text className="mt-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
-      </CardContent>
-    </Card>
-  )
-}
-
-/** Lista de otros días entrenables de la semana (cuando hoy es descanso/cardio). */
-function OtherDays({ phase, todayId, weekDays }: { phase: number; todayId: DayId; weekDays: WeekDay[] }) {
-  const { t } = useTranslation()
-  const router = useRouter()
-  const { getWorkout, isWorkoutDone } = useWorkoutActions()
-  const session = useActiveSession()
-
-  const trainable = weekDays.filter(d => d.id !== todayId && !NON_STRENGTH_TYPES.has(d.type))
-  if (trainable.length === 0) return null
-
-  return (
-    <View className="gap-2">
-      <Kicker>{t('workout.chooseWorkout')}</Kicker>
-      {trainable.map(day => {
-        const w = getWorkout(phase, day.id)
-        if (!w || w.exercises.length === 0) return null
-        const key = `p${phase}_${day.id}`
-        const done = isWorkoutDone(key)
-        return (
-          <Pressable
-            key={day.id}
-            onPress={() => {
-              // Igual que en `handleStart`: `startSession` resetea el estado y
-              // es quien decide el desenlace de la sesión que se reemplaza.
-              session.startSession(w, key, 'program')
-              router.push('/session')
-            }}
-            className="flex-row items-center justify-between rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
-          >
-            <View className="flex-1">
-              <Text className="font-sans-medium text-foreground">{w.title}</Text>
-              <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                {day.name} · {t('workout.exerciseCount', { count: w.exercises.length })}
-              </Text>
-            </View>
-            {done ? <Check size={16} color={LIME} /> : <Play size={16} color="hsl(0 0% 55%)" />}
-          </Pressable>
-        )
-      })}
-    </View>
   )
 }

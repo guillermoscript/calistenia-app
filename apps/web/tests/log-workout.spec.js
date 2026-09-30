@@ -14,7 +14,7 @@ async function register(page) {
   await page.getByRole('button', { name: /create account|crear cuenta/i }).click()
   // Skip onboarding if it appears
   const skipBtn = page.getByText(/ya conozco la app|skip|saltar/i)
-  const headerNav = page.locator('header nav')
+  const headerNav = page.getByTestId('app-header')
   await expect(skipBtn.or(headerNav)).toBeVisible({ timeout: 15000 })
   if (await skipBtn.isVisible()) await skipBtn.click()
   await expect(headerNav).toBeVisible({ timeout: 10000 })
@@ -110,13 +110,11 @@ test.describe('Log Past Workout', () => {
     ).toBeVisible({ timeout: 5000 })
   })
 
-  test('log-workout appears in sidebar nav', async ({ page }) => {
+  test('log-workout appears in sidebar shortcuts', async ({ page }) => {
     await page.goto('/')
-    // Open sidebar if needed (hamburger or sidebar trigger)
-    const sidebarTrigger = page.locator('[data-testid="sidebar-trigger"], button[aria-label*="sidebar" i], button[aria-label*="menu" i]').first()
-    if (await sidebarTrigger.isVisible()) await sidebarTrigger.click()
-    await expect(
-      page.getByText(/log past workout|registrar entreno/i).first()
-    ).toBeVisible({ timeout: 5000 })
+    // #856: es un atajo del sidebar, «Apuntar entreno hecho fuera».
+    const sidebar = page.locator('[data-sidebar="sidebar"]')
+    await sidebar.getByRole('button', { name: /apuntar entreno hecho fuera|log a workout done elsewhere/i }).click()
+    await expect(page).toHaveURL(/\/log-workout/, { timeout: 8000 })
   })
 })

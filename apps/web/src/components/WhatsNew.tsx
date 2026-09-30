@@ -19,7 +19,7 @@ const CHANGELOG = changelogJson as ChangelogData
 // Web deploys continuously (no discrete "installed version") — the newest
 // entry in the changelog is always considered current, so nothing is ever
 // filtered out as "not released yet" the way mobile's app.json version gates it.
-const CURRENT_VERSION = CHANGELOG.versions[0]?.version ?? '0.0.0'
+export const CURRENT_VERSION = CHANGELOG.versions[0]?.version ?? '0.0.0'
 const LS_KEY = 'calistenia_last_seen_version'
 
 function formatDate(iso: string): string {

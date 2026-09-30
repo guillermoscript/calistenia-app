@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveActivation } from './activation'
+import { deriveActivation, resolveHomeStage } from './activation'
 import { dayHasContent, getHomeState, HOME_STATE_PRECEDENCE, type HomeStateInput } from './homeState'
 import type { DayId, DayType, WeekDay } from '../types'
 
@@ -179,6 +179,17 @@ describe('getHomeState · precedencia', () => {
   it('el flag «ya llegó a 3» del dispositivo evita first_workout con el contador a 0', () => {
     const s = getHomeState(input({ account: { stage: 'full', sessions: 0, pending: false } }))
     expect(s.kind).toBe('training_day')
+  })
+
+  it('veterano que cambia de programa: el contador del programa a 0 no lo manda a first_workout (#858)', () => {
+    // Así lo monta el inicio móvil: `useHomeStage` cruza `getTotalSessions()`
+    // (0 con el programa recién activado) con las filas de `sessions` de la cuenta.
+    const account = resolveHomeStage({ programSessions: 0, lifetimeSessions: 2, reachedBefore: false })
+    expect(account).toEqual({ stage: 'early', sessions: 2, pending: false })
+    expect(getHomeState(input({ account })).kind).toBe('training_day')
+    // Sin el contador de la cuenta todavía: esqueleto, nunca «Tu primer entreno».
+    const pending = resolveHomeStage({ programSessions: 0, lifetimeSessions: undefined, reachedBefore: false })
+    expect(getHomeState(input({ account: pending })).modifiers.loading).toBe(true)
   })
 
   it('comeback gana a done_today', () => {

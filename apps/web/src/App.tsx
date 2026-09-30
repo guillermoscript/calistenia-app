@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, startTransition, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
@@ -82,9 +82,7 @@ import { CircuitSessionProvider, useCircuitSession } from './contexts/CircuitSes
 import { ActiveSessionProvider, useActiveSession } from './contexts/ActiveSessionContext'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
-import { WhatsNewButton } from './components/WhatsNew'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
-import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { consumePendingSharedProgram } from '@calistenia/core/lib/sharedProgramHandoff'
@@ -106,17 +104,9 @@ import {
   SidebarInset,
   useSidebar,
 } from './components/ui/sidebar'
-import { Button } from './components/ui/button'
 import { Separator } from './components/ui/separator'
-import {
-  type IconProps,
-  LayoutIcon, DumbbellIcon, SpineIcon, ChartIcon, NutritionIcon,
-  ProfileIcon, ProgramIcon, ExerciseIcon, RunningIcon, ChallengeIcon,
-  ActivityIcon, FriendsIcon, TrophyIcon, FreeSessionIcon, CalendarNavIcon,
-  ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon, BellIcon,
-  ReferralIcon, CircuitIcon,
-} from './components/icons/nav-icons'
-import { NAV_ITEMS, MOBILE_TABS, NAV_SECTIONS } from './lib/nav-routes'
+import { ShieldIcon, PencilIcon, BellIcon } from './components/icons/nav-icons'
+import { NAV_ITEMS, MOBILE_TABS, NAV_SECTIONS, isNavItemActive } from './lib/nav-routes'
 import { useAutoRestoreNavigate } from './hooks/useAutoRestoreNavigate'
 
 /** Reanuda la sesión de entreno persistida llevando a /session. */
@@ -145,7 +135,12 @@ const RE_ADD_FRIEND = /^\/add\/[^/]+$/
 const RE_SHARED_PROGRAM = /^\/shared\/[^/]+$/
 const RE_USER_PROFILE = /^\/u\/[^/]+$/
 
-function getBreadcrumbKey(pathname: string): string {
+/**
+ * Título de la cabecera. `null` en Hoy (`/`, #856: fuera «Dashboard») y en las
+ * rutas sin nombre propio, que antes caían a «Dashboard».
+ */
+function getBreadcrumbKey(pathname: string): string | null {
+  if (pathname === '/') return null
   const exact = NAV_ITEMS.find(item => item.path === pathname)
   if (exact) return exact.labelKey
   if (pathname === '/programs/new') return 'breadcrumb.newProgram'
@@ -162,7 +157,7 @@ function getBreadcrumbKey(pathname: string): string {
   if (RE_SHARED_PROGRAM.test(pathname)) return 'breadcrumb.sharedProgram'
   if (pathname.match(/^\/u\/[^/]+\/routine$/)) return 'breadcrumb.routine'
   if (RE_USER_PROFILE.test(pathname)) return 'nav.profile'
-  return 'nav.dashboard'
+  return null
 }
 
 const AppLoader: React.FC = () => (
@@ -174,14 +169,7 @@ const AppLoader: React.FC = () => (
 
 function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; pathname: string }) {
   const { t } = useTranslation()
-  const getActiveIndex = () => {
-    for (let i = 0; i < MOBILE_TABS.length; i++) {
-      const p = MOBILE_TABS[i].path
-      if (p === '/' ? pathname === '/' : pathname.startsWith(p)) return i
-    }
-    return -1
-  }
-  const activeIndex = getActiveIndex()
+  const activeIndex = MOBILE_TABS.findIndex(tab => isNavItemActive(tab, pathname))
   const tabWidthPercent = 100 / MOBILE_TABS.length
 
   return (
@@ -206,6 +194,7 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
               <button
                 key={path}
                 onClick={() => navigate(path)}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex-1 flex flex-col items-center justify-center gap-1 min-h-[52px] py-2 relative',
                   'transition-colors duration-200 ease-out',
@@ -226,57 +215,26 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
 // ── AppShell (uses sidebar context) ─────────────────────────────────────────
 
 interface AppShellProps {
-  /** Fase del programa activo, ya derivada (#616): el shell solo la pinta. */
-  phase: number
   displayName: string
-  userId: string | null
-  signOut: () => void
-  dark: boolean
-  toggleDark: () => void
   userRole: import('@calistenia/core/types').UserRole
   children: ReactNode
 }
 
-
-function AppShell({ phase, displayName, userId, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
-  const { t, i18n } = useTranslation()
+/**
+ * Marco de la app (#856): 5 destinos + «Atajos» en el sidebar, el avatar con
+ * «Perfil y ajustes» al pie y una cabecera que solo lleva la campana (y el
+ * avatar en móvil). Idioma, tema, fase y la guía se mudaron a Perfil.
+ */
+function AppShell({ displayName, userRole, children }: AppShellProps) {
+  const { t } = useTranslation()
   const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
   const { unreadCount } = useNotificationsContext()
+  const initial = displayName?.[0]?.toUpperCase() ?? '?'
+  const titleKey = getBreadcrumbKey(location.pathname)
 
-  // Collapsible sidebar sections — auto-expand section containing active route
-  const activeSectionIdx = useMemo(() => {
-    return NAV_SECTIONS.findIndex(s => s.items.some(item =>
-      item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
-    ))
-  }, [location.pathname])
-
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(() => new Set([Math.max(activeSectionIdx, 0)]))
-
-  // Keep active section expanded on route change
-  useEffect(() => {
-    if (activeSectionIdx >= 0) {
-      setExpandedSections(prev => {
-        if (prev.has(activeSectionIdx)) return prev
-        return new Set(prev).add(activeSectionIdx)
-      })
-    }
-  }, [activeSectionIdx])
-
-  const toggleSection = useCallback((idx: number) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev)
-      if (next.has(idx)) next.delete(idx)
-      else next.add(idx)
-      return next
-    })
-  }, [])
-
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/'
-    return location.pathname.startsWith(path)
-  }
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`)
 
   const handleNav = (path: string) => {
     navigate(path)
@@ -289,145 +247,103 @@ function AppShell({ phase, displayName, userId, signOut, dark, toggleDark, userR
         <SidebarHeader className="px-3 py-4">
           <div className="flex items-baseline gap-2 px-1">
             <span className="text-base font-bold tracking-tight text-foreground">Calistenia</span>
-            <span className="text-xs text-muted-foreground">6M</span>
           </div>
         </SidebarHeader>
         <SidebarContent className="px-2">
-          <div id="tour-sidebar-nav" className="flex flex-col gap-1">
-            {NAV_SECTIONS.map((section, idx) => {
-              const isExpanded = expandedSections.has(idx)
-              return (
-                <div key={section.labelKey}>
-                  {open ? (
-                    <button
-                      onClick={() => toggleSection(idx)}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                    >
-                      <span>{t(section.labelKey)}</span>
-                      <svg
-                        className={cn('size-3 transition-transform duration-200', isExpanded && 'rotate-180')}
-                        viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                      >
-                        <polyline points="3,4.5 6,7.5 9,4.5" />
-                      </svg>
-                    </button>
-                  ) : null}
-                  {(isExpanded || !open) && (
-                    <SidebarMenu>
-                      {section.items.map(({ path, labelKey, icon: Icon }) => (
-                        <SidebarMenuItem key={path}>
-                          <SidebarMenuButton isActive={isActive(path)} onClick={() => handleNav(path)} tooltip={t(labelKey)}>
-                            <Icon className="size-4 shrink-0" />
-                            <span>{t(labelKey)}</span>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  )}
-                </div>
-              )
-            })}
-            {(userRole === 'admin' || userRole === 'editor') ? (
-              <div>
-                {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{t('nav.sectionManagement')}</div> : null}
+          <div className="flex flex-col gap-5">
+            {NAV_SECTIONS.map(section => (
+              <nav key={section.key} aria-label={section.labelKey ? t(section.labelKey) : t('nav.mainNavigation')}>
+                {section.labelKey && open ? (
+                  <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t(section.labelKey)}</div>
+                ) : null}
                 <SidebarMenu>
-                  {userRole === 'admin' ? (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton isActive={isActive('/admin')} onClick={() => handleNav('/admin')} tooltip={t('nav.admin')}>
-                        <ShieldIcon className="size-4 shrink-0" /><span>{t('nav.admin')}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ) : null}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={isActive('/editor')} onClick={() => handleNav('/editor')} tooltip={t('nav.editor')}>
-                      <PencilIcon className="size-4 shrink-0" /><span>{t('nav.editor')}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  {section.items.map(item => {
+                    const { path, labelKey, icon: Icon } = item
+                    const active = section.key === 'main' ? isNavItemActive(item, location.pathname) : isActive(path)
+                    return (
+                      <SidebarMenuItem key={path}>
+                        <SidebarMenuButton
+                          isActive={active}
+                          aria-current={active ? 'page' : undefined}
+                          onClick={() => handleNav(path)}
+                          tooltip={t(labelKey)}
+                          className={section.key === 'shortcuts' ? 'text-muted-foreground' : undefined}
+                        >
+                          <Icon className="size-4 shrink-0" />
+                          <span>{t(labelKey)}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
                 </SidebarMenu>
-              </div>
-            ) : null}
+              </nav>
+            ))}
           </div>
         </SidebarContent>
         <SidebarFooter className="px-2 py-3">
-          <Separator className="mb-3 bg-border" />
-          <div className="px-2 mb-2 flex items-center gap-2">
-            <div className="size-7 rounded-full bg-accent flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
-              {displayName?.[0]?.toUpperCase() ?? '?'}
-            </div>
-            {open ? (
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">{displayName}</div>
-                <div className="text-[11px] text-muted-foreground">{t('nav.phase')} {phase}</div>
-              </div>
-            ) : null}
-          </div>
+          {(userRole === 'admin' || userRole === 'editor') ? (
+            <SidebarMenu aria-label={t('nav.sectionManagement')}>
+              {userRole === 'admin' ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton isActive={isActive('/admin')} onClick={() => handleNav('/admin')} tooltip={t('nav.admin')} className="text-muted-foreground">
+                    <ShieldIcon className="size-4 shrink-0" /><span>{t('nav.admin')}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={isActive('/editor')} onClick={() => handleNav('/editor')} tooltip={t('nav.editor')} className="text-muted-foreground">
+                  <PencilIcon className="size-4 shrink-0" /><span>{t('nav.editor')}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          ) : null}
+          <Separator className="my-2 bg-border" />
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={toggleDark} tooltip={dark ? t('nav.lightMode') : t('nav.darkMode')} className="text-muted-foreground hover:text-foreground">
-                {dark ? <SunIcon className="size-4 shrink-0" /> : <MoonIcon className="size-4 shrink-0" />}
-                <span>{dark ? t('nav.lightMode') : t('nav.darkMode')}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={signOut} className="text-muted-foreground hover:text-destructive">
-                <LogOutIcon className="size-4 shrink-0" /><span>{t('nav.signOut')}</span>
+              <SidebarMenuButton
+                size="lg"
+                isActive={isActive('/profile')}
+                onClick={() => handleNav('/profile')}
+                tooltip={t('nav.profileAndSettings')}
+                data-testid="sidebar-profile"
+              >
+                <span className="size-8 rounded-full bg-accent flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
+                  {initial}
+                </span>
+                <span className="flex flex-col min-w-0 leading-tight">
+                  <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{t('nav.profileAndSettings')}</span>
+                </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-          {open ? (
-            <div className="flex items-center gap-2 px-2 mt-2 text-[11px] text-muted-foreground">
-              <Link to="/legal#privacy" className="hover:text-foreground transition-colors">{t('nav.privacy')}</Link>
-              <span>·</span>
-              <Link to="/legal#terms" className="hover:text-foreground transition-colors">{t('nav.terms')}</Link>
-              <span>·</span>
-              <WhatsNewButton className="hover:text-foreground transition-colors" />
-            </div>
-          ) : null}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-border bg-background/95 backdrop-blur px-3 sm:px-4 sm:gap-3">
+        <header data-testid="app-header" className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-border bg-background/95 backdrop-blur px-3 sm:px-4 sm:gap-3">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
           <Separator orientation="vertical" className="h-4 bg-border hidden sm:block" />
           <nav aria-label="breadcrumb" className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground truncate block">{t(getBreadcrumbKey(location.pathname))}</span>
+            {titleKey ? <span className="text-sm font-medium text-foreground truncate block">{t(titleKey)}</span> : null}
           </nav>
           <div className="flex items-center gap-1 sm:gap-2.5">
-            {/* Language toggle — min 44px touch target on mobile */}
-            <button
-              onClick={() => i18n.changeLanguage(i18n.language.startsWith('en') ? 'es' : 'en')}
-              className="inline-flex items-center h-8 sm:h-7 rounded-lg sm:rounded-md border border-border bg-muted/50 text-xs sm:text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:border-border/70 active:scale-95 transition-all overflow-hidden"
-              aria-label={t('profile.language')}
-              title={t('profile.language')}
-            >
-              <span className={cn('px-2 sm:px-1.5 py-1 sm:py-0.5 transition-colors', i18n.language.startsWith('es') ? 'bg-lime-500/15 text-lime-500' : '')}>ES</span>
-              <span className={cn('px-2 sm:px-1.5 py-1 sm:py-0.5 transition-colors', i18n.language.startsWith('en') ? 'bg-lime-500/15 text-lime-500' : '')}>EN</span>
-            </button>
-            {/* Notification bell */}
             <button
               onClick={() => handleNav('/notifications')}
-              className="relative size-8 sm:size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all"
-              aria-label={t('nav.notifications', { defaultValue: 'Notificaciones' })}
-              title={t('nav.notifications', { defaultValue: 'Notificaciones' })}
+              className="relative size-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all"
+              aria-label={t('nav.notifications')}
+              title={t('nav.notifications')}
             >
               <BellIcon className="size-4" />
               <NotificationBadge count={unreadCount} />
             </button>
-            <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">{t('nav.phase')} {phase}</span>
-            <Button variant="ghost" size="icon" onClick={() => replayTourForPage(location.pathname)} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={t('nav.pageGuide')} title={t('nav.pageGuide')}>
-              <span className="text-sm font-bold">?</span>
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleDark} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={dark ? t('nav.lightMode') : t('nav.darkMode')}>
-              {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-            </Button>
-            {/* Profile avatar — 32px on mobile for better touch target */}
+            {/* En escritorio el avatar vive al pie del sidebar. */}
             <button
               onClick={() => handleNav('/profile')}
-              className="size-8 sm:size-7 rounded-full bg-accent flex items-center justify-center text-xs sm:text-[11px] font-semibold text-foreground shrink-0 hover:ring-2 hover:ring-lime-500/40 active:scale-95 transition-all"
-              aria-label={t('nav.profile')}
-              title={t('nav.profile')}
+              className="sm:hidden size-8 rounded-full bg-accent flex items-center justify-center text-xs font-semibold text-foreground shrink-0 hover:ring-2 hover:ring-lime-500/40 active:scale-95 transition-all"
+              aria-label={t('nav.profileAndSettings')}
+              title={t('nav.profileAndSettings')}
             >
-              {displayName?.[0]?.toUpperCase() ?? '?'}
+              {initial}
             </button>
           </div>
         </header>
@@ -590,7 +506,7 @@ function AuthenticatedApp({
     <NotificationsProvider userId={userId ?? null}>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <AppShell phase={programProgress.currentPhase} displayName={displayName} userId={userId ?? null} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
+        <AppShell displayName={displayName} userRole={userRole}>
           <Suspense fallback={<AppLoader />}>
           <Routes>
             <Route path="/" element={
@@ -606,7 +522,7 @@ function AuthenticatedApp({
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/progress/free" element={<FreeProgressPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/profile" element={<ProfilePage user={user!} />} />
+            <Route path="/profile" element={<ProfilePage user={user!} dark={dark} toggleDark={toggleDark} />} />
             <Route path="/reminders" element={<RemindersPage userId={userId!} />} />
             <Route path="/programs" element={<ProgramsPage />} />
             <Route path="/programs/new" element={<ProgramEditorPage userId={userId!} userRole={userRole} />} />
@@ -649,9 +565,6 @@ function AuthenticatedApp({
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           </Suspense>
-          {/* #855: el tour ya no arranca solo; se reabre con «?» y lo sustituye la
-              «Guía rápida» de #856. */}
-          <AppTour pathname={location.pathname} userId={userId!} />
           <DiscoverySurvey userId={userId!} />
         </AppShell>
       </div>

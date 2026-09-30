@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { register, login, navigateTo, dismissOverlays, selectDay } from './helpers.js'
+import { register, login, navigateTo, dismissOverlays, selectDay, signOutFromProfile } from './helpers.js'
 
 const TEST_PASS  = 'TestPass123!'
 
@@ -42,25 +42,23 @@ test.describe('Auth', () => {
 
   test('registro de nuevo usuario', async ({ page }) => {
     await register(page)
-    await expect(page.locator('header nav')).toBeVisible()
+    await expect(page.getByTestId('app-header')).toBeVisible()
   })
 
   test('logout cierra sesión y vuelve al landing', async ({ page }) => {
     await register(page)
-    // Open sidebar and click logout
-    await page.locator('[data-sidebar="trigger"]').click()
-    await page.getByRole('button', { name: /cerrar sesión|sign out|log out/i }).click()
+    // Cerrar sesión vive en Perfil › Cuenta y privacidad (#856)
+    await signOutFromProfile(page)
     // After logout, user lands on the public landing page (not /auth directly)
-    await expect(page.getByText(/get started|comenzar/i).first()).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('button', { name: /use the web app|usar en la web/i }).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('login con cuenta existente', async ({ page }) => {
     const email = await register(page)
-    await page.locator('[data-sidebar="trigger"]').click()
-    await page.getByRole('button', { name: /cerrar sesión|sign out|log out/i }).click()
-    await expect(page.getByText(/get started|comenzar/i).first()).toBeVisible({ timeout: 8000 })
+    await signOutFromProfile(page)
+    await expect(page.getByRole('button', { name: /use the web app|usar en la web/i }).first()).toBeVisible({ timeout: 8000 })
     await login(page, email)
-    await expect(page.locator('header nav')).toBeVisible()
+    await expect(page.getByTestId('app-header')).toBeVisible()
   })
 
 })
@@ -74,15 +72,28 @@ test.describe('Navegación principal', () => {
   })
 
   test('sidebar has main navigation links', async ({ page }) => {
-    // Sidebar should show key navigation items
+    // #856: los 5 destinos (iguales a la barra inferior) y los atajos.
+    // La encuesta de descubrimiento sale a los ~4 s y, como modal, esconde el
+    // sidebar del árbol de accesibilidad: se cierra si aparece.
+    await page.getByRole('button', { name: /^(ahora no|not now)$/i }).click({ timeout: 6000 }).catch(() => {})
     await expect(page.locator('[data-sidebar="trigger"]')).toBeVisible()
-    await expect(page.locator('header nav')).toBeVisible()
+    await expect(page.getByTestId('app-header')).toBeVisible()
+    const sidebar = page.locator('[data-sidebar="sidebar"]')
+    for (const name of [/^(hoy|today)$/i, /^(entrenar|workout)$/i, /^(nutrición|nutrition)$/i, /^(progreso|progress)$/i, /^(comunidad|community)$/i]) {
+      await expect(sidebar.getByRole('button', { name })).toBeVisible()
+    }
+    await expect(sidebar.getByRole('button', { name: /sesión libre|free session/i })).toBeVisible()
+    await expect(sidebar.getByTestId('sidebar-profile')).toBeVisible()
   })
 
-  test('navega a Workout y muestra selector de fase/día', async ({ page }) => {
+  test('navega a Entrenar, abre un día y muestra selector de fase/día', async ({ page }) => {
     await navigateTo(page, '/workout')
-    await expect(page.getByText(/FASE 1|PHASE 1|fase/i).first()).toBeVisible({ timeout: 5000 })
+    // Sin ?day es la pestaña Entrenar: la semana, y cada día lleva a su vista.
+    await expect(page.getByText(/^(esta semana|this week)$/i).first()).toBeVisible({ timeout: 5000 })
     await expect(page.getByText(/^LUN$|^MON$/i).first()).toBeVisible()
+    await page.locator('a[href^="/workout?day="]').first().click()
+    await expect(page).toHaveURL(/\/workout\?day=/)
+    await expect(page.getByText(/FASE 1|PHASE 1|fase|phase/i).first()).toBeVisible({ timeout: 5000 })
   })
 
   test('navega a Lumbar y muestra la página', async ({ page }) => {

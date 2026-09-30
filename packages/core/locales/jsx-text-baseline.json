@@ -3,7 +3,6 @@
     "apps/web/src/pages/LegalPage.tsx": "Política de privacidad y términos. Es texto legal publicado y aceptado en español; traducirlo cambia lo que el usuario acepta, así que no pasa por i18n mientras la app solo tenga versión legal en español."
   },
   "pending": {
-    "apps/mobile/src/app/(tabs)/history.tsx": 1,
     "apps/mobile/src/app/cardio/[id].tsx": 2,
     "apps/mobile/src/app/friends.tsx": 6,
     "apps/mobile/src/app/health.tsx": 12,
@@ -18,11 +17,8 @@
     "apps/mobile/src/components/share/NutritionShareCard.tsx": 7,
     "apps/mobile/src/components/share/PRCelebration.tsx": 2,
     "apps/mobile/src/components/share/PRShareCard.tsx": 2,
-    "apps/mobile/src/components/share/StreakShareCard.tsx": 2,
     "apps/mobile/src/components/share/WorkoutShareCard.tsx": 6,
     "apps/mobile/src/components/social/CommentsSheet.tsx": 4,
-    "apps/mobile/src/components/StreakMilestone.tsx": 4,
-    "apps/web/src/App.tsx": 2,
     "apps/web/src/components/cardio/ElevationProfile.tsx": 1,
     "apps/web/src/components/cardio/SplitsTable.tsx": 1,
     "apps/web/src/components/ExerciseCatalogPicker.tsx": 2,

@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { X, Plus, RotateCcw, Trash2 } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
@@ -52,7 +52,9 @@ export default function FreeSessionScreen() {
     if (tpl.id) void applyTemplate(tpl.id)
   }
 
-  const [mode, setMode] = useState<'manual' | 'circuit' | 'ai'>('manual')
+  // `?mode=circuit` abre directamente Circuitos: es la entrada de Entrenar (#859).
+  const params = useLocalSearchParams<{ mode?: string }>()
+  const [mode, setMode] = useState<'manual' | 'circuit' | 'ai'>(params.mode === 'circuit' || params.mode === 'ai' ? params.mode : 'manual')
   const [view, setView] = useState<'pick' | 'review'>('pick')
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('todos')

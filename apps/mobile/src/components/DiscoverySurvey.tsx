@@ -18,6 +18,7 @@ import {
 } from '@calistenia/core/lib/discovery-survey'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
+import { hasAccountTrained, isAnyOverlayOpen } from '@/lib/overlay-gate'
 
 /**
  * Misma encuesta que web. Las reglas de cuándo sale y qué se manda a
@@ -38,7 +39,8 @@ export default function DiscoverySurvey({ userId }: { userId: string | null }) {
     if (!userId) return
     let timer: ReturnType<typeof setTimeout> | undefined
     const attempt = () => {
-      if (!canShowDiscoverySurvey(userId)) {
+      // Ni antes del primer entreno ni encima de otro modal (#858).
+      if (!canShowDiscoverySurvey(userId) || !hasAccountTrained() || isAnyOverlayOpen()) {
         timer = setTimeout(attempt, DISCOVERY_SURVEY_RETRY_MS)
         return
       }
