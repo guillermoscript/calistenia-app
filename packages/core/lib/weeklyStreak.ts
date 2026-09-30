@@ -128,7 +128,10 @@ export interface GoalChange {
  * usuario o por cambio de programa): el objetivo de una semana es el del último
  * cambio con `from <= lastDay`. Antes del primer cambio vale `fallback`.
  */
-export function goalForWeekFromChanges(changes: readonly GoalChange[], fallback: number): GoalForWeek {
+export function goalForWeekFromChanges(
+  changes: readonly GoalChange[],
+  fallback: number,
+): (weekStart: string, lastDay: string) => number {
   const ordered = changes.filter(c => isDayStr(c.from)).sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0))
   return (_weekStart: string, lastDay: string) => {
     let goal = fallback
@@ -138,6 +141,71 @@ export function goalForWeekFromChanges(changes: readonly GoalChange[], fallback:
     }
     return goal
   }
+}
+
+// ─── Historial de objetivos (#801) ──────────────────────────────────────────
+//
+// `settings.weekly_goal_log` guarda los cambios del objetivo EFECTIVO
+// (`getEffectiveWeeklyGoal`): cambio de programa, de fase o un objetivo fijado a
+// mano. Lo escribe el cliente (`useWorkoutStreak`) y lo leen el cliente y el
+// servidor (`pb_hooks/utils/weekly_streak.js`) con `goalForWeekFromChanges`, así
+// que la racha del inicio y la de `user_stats` juzgan cada semana igual.
+
+/**
+ * Objetivo de las semanas anteriores al primer cambio registrado. El programa
+ * activo de semanas pasadas no se puede reconstruir con fiabilidad, así que la
+ * historia previa al historial se mide contra 3 (decisión de #801).
+ */
+export const HISTORICAL_WEEKLY_GOAL = 3
+
+/** Entradas que se conservan: de sobra para años de cambios de programa. */
+const GOAL_LOG_MAX = 100
+
+/** `settings.weekly_goal_log` tal cual llega de PocketBase → cambios válidos. */
+export function parseGoalLog(raw: unknown): GoalChange[] {
+  let value = raw
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value)
+    } catch {
+      return []
+    }
+  }
+  if (!Array.isArray(value)) return []
+  return value.filter(
+    (c): c is GoalChange =>
+      !!c && isDayStr((c as GoalChange).from) && typeof (c as GoalChange).goal === 'number' && Number.isFinite((c as GoalChange).goal),
+  ).map(c => ({ from: c.from, goal: c.goal }))
+}
+
+/**
+ * Historial con el objetivo `goal` vigente desde `today`, o `null` si ya lo
+ * estaba (no hay nada que guardar). Un segundo cambio el mismo día sustituye al
+ * primero: solo cuenta el objetivo con el que acaba el día.
+ */
+export function withGoalChange(log: readonly GoalChange[], goal: number, today: string): GoalChange[] | null {
+  if (!isDayStr(today) || !Number.isFinite(goal)) return null
+  const inForce = goalForWeekFromChanges(log, HISTORICAL_WEEKLY_GOAL)
+  if (inForce(today, today) === goal) return null
+  const kept = log.filter(c => c.from < today)
+  return [...kept, { from: today, goal }].slice(-GOAL_LOG_MAX)
+}
+
+/**
+ * Día de un entreno a partir de su marca de tiempo guardada, con la MISMA regla
+ * que el hook del servidor (`workoutDayOf`): los 10 primeros caracteres.
+ * `sessions.completed_at` lleva la hora de pared local del usuario, y
+ * circuito/cardio (`finished_at`, o `started_at` si falta) llevan ISO UTC. No
+ * se convierte a la zona del dispositivo a propósito: así cliente y servidor
+ * cuentan exactamente los mismos días.
+ */
+export function streakDayOf(...stamps: unknown[]): string | null {
+  for (const stamp of stamps) {
+    if (typeof stamp !== 'string' || stamp === '') continue
+    const day = stamp.slice(0, 10)
+    return isDayStr(day) ? day : null
+  }
+  return null
 }
 
 /**

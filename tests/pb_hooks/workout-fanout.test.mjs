@@ -7,9 +7,15 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  createUser, createAs, create, update, getOne, waitFor,
+  createUser, createAs, create, update, getOne, list, waitFor,
   expectNotifications, localDateString,
 } from "./helpers/client.mjs"
+
+function makeSessionOn(user, day, key) {
+  return createAs(user, "sessions", {
+    user: user.id, workout_key: key, phase: 1, day: "day1", completed_at: `${day} 10:00:00`,
+  })
+}
 
 function makeSession(user, key = "w1") {
   return createAs(user, "sessions", {
@@ -65,42 +71,60 @@ test("primera sesión de un referido → referral_bonus al referrer (solo una ve
   await expectNotifications(referrer.id, "referral_bonus", 1, "sin bonus duplicado en la segunda")
 })
 
-test("circuit_sessions actualiza total_sessions y la racha server-side", async () => {
-  const user = await createUser("Circuitero")
-  const stats = await create("user_stats", {
-    user: user.id,
-    total_sessions: 5,
-    workout_streak_current: 3,
-    workout_streak_best: 3,
-    last_workout_date: localDateString(-1), // ayer → la racha continúa
-  })
+/** Lunes de la semana de `day` ("YYYY-MM-DD"), con aritmetica UTC. */
+function mondayOf(day) {
+  const d = new Date(`${day}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7))
+  return d.toISOString().slice(0, 10)
+}
 
-  // 1ª del día: racha 3→4, total 5→6
+/** Dia `dow` (0 = lunes) de la semana `weeks` semanas respecto a la actual. */
+function weekDay(weeks, dow) {
+  const d = new Date(`${mondayOf(localDateString(0))}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + weeks * 7 + dow)
+  return d.toISOString().slice(0, 10)
+}
+
+function waitStats(userId, total, msg) {
+  return waitFor(async () => {
+    const [s] = await list("user_stats", `user='${userId}'`)
+    return s && s.total_sessions === total ? s : null
+  }, msg)
+}
+
+test("circuit_sessions actualiza total_sessions y la racha semanal server-side", async () => {
+  // Racha de 1 semana (3 dias de la semana pasada, objetivo 3 por defecto).
+  // Un circuito sin fechas cae al dia del servidor: la semana en curso.
+  const user = await createUser("Circuitero")
+  for (const dow of [0, 2, 4]) await makeSessionOn(user, weekDay(-1, dow), `pasada${dow}`)
+  await waitStats(user.id, 3, "total 3")
+
+  // 1ª del día: abre la semana de hoy, la racha sigue en 1, total 3→4
   await createAs(user, "circuit_sessions", { user: user.id, mode: "rounds", rounds_completed: 3 })
-  await waitFor(async () => {
-    const s = await getOne("user_stats", stats.id)
-    return s.total_sessions === 6 && s.workout_streak_current === 4 ? s : null
-  }, "racha continúa: 3→4, total 6").then((s) => {
-    assert.equal(s.workout_streak_best, 4, "best acompaña a current")
-    assert.equal(s.last_workout_date, localDateString(0))
-  })
+  const s4 = await waitStats(user.id, 4, "total 4")
+  assert.equal(s4.workout_streak_current, 1, "la racha semanal sigue")
+  assert.equal(s4.workout_streak_best, 1)
+  assert.equal(s4.last_workout_date, localDateString(0))
 
   // 2ª del mismo día: total sube, racha no
   await createAs(user, "circuit_sessions", { user: user.id, mode: "rounds", rounds_completed: 2 })
-  await waitFor(async () => {
-    const s = await getOne("user_stats", stats.id)
-    return s.total_sessions === 7 ? s : null
-  }, "total 7").then((s) => {
-    assert.equal(s.workout_streak_current, 4, "misma racha el mismo día")
-  })
+  const s5 = await waitStats(user.id, 5, "total 5")
+  assert.equal(s5.workout_streak_current, 1, "el mismo día no cumple la semana en curso")
 
-  // Racha rota (último workout hace mucho): reinicia en 1, best se conserva
-  await update("user_stats", stats.id, { last_workout_date: "2020-01-01" })
-  await createAs(user, "circuit_sessions", { user: user.id, mode: "rounds", rounds_completed: 1 })
-  await waitFor(async () => {
-    const s = await getOne("user_stats", stats.id)
-    return s.total_sessions === 8 && s.workout_streak_current === 1 ? s : null
-  }, "racha rota → 1").then((s) => {
-    assert.equal(s.workout_streak_best, 4, "best no retrocede")
+  // Sube el objetivo a 4: la semana pasada deja de cumplirse → racha 0, y el
+  // circuito siguiente demuestra que best no retrocede (se recalcula desde el
+  // historial con el nuevo objetivo, pero nunca baja de la racha actual).
+  const settings = await create("settings", { user: user.id, phase: 1 })
+  await update("settings", settings.id, {
+    weekly_goal_log: [{ from: localDateString(-60), goal: 4 }],
   })
+  await waitFor(async () => {
+    const s = await getOne("user_stats", s5.id)
+    return s.workout_streak_current === 0 ? s : null
+  }, "objetivo 4: la racha cae a 0")
+
+  await createAs(user, "circuit_sessions", { user: user.id, mode: "rounds", rounds_completed: 1 })
+  const s6 = await waitStats(user.id, 6, "total 6")
+  assert.equal(s6.workout_streak_current, 0, "racha rota → 0")
+  assert.ok(s6.workout_streak_best >= s6.workout_streak_current, "best nunca queda por debajo de current")
 })

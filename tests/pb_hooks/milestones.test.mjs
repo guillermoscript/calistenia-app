@@ -53,25 +53,37 @@ test("racha que cruza un milestone notifica y hace fan-out; sin cruce no", async
 
   const stats = await create("user_stats", {
     user: user.id,
-    workout_streak_current: 5,
-    workout_streak_best: 5,
+    workout_streak_current: 3,
+    workout_streak_best: 3,
   })
 
-  // 5 → 7: cruza el milestone de 7 días
-  await update("user_stats", stats.id, { workout_streak_current: 7 })
-  const [selfNotif] = await expectNotifications(user.id, "streak", 1, "milestone 7 días")
-  assert.equal(selfNotif.reference_id, "7")
-  assert.equal(selfNotif.data.days, 7)
+  // 3 → 4: cruza el milestone de 4 semanas (#801: la racha es semanal)
+  await update("user_stats", stats.id, { workout_streak_current: 4 })
+  const [selfNotif] = await expectNotifications(user.id, "streak", 1, "milestone 4 semanas")
+  assert.equal(selfNotif.reference_id, "4")
+  assert.equal(selfNotif.data.weeks, 4)
+  assert.equal(selfNotif.data.days, undefined, "ya no se manda en dias")
   const [friendNotif] = await expectNotifications(fan.id, "friend_streak", 1, "fan-out friend_streak")
   assert.equal(friendNotif.actor, user.id)
+  assert.equal(friendNotif.data.weeks, 4)
 
-  // 7 → 8: sin cruce de milestone → nada nuevo
+  // 4 → 5: sin cruce de milestone → nada nuevo
+  await update("user_stats", stats.id, { workout_streak_current: 5 })
+  await expectNotifications(user.id, "streak", 1, "sin notif extra en 5")
+
+  // 5 → 7: todavia sin cruzar el 8
+  await update("user_stats", stats.id, { workout_streak_current: 7 })
+  await expectNotifications(user.id, "streak", 1, "sin notif extra en 7")
+
+  // 7 → 8: el siguiente milestone
   await update("user_stats", stats.id, { workout_streak_current: 8 })
-  await expectNotifications(user.id, "streak", 1, "sin notif extra en 8")
+  const notifs = await expectNotifications(user.id, "streak", 2, "milestone 8 semanas")
+  const weeks = notifs.map((n) => n.data.weeks).sort((a, b) => a - b)
+  assert.deepEqual(weeks, [4, 8])
 
-  // 8 → 3: racha baja → nada
-  await update("user_stats", stats.id, { workout_streak_current: 3 })
-  await expectNotifications(user.id, "streak", 1, "racha rota no notifica")
+  // 8 → 1: racha baja → nada
+  await update("user_stats", stats.id, { workout_streak_current: 1 })
+  await expectNotifications(user.id, "streak", 2, "racha rota no notifica")
 })
 
 test("racha que cruza varios milestones a la vez notifica solo el mayor (#260)", async () => {
@@ -81,22 +93,29 @@ test("racha que cruza varios milestones a la vez notifica solo el mayor (#260)",
 
   const stats = await create("user_stats", {
     user: user.id,
-    workout_streak_current: 5,
-    workout_streak_best: 5,
+    workout_streak_current: 1,
+    workout_streak_best: 1,
   })
 
-  // 5 → 20: cruza 7 y 14 en un solo update (recálculo server-side / sync
-  // atrasado) → una sola notif, la del milestone mayor (14).
-  await update("user_stats", stats.id, { workout_streak_current: 20 })
+  // 1 → 5: cruza el 4 en un solo update (recálculo server-side / sync
+  // atrasado) → una sola notif, la del milestone mayor (4).
+  await update("user_stats", stats.id, { workout_streak_current: 5 })
   const [selfNotif] = await expectNotifications(user.id, "streak", 1, "solo el milestone mayor")
-  assert.equal(selfNotif.reference_id, "14")
-  assert.equal(selfNotif.data.days, 14)
+  assert.equal(selfNotif.reference_id, "4")
+  assert.equal(selfNotif.data.weeks, 4)
   const [friendNotif] = await expectNotifications(fan.id, "friend_streak", 1, "fan-out solo del mayor")
-  assert.equal(friendNotif.data.days, 14)
+  assert.equal(friendNotif.data.weeks, 4)
 
-  // 20 → 120: cruza 30, 50 y 100 → solo el 100
-  await update("user_stats", stats.id, { workout_streak_current: 120 })
-  const notifs = await expectNotifications(user.id, "streak", 2, "segundo salto notifica solo el 100")
-  const days = notifs.map((n) => n.data.days).sort((a, b) => a - b)
-  assert.deepEqual(days, [14, 100])
+  // 5 → 30: cruza 8, 12 y 26 → solo el 26
+  await update("user_stats", stats.id, { workout_streak_current: 30 })
+  const notifs = await expectNotifications(user.id, "streak", 2, "segundo salto notifica solo el 26")
+  const weeks = notifs.map((n) => n.data.weeks).sort((a, b) => a - b)
+  assert.deepEqual(weeks, [4, 26])
+
+  // 30 → 60: cruza 52 → solo el 52
+  await update("user_stats", stats.id, { workout_streak_current: 60 })
+  const all = await expectNotifications(user.id, "streak", 3, "tercer salto notifica solo el 52")
+  assert.deepEqual(all.map((n) => n.data.weeks).sort((a, b) => a - b), [4, 26, 52])
+  const friends = await expectNotifications(fan.id, "friend_streak", 3, "fan-out de cada salto")
+  assert.ok(friends.some((n) => n.data.weeks === 52))
 })

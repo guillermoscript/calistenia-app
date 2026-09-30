@@ -58,7 +58,7 @@ const WIDGET_STRINGS = {
   },
   StreakWidget: {
     label: { en: 'Streak', es: 'Racha' },
-    desc: { en: 'Consecutive training days and the week', es: 'Días seguidos entrenando y la semana' },
+    desc: { en: 'Weeks in a row training and this week', es: 'Semanas seguidas entrenando y la semana' },
   },
   MealStreakWidget: {
     label: { en: 'Meal streak', es: 'Racha de comidas' },

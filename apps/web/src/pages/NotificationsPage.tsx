@@ -65,13 +65,17 @@ function getNotificationMessage(
     case 'achievement':
       return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementName || t('notif.anAchievement') })}`
     case 'streak':
-      return t('notif.streak', { days: n.data?.days || '' })
+      return n.data?.weeks != null
+        ? t('notif.streakWeeks', { weeks: n.data.weeks })
+        : t('notif.streak', { days: n.data?.days || '' })
     case 'referral_signup':
       return t('notif.referralSignup', { name: n.data?.referredName || n.actorName })
     case 'referral_bonus':
       return t('notif.referralBonus', { name: n.data?.referredName || n.actorName })
     case 'friend_streak':
-      return t('notif.friendStreak', { name: n.actorName, days: n.data?.days || '' })
+      return n.data?.weeks != null
+        ? t('notif.friendStreakWeeks', { name: n.actorName, weeks: n.data.weeks })
+        : t('notif.friendStreak', { name: n.actorName, days: n.data?.days || '' })
     case 'friend_achievement':
       return t('notif.friendAchievement', { name: n.actorName, achievement: n.data?.achievementName || t('notif.anAchievement') })
     case 'friend_workout':

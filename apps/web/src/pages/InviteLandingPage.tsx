@@ -186,7 +186,7 @@ export default function InviteLandingPage() {
             {/* Social proof stats */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               <StatChip label={t('referrals.statLevel')} value={inviter.level} />
-              <StatChip label={t('referrals.statStreak')} value={inviter.currentStreak} unit="d" />
+              <StatChip label={t('referrals.statStreak')} value={inviter.currentStreak} unit={t('profile.weeks')} />
               <StatChip label={t('referrals.statSessions')} value={inviter.totalSessions} />
             </div>
 
