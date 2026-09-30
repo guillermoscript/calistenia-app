@@ -5,6 +5,7 @@ import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { NAVIGATION_DENYLIST } from './lib/sw-navigation'
 import { withNotificationClickMarker } from './lib/push-click-marker'
+import { reminderUrl } from './lib/workout-today-url'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -187,18 +188,13 @@ function fireSWNotification(reminder: SWReminder): void {
     workout: "Your workout is waiting / Tu entrenamiento te espera",
     pause: "Stand up, stretch and move / Levántate, estira y muévete",
   }
-  const urls: Record<string, string> = {
-    meal: '/nutrition',
-    workout: '/workout',
-    pause: '/workout',
-  }
-
   self.registration.showNotification(titles[reminder.type] || 'Reminder', {
     body: bodies[reminder.type] || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: `sw-${reminder.type}-${reminder.id}`,
-    data: { url: urls[reminder.type] || '/' },
+    // El día se calcula al DISPARAR, con la fecha local del dispositivo.
+    data: { url: reminderUrl(reminder.type, new Date().getDay()) },
     vibrate: [200, 100, 200],
     requireInteraction: true,
   } as NotificationOptions)

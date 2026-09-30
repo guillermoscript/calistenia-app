@@ -85,6 +85,8 @@ import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { localDay } from '@calistenia/core/lib/dateUtils'
+import { workoutTodayUrl } from './lib/workout-today-url'
 import { consumePendingSharedProgram } from '@calistenia/core/lib/sharedProgramHandoff'
 import { cn } from './lib/utils'
 import { Toaster, toast } from 'sonner'
@@ -475,7 +477,7 @@ function AuthenticatedApp({
         displayName={displayName} programs={programs} activeProgram={activeProgram}
         userId={user.id} user={user} onSelectProgram={selectProgram}
         onCreateProgram={() => { markOnboardingDone(user.id); setOnboardingDone(true); navigate('/programs/new') }}
-        onComplete={() => { setOnboardingDone(true); navigate('/workout') }}
+        onComplete={() => { setOnboardingDone(true); navigate(workoutTodayUrl(localDay())) }}
         onFirstMeasurement={() => { setOnboardingDone(true); navigate('/progress?tab=cuerpo') }}
         // En una sola transición: si el estado y la navegación fueran
         // actualizaciones separadas, el árbol autenticado se pintaría primero
