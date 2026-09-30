@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Kicker } from '../components/ui/kicker'
 import { cn } from '../lib/utils'
-import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useWorkoutState } from '../contexts/WorkoutContext'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
@@ -30,6 +30,7 @@ import {
   SettingsRow, Field, UnitInput, Segmented, ChipToggle, DayToggle,
 } from '../components/profile/SettingsPanel'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
+import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { useAuthState, useAuthActions } from '../contexts/AuthContext'
 import { useTrainingWeek } from '../hooks/useTrainingWeek'
 import { WeeklyGoalSetting } from '../components/profile/WeeklyGoalSetting'
@@ -117,9 +118,9 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
   const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency(user?.id ?? null)
   // Cifras del carné: las mismas que el dashboard, leídas del contexto de
   // entreno para que no puedan discrepar de lo que ve el usuario en portada.
-  const { settings, activeProgram, programProgress, programsReady, usePB } = useWorkoutState()
-  const { getTotalSessions } = useWorkoutActions()
-  const totalSessions = getTotalSessions()
+  const { settings, activeProgram, programProgress, programsReady, usePB, progress } = useWorkoutState()
+  // Sesiones de la cuenta (#869): la misma cifra que la tarjeta de racha de Progreso.
+  const totalSessions = useAccountSessionCount(user?.id ?? null, progress)
   // Racha en SEMANAS y «esta semana N/objetivo» (#852/#853), las mismas que Progreso.
   const { streak, goal: weeklyGoal, goalIsCustom, programGoal } = useTrainingWeek()
 
@@ -438,7 +439,7 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
       {/* Cifras: tres, grandes, y la racha en lima porque es la que se cuida. */}
       <div className="mt-3 grid grid-cols-3 gap-3">
         <div className="rounded-lg border border-border p-3 md:p-4">
-          <div className="font-bebas text-[34px] leading-none">{totalSessions}</div>
+          <div className="font-bebas text-[34px] leading-none">{totalSessions ?? '–'}</div>
           <Kicker className="mt-1">{t('profile.sessions')}</Kicker>
         </div>
         <div className="rounded-lg border border-border p-3 md:p-4">
