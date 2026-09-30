@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Dumbbell, Activity, Repeat, Sparkles, Utensi
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
+import { BackButton } from '@/components/ui/back-button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
@@ -181,9 +182,12 @@ export default function CalendarScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-4 pb-10 pt-2 gap-4">
         {/* Cabecera */}
-        <View>
-          <Kicker>{t('calendar.section')}</Kicker>
-          <Text className="font-bebas text-4xl leading-none text-foreground">{t('calendar.title')}</Text>
+        <View className="flex-row items-center gap-1">
+          <BackButton />
+          <View>
+            <Kicker>{t('calendar.section')}</Kicker>
+            <Text className="font-bebas text-4xl leading-none text-foreground">{t('calendar.title')}</Text>
+          </View>
         </View>
 
         {/* Navegación de mes */}

@@ -30,6 +30,7 @@ export const STREAK_MILESTONES = WEEKLY_STREAK_MILESTONES
 export function pickActiveMilestone(
   streak: number,
   isShown: (milestone: number) => boolean,
+  milestones: readonly number[] = STREAK_MILESTONES,
 ): number | null {
-  return [...STREAK_MILESTONES].reverse().find((m) => streak >= m && !isShown(m)) ?? null
+  return [...milestones].reverse().find((m) => streak >= m && !isShown(m)) ?? null
 }

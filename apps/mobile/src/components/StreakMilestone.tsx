@@ -1,13 +1,14 @@
 /**
- * StreakMilestone — center modal overlay for streak milestones.
- * On mount: checks AsyncStorage for unshown milestones.
- * If none → calls onDismiss immediately (renders null).
- * If found → shows modal, marks shown, offers share.
+ * StreakMilestone — modal centrado para los hitos de racha SEMANAL (#858):
+ * 4, 8, 12, 26 y 52 semanas seguidas cumpliendo el objetivo.
+ *
+ * Al montar mira en AsyncStorage qué hitos ya se enseñaron. Si no toca
+ * ninguno, no pinta nada. No sale si ya hay otro modal automático a la vista
+ * (`overlay-gate`): en ese caso no se marca y se intenta en la próxima visita.
  */
-import React, { useEffect, useState, useCallback } from 'react'
-import { Animated, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Animated, Modal, Pressable, StyleSheet, useWindowDimensions } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useRef } from 'react'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -16,51 +17,54 @@ import { MOBILE_SHARE_CARD_CONTEXTS, shareText, shareCardImage, shareReferralInv
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import StreakShareCard from '@/components/share/StreakShareCard'
 import {
-  getActiveMilestone,
-  getShownMilestones,
-  markMilestoneShown,
+  getActiveWeeklyMilestone,
+  getShownWeeklyMilestones,
+  markWeeklyMilestoneShown,
 } from '@/lib/streak-milestones'
+import { isAnyOverlayOpen, setOverlayOpen } from '@/lib/overlay-gate'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export interface StreakMilestoneProps {
-  streak: number
+  /** Semanas seguidas cumpliendo el objetivo (`computeWeeklyStreak().current`). */
+  weeks: number
   userId: string
   userName: string
   referralCode?: string | null
-  onDismiss: () => void
 }
 
 type Phase = 'loading' | 'visible' | 'hidden'
 
+const OVERLAY_ID = 'streak_milestone'
+
 export default function StreakMilestone({
-  streak,
+  weeks,
   userId,
   userName,
   referralCode,
-  onDismiss,
 }: StreakMilestoneProps) {
+  const { t } = useTranslation()
   const [phase, setPhase] = useState<Phase>('loading')
   const [milestone, setMilestone] = useState<number | null>(null)
   const scale = useRef(new Animated.Value(0.85)).current
   const opacity = useRef(new Animated.Value(0)).current
   const captureRef = useRef<ShareCardCaptureHandle>(null)
-  const { t } = useTranslation()
   const { width: screenW, height: screenH } = useWindowDimensions()
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
 
   useEffect(() => {
     let cancelled = false
     async function check() {
-      const shown = await getShownMilestones(userId)
-      const active = getActiveMilestone(streak, shown)
+      const shown = await getShownWeeklyMilestones(userId)
+      const active = getActiveWeeklyMilestone(weeks, shown)
       if (cancelled) return
-      if (active === null) {
-        onDismiss()
+      if (active === null || isAnyOverlayOpen()) {
+        setPhase('hidden')
         return
       }
       setMilestone(active)
-      await markMilestoneShown(userId, active)
+      await markWeeklyMilestoneShown(userId, active)
+      setOverlayOpen(OVERLAY_ID, true)
       setPhase('visible')
       haptics.success()
       Animated.parallel([
@@ -79,32 +83,34 @@ export default function StreakMilestone({
     }
     void check()
     return () => { cancelled = true }
-  }, [userId, streak, onDismiss, scale, opacity])
+  }, [userId, weeks, scale, opacity])
+
+  // Si el inicio desmonta el modal (p. ej. empieza una actividad), libera el turno.
+  useEffect(() => () => setOverlayOpen(OVERLAY_ID, false), [])
 
   const handleDismiss = useCallback(() => {
     // En el cierre y no al mostrarlo, igual que web (#636 §5): así el evento
-    // mide que el usuario VIO el hito, no que el componente se montó. `weeks` es
-    // el hito alcanzado, no la racha actual, que puede ser mayor.
+    // mide que el usuario VIO el hito, no que el componente se montó.
     if (milestone) {
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.streakMilestone, {
-        surface: 'streak', source: 'streak_card', weeks: milestone,
+        surface: 'streak', source: 'streak_card', weeks: milestone, unit: 'weeks',
       })
     }
+    setOverlayOpen(OVERLAY_ID, false)
     setPhase('hidden')
-    onDismiss()
-  }, [milestone, onDismiss])
+  }, [milestone])
 
   const handleShare = useCallback(async () => {
     if (!milestone) return
     const message = referralCode
       ? shareReferralInvite(userName, referralCode).message
-      : t('streak.milestone.shareText', { weeks: milestone })
+      : t('home.streak.shareText', { count: milestone })
     try {
       // Fonts are loaded by _layout boot; small RAF guards against a blank capture.
       await new Promise((r) => requestAnimationFrame(() => r(null)))
       const uri = await captureRef.current?.capture()
       if (uri) {
-        await shareCardImage(uri, { message, title: 'Compartir racha' }, {
+        await shareCardImage(uri, { message, title: t('home.streak.shareTitle') }, {
           ...MOBILE_SHARE_CARD_CONTEXTS.streak,
           streak_weeks: milestone,
         })
@@ -135,10 +141,10 @@ export default function StreakMilestone({
               {milestone}
             </Text>
             <Text className="font-bebas text-2xl text-white tracking-widest mt-1">
-              {t('streak.milestone.unit')}
+              {t('home.streak.share.label')}
             </Text>
             <Text className="font-sans-medium text-sm text-zinc-400 text-center mt-2 px-4">
-              {t('streak.milestone.body', { weeks: milestone })}
+              {t('home.streak.milestone', { count: milestone })}
             </Text>
 
             {/* Share */}
@@ -148,7 +154,7 @@ export default function StreakMilestone({
               onPress={() => void handleShare()}
             >
               <Text className="font-mono text-xs tracking-widest text-lime-400 uppercase">
-                COMPARTIR
+                {t('common.share')}
               </Text>
             </Button>
 
@@ -159,12 +165,12 @@ export default function StreakMilestone({
               onPress={handleDismiss}
             >
               <Text className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
-                Cerrar
+                {t('common.close')}
               </Text>
             </Button>
           </Animated.View>
 
-          {/* Off-screen share card (captured to PNG on COMPARTIR) */}
+          {/* Off-screen share card (captured to PNG on share) */}
           <ShareCardCapture ref={captureRef} width={screenW} height={screenH}>
             <StreakShareCard
               streak={milestone}
@@ -179,6 +185,7 @@ export default function StreakMilestone({
     </Modal>
   )
 }
+
 
 const styles = StyleSheet.create({
   backdrop: {

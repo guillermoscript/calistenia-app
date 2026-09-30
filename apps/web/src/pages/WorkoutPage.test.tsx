@@ -66,7 +66,13 @@ vi.mock('@calistenia/core/hooks/useRestPreferences', () => ({
 vi.mock('@calistenia/core/hooks/useUserHealth', () => ({
   useUserHealth: () => ({ health: { injuries: [], medical_conditions: [] } }),
 }))
-vi.mock('../components/AppTour', () => ({ triggerWorkoutDetailTour: vi.fn() }))
+vi.mock('../hooks/useTrainingWeek', () => ({
+  useTrainingWeek: () => ({ streak: { thisWeek: { done: 1, goal: 3 } } }),
+}))
+const mockOpenSwitcher = vi.hoisted(() => vi.fn())
+vi.mock('../components/program/ProgramSwitcher', () => ({
+  useProgramSwitcher: () => ({ openSwitcher: mockOpenSwitcher, switcherModal: null }),
+}))
 vi.mock('../components/ExerciseCard', () => ({
   default: ({ exercise }: { exercise: { name: string } }) => <div data-testid="exercise">{exercise.name}</div>,
 }))
@@ -92,59 +98,93 @@ function mount(path = '/workout') {
   )
 }
 
-describe('WorkoutPage sin ?day= (#574)', () => {
+describe('WorkoutPage sin ?day=: pestaña Entrenar (#856)', () => {
   beforeEach(() => {
+    h.todayIndex = 1 // lunes
     h.weekDays = WEEK
+    h.activeProgram = null
     h.getWorkout.mockImplementation((_p: number, d: string) => WEEK.find(w => w.id === d)?.type === 'rest' ? null : workoutFor(d))
   })
 
-  it('autoselecciona hoy y muestra ejercicios + EMPEZAR, no el estado vacío', () => {
-    h.todayIndex = 1 // lunes
+  it('no abre ningún día: enseña la semana, otras formas de entrenar y explorar', () => {
     mount()
-    expect(screen.getByText('Ejercicio lun')).toBeTruthy()
-    expect(document.querySelector('#tour-start-session')).not.toBeNull()
-    expect(screen.queryByText('workout.chooseWorkout')).toBeNull()
+    expect(screen.queryByText('Ejercicio lun')).toBeNull()
+    expect(document.querySelector('#tour-start-session')).toBeNull()
+    expect(screen.getByText('train.thisWeek')).toBeTruthy()
+    expect(screen.getByText('train.otherWays')).toBeTruthy()
+    expect(screen.getByText('train.explore')).toBeTruthy()
+    expect(screen.getByText('train.weekDone:1,3')).toBeTruthy()
   })
 
-  it('?day= sigue mandando sobre el día de hoy', () => {
+  it('cada día entrenable lleva a su `?day=`; los de descanso no son enlace', () => {
+    mount()
+    const lunes = screen.getByText('Entreno lun').closest('a')!
+    expect(lunes.getAttribute('href')).toBe('/workout?day=lun')
+    expect(lunes.getAttribute('aria-current')).toBe('date')
+    expect(screen.getAllByText('train.rest').every(el => el.closest('a') === null)).toBe(true)
+  })
+
+  it('pulsar un día abre la vista del día de siempre', async () => {
+    mount()
+    await userEvent.click(screen.getByText('Entreno vie'))
+    expect(screen.getByText('Ejercicio vie')).toBeTruthy()
+    expect(screen.getByText('train.backToTrain')).toBeTruthy()
+  })
+
+  it('las otras formas de entrenar y explorar apuntan a sus rutas', () => {
+    mount()
+    const hrefs = screen.getAllByRole('link').map(a => a.getAttribute('href'))
+    for (const to of ['/free-session', '/cardio', '/circuit', '/lumbar', '/log-workout', '/programs', '/exercises']) {
+      expect(hrefs).toContain(to)
+    }
+  })
+
+  it('con programa, «Cambiar» abre el selector de programas', async () => {
+    h.activeProgram = { id: 'prog1', name: 'Planche Roadmap' }
+    mount()
+    expect(screen.getByText('Planche Roadmap')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'train.change' }))
+    expect(mockOpenSwitcher).toHaveBeenCalled()
+  })
+
+  it('un ?day= que no existe cae en la pestaña Entrenar', () => {
+    mount('/workout?day=xyz')
+    expect(screen.getByText('train.thisWeek')).toBeTruthy()
+  })
+})
+
+describe('WorkoutPage con ?day=', () => {
+  beforeEach(() => {
     h.todayIndex = 1
+    h.weekDays = WEEK
+    h.activeProgram = null
+    h.getWorkout.mockImplementation((_p: number, d: string) => WEEK.find(w => w.id === d)?.type === 'rest' ? null : workoutFor(d))
+  })
+
+  it('abre ese día con sus ejercicios y EMPEZAR', () => {
     mount('/workout?day=vie')
     expect(screen.getByText('Ejercicio vie')).toBeTruthy()
+    expect(document.querySelector('#tour-start-session')).not.toBeNull()
   })
 
-  it('si hoy es descanso, salta al siguiente día entrenable', () => {
-    h.todayIndex = 2 // martes (descanso) → miércoles
-    mount()
-    expect(screen.getByText('Ejercicio mie')).toBeTruthy()
-  })
-
-  it('en un día de descanso elegido a mano ofrece "entrenar de todas formas"', async () => {
-    h.todayIndex = 1
-    mount()
+  it('en un día de descanso ofrece "entrenar de todas formas"', async () => {
+    mount('/workout?day=lun')
     await userEvent.click(screen.getByRole('button', { name: /^Martes/ }))
     expect(screen.getByText('workout.restDay')).toBeTruthy()
     await userEvent.click(screen.getByText('workout.trainAnyway:Miércoles'))
     expect(screen.getByText('Ejercicio mie')).toBeTruthy()
   })
 
-  it('deseleccionar a mano no vuelve a autoseleccionar', async () => {
-    h.todayIndex = 1
-    mount()
+  it('volver pulsando el día elegido no lo deselecciona', async () => {
+    mount('/workout?day=lun')
     await userEvent.click(screen.getByRole('button', { name: /^Lunes/ }))
-    expect(screen.getByText('workout.chooseWorkout')).toBeTruthy()
+    expect(screen.getByText('Ejercicio lun')).toBeTruthy()
   })
 
-  it('autoselecciona cuando la semana del programa llega después de montar', () => {
-    h.todayIndex = 1
-    h.weekDays = []
-    const { rerender } = mount()
-    h.weekDays = WEEK
-    rerender(
-      <MemoryRouter initialEntries={['/workout']}>
-        <Routes><Route path="/workout" element={<WorkoutPage />} /></Routes>
-      </MemoryRouter>,
-    )
-    expect(screen.getByText('Ejercicio lun')).toBeTruthy()
+  it('«Entrenar» vuelve a la pestaña', async () => {
+    mount('/workout?day=lun')
+    await userEvent.click(screen.getByText('train.backToTrain'))
+    expect(screen.getByText('train.thisWeek')).toBeTruthy()
   })
 })
 
@@ -187,7 +227,7 @@ describe('WorkoutPage en un día de circuito (#625)', () => {
   })
 
   it('pinta la tarjeta de circuito, no la de fuerza, aunque haya `workout`', () => {
-    mount()
+    mount('/workout?day=lun')
     expect(screen.getByText('circuit.startCircuit')).toBeTruthy()
     expect(screen.getByText('circuit.summary:4,2')).toBeTruthy()
     // La UI de fuerza no debe aparecer: ni sus ejercicios ni el botón EMPEZAR.
@@ -196,20 +236,20 @@ describe('WorkoutPage en un día de circuito (#625)', () => {
   })
 
   it('lista los ejercicios del circuito', () => {
-    mount()
+    mount('/workout?day=lun')
     expect(screen.getByText('Burpees')).toBeTruthy()
     expect(screen.getByText('Sentadillas con salto')).toBeTruthy()
   })
 
   it('arranca con `p{fase}_{día}` como program_day_key, no con el día suelto', async () => {
-    mount()
+    mount('/workout?day=lun')
     await userEvent.click(screen.getByText('circuit.startCircuit'))
     expect(h.startCircuit).toHaveBeenCalledWith(circuitCfg, 'program', 'prog1', 'p1_lun')
   })
 
   it('sin ejercicios configurados deshabilita el arranque en vez de abrir un runner vacío', () => {
     h.circuitDayConfigs = { p1_lun: { ...circuitCfg, exercises: [] } }
-    mount()
+    mount('/workout?day=lun')
     expect(screen.getByText('circuit.noExercises')).toBeTruthy()
     expect(screen.getByText('circuit.startCircuit').closest('button')!.hasAttribute('disabled')).toBe(true)
   })
@@ -217,7 +257,7 @@ describe('WorkoutPage en un día de circuito (#625)', () => {
   it('cae al `circuitConfig` del WeekDay cuando el mapa no trae ese día', () => {
     h.circuitDayConfigs = {}
     h.weekDays = CIRCUIT_WEEK.map(d => d.id === 'lun' ? { ...d, circuitConfig: circuitCfg } : d)
-    mount()
+    mount('/workout?day=lun')
     expect(screen.getByText('circuit.startCircuit')).toBeTruthy()
     expect(screen.queryByText('Ejercicio lun')).toBeNull()
   })

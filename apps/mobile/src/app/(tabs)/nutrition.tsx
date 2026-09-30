@@ -22,7 +22,7 @@ import { Kicker } from '@/components/ui/kicker'
 import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { MenuButton } from '@/components/QuickMenu'
+import { ProfileAvatarButton } from '@/components/ProfileAvatarButton'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -469,7 +469,7 @@ export default function NutritionTab() {
             </Text>
             <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
           </View>
-          <MenuButton className="mt-1" />
+          <View className="mt-1"><ProfileAvatarButton /></View>
         </View>
 
         {/* Phase change banner (US-14) */}

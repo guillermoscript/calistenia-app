@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { STREAK_MILESTONES, pickActiveMilestone } from './streak-milestones'
+import { WEEKLY_STREAK_MILESTONES } from './weeklyStreak'
 
 const nadaEnseñado = () => false
 
@@ -46,5 +47,15 @@ describe('pickActiveMilestone', () => {
   it('una racha de 0 o negativa no celebra nada', () => {
     expect(pickActiveMilestone(0, nadaEnseñado)).toBeNull()
     expect(pickActiveMilestone(-5, nadaEnseñado)).toBeNull()
+  })
+})
+
+describe('pickActiveMilestone con hitos semanales (#858)', () => {
+  it('usa la lista que se le pasa: 4, 8, 12, 26 y 52 semanas', () => {
+    expect(pickActiveMilestone(3, nadaEnseñado, WEEKLY_STREAK_MILESTONES)).toBeNull()
+    expect(pickActiveMilestone(4, nadaEnseñado, WEEKLY_STREAK_MILESTONES)).toBe(4)
+    expect(pickActiveMilestone(13, nadaEnseñado, WEEKLY_STREAK_MILESTONES)).toBe(12)
+    // 7 días es un hito de la racha diaria, no de la semanal.
+    expect(pickActiveMilestone(7, nadaEnseñado, WEEKLY_STREAK_MILESTONES)).toBe(4)
   })
 })

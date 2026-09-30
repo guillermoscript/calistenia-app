@@ -219,3 +219,53 @@ export function crossedWeeklyStreakMilestone(previous: number, current: number):
   }
   return hit
 }
+
+export type WeekHistoryState = 'met' | 'missed' | 'current'
+
+export interface WeekHistoryEntry {
+  /** Lunes de la semana. */
+  weekStart: string
+  done: number
+  goal: number
+  /**
+   * `met`/`missed` en las semanas cerradas. La en curso sale `met` si ya se
+   * cumplió y `current` si no: igual que en `computeWeeklyStreak`, no rompe
+   * nada mientras no termine.
+   */
+  state: WeekHistoryState
+}
+
+/**
+ * Las últimas `count` semanas, de la más antigua a la en curso, con las mismas
+ * reglas que `computeWeeklyStreak`: días distintos, objetivo del último día de
+ * cada semana y acotado a 1-7. Es la tira de «últimas 10 semanas» de la
+ * tarjeta de racha de Progreso (#856).
+ */
+export function weeklyStreakHistory(
+  doneDates: Iterable<string>,
+  goalForWeek: GoalForWeek,
+  today: string,
+  count = 10,
+): WeekHistoryEntry[] {
+  const currentWeek = mondayOf(today)
+  const firstWeek = shiftDay(currentWeek, -7 * (Math.max(1, Math.floor(count)) - 1))
+  const daysByWeek = new Map<string, Set<string>>()
+  for (const day of doneDates) {
+    if (!isDayStr(day) || day > today) continue
+    const week = mondayOf(day)
+    if (week < firstWeek) continue
+    let set = daysByWeek.get(week)
+    if (!set) daysByWeek.set(week, (set = new Set()))
+    set.add(day)
+  }
+
+  const entries: WeekHistoryEntry[] = []
+  for (let week = firstWeek; week <= currentWeek; week = shiftDay(week, 7)) {
+    const isCurrent = week === currentWeek
+    const lastDay = isCurrent ? today : shiftDay(week, 6)
+    const goal = clampGoal(typeof goalForWeek === 'number' ? goalForWeek : goalForWeek(week, lastDay))
+    const done = daysByWeek.get(week)?.size ?? 0
+    entries.push({ weekStart: week, done, goal, state: done >= goal ? 'met' : isCurrent ? 'current' : 'missed' })
+  }
+  return entries
+}
