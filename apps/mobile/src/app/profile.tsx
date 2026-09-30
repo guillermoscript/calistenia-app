@@ -20,6 +20,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { QuickGuideSheet } from '@/components/profile/QuickGuideSheet'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { useKeepScrollOffset } from '@/lib/use-keep-scroll-offset'
 import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
 import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
@@ -30,6 +31,7 @@ import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
+import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { getEffectiveWeeklyGoal, trainableDaysPerWeek, DEFAULT_WEEKLY_GOAL } from '@calistenia/core/lib/weeklyGoal'
 import { activityDaysFromProgress } from '@calistenia/core/lib/weekSummary'
 import { computeWeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
@@ -126,13 +128,18 @@ function StatTile({ label, value, lime }: { label: string; value: string; lime?:
   )
 }
 
+// Estilo estable (#881): fuera del render, sin pasar por la interop de NativeWind
+// en cada refresco de datos.
+const CONTENT_STYLE = { paddingHorizontal: 16, paddingBottom: 32, gap: 12 } as const
+
 export default function ProfileScreen() {
+  const keepScroll = useKeepScrollOffset()
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const { settings, activeProgram, programProgress, weekDays, progress } = useWorkoutState()
   const { colorScheme } = useColorScheme()
-  const { getTotalSessions, updateSettings } = useWorkoutActions()
+  const { updateSettings } = useWorkoutActions()
   // `?section=goal` abre un panel directamente (el enlace «Objetivo» de Progreso).
   const params = useLocalSearchParams<{ section?: string }>()
   const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
@@ -203,7 +210,8 @@ export default function ProfileScreen() {
 
   // Carné: las mismas cifras que el dashboard y las mismas cinco skills que el
   // perfil público, para que nada discrepe entre pantallas.
-  const totalSessions = getTotalSessions()
+  // Sesiones de la CUENTA (#869/#881): la misma cifra que Progreso.
+  const totalSessions = useAccountSessionCount(user?.id ?? null, progress)
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   // El objetivo que tendría sin fijarlo a mano: los días de su programa (#853).
   const programGoal = (activeProgram && trainableDaysPerWeek(weekDays)) || DEFAULT_WEEKLY_GOAL
@@ -348,7 +356,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <ScrollView contentContainerClassName="px-4 pb-8 gap-3">
+      <ScrollView contentContainerStyle={CONTENT_STYLE} {...keepScroll}>
         {/* Pantalla de pila desde #859: se llega desde el avatar de cada pestaña. */}
         <View className="flex-row items-center gap-1 pt-1">
           <BackButton />
@@ -379,7 +387,7 @@ export default function ProfileScreen() {
 
         {/* Cifras: tres, grandes, y la racha (semanal, #853) en lima porque es la que se cuida. */}
         <View className="flex-row gap-3">
-          <StatTile label={t('profile.sessions')} value={String(totalSessions)} />
+          <StatTile label={t('profile.sessions')} value={totalSessions === null ? '–' : String(totalSessions)} />
           <StatTile label={t('profile.streak')} value={t('progressTab.weeksShort', { count: streak.current })} lime />
           <StatTile label={t('common.week')} value={`${streak.thisWeek.done}/${streak.thisWeek.goal}`} />
         </View>
