@@ -9,48 +9,127 @@
  * única de esas operaciones; `dateUtils.ts` delega aquí pasando `_tz`, así
  * que cliente y servidor comparten la misma aritmética por construcción.
  *
- * Sin dependencias más allá de dayjs (+utc/timezone): importable desde
- * mcp-server, que no tiene i18next ni el runtime de la app.
+ * La conversión de zona NO usa `dayjs.tz`: su plugin hace
+ * `new Date(date.toLocaleString('en-US', {timeZone}))`, que en Hermes (Android)
+ * es Invalid Date y deja todo en UTC (#880). Aquí se lee la hora de pared con
+ * `Intl.DateTimeFormat(...).formatToParts()`, que sí funciona en Hermes.
+ *
+ * Sin dependencias más allá de dayjs (+utc): importable desde mcp-server, que
+ * no tiene i18next ni el runtime de la app.
  */
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
 
 dayjs.extend(utc)
-dayjs.extend(timezone)
 
-const YMD = /^\d{4}-\d{2}-\d{2}$/
+const YMD = /^\d{4}-\d{2}-\d{2}/
+const DAY_MS = 86_400_000
+
+export interface ZonedParts {
+  year: number
+  month: number // 1-12
+  day: number
+  hour: number // 0-23
+  minute: number
+  second: number
+  /** 0=domingo … 6=sábado */
+  weekday: number
+}
+
+const formatters = new Map<string, Intl.DateTimeFormat>()
+
+function formatterFor(tz: string): Intl.DateTimeFormat {
+  let f = formatters.get(tz)
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    })
+    formatters.set(tz, f)
+  }
+  return f
+}
+
+/** Hora de pared (año, mes, día, hora…) del instante `ms` en la zona `tz`. */
+export function zonedParts(ms: number, tz: string): ZonedParts {
+  const p: Record<string, number> = {}
+  for (const part of formatterFor(tz).formatToParts(new Date(ms))) {
+    if (part.type !== 'literal') p[part.type] = parseInt(part.value, 10)
+  }
+  const year = p.year, month = p.month, day = p.day
+  return {
+    year,
+    month,
+    day,
+    hour: p.hour % 24, // algunos motores dan 24 a medianoche
+    minute: p.minute,
+    second: p.second,
+    weekday: new Date(Date.UTC(year, month - 1, day)).getUTCDay(),
+  }
+}
+
+/** ms del instante «hora de pared de `ms` en `tz`, leída como si fuera UTC». */
+function wallAsUtcMs(ms: number, tz: string): number {
+  const z = zonedParts(ms, tz)
+  return Date.UTC(z.year, z.month - 1, z.day, z.hour, z.minute, z.second)
+}
+
+/**
+ * Reloj de pared de `tz` como dayjs en modo UTC: sus campos (`hour()`, `day()`,
+ * `format('YYYY-MM-DD')`, `isoWeekday(1)`…) son los de la zona `tz`. Sustituye a
+ * `dayjs().tz(tz)`. NO es un instante real: no uses `valueOf()` para comparar
+ * con timestamps (usa `zonedMidnightMs`).
+ */
+export function wallClock(tz: string, ms: number = Date.now()): dayjs.Dayjs {
+  return dayjs.utc(wallAsUtcMs(ms, tz))
+}
+
+const pad = (n: number, w = 2) => String(n).padStart(w, '0')
+
+function ymdOf(z: ZonedParts): string {
+  return `${pad(z.year, 4)}-${pad(z.month)}-${pad(z.day)}`
+}
+
+/** Instante UTC (ms) en que empieza el día `dateStr` (YYYY-MM-DD) en la zona `tz`. */
+export function zonedMidnightMs(dateStr: string, tz: string): number {
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  const wall = Date.UTC(y, m - 1, d)
+  // Dos pasadas: la primera estima con el offset del propio `wall`; la segunda
+  // corrige si al aplicarlo se cruzó un cambio de horario.
+  const t1 = wall - (wallAsUtcMs(wall, tz) - wall)
+  return wall - (wallAsUtcMs(t1, tz) - t1)
+}
 
 /**
  * Hoy como YYYY-MM-DD en la zona `tz`.
  *
- * Blindado: si el plugin timezone devuelve una fecha inválida, cae a la hora
- * local del host en vez de propagar «Invalid Date». Pasó con dayjs 1.11.22+
- * en Hermes (Android): el nuevo cálculo de offset parsea
- * `Intl.DateTimeFormat().formatToParts` y sale NaN → `computeCurrentStreak`
- * hacía `new Date(NaN).toISOString()` → RangeError → la app no arrancaba
- * (v1.12.1/vc37). dayjs está pineado a 1.11.21 por eso; esto es la red.
+ * Blindado: si `tz` no es válida (Intl lanza RangeError) cae a la hora local
+ * del host en vez de propagar el error: un fallo aquí tumbó el arranque de la
+ * app (v1.12.1/vc37).
  */
 export function todayStrIn(tz: string): string {
-  const s = dayjs().tz(tz).format('YYYY-MM-DD')
-  if (YMD.test(s)) return s
-  const local = dayjs().format('YYYY-MM-DD')
-  console.warn(`[tzDate] todayStrIn(${tz}) devolvió «${s}»; usando hora local ${local}`)
-  return local
+  try {
+    return ymdOf(zonedParts(Date.now(), tz))
+  } catch {
+    const local = dayjs().format('YYYY-MM-DD')
+    console.warn(`[tzDate] todayStrIn(${tz}) falló; usando hora local ${local}`)
+    return local
+  }
 }
 
-/**
- * `dayjs.tz(str, tz)` con una cadena que dayjs no puede parsear NO devuelve un
- * dayjs inválido: el plugin llama a `Intl.DateTimeFormat().formatToParts(new
- * Date(NaN))` y eso LANZA `RangeError: Invalid time value` (tumbó la Home en
- * la v1.12.2 con un startDate «Invalid Date» rehidratado de caché). Se parsea
- * primero en UTC, que sí devuelve un dayjs inválido sin lanzar.
- */
-function parseIn(dateStr: string, tz: string): dayjs.Dayjs | null {
-  if (typeof dateStr !== 'string' || !dateStr) return null
-  if (!dayjs.utc(dateStr).isValid()) return null
-  return dayjs.tz(dateStr, tz)
+/** Fecha de calendario (YYYY-MM-DD…) → ms UTC de su medianoche, o null si no es una fecha. */
+function calendarMs(dateStr: string): number | null {
+  if (typeof dateStr !== 'string' || !YMD.test(dateStr)) return null
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  const ms = Date.UTC(y, m - 1, d)
+  return Number.isNaN(ms) || new Date(ms).getUTCMonth() !== m - 1 ? null : ms
 }
 
 function warnInvalid(fn: string, value: unknown): void {
@@ -58,27 +137,28 @@ function warnInvalid(fn: string, value: unknown): void {
 }
 
 /**
- * Desplaza una fecha YYYY-MM-DD `offset` días (en la zona `tz`) y devuelve
- * YYYY-MM-DD. Con una fecha inválida devuelve la entrada tal cual.
+ * Desplaza una fecha YYYY-MM-DD `offset` días y devuelve YYYY-MM-DD. Es
+ * aritmética de calendario, sin zona (`tz` se conserva por compatibilidad de
+ * firma). Con una fecha inválida devuelve la entrada tal cual.
  */
-export function addDaysIn(dateStr: string, offset: number, tz: string): string {
-  const d = parseIn(dateStr, tz)
-  if (!d) {
+export function addDaysIn(dateStr: string, offset: number, _tz: string): string {
+  const ms = calendarMs(dateStr)
+  if (ms === null) {
     warnInvalid('addDaysIn', dateStr)
     return dateStr
   }
-  return d.add(offset, 'day').format('YYYY-MM-DD')
+  return new Date(ms + offset * DAY_MS).toISOString().slice(0, 10)
 }
 
-/** Días entre dos YYYY-MM-DD (a - b), en la zona `tz`. Con una fecha inválida devuelve 0. */
-export function diffDaysIn(a: string, b: string, tz: string): number {
-  const da = parseIn(a, tz)
-  const db = parseIn(b, tz)
-  if (!da || !db) {
-    warnInvalid('diffDaysIn', !da ? a : b)
+/** Días entre dos YYYY-MM-DD (a - b). Con una fecha inválida devuelve 0. */
+export function diffDaysIn(a: string, b: string, _tz: string): number {
+  const ma = calendarMs(a)
+  const mb = calendarMs(b)
+  if (ma === null || mb === null) {
+    warnInvalid('diffDaysIn', ma === null ? a : b)
     return 0
   }
-  return da.diff(db, 'day')
+  return Math.round((ma - mb) / DAY_MS)
 }
 
 /** Timestamp UTC (formato PocketBase o ISO) → YYYY-MM-DD en la zona `tz`. Inválido → ''. */
@@ -88,7 +168,7 @@ export function utcToLocalDateStrIn(utcTimestamp: string, tz: string): string {
     warnInvalid('utcToLocalDateStrIn', utcTimestamp)
     return ''
   }
-  return d.tz(tz).format('YYYY-MM-DD')
+  return ymdOf(zonedParts(d.valueOf(), tz))
 }
 
 /**
@@ -97,10 +177,9 @@ export function utcToLocalDateStrIn(utcTimestamp: string, tz: string): string {
  * "2026-03-24 05:00:00".
  */
 export function localMidnightAsUTCIn(dateStr: string, tz: string): string {
-  const d = parseIn(dateStr, tz)
-  if (!d) {
+  if (calendarMs(dateStr) === null) {
     warnInvalid('localMidnightAsUTCIn', dateStr)
     return ''
   }
-  return d.utc().format('YYYY-MM-DD HH:mm:ss')
+  return dayjs.utc(zonedMidnightMs(dateStr, tz)).format('YYYY-MM-DD HH:mm:ss')
 }

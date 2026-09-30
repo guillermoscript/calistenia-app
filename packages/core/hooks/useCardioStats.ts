@@ -4,13 +4,12 @@ import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
-import tz from 'dayjs/plugin/timezone'
 import utcPlugin from 'dayjs/plugin/utc'
 import { getTimezone } from '../lib/dateUtils'
+import { wallClock, zonedMidnightMs } from '../lib/tzDate'
 import { safeLocale } from '../lib/i18n-safe'
 
 dayjs.extend(utcPlugin)
-dayjs.extend(tz)
 dayjs.extend(isoWeek)
 import type { CardioSession, KmSplit } from '../types'
 
@@ -139,8 +138,8 @@ export function useCardioStats(userId: string | null) {
   // — weeklyStats —
   const weeklyStats = useMemo((): CardioAggregateStats => {
     if (allSessions.length === 0) return emptyStats
-    const nowLocal = dayjs().tz(userTz)
-    const weekStartMs = nowLocal.isoWeekday(1).startOf('day').valueOf()
+    const nowLocal = wallClock(userTz)
+    const weekStartMs = zonedMidnightMs(nowLocal.isoWeekday(1).format('YYYY-MM-DD'), userTz)
     const weeklySessions = allSessions.filter(s => new Date(s.started_at).getTime() >= weekStartMs)
     return aggregate(weeklySessions)
   }, [allSessions, userTz])
@@ -148,8 +147,8 @@ export function useCardioStats(userId: string | null) {
   // — monthlyStats —
   const monthlyStats = useMemo((): CardioAggregateStats => {
     if (allSessions.length === 0) return emptyStats
-    const nowLocal = dayjs().tz(userTz)
-    const monthStartMs = nowLocal.startOf('month').valueOf()
+    const nowLocal = wallClock(userTz)
+    const monthStartMs = zonedMidnightMs(nowLocal.format('YYYY-MM-01'), userTz)
     const monthlySessions = allSessions.filter(s => new Date(s.started_at).getTime() >= monthStartMs)
     return aggregate(monthlySessions)
   }, [allSessions, userTz])
@@ -199,9 +198,9 @@ export function useCardioStats(userId: string | null) {
   // — lastSession: primera sesión del array (ya viene ordenado por -started_at) —
   const lastSession = useMemo((): CardioSession | null => {
     if (allSessions.length === 0) return null
-    const nowLocal = dayjs().tz(userTz)
-    const weekStartMs = nowLocal.isoWeekday(1).startOf('day').valueOf()
-    const monthStartMs = nowLocal.startOf('month').valueOf()
+    const nowLocal = wallClock(userTz)
+    const weekStartMs = zonedMidnightMs(nowLocal.isoWeekday(1).format('YYYY-MM-DD'), userTz)
+    const monthStartMs = zonedMidnightMs(nowLocal.format('YYYY-MM-01'), userTz)
 
     const weeklyFirst = allSessions.find(s => new Date(s.started_at).getTime() >= weekStartMs)
     if (weeklyFirst) return weeklyFirst
@@ -215,13 +214,13 @@ export function useCardioStats(userId: string | null) {
   // — weeklyTrend: distancia acumulada por semana, últimas 8 semanas —
   const weeklyTrend = useMemo((): WeeklyTrendPoint[] => {
     const WEEKS = 8
-    const nowLocal = dayjs().tz(userTz)
+    const nowLocal = wallClock(userTz)
     const trend: WeeklyTrendPoint[] = []
 
     for (let w = WEEKS - 1; w >= 0; w--) {
-      const wStartDay = nowLocal.isoWeekday(1).subtract(w, 'week').startOf('day')
-      const wStartMs = wStartDay.valueOf()
-      const wEndMs = wStartDay.add(7, 'day').valueOf()
+      const wStartDay = nowLocal.isoWeekday(1).subtract(w, 'week')
+      const wStartMs = zonedMidnightMs(wStartDay.format('YYYY-MM-DD'), userTz)
+      const wEndMs = zonedMidnightMs(wStartDay.add(7, 'day').format('YYYY-MM-DD'), userTz)
 
       let dist = 0
       let count = 0
@@ -233,7 +232,7 @@ export function useCardioStats(userId: string | null) {
         }
       }
       trend.push({
-        weekLabel: wStartDay.toDate().toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
+        weekLabel: wStartDay.startOf('day').toDate().toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
         distance: Math.round(dist * 10) / 10,
         sessions: count,
       })
