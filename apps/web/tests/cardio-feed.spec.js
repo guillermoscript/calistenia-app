@@ -55,8 +55,8 @@ test('cardio session shows in a friend feed as a commentable activity item', asy
   //  dismissOverlays helper.)
   await pageB.goto('/feed')
   await pageB.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
-  await expect(pageB.getByText(/Hizo cardio/i).first()).toBeVisible({ timeout: 12000 })
-  await expect(pageB.getByText(/Carrera/).first()).toBeVisible()
+  await expect(pageB.getByText(/hizo cardio|did cardio/i).first()).toBeVisible({ timeout: 12000 })
+  await expect(pageB.getByText(/Carrera|Running/).first()).toBeVisible()
   await expect(pageB.getByText(/5\.20 km/).first()).toBeVisible()
   await expect(pageB.getByText(/morning run test/).first()).toBeVisible()
 
