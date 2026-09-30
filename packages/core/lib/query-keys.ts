@@ -186,6 +186,10 @@ export const qk = {
   streakDays: (userId: string | null, stamp?: string) =>
     (stamp === undefined ? ['streak-days', userId] : ['streak-days', userId, stamp]) as readonly unknown[],
 
+  // Total de entrenos de la cuenta (#869): filas de las tres colecciones.
+  accountSessions: (userId: string | null, stamp?: string) =>
+    (stamp === undefined ? ['account-sessions', userId] : ['account-sessions', userId, stamp]) as readonly unknown[],
+
   // — Retos —
   challenges: (userId: string | null) => ['challenges', userId] as const,
   challenge: (id: string) => ['challenge', id] as const,

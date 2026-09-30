@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { useSleep } from '@calistenia/core/hooks/useSleep'
+import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
 import { safeLocale } from '@calistenia/core/lib/i18n-safe'
 import type { WeekHistoryEntry } from '@calistenia/core/lib/weeklyStreak'
@@ -39,9 +40,11 @@ function weekLabel(entry: WeekHistoryEntry, t: (k: string, o?: Record<string, un
  */
 export function WeeklyStreakCard() {
   const { t } = useTranslation()
-  const { getTotalSessions } = useWorkoutActions()
+  const { progress } = useWorkoutState()
+  const { userId } = useAuthState()
   const { streak, history, goal } = useTrainingWeek()
-  const total = getTotalSessions()
+  // Sesiones de la cuenta (#869), no las del programa activo.
+  const total = useAccountSessionCount(userId ?? null, progress)
 
   return (
     <section aria-labelledby="progress-streak" className="rounded-xl border border-border bg-card p-4 md:p-5 flex flex-col gap-4">
@@ -94,7 +97,7 @@ export function WeeklyStreakCard() {
 
       <dl className="grid grid-cols-3 gap-2 border-t border-border pt-4">
         {[
-          [t('progress.streak.totalWorkouts'), String(total)],
+          [t('progress.streak.totalWorkouts'), total === null ? '–' : String(total)],
           [t('progress.streak.thisWeek'), `${streak.thisWeek.done} / ${streak.thisWeek.goal}`],
           [t('progress.streak.best'), t('progress.streak.weeksShort', { count: streak.best })],
         ].map(([label, value]) => (
