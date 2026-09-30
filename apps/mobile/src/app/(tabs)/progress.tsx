@@ -29,6 +29,7 @@ import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
+import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
@@ -115,7 +116,10 @@ export default function ProgressScreen() {
   const monthActivity = useMemo(() => getMonthActivity(), [getMonthActivity])
   const today = todayStr()
 
-  const totalSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
+  // Entrenos de la CUENTA (#869/#881), no solo los del programa activo. El evento
+  // de analítica conserva la cifra del programa: es la que ya medía.
+  const programSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
+  const totalSessions = useAccountSessionCount(user?.id ?? null, progress)
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
 
   // Días con cualquier entreno: marcadores del programa (fuerza, yoga, cardio y
@@ -147,7 +151,7 @@ export default function ProgressScreen() {
   useEffect(() => {
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.historyViewed, {
       surface: 'history', source: 'history_tab',
-      total_sessions: totalSessions,
+      total_sessions: programSessions,
       streak: streak.current,
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- una vista por visita
@@ -221,7 +225,7 @@ export default function ProgressScreen() {
 
         {/* Tres cifras, separadas por filetes. */}
         <View className="flex-row border-y border-border">
-          <StatCell label={t('progressTab.workouts')} value={totalSessions} />
+          <StatCell label={t('progressTab.workouts')} value={totalSessions ?? '–'} />
           <StatCell label={t('common.week')} value={`${streak.thisWeek.done} / ${streak.thisWeek.goal}`} bordered />
           <StatCell label={t('progressTab.bestStreak')} value={t('progressTab.weeksShort', { count: streak.best })} bordered />
         </View>

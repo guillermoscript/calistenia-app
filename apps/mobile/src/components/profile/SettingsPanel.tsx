@@ -51,9 +51,15 @@ export function SettingsRow({ label, value, open = false, onPress, bordered, mut
         accessibilityState={expandable ? { expanded: open } : undefined}
         className="flex-row items-center gap-3 px-5 py-3.5 active:bg-muted/70"
       >
-        <Text className={cn('flex-1 text-[15px]', open ? 'text-lime' : 'text-foreground')}>{label}</Text>
+        {/* La etiqueta no se parte (#881): es la descripción la que cede ancho y se recorta. */}
+        <Text
+          className={cn(value ? 'shrink-0' : 'flex-1', 'text-[15px]', open ? 'text-lime' : 'text-foreground')}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
         {value ? (
-          <Text className="shrink font-mono text-[11px] text-muted-foreground" numberOfLines={1}>{value}</Text>
+          <Text className="flex-1 shrink text-right font-mono text-[11px] text-muted-foreground" numberOfLines={1} ellipsizeMode="tail">{value}</Text>
         ) : null}
         {/* El giro va en la `View`, nunca en el icono: `lucide-react-native`
             reparte `style` también a los `<Path>` y el trazo se sale del

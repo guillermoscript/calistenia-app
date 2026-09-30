@@ -5,6 +5,7 @@ import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, emitOnce, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
+import { saveSettingsSerial } from '../lib/settingsWrite'
 import { pickAffectedChallenges } from '../lib/challenge-scoring'
 import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
 import { TRAINING_FUNNEL_EVENTS, sessionFunnelProperties } from '../lib/session-funnel'
@@ -302,10 +303,7 @@ export function useProgressMutations(userId: string | null = null, activeProgram
     const updated = patchSettings(prev => ({ ...prev, ...newSettings }))
     if (usePB && userId) {
       try {
-        const existingRes = await pb.collection('settings').getList(1, 1, {
-          filter: pb.filter('user = {:uid}', { uid: userId }), $autoCancel: false,
-        })
-        const data = {
+        await saveSettingsSerial(pb as never, userId, {
           phase: updated.phase, start_date: updated.startDate, weekly_goal: updated.weeklyGoal,
           pr_pullups: updated.pr_pullups ?? null, pr_pushups: updated.pr_pushups ?? null,
           pr_lsit: updated.pr_lsit ?? null, pr_pistol: updated.pr_pistol ?? null,
@@ -316,21 +314,10 @@ export function useProgressMutations(userId: string | null = null, activeProgram
           // Solo cuando ESTA llamada lo cambia: cualquier otro guardado desde un
           // dispositivo con caché vieja pisaría el historial del servidor (#801).
           ...(Array.isArray(newSettings.weeklyGoalLog) ? { weekly_goal_log: newSettings.weeklyGoalLog } : {}),
-        }
-        if (existingRes.items.length > 0) {
-          await pb.collection('settings').update(existingRes.items[0].id, data)
-        } else {
-          await pb.collection('settings').create({ user: userId, ...data })
-        }
-      } catch {
-        pb.collection('settings').create({
-          user: userId, phase: updated.phase, start_date: updated.startDate, weekly_goal: updated.weeklyGoal,
-          pr_pullups: updated.pr_pullups ?? null, pr_pushups: updated.pr_pushups ?? null,
-          pr_lsit: updated.pr_lsit ?? null, pr_pistol: updated.pr_pistol ?? null,
-          pr_handstand: updated.pr_handstand ?? null,
-          ...(typeof updated.weeklyGoalCustom === 'boolean' ? { weekly_goal_custom: updated.weeklyGoalCustom } : {}),
-          ...(Array.isArray(newSettings.weeklyGoalLog) ? { weekly_goal_log: newSettings.weeklyGoalLog } : {}),
-        }).catch((e: any) => console.warn('PB settings create error:', e))
+        })
+      } catch (e) {
+        console.warn('PB settings save error:', e)
+        getPlatform().reportError?.(e)
       }
     }
   }, [usePB, userId, patchSettings])
