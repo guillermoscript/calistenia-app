@@ -9,7 +9,8 @@ import type { FollowRequest } from '@calistenia/core/hooks/useFollows'
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
-import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
+import { timeAgoShort, localDay } from '@calistenia/core/lib/dateUtils'
+import { workoutTodayUrl } from '../lib/workout-today-url'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { EmptyState } from '../components/ui/empty-state'
@@ -145,8 +146,8 @@ function getNotificationRoute(n: AppNotification): string {
     case 'inactivity_7d':
     case 'inactivity_14d':
     case 'inactivity_new_start':
-      // La acción útil es entrenar: la página del entreno de hoy (#695).
-      return '/workout'
+      // La acción útil es entrenar: el entreno de hoy (#695, #870).
+      return workoutTodayUrl(localDay())
     default:
       return '/'
   }
