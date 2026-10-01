@@ -417,7 +417,7 @@ const CardioRow = memo(function CardioRow({
           {t(`cardio.${session.activity_type}`, { defaultValue: session.activity_type })} · {dist} km
         </Text>
         <Text className="text-xs text-muted-foreground">
-          <Text className="font-mono text-[11px] text-muted-foreground/70">{relativeDate(session.started_at.slice(0, 10))}</Text>
+          <Text className="font-mono text-[11px] text-muted-foreground/70">{relativeDate(utcToLocalDateStr(session.started_at))}</Text>
           {` · ${formatDuration(session.duration_seconds ?? 0)}`}
           {session.note ? ` · ${session.note}` : ''}
         </Text>

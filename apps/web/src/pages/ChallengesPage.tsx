@@ -97,28 +97,6 @@ export default function ChallengesPage({ userId, embedded = false }: ChallengesP
         </Button>
       </div>
 
-      {filter === 'active' && (
-        <section data-testid="beginner-challenge-presets" className="mb-8">
-          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">
-            {t('challenge.preset.kicker')}
-          </div>
-          <h2 className="font-bebas text-2xl mb-1">{t('challenge.preset.catalogTitle')}</h2>
-          <p className="text-xs text-muted-foreground mb-4">{t('challenge.preset.catalogDescription')}</p>
-          <div className="grid gap-2 md:grid-cols-2">
-            {getVisibleBeginnerChallengePresets().map(preset => (
-              <BeginnerPresetCard
-                key={preset.id}
-                preset={preset}
-                joinedChallenge={joinedPresets.get(preset.id)}
-                joining={joiningPreset === preset.id}
-                onJoin={() => void handleJoinPreset(preset)}
-                onOpen={(challengeId) => navigate(`/challenges/${challengeId}`)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Filter tabs */}
       <div role="tablist" aria-label={t('challenges.filterAriaLabel')} className="flex gap-1.5 mb-6">
         {FILTERS.map(f => (
@@ -188,6 +166,29 @@ export default function ChallengesPage({ userId, embedded = false }: ChallengesP
           </div>
         )}
       </div>
+
+      {/* #891: lo activo del usuario primero; las sugerencias debajo. */}
+      {filter === 'active' && (
+        <section data-testid="beginner-challenge-presets" className="mt-8">
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">
+            {t('challenge.preset.kicker')}
+          </div>
+          <h2 className="font-bebas text-2xl mb-1">{t('challenge.preset.catalogTitle')}</h2>
+          <p className="text-xs text-muted-foreground mb-4">{t('challenge.preset.catalogDescription')}</p>
+          <div className="grid gap-2 md:grid-cols-2">
+            {getVisibleBeginnerChallengePresets().map(preset => (
+              <BeginnerPresetCard
+                key={preset.id}
+                preset={preset}
+                joinedChallenge={joinedPresets.get(preset.id)}
+                joining={joiningPreset === preset.id}
+                onJoin={() => void handleJoinPreset(preset)}
+                onOpen={(challengeId) => navigate(`/challenges/${challengeId}`)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

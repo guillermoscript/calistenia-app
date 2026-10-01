@@ -49,22 +49,18 @@ export async function fetchRankingUserIds(userId: string): Promise<{ allUserIds:
 }
 
 /**
- * Entrenos de `uid` desde `start` (fuerza + circuito + cardio). Sale de las
- * views `public_*` (#386): las tablas base son owner-only y aquí se leen datos
- * de otras personas.
+ * Entrenos de `uid` desde `start`: SOLO de programa y libres (la tabla
+ * `sessions`), la misma definición que la racha y el objetivo semanal (#890).
+ * El cardio y los circuitos no cuentan: antes se sumaban y la misma persona
+ * salía con 3 en Comunidad y 2 de 6 en Hoy/Progreso/Perfil. Sale de la view
+ * `public_sessions` (#386): la tabla base es owner-only y aquí se leen datos de
+ * otras personas.
  */
-export async function countActivitySince(uid: string, start: string): Promise<number> {
-  const count = (collection: string, field: string) =>
-    pb.collection(collection).getList(1, 1, {
-      filter: pb.filter(`user = {:uid} && ${field} >= {:start}`, { uid, start }),
-      $autoCancel: false,
-    }).then((r: any) => r?.totalItems || 0).catch(() => 0)
-  const [strength, circuit, cardio] = await Promise.all([
-    count('public_sessions', 'completed_at'),
-    count('public_circuit_sessions', 'started_at'),
-    count('public_cardio_sessions', 'started_at'),
-  ])
-  return strength + circuit + cardio
+export async function countWorkoutSessionsSince(uid: string, start: string): Promise<number> {
+  return pb.collection('public_sessions').getList(1, 1, {
+    filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start }),
+    $autoCancel: false,
+  }).then((r: any) => r?.totalItems || 0).catch(() => 0)
 }
 
 /**
@@ -118,8 +114,8 @@ export function useLeaderboard(userId: string | null) {
             pb.filter('user = {:uid}', { uid }),
             { $autoCancel: false, fields: 'id,user,pr_pullups,pr_pushups,pr_lsit,pr_handstand' },
           ).catch(() => null),
-          countActivitySince(uid, weekStartStr),
-          countActivitySince(uid, monthStartStr),
+          countWorkoutSessionsSince(uid, weekStartStr),
+          countWorkoutSessionsSince(uid, monthStartStr),
         ])
 
         const displayName = authorDisplayName(userRes as any) || '?'

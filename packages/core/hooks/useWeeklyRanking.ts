@@ -4,13 +4,13 @@ import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { startOfWeekStr, localMidnightAsUTC } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
 import { authorDisplayName } from '../lib/author-name'
-import { countActivitySince, fetchRankingUserIds } from './useLeaderboard'
+import { countWorkoutSessionsSince, fetchRankingUserIds } from './useLeaderboard'
 
 export interface WeeklyRankingRow {
   userId: string
   displayName: string
   avatarUrl: string | null
-  /** Entrenos esta semana (fuerza + circuito + cardio). */
+  /** Entrenos esta semana (programa y libres; sin cardio ni circuitos, #890). */
   value: number
   /** Puesto 1-based en el ranking completo de la semana. */
   position: number
@@ -67,7 +67,7 @@ export function useWeeklyRanking(userId: string | null) {
 
       const counts = await Promise.all(allUserIds.map(async (uid) => ({
         userId: uid,
-        value: await countActivitySince(uid, weekStartStr),
+        value: await countWorkoutSessionsSince(uid, weekStartStr),
       })))
       const { top, me } = rankWeekly(counts, userId!)
 

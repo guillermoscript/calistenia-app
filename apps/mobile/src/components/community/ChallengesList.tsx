@@ -150,15 +150,16 @@ export default function ChallengesList() {
       </View>
 
       {/*
-        El catálogo va como cabecera de la FlatList, no como View hermana: si no,
-        ocupa alto fijo, empuja la lista fuera de pantalla y nada de eso scrollea
-        (el último preset quedaba tapado por la barra de navegación).
+        El catálogo va como pie de la FlatList (#891: tus retos activos primero,
+        las sugerencias debajo), no como View hermana: si no, ocupa alto fijo,
+        empuja la lista fuera de pantalla y nada de eso scrollea (el último
+        preset quedaba tapado por la barra de navegación).
       */}
       <FlatList
         data={loading ? [] : items}
         keyExtractor={(item) => item.id}
         contentContainerClassName="px-4 pb-10 gap-2"
-        ListHeaderComponent={
+        ListFooterComponent={
           filter === 'active' ? (
             <BeginnerPresetCatalog
               joinedPresets={joinedPresets}
@@ -179,7 +180,7 @@ export default function ChallengesList() {
               title={filter === 'active' ? t('challenges.emptyActive') : t('challenges.emptyPast')}
               /*
                 Un cuerpo por pestaña: en «Activos» el catálogo de presets va
-                como cabecera de esta misma lista (justo encima), así que el
+                como pie de esta misma lista (justo debajo), así que el
                 texto remite ahí; en «Finalizados» no hay catálogo que señalar.
               */
               body={filter === 'active' ? t('challenges.emptyBodyActive') : t('challenges.emptyBodyPast')}
@@ -286,7 +287,7 @@ function BeginnerPresetCatalog({
 
   return (
     // Sin px-4: el padding horizontal ya lo pone el contentContainer de la lista.
-    <View className="pb-4 gap-2">
+    <View className="pt-4 gap-2">
       <Kicker>
         {t('challenge.preset.kicker')}
       </Kicker>

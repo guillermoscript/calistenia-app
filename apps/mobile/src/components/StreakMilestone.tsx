@@ -24,6 +24,7 @@ import {
 import { isAnyOverlayOpen, setOverlayOpen } from '@/lib/overlay-gate'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 
 export interface StreakMilestoneProps {
   /** Semanas seguidas cumpliendo el objetivo (`computeWeeklyStreak().current`). */
@@ -50,7 +51,7 @@ export default function StreakMilestone({
   const opacity = useRef(new Animated.Value(0)).current
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const { width: screenW, height: screenH } = useWindowDimensions()
-  const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
+  const today = useRef<string>(todayStr()).current
 
   useEffect(() => {
     let cancelled = false

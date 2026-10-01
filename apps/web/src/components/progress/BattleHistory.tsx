@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { useBattleHistory, type BattleHistoryEntry } from '@calistenia/core/hooks/useBattleHistory'
-import { relativeDate } from '@calistenia/core/lib/dateUtils'
+import { relativeDate, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import type { BattleOutcome } from '@calistenia/core/lib/battle'
 
 const OUTCOME_KEY: Record<BattleOutcome, string> = {
@@ -33,7 +33,7 @@ function BattleRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string | 
         className="w-full text-left px-4 py-3 hover:border-lime/30 transition-colors flex items-center justify-between gap-3"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="text-xs text-muted-foreground w-16 shrink-0">{relativeDate(when.slice(0, 10))}</div>
+          <div className="text-xs text-muted-foreground w-16 shrink-0">{relativeDate(utcToLocalDateStr(when))}</div>
           <div className="min-w-0">
             <div className="text-sm font-medium truncate">
               {battle.config.rounds} {t('battle.rounds')} · {battle.config.exercises.length} {t('battle.exercises')}
