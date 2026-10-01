@@ -18,7 +18,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, ScrollView, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { RotateCcw } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -32,11 +31,10 @@ import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import BattleResultShareButton from '@/components/battle/BattleResultShareButton'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { battleResultView, battleWorkColumns, type BattleResultRow } from '@calistenia/core/lib/battle'
-import { findBattlePreset } from '@calistenia/core/data/battle-presets'
+import { battleTitle } from '@calistenia/core/data/battle-presets'
 
 export default function BattleResults() {
-  const { t } = useTranslation()
-  const l = useLocalize()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const { snapshot, standings, phase, isCreator, busy, actions } = useBattleContext()
@@ -77,8 +75,7 @@ export default function BattleResults() {
   // Las columnas del marcador salen del circuito, no de los números (#426): una batalla
   // con plancha enseña los segundos que aguantó cada uno.
   const columns = battleWorkColumns(snapshot?.battle.config)
-  const preset = findBattlePreset(snapshot?.battle.config?.workout_template_id ?? '')
-  const circuitName = (preset && l(preset.name)) || t('battle.title')
+  const circuitName = battleTitle(snapshot?.battle.config, i18n.language) || t('battle.title')
 
   const headline = headlineFor(t, result.state, result.outcome)
 

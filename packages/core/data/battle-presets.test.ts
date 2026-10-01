@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   BATTLE_PRESETS,
   battleExerciseLabel,
-  battleExerciseName,
   battleRoundTargets,
   battleSourceOf,
   battleTitle,
@@ -42,17 +41,18 @@ describe('BATTLE_PRESETS', () => {
   })
 })
 
-describe('battleExerciseName', () => {
+describe('battleExerciseLabel (presets)', () => {
   it('resolves the localized name', () => {
-    expect(battleExerciseName('battle_sprint_3', 'push_ups', 'es')).toBe('Flexiones')
-    expect(battleExerciseName('battle_sprint_3', 'push_ups', 'en-US')).toBe('Push-ups')
+    const config = { workout_template_id: 'battle_sprint_3' }
+    expect(battleExerciseLabel(config, 'push_ups', 'es')).toBe('Flexiones')
+    expect(battleExerciseLabel(config, 'push_ups', 'en-US')).toBe('Push-ups')
   })
 
   it('prettifies an unknown exercise instead of showing the raw id', () => {
     // Una batalla creada por un cliente más nuevo puede traer un ejercicio que este
     // build no conoce; la pantalla tiene que seguir siendo legible.
-    expect(battleExerciseName('battle_sprint_3', 'archer_push_ups', 'es')).toBe('Archer Push Ups')
-    expect(battleExerciseName('preset_que_no_existe', 'push_ups', 'es')).toBe('Push Ups')
+    expect(battleExerciseLabel({ workout_template_id: 'battle_sprint_3' }, 'archer_push_ups', 'es')).toBe('Archer Push Ups')
+    expect(battleExerciseLabel({ workout_template_id: 'preset_que_no_existe' }, 'push_ups', 'es')).toBe('Push Ups')
   })
 })
 
