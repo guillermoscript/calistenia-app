@@ -32,7 +32,7 @@ import { BATTLE_PRESETS, BATTLE_CUSTOM_TEMPLATE_ID } from '@calistenia/core/data
 import { BATTLE_LIMITS, validateBattleConfiguration } from '@calistenia/core/lib/battle'
 import { battleExerciseNamesFrom } from '@calistenia/core/lib/battle-exercise-names'
 import { parseRestSeconds, type BattleDayNote } from '@calistenia/core/lib/battle-from-program-day'
-import { getOrLoadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
+import { loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { dayIdFromDateStr } from '@calistenia/core/lib/programProgress'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
@@ -42,7 +42,7 @@ import {
   publishBattle,
   newIdempotencyKey,
 } from '@calistenia/core/lib/battleApi'
-import type { Battle, BattleConfiguration, BattleSource } from '@calistenia/core/types/battle'
+import type { Battle, BattleConfiguration } from '@calistenia/core/types/battle'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 /** Lo que una batalla propia lleva por ejercicio mientras se edita. */
@@ -139,7 +139,18 @@ export default function BattleCreateScreen() {
   const autoTitle = (dayId ? battleDay.dayTitle(dayId, phase) : '').slice(0, BATTLE_LIMITS.maxTitleLength)
   const lang = i18n.language
 
-  // La configuración que se enviaría, ya con origen, título y nombres congelados.
+  // Los nombres que se congelan en `exercise_names` (#882). Se resuelven al CREAR, con el
+  // catálogo ya cargado: calcularlos aquí con el índice síncrono los dejaba solo en el
+  // idioma del creador cuando el catálogo aún no había llegado.
+  const nameSources = useMemo(() => {
+    if (origin === 'program_day') {
+      return conversion?.ok ? conversion.meta.map(m => ({ exerciseId: m.exerciseId, displayName: m.name })) : []
+    }
+    if (origin === 'custom') return items.map(it => ({ exerciseId: it.exerciseId, displayName: it.name }))
+    return []
+  }, [origin, conversion, items])
+
+  // La configuración que se enviaría, ya con origen y título.
   const config = useMemo((): BattleConfiguration | null => {
     if (origin === 'preset') {
       const preset = BATTLE_PRESETS.find(p => p.id === selected)
@@ -155,11 +166,6 @@ export default function BattleCreateScreen() {
           ...ex,
           target: { kind: ex.target.kind, value: targetEdits[`${dayId}:${ex.exercise_id}`] ?? ex.target.value },
         })),
-        exercise_names: battleExerciseNamesFrom(
-          conversion.meta.map(m => ({ exerciseId: m.exerciseId, displayName: m.name })),
-          lang,
-          getOrLoadCatalogIndex(),
-        ),
       }
     }
     if (items.length === 0) return null
@@ -176,13 +182,8 @@ export default function BattleCreateScreen() {
         target: { kind: it.kind, value: it.value },
         rest_seconds: it.rest,
       })),
-      exercise_names: battleExerciseNamesFrom(
-        items.map(it => ({ exerciseId: it.exerciseId, displayName: it.name })),
-        lang,
-        getOrLoadCatalogIndex(),
-      ),
     }
-  }, [origin, selected, conversion, dayId, dayTitle, autoTitle, targetEdits, items, customRounds, customTitle, lang])
+  }, [origin, selected, conversion, dayId, dayTitle, autoTitle, targetEdits, items, customRounds, customTitle])
 
   const chooseOrigin = (next: Origin) => {
     setOrigin(next)
@@ -222,8 +223,14 @@ export default function BattleCreateScreen() {
 
   const handleCreate = async () => {
     if (!config || !user?.id) return
+    let toSend = config
+    if (nameSources.length > 0) {
+      // Sin catálogo (falló la carga) se congela el nombre del programa en el idioma del creador.
+      const index = await loadCatalogIndex().catch(() => null)
+      toSend = { ...config, exercise_names: battleExerciseNamesFrom(nameSources, lang, index) }
+    }
     // Los mismos límites que aplica el servidor: aquí se explican, allí se rechazan.
-    const problems = validateBattleConfiguration(config)
+    const problems = validateBattleConfiguration(toSend)
     if (problems.length > 0) {
       setError(`${t('battle.invalidConfig')} ${problems.join(' · ')}`)
       void haptics.error()
@@ -233,15 +240,16 @@ export default function BattleCreateScreen() {
     setBusy(true)
     setError(null)
     try {
-      const battleId = await createBattleDraft(user.id, config)
+      const battleId = await createBattleDraft(user.id, toSend)
       // Publicar en el mismo gesto: un borrador sin sala no le sirve a nadie, y así el
       // creador ya tiene su plaza y puede compartir el enlace de inmediato.
       await publishBattle(battleId, newIdempotencyKey())
-      const source: BattleSource = config.source ?? 'preset'
+      // `source` es, como en todo el contrato canónico, la pantalla de origen; de dónde
+      // salió el circuito va aparte en `battle_source` (#882).
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCreated, {
-        surface: 'battle', source, battle_id: battleId,
-        participant_count: 1, result: 'created', template: config.workout_template_id,
-        exercise_count: config.exercises.length,
+        surface: 'battle', source: 'battle_create', battle_id: battleId,
+        participant_count: 1, result: 'created', template: toSend.workout_template_id,
+        battle_source: toSend.source ?? 'preset', exercise_count: toSend.exercises.length,
       })
       void haptics.success()
       router.replace(`/battle/${battleId}`)
