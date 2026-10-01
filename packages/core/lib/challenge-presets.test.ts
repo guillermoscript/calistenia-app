@@ -24,12 +24,13 @@ describe('beginner challenge presets', () => {
     })
   })
 
-  it('contains the four requested presets, all enabled now that cumulative scoring exists', () => {
+  it('contains the five requested presets, all enabled now that cumulative scoring exists', () => {
     expect(BEGINNER_CHALLENGE_PRESETS.map((preset) => preset.id)).toEqual([
       'starter_7_day',
       'consistency_30_day',
       'first_10_workouts',
       'pushup_builder',
+      'first_pullup',
     ])
     expect(BEGINNER_CHALLENGE_PRESETS.every((preset) => preset.enabled)).toBe(true)
   })
@@ -44,6 +45,20 @@ describe('beginner challenge presets', () => {
     expect(pushups.goal).toBe(100)
     expect(pushups.durationDays).toBe(30)
     expect(pushups.disabledReasonKey).toBeUndefined()
+  })
+
+  // #805: se puntúa con el PR histórico (`most_pullups`), así que no hay que
+  // tocar el motor de puntuación; llegar a 1 dominada completa el reto.
+  it('offers a first pull-up preset scored by the pull-up PR, joinable with no friends', () => {
+    const preset = getBeginnerChallengePreset('first_pullup')!
+    expect(preset.metric).toBe('most_pullups')
+    expect(preset.goal).toBe(1)
+    expect(preset.durationDays).toBe(180)
+    expect(preset.enabled).toBe(true)
+    expect(preset.exerciseSlug).toBeUndefined()
+    expect(getVisibleBeginnerChallengePresets().map((p) => p.id)).toContain('first_pullup')
+    expect(getPresetTargetLabel(preset)).toBe('1 pull-up')
+    expect(resolvePresetChallengeTitle({ title: 'x', preset_key: 'first_pullup' })).toBe('Your first pull-up')
   })
 
   it('every preset that scores one exercise names a real catalog exercise', () => {
@@ -65,6 +80,7 @@ describe('beginner challenge presets', () => {
       'consistency_30_day',
       'first_10_workouts',
       'pushup_builder',
+      'first_pullup',
     ])
     expect(getVisibleBeginnerChallengePresets().every((preset) => preset.enabled)).toBe(true)
     // Un reto ya creado desde un preset tiene que seguir resolviendo por id
