@@ -14,6 +14,7 @@
  */
 
 import { utcToLocalDateStr } from './dateUtils'
+import { authorDisplayName } from './author-name'
 import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from './session-key'
 import { WORKOUTS } from '../data/workouts'
 import type { TranslatableField } from './i18n-db'
@@ -177,13 +178,9 @@ export function mapRecentSessions(
     })
 }
 
-/** Nombre visible con los mismos fallbacks que usaban ambas pantallas. */
+/** Nombre visible: misma regla que el resto de Comunidad (`authorDisplayName`, #892). */
 export function profileDisplayName(user: { display_name?: string; name?: string; email?: string }): string {
-  // `name` va entre display_name y el email a propósito: users_field_privacy.pb.js
-  // (#411) esconde `email` salvo emailVisibility, pero publica `name`. Sin este
-  // escalón, quien se dio de alta con Google (rellena `name`, no `display_name`)
-  // salía como cadena vacía o «?».
-  return user.display_name || user.name || user.email?.split('@')[0] || ''
+  return authorDisplayName(user)
 }
 
 /** PRs con ceros por defecto: `public_prs` puede no tener fila todavía. */

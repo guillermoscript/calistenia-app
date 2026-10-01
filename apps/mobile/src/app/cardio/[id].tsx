@@ -15,6 +15,7 @@ import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
@@ -87,9 +88,7 @@ export default function CardioDetailScreen() {
         const expandedUser = (raw as any).expand?.user
         if (expandedUser) {
           setAuthorName(
-            expandedUser.display_name ||
-              expandedUser.email?.split('@')[0] ||
-              undefined,
+            authorDisplayName(expandedUser) || undefined,
           )
         }
 

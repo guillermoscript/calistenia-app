@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { assessTrackQuality } from '@calistenia/core/lib/geo'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
@@ -61,7 +62,7 @@ export default function CardioSessionDetailPage() {
         setSession(s)
         const expandedUser = record.expand?.user
         if (expandedUser) {
-          setAuthorName(expandedUser.display_name || expandedUser.email?.split('@')[0] || '')
+          setAuthorName(authorDisplayName(expandedUser))
           setAuthorAvatarUrl(getUserAvatarUrl(expandedUser, '200x200'))
         }
         // Solo el dueño puede leer su ruta, así que ni se pide para una

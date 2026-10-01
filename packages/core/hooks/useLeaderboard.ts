@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { startOfWeekStr, localMidnightAsUTC, todayStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
+import { authorDisplayName } from '../lib/author-name'
 
 export interface LeaderboardEntry {
   userId: string
@@ -117,7 +118,7 @@ export function useLeaderboard(userId: string | null) {
           countWorkoutSessionsSince(uid, monthStartStr),
         ])
 
-        const displayName = (userRes as any)?.display_name || (userRes as any)?.email?.split('@')[0] || '?'
+        const displayName = authorDisplayName(userRes as any) || '?'
         const avatarUrl = userRes ? getUserAvatarUrl(userRes as any, '100x100') : null
         const isMe = uid === userId
 

@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { shareReferralInvite, shareText, profileUrl } from '@/lib/share'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { isAutoCancelError } from '@calistenia/core/lib/pocketbase-errors'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
@@ -50,7 +51,7 @@ function mapPbItems(items: any[], excludeUserId: string): SearchResult[] {
     .filter((u: any) => u.id !== excludeUserId)
     .map((u: any) => ({
       id: u.id,
-      displayName: u.display_name || u.name || u.username || '?',
+      displayName: authorDisplayName(u) || '?',
       username: u.username || '',
       avatarUrl: getUserAvatarUrl(u, '100x100'),
     }))
