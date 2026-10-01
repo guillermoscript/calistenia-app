@@ -134,6 +134,10 @@ export const CANONICAL_ANALYTICS_EVENTS = {
    */
   notificationClicked: 'notification_clicked',
   leaderboardViewed: 'leaderboard_viewed',
+  /** #806: se enseñó la lista «gente activa para seguir» (`surface`: friends_suggestions | leaderboard_suggestions). */
+  suggestedUsersViewed: 'suggested_users_viewed',
+  /** #806: se siguió a alguien desde esa lista. */
+  suggestedUserFollowed: 'suggested_user_followed',
   cardioDetailViewed: 'cardio_detail_viewed',
   exerciseSearched: 'exercise_searched',
   /** Una racha alcanzó un hito y el usuario cerró el aviso. */
