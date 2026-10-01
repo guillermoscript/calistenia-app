@@ -19,6 +19,9 @@ const getFullList = vi.hoisted(() => vi.fn())
 // #636 §5: la página pasó al facade canónico para llevar `event_version` y
 // `surface`. El nombre del evento no cambia, así que la aserción de abajo sigue
 // midiendo lo mismo: UN `leaderboard_viewed` por visita.
+// #806: las sugerencias tienen sus propios tests; aquí solo molestan.
+vi.mock('../components/friends/SuggestedUsers', () => ({ SuggestedUsers: () => null }))
+
 vi.mock('@calistenia/core/lib/analytics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@calistenia/core/lib/analytics')>()),
   op: { track: mockTrack },

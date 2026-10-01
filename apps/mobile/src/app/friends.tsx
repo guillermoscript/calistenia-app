@@ -32,6 +32,8 @@ import { excludeBlocked } from '@calistenia/core/lib/blocks'
 import { Sentry } from '@/lib/instrument'
 import type { FollowUser } from '@calistenia/core/hooks/useFollows'
 import { buildUserSearchFilter } from '@/lib/user-search-filter'
+import { SuggestedUsers } from '@/components/social/SuggestedUsers'
+import { SUGGESTED_USERS_MAX_FOLLOWING } from '@calistenia/core/lib/suggested-users'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -397,6 +399,11 @@ export default function FriendsScreen() {
                 COMPARTIR INVITACIÓN
               </Text>
             </Button>
+          </View>
+
+          {/* #806: pocos seguidos → gente activa para empezar */}
+          <View className="px-4">
+            <SuggestedUsers surface="friends_suggestions" maxFollowing={SUGGESTED_USERS_MAX_FOLLOWING} />
           </View>
 
           {/* Tab bar */}

@@ -14,6 +14,8 @@ import { Trophy } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { EmptyState } from '@/components/ui/empty-state'
+import { SuggestedUsers } from '@/components/social/SuggestedUsers'
+import { SUGGESTED_USERS_LEADERBOARD_LIMIT } from '@calistenia/core/lib/suggested-users'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
@@ -167,13 +169,17 @@ export default function LeaderboardList() {
               <Text className="font-mono text-xs text-muted-foreground">{t('common.loading')}</Text>
             </View>
           ) : !hasAnyFollows ? (
-            <EmptyState
-              icon={Trophy}
-              title={t('leaderboard.emptyTitle')}
-              body={t('leaderboard.emptyBody')}
-              ctaLabel={t('dashboard.findFriends')}
-              onCtaPress={() => router.push('/friends')}
-            />
+            <View className="gap-5">
+              <EmptyState
+                icon={Trophy}
+                title={t('leaderboard.emptyTitle')}
+                body={t('leaderboard.emptyBody')}
+                ctaLabel={t('dashboard.findFriends')}
+                onCtaPress={() => router.push('/friends')}
+              />
+              {/* #806: el vacío no es un callejón sin salida */}
+              <SuggestedUsers surface="leaderboard_suggestions" limit={SUGGESTED_USERS_LEADERBOARD_LIMIT} />
+            </View>
           ) : (
             <View className="items-center py-10">
               <Text className="font-mono text-xs text-muted-foreground">{t('leaderboard.noData')}</Text>

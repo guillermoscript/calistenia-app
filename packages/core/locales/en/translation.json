@@ -1132,6 +1132,10 @@
   "friends.searchNoResults": "No results for \"{{query}}\"",
   "friends.searchInviteHint": "Not on the app? Invite them to join.",
   "friends.invite": "Invite",
+  "friends.suggestedTitle": "Active people to follow",
+  "friends.suggestedHint": "They trained recently. Follow someone to see their activity and compare on the leaderboard.",
+  "friends.suggestedSessions": "{{n}} workouts",
+  "friends.suggestedStreak": "{{n}}-day streak",
 
   "blocks.blockBtn": "BLOCK",
   "blocks.unblockBtn": "UNBLOCK",

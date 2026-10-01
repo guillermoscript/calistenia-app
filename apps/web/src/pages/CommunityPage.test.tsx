@@ -12,6 +12,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import type { WeeklyRanking } from '@calistenia/core/hooks/useWeeklyRanking'
 
+// #806: las sugerencias tienen sus propios tests; aquí solo molestan.
+vi.mock('../components/friends/SuggestedUsers', () => ({ SuggestedUsers: () => null }))
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, params?: Record<string, unknown>) =>

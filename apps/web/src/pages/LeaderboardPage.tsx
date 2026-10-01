@@ -8,6 +8,8 @@ import { RANK_MEDALS } from '@calistenia/core/lib/challenges'
 import { Button } from '../components/ui/button'
 import { EmptyState } from '../components/ui/empty-state'
 import { Loader } from '../components/ui/loader'
+import { SuggestedUsers } from '../components/friends/SuggestedUsers'
+import { SUGGESTED_USERS_LEADERBOARD_LIMIT } from '@calistenia/core/lib/suggested-users'
 
 type TimeFilter = 'week' | 'month'
 
@@ -130,6 +132,15 @@ export default function LeaderboardPage({ userId, embedded = false }: Leaderboar
               {t('leaderboard.findFriends')}
             </Button>
           )}
+        />
+      )}
+      {/* #806: el vacío no es un callejón sin salida, enseña gente activa */}
+      {!loading && !error && !hasAnyFollows && (
+        <SuggestedUsers
+          userId={userId}
+          surface="leaderboard_suggestions"
+          limit={SUGGESTED_USERS_LEADERBOARD_LIMIT}
+          className="mt-6"
         />
       )}
 

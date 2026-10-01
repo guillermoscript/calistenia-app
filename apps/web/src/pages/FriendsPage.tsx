@@ -12,6 +12,8 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
+import { SuggestedUsers } from '../components/friends/SuggestedUsers'
+import { SUGGESTED_USERS_MAX_FOLLOWING } from '@calistenia/core/lib/suggested-users'
 
 type Tab = 'siguiendo' | 'seguidores'
 
@@ -274,6 +276,16 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* #806: sin búsqueda y con pocos seguidos, gente activa para empezar */}
+      {!search && (
+        <SuggestedUsers
+          userId={userId}
+          surface="friends_suggestions"
+          maxFollowing={SUGGESTED_USERS_MAX_FOLLOWING}
+          className="mb-6"
+        />
       )}
 
       {/* When searching: unified remote search results with infinite scroll */}

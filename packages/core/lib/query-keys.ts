@@ -23,6 +23,7 @@ export const qk = {
   // — Social / feed —
   follows: (userId: string | null) => ['follows', userId] as const,
   blocks: (userId: string | null) => ['blocks', userId] as const,
+  suggestedUsers: (userId: string | null) => ['suggested-users', userId] as const,
   feed: {
     all: ['feed'] as const,
     meta: (userId: string | null) => ['feed', 'meta', userId] as const,
