@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Sentry from '@sentry/react-native'
 import i18n from 'i18next'
 import { pb } from '@calistenia/core/lib/pocketbase'
-import { todayStr } from '@calistenia/core/lib/dateUtils'
+import { todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { CARDIO_WIDGET_SNAPSHOT_KEY, type CardioWidgetSnapshot } from './cardio-widget-snapshot'
 
 let lastJson: string | null = null
@@ -54,7 +54,7 @@ export async function syncCardioWidget(userId: string | null): Promise<void> {
             distanceKm: last.distance_km || 0,
             durationSeconds: last.duration_seconds || 0,
             paceMinKm: last.avg_pace || 0,
-            date: String(last.started_at).slice(0, 10),
+            date: utcToLocalDateStr(String(last.started_at)) || String(last.started_at).slice(0, 10),
           }
         : null,
       lang: i18n.language?.startsWith('en') ? 'en' : 'es',
