@@ -21,6 +21,7 @@ import { shutdownTracing } from "./instrumentation.js";
 import { startReminderScheduler, stopReminderScheduler } from "./api/reminder-dispatcher.js";
 import { startInactivityScheduler, stopInactivityScheduler } from "./api/inactivity-dispatcher.js";
 import { startReactivationScheduler, stopReactivationScheduler } from "./api/reactivation-dispatcher.js";
+import { startChallengeReminderScheduler, stopChallengeReminderScheduler } from "./api/challenge-reminder-dispatcher.js";
 import { startWeeklyInsightScheduler, stopWeeklyInsightScheduler } from "./api/weekly-insight-dispatcher.js";
 
 const FLAG = "__calistenia_bootstrapped__" as const;
@@ -49,6 +50,11 @@ if (!g[FLAG] && isServingProcess) {
     startReactivationScheduler();
   }
 
+  // #805: aviso diario de los retos en solitario (apagar con CHALLENGE_REMINDER_PUSH=off).
+  if (process.env.CHALLENGE_REMINDER_PUSH !== "off") {
+    startChallengeReminderScheduler();
+  }
+
   if (process.env.WEEKLY_INSIGHT_PUSH !== "off") {
     startWeeklyInsightScheduler();
   }
@@ -58,6 +64,7 @@ if (!g[FLAG] && isServingProcess) {
     stopReminderScheduler();
     stopInactivityScheduler();
     stopReactivationScheduler();
+    stopChallengeReminderScheduler();
     stopWeeklyInsightScheduler();
     await shutdownTracing();
     process.exit(0);
