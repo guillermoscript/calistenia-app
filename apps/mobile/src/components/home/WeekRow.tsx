@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { useThemeColors } from '@/lib/theme'
 import type { HomeView } from '@/lib/use-home-state'
 import type { HomeFirstWeek } from '@calistenia/core/lib/homeState'
-import type { WeekCell } from '@calistenia/core/lib/weekSummary'
+import { getMissedDaysNote, type WeekCell, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 
 function cellLabelKey(cell: WeekCell): string {
   switch (cell.state) {
@@ -23,6 +23,7 @@ function cellLabelKey(cell: WeekCell): string {
     case 'in_progress': return 'home.week.cell.inProgress'
     case 'before_start': return 'home.week.cell.beforeStart'
     case 'today': return cell.trainable ? 'home.week.cell.today' : 'home.week.cell.todayRest'
+    case 'missed': return 'home.week.cell.missed'
     case 'planned': return 'home.week.cell.planned'
     default: return 'home.week.cell.rest'
   }
@@ -49,6 +50,8 @@ function Cell({ cell, lang }: { cell: WeekCell; lang: string }) {
           cell.state === 'in_progress' && 'border-2 border-lime',
           cell.state === 'today' && 'border-2 border-foreground',
           cell.state === 'planned' && 'border border-border',
+          // Perdido (#809): distinto de un día por venir, pero sin pinta de error.
+          cell.state === 'missed' && 'border border-amber-400/30',
           (cell.state === 'rest' || cell.state === 'before_start') && 'border border-dashed border-border',
         )}
       >
@@ -60,11 +63,29 @@ function Cell({ cell, lang }: { cell: WeekCell; lang: string }) {
           <Text className="font-mono text-[10px] uppercase text-foreground">{t('home.week.todayShort')}</Text>
         ) : cell.state === 'planned' ? (
           <View className="size-[5px] rounded-full bg-muted-foreground" />
+        ) : cell.state === 'missed' ? (
+          <View className="size-[6px] rounded-full border border-amber-400" />
         ) : (
           <Text className="text-muted-foreground">–</Text>
         )}
       </View>
     </View>
+  )
+}
+
+/**
+ * «Te saltaste el lunes. No pasa nada…» (#809). Sin él, un lunes perdido se
+ * quedaba en una celda vacía y cada cual leía el hueco a su manera.
+ */
+function MissedDaysNote({ week, lang }: { week: WeekSummary; lang: string }) {
+  const { t } = useTranslation()
+  const note = getMissedDaysNote(week)
+  if (!note) return null
+  const day = new Date(`${note.latest.day}T12:00:00`).toLocaleDateString(lang, { weekday: 'long' })
+  return (
+    <Text className="text-[13px] text-muted-foreground">
+      {t('home.week.missed', { count: note.days.length, day })}
+    </Text>
   )
 }
 
@@ -117,6 +138,8 @@ export default function WeekRow({ view }: { view: HomeView }) {
       <View className="flex-row gap-1.5">
         {week.cells.map(cell => <Cell key={cell.day} cell={cell} lang={i18n.language} />)}
       </View>
+      {/* La primera semana ya tiene su propio empujón («te quedan N días»). */}
+      {!firstWeek && <MissedDaysNote week={week} lang={i18n.language} />}
       {firstWeek ? (
         <FirstWeekGoal goal={firstWeek} />
       ) : streak.current > 0 ? (
