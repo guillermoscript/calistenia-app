@@ -7,6 +7,7 @@ import { Text } from '@/components/ui/text'
 import { haptics } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 import { DISCOVERY_SOURCES, type DiscoverySourceId } from '@calistenia/core/lib/discovery-source'
+import { DISCOVERY_SOURCE_ICONS } from '@/lib/discovery-icons'
 
 interface Props {
   firstName: string
@@ -86,6 +87,7 @@ export function StepWelcome({
         <View className="flex-row flex-wrap gap-2">
           {DISCOVERY_SOURCES.map((option) => {
             const active = discoverySource === option.id
+            const Icon = DISCOVERY_SOURCE_ICONS[option.id]
             return (
               <Pressable
                 key={option.id}
@@ -93,10 +95,11 @@ export function StepWelcome({
                 accessibilityState={{ selected: active }}
                 onPress={() => { haptics.selection(); onDiscoverySourceChange(active ? null : option.id) }}
                 className={cn(
-                  'rounded-full border px-3 py-1.5 active:opacity-70',
+                  'flex-row items-center gap-1.5 rounded-full border px-3 py-1.5 active:opacity-70',
                   active ? 'border-lime bg-lime/10' : 'border-border bg-card',
                 )}
               >
+                <Icon size={13} color={active ? 'hsl(74 90% 57%)' : 'rgba(255,255,255,0.55)'} />
                 <Text className={cn('text-xs', active ? 'text-foreground' : 'text-muted-foreground')}>
                   {t(option.labelKey)}
                 </Text>

@@ -19,6 +19,10 @@ import {
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { hasAccountTrained, isAnyOverlayOpen } from '@/lib/overlay-gate'
+import { DISCOVERY_SOURCE_ICONS } from '@/lib/discovery-icons'
+
+const LIME = 'hsl(74 90% 57%)'
+const MUTED = 'rgba(255,255,255,0.55)'
 
 /**
  * Misma encuesta que web. Las reglas de cuándo sale y qué se manda a
@@ -98,17 +102,21 @@ export default function DiscoverySurvey({ userId }: { userId: string | null }) {
             {step === 'goal' ? t('discoverySurvey.goalQuestion') : t('onboarding.discoveryTitle')}
           </Text>
           <View className="mt-3 gap-2">
-            {options.map((option) => (
+            {options.map((option) => {
+              const Icon = step === 'source' ? DISCOVERY_SOURCE_ICONS[option.id as DiscoverySourceId] : null
+              return (
               <Pressable
                 key={option.id}
                 accessibilityRole="button"
                 accessibilityState={{ selected: selected === option.id }}
                 onPress={() => choose(option.id)}
-                className={`rounded-md border px-3 py-3 ${selected === option.id ? 'border-lime bg-lime/15' : 'border-border bg-card'}`}
+                className={`flex-row items-center gap-3 rounded-md border px-3 py-3 ${selected === option.id ? 'border-lime bg-lime/15' : 'border-border bg-card'}`}
               >
-                <Text className="text-foreground">{t(option.labelKey)}</Text>
+                {Icon ? <Icon size={18} color={selected === option.id ? LIME : MUTED} /> : null}
+                <Text className="flex-1 text-foreground">{t(option.labelKey)}</Text>
               </Pressable>
-            ))}
+              )
+            })}
           </View>
           <View className="mt-5 flex-row items-center justify-between gap-3">
             <Button variant="ghost" onPress={dismiss}><Text>{t('discoverySurvey.notNow')}</Text></Button>

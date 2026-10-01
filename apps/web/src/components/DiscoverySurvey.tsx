@@ -15,6 +15,7 @@ import {
   type DiscoverySurveyStep,
   type UserGoalId,
 } from '@calistenia/core/lib/discovery-survey'
+import { DISCOVERY_SOURCE_ICONS } from '@/lib/discovery-icons'
 import { Button } from './ui/button'
 import {
   Dialog,
@@ -102,7 +103,9 @@ export default function DiscoverySurvey({ userId }: { userId: string }) {
         <div className="space-y-3">
           <p className="font-medium">{question}</p>
           <div className="grid gap-2" role="group" aria-label={question}>
-            {options.map((option) => (
+            {options.map((option) => {
+              const Icon = step === 'source' ? DISCOVERY_SOURCE_ICONS[option.id as DiscoverySourceId] : null
+              return (
               <Button
                 key={option.id}
                 variant={selected === option.id ? 'limeSolid' : 'outline'}
@@ -110,9 +113,11 @@ export default function DiscoverySurvey({ userId }: { userId: string }) {
                 className="justify-start whitespace-normal text-left"
                 onClick={() => choose(option.id)}
               >
+                {Icon ? <Icon className="size-4 shrink-0" aria-hidden /> : null}
                 {t(option.labelKey)}
               </Button>
-            ))}
+              )
+            })}
           </div>
         </div>
         <div className="flex items-center justify-between gap-3">

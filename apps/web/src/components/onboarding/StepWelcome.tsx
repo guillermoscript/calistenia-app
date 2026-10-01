@@ -3,6 +3,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { DISCOVERY_SOURCES, type DiscoverySourceId } from '@calistenia/core/lib/discovery-source'
+import { DISCOVERY_SOURCE_ICONS } from '@/lib/discovery-icons'
 
 interface Props {
   firstName: string
@@ -70,6 +71,7 @@ export function StepWelcome({
         <div className="flex flex-wrap gap-2" role="group" aria-label={t('onboarding.discoveryTitle')}>
           {DISCOVERY_SOURCES.map((option) => {
             const active = discoverySource === option.id
+            const Icon = DISCOVERY_SOURCE_ICONS[option.id]
             return (
               <button
                 key={option.id}
@@ -77,12 +79,13 @@ export function StepWelcome({
                 onClick={() => onDiscoverySourceChange(active ? null : option.id)}
                 aria-pressed={active}
                 className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors',
                   active
                     ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/10 text-foreground'
                     : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
                 )}
               >
+                <Icon className="size-3.5" aria-hidden />
                 {t(option.labelKey)}
               </button>
             )
