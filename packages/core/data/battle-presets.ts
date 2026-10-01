@@ -224,18 +224,6 @@ export function battleExerciseLabel(
 }
 
 /**
- * @deprecated Use `battleExerciseLabel(config, …)`: this one cannot see the names a
- * program-day or custom battle carries in its config (#882).
- */
-export function battleExerciseName(
-  templateId: string,
-  exerciseId: string,
-  language: string,
-): string {
-  return battleExerciseLabel({ workout_template_id: templateId }, exerciseId, language)
-}
-
-/**
  * Title of a battle: the one written (or generated) at creation, then the preset's
  * name. `null` when there is neither — the caller picks its generic copy.
  */

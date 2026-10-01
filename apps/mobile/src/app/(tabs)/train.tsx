@@ -17,7 +17,7 @@ import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, type Href } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, ChevronRight, Plus, Activity, Timer } from 'lucide-react-native'
+import { Check, ChevronRight, Plus, Activity, Timer, Swords } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
+import { useBattleProgramDay } from '@/lib/use-battle-program-day'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { activityDaysFromProgress, getWeekSummary, type WeekCell } from '@calistenia/core/lib/weekSummary'
@@ -44,6 +45,7 @@ export default function TrainScreen() {
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 32%)'
   const { activeProgram, weekDays, phases, programProgress, progress, programsReady } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
+  const battleDay = useBattleProgramDay()
   // Misma query key que Hoy y Progreso: no hay fetch extra.
   const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
 
@@ -168,15 +170,18 @@ export default function TrainScreen() {
                   ? [t('common.today'), minutes > 0 ? t('train.minutes', { count: minutes }) : ''].filter(Boolean).join(' · ')
                   : minutes > 0 ? t('train.minutes', { count: minutes }) : ''
 
+                // «Retar a un amigo» (#882): solo en días que se pueden jugar como batalla.
+                const challengeable = !isRest && !!battleDay.convert(cell.dayId, { phase })?.ok
+
                 return (
+                  <View key={cell.day} className="flex-row items-center border-b border-border">
                   <Pressable
-                    key={cell.day}
                     onPress={() => openDay(cell)}
                     disabled={!pressable}
                     accessibilityRole={pressable ? 'button' : undefined}
                     accessibilityLabel={`${t(`day.${cell.dayId}`)}: ${title}${done ? `, ${t('train.done')}` : ''}`}
                     className={cn(
-                      'flex-row items-center gap-3 border-b border-border',
+                      'flex-1 flex-row items-center gap-3',
                       cell.isToday ? 'h-[52px]' : 'h-12',
                       pressable && 'active:bg-muted/40',
                     )}
@@ -214,6 +219,24 @@ export default function TrainScreen() {
                       </Text>
                     ) : null}
                   </Pressable>
+                  {challengeable ? (
+                    <Pressable
+                      onPress={() => {
+                        haptics.light()
+                        router.push({
+                          pathname: '/battle-create',
+                          params: { origin: 'program_day', phase: String(phase), day: cell.dayId },
+                        })
+                      }}
+                      hitSlop={4}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('battle.challengeFriend')}: ${t(`day.${cell.dayId}`)}`}
+                      className="ml-1 h-11 w-11 items-center justify-center rounded-full active:bg-muted/40"
+                    >
+                      <Swords size={16} color={MUTED} />
+                    </Pressable>
+                  ) : null}
+                  </View>
                 )
               })}
             </View>

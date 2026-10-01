@@ -68,6 +68,7 @@ function HistoryRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string |
       <View className="flex-row items-center gap-3">
         <View className="flex-1">
           <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+            {battle.config.title?.trim() ? `${battle.config.title.trim()} · ` : ''}
             {battle.config.rounds} {t('battle.rounds')} · {battle.config.exercises.length}{' '}
             {t('battle.exercises')}
           </Text>

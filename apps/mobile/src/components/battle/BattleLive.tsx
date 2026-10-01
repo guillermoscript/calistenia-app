@@ -27,7 +27,7 @@ import BattleExerciseEntry from '@/components/battle/BattleExerciseEntry'
 import { RestPanel } from '@/components/training/RestPanel'
 import { battleElapsedMs } from '@calistenia/core/hooks/useBattle'
 import { useCountdown } from '@calistenia/core/hooks/useCountdown'
-import { battleExerciseName } from '@calistenia/core/data/battle-presets'
+import { battleExerciseLabel } from '@calistenia/core/data/battle-presets'
 import { formatBattleElapsed } from '@calistenia/core/lib/battle'
 import { serverNow } from '@calistenia/core/lib/serverClock'
 
@@ -132,7 +132,7 @@ export default function BattleLive() {
   // de realtime, quedarse mirando ese campo dejaría la pantalla de descanso clavada en
   // 0 s. El tic de `useCountdown` es lo que provoca el re-render en el que se apaga.
   const resting = restEndsAt !== null && restEndsAt > serverNow()
-  const exerciseName = battleExerciseName(config.workout_template_id, exercise.exercise_id, i18n.language)
+  const exerciseName = battleExerciseLabel(config, exercise.exercise_id, i18n.language)
 
   return (
     <View className="flex-1">

@@ -17,6 +17,7 @@ import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCircuitSession } from '@/contexts/CircuitSessionContext'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { useBattleProgramDay } from '@/lib/use-battle-program-day'
 import { useStartFirstWorkout } from '@/lib/start-first-workout'
 import type { HomeView } from '@/lib/use-home-state'
 import type { useHomeActions } from '@/lib/use-home-actions'
@@ -128,6 +129,8 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
   const { activeProgram, phases, programProgress, cardioDayConfigs, circuitDayConfigs, weekDays } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
   const inactive = view.state.modifiers.inactiveDays
+  const battleDay = useBattleProgramDay()
+  const router = useRouter()
 
   const weekDay = weekDays.find(d => d.id === day.dayId)
   const workout = getWorkout(view.phase, day.dayId)
@@ -228,6 +231,17 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
       {/* Segunda entrada a «otro día», al alcance del pulgar (QA #858). */}
       {!chosen && !header && onChangeDay ? (
         <TextAction label={t('home.action.chooseOtherDay')} onPress={onChangeDay} className="-my-2 self-center" />
+      ) : null}
+      {/* Solo si el día se puede jugar como batalla (#882): fuerza con ejercicios. */}
+      {day.dayType === 'strength' && battleDay.convert(day.dayId, { phase: view.phase })?.ok ? (
+        <TextAction
+          label={t('battle.challengeFriend')}
+          onPress={() => router.push({
+            pathname: '/battle-create',
+            params: { origin: 'program_day', phase: String(view.phase), day: day.dayId },
+          })}
+          className="-my-2 self-center"
+        />
       ) : null}
     </TodayCard>
   )
