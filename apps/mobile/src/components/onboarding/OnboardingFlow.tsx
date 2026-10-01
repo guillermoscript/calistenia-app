@@ -55,6 +55,7 @@ import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
 import { StepEssentials } from './StepEssentials'
 import { StepHealth } from './StepHealth'
+import { takeInvitedProgram, pickInvitedProgramId, trackReferralProgramMatched } from '@calistenia/core/lib/invited-program'
 import { StepProgram } from './StepProgram'
 import { StepReminder } from './StepReminder'
 import { StepPersonalizing } from './StepPersonalizing'
@@ -212,6 +213,24 @@ export function OnboardingFlow() {
     await handleSelectProgram(programId)
     goToStep(nextAfterProgram)
   }
+
+  // #803 «Entrena con alguien»: si te invitó alguien con programa activo, ese
+  // programa llega preseleccionado al paso de programa (editable, no forzado).
+  const [invitedProgramId, setInvitedProgramId] = useState<string | null>(null)
+  const invitedResolved = useRef(false)
+  useEffect(() => {
+    if (step !== programStep || invitedResolved.current || !userId || programs.length === 0) return
+    invitedResolved.current = true
+    const invited = takeInvitedProgram(userId)
+    if (!invited) return
+    const programId = pickInvitedProgramId(invited, programs)
+    trackReferralProgramMatched({
+      referrerId: invited.referrerId, programId: programId ?? invited.programId, matched: !!programId, stage: 'onboarding',
+    })
+    if (!programId) return
+    setInvitedProgramId(programId)
+    if (!selectedProgramId) void handleSelectProgram(programId)
+  }, [step, programStep, userId, programs]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveBasics = async () => {
     if (await saveBasics(basics)) goToStep(essentialsStep)
@@ -425,6 +444,7 @@ export function OnboardingFlow() {
 
           {step === programStep ? (
             <StepProgram
+              invitedProgramId={invitedProgramId}
               programs={programs}
               selectedProgramId={selectedProgramId}
               selecting={selecting}

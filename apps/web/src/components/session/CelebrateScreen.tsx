@@ -144,6 +144,7 @@ export default function CelebrateScreen({
         workoutTitle={workoutTitle}
         totalSets={totalSetsLogged}
         durationMin={durationMin}
+        totalSessions={totalSessions}
         exercises={exercises}
         quote={quote}
         onRepeat={onRepeat}

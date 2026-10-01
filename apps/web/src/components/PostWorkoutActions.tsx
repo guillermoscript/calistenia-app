@@ -10,14 +10,19 @@
  * control de aquí tiene que parar la propagación**: sin eso, la primera
  * pulsación en cualquier acción te saca de la pantalla.
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { buildPostWorkoutActions, trackPostWorkoutAction, type PostWorkoutActionId } from '@calistenia/core/lib/post-workout-actions'
 import { usePostWorkoutChallenge } from '@calistenia/core/hooks/usePostWorkoutChallenge'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import {
+  markReferralPromptHandled,
+  markReferralPromptViewed,
+  shouldShowReferralPrompt,
+} from '@calistenia/core/lib/referral-prompt'
 import type { Exercise } from '@calistenia/core/types'
 import WorkoutShareCard from './WorkoutShareCard'
-import { shareReferralInvite } from '../lib/share'
+import { shareReferralInvite, type ShareMethod } from '../lib/share'
 import { cn } from '../lib/utils'
 import { useSessionIdentity } from '../hooks/useSessionIdentity'
 
@@ -28,6 +33,8 @@ export interface PostWorkoutActionsProps {
   workoutTitle: string
   totalSets: number
   durationMin: number
+  /** Sesiones de la cuenta, para decidir si toca el aviso de invitar (#803). */
+  totalSessions: number
   exercises: Exercise[]
   quote?: Quote | null
   /** Reinicia la misma rutina; si no se pasa, la acción no aparece. */
@@ -41,6 +48,7 @@ export default function PostWorkoutActions({
   workoutTitle,
   totalSets,
   durationMin,
+  totalSessions,
   exercises,
   quote,
   onRepeat,
@@ -53,6 +61,7 @@ export default function PostWorkoutActions({
   // Solo para esta finalización: no se persiste, así que la próxima sesión
   // completada vuelve a mostrar el panel.
   const [dismissed, setDismissed] = useState(false)
+  const [promptVisible, setPromptVisible] = useState(false)
 
   const { challenge } = usePostWorkoutChallenge(userId ?? null, exercises.map(e => e.id))
 
@@ -61,6 +70,34 @@ export default function PostWorkoutActions({
     canRepeat: !!onRepeat,
     affectedChallengeId: challenge?.id ?? null,
   })
+
+  // #803: aviso automático de invitar en el primer entreno (paridad con móvil).
+  useEffect(() => {
+    if (dismissed) return
+    if (!shouldShowReferralPrompt({ userId, referralCode, totalSessions })) return
+    markReferralPromptViewed(userId!)
+    setPromptVisible(true)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.referralPromptViewed, {
+      surface: 'post_workout', source: 'workout_completion', workout_id: workoutKey, result: 'viewed',
+    })
+  }, [dismissed, userId, referralCode, totalSessions, workoutKey])
+
+  const handlePromptInvite = useCallback(async (method: ShareMethod) => {
+    if (!userId || !referralCode) return
+    const ok = await shareReferralInvite(userName || '', referralCode, method)
+    if (!ok) return
+    markReferralPromptHandled(userId)
+    setPromptVisible(false)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteSent, {
+      surface: 'post_workout', source: 'workout_completion', workout_id: workoutKey,
+      share_type: method, result: method === 'copy' ? 'copied' : 'sent',
+    })
+  }, [userId, referralCode, userName, workoutKey])
+
+  const handlePromptDismiss = useCallback(() => {
+    if (userId) markReferralPromptHandled(userId)
+    setPromptVisible(false)
+  }, [userId])
 
   const track = useCallback((action: PostWorkoutActionId) => {
     trackPostWorkoutAction(action, { workoutKey, challengeId: action === 'challenge' ? challenge?.id : null })
@@ -103,6 +140,8 @@ export default function PostWorkoutActions({
 
   if (dismissed) return null
 
+  const firstWorkout = totalSessions === 1
+
   return (
     // a11y: contenedor que solo frena la propagación del clic; los controles
     // reales de dentro son botones enfocables. (Sin regla jsx-a11y activa: #484)
@@ -113,12 +152,51 @@ export default function PostWorkoutActions({
     >
       <div className="h-px mb-4 bg-gradient-to-r from-transparent via-border to-transparent" />
 
+      {promptVisible && (
+        <div className="mb-4 border-l border-lime pl-3.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="font-mono text-[9px] uppercase tracking-[3px] text-lime">
+              {t(firstWorkout ? 'referral.prompt.kickerFirst' : 'referral.prompt.kicker')}
+            </div>
+          </div>
+          <p className="mb-3 text-[13px] leading-[18px] text-foreground/80">
+            {t(firstWorkout ? 'referral.prompt.questionFirst' : 'referral.prompt.question')}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handlePromptInvite('native')}
+              className="min-h-10 px-3 py-2 rounded-md border border-lime bg-lime text-lime-foreground font-mono text-[10px] tracking-wide hover:bg-lime/90"
+            >
+              {t('referral.prompt.native')}
+            </button>
+            <button
+              onClick={() => handlePromptInvite('copy')}
+              className="min-h-10 px-3 py-2 rounded-md border border-border font-mono text-[10px] tracking-wide hover:bg-muted/40"
+            >
+              {t('referral.prompt.copy')}
+            </button>
+            <button
+              onClick={() => handlePromptInvite('whatsapp')}
+              className="min-h-10 px-3 py-2 rounded-md border border-border font-mono text-[10px] tracking-wide hover:bg-muted/40"
+            >
+              {t('referral.prompt.whatsapp')}
+            </button>
+          </div>
+          <button
+            onClick={handlePromptDismiss}
+            className="mt-3 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            {t('referral.prompt.dismiss')}
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-3">
         <div className="font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">
           {t('postWorkout.kicker')}
         </div>
         <button
-          onClick={() => setDismissed(true)}
+          onClick={() => { if (promptVisible && userId) markReferralPromptHandled(userId); setDismissed(true) }}
           aria-label={t('postWorkout.dismiss')}
           title={t('postWorkout.dismiss')}
           className="size-7 flex items-center justify-center text-muted-foreground/60 hover:text-foreground transition-colors"
