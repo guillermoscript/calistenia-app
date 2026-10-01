@@ -16,13 +16,14 @@
  */
 import type { DayType, Exercise } from '../types'
 import type { BattleConfiguration, BattleExerciseTarget } from '../types/battle'
+import { BATTLE_LIMITS } from './battle'
 
 export const BATTLE_DAY_TEMPLATE_ID = 'program_day'
-export const BATTLE_DAY_MAX_EXERCISES = 8
-export const BATTLE_DAY_MIN_ROUNDS = 1
-export const BATTLE_DAY_MAX_ROUNDS = 10
-export const BATTLE_DAY_MAX_REPS = 200
-export const BATTLE_DAY_MAX_SECONDS = 600
+export const BATTLE_DAY_MAX_EXERCISES = BATTLE_LIMITS.maxExercises
+export const BATTLE_DAY_MIN_ROUNDS = BATTLE_LIMITS.minRounds
+export const BATTLE_DAY_MAX_ROUNDS = BATTLE_LIMITS.maxRounds
+export const BATTLE_DAY_MAX_REPS = BATTLE_LIMITS.maxReps
+export const BATTLE_DAY_MAX_SECONDS = BATTLE_LIMITS.maxSeconds
 export const BATTLE_DAY_MAX_REST_SECONDS = 120
 /** Series que cuenta un ejercicio cuyo `sets` no es un número («múltiples», «intentos»). */
 export const BATTLE_DAY_DEFAULT_SETS = 3
@@ -265,6 +266,7 @@ export function battleConfigFromProgramDay(
     ok: true,
     config: {
       workout_template_id: BATTLE_DAY_TEMPLATE_ID,
+      source: 'program_day',
       rounds,
       scoring_mode: 'rounds_then_reps_then_time',
       exercises,

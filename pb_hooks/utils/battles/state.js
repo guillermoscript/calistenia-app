@@ -273,17 +273,51 @@ function canAcceptJoin(status) {
 
 // ── Configuration validation (mirror of validateBattleConfiguration) ─────────
 
+/**
+ * Topes de una configuración (#882). Espejo EXACTO de `BATTLE_LIMITS` en
+ * `packages/core/lib/battle.ts`; el test de core evalúa este fichero y compara.
+ */
+var BATTLE_LIMITS = {
+  minRounds: 1,
+  maxRounds: 10,
+  minExercises: 1,
+  maxExercises: 8,
+  maxReps: 200,
+  maxSeconds: 600,
+  maxRestSeconds: 300,
+  maxTitleLength: 60,
+  maxExerciseNameLength: 80,
+}
+
+var BATTLE_SOURCES = ['preset', 'program_day', 'custom']
+
 function validateConfiguration(config) {
   var errors = []
   if (!config || typeof config !== 'object') return ['configuration is required']
   if (typeof config.workout_template_id !== 'string' || !config.workout_template_id.trim()) {
     errors.push('workout_template_id is required')
   }
-  if (!isInteger(config.rounds) || config.rounds < 1) errors.push('rounds must be a positive integer')
+  if (!isInteger(config.rounds) || config.rounds < BATTLE_LIMITS.minRounds) {
+    errors.push('rounds must be a positive integer')
+  } else if (config.rounds > BATTLE_LIMITS.maxRounds) {
+    errors.push('rounds must be at most ' + BATTLE_LIMITS.maxRounds)
+  }
   if (config.scoring_mode !== 'rounds_then_reps_then_time') errors.push('unsupported scoring_mode')
+  if (config.title !== undefined && config.title !== null) {
+    if (typeof config.title !== 'string') errors.push('title must be a string')
+    else if (config.title.trim().length > BATTLE_LIMITS.maxTitleLength) {
+      errors.push('title must be at most ' + BATTLE_LIMITS.maxTitleLength + ' characters')
+    }
+  }
+  if (config.source !== undefined && config.source !== null && BATTLE_SOURCES.indexOf(config.source) === -1) {
+    errors.push('unsupported source')
+  }
   if (!Array.isArray(config.exercises) || config.exercises.length === 0) {
     errors.push('at least one exercise is required')
     return errors
+  }
+  if (config.exercises.length > BATTLE_LIMITS.maxExercises) {
+    errors.push('at most ' + BATTLE_LIMITS.maxExercises + ' exercises')
   }
 
   var positions = []
@@ -303,6 +337,8 @@ function validateConfiguration(config) {
     exerciseIds.push(exerciseId)
     if (!isInteger(exercise.rest_seconds) || exercise.rest_seconds < 0) {
       errors.push('invalid rest_seconds for ' + exerciseId)
+    } else if (exercise.rest_seconds > BATTLE_LIMITS.maxRestSeconds) {
+      errors.push('rest_seconds must be at most ' + BATTLE_LIMITS.maxRestSeconds + ' for ' + exerciseId)
     }
     var target = exercise.target || {}
     if (target.kind !== 'reps' && target.kind !== 'seconds') {
@@ -310,6 +346,9 @@ function validateConfiguration(config) {
     }
     if (!isInteger(target.value) || target.value <= 0) {
       errors.push('invalid target for ' + exerciseId)
+    } else {
+      var max = target.kind === 'seconds' ? BATTLE_LIMITS.maxSeconds : BATTLE_LIMITS.maxReps
+      if (target.value > max) errors.push('target must be at most ' + max + ' for ' + exerciseId)
     }
   }
   var ordered = positions.slice().sort(function (a, b) { return a - b })
@@ -317,6 +356,34 @@ function validateConfiguration(config) {
     if (ordered[j] !== j) {
       errors.push('exercise positions must be contiguous from 0')
       break
+    }
+  }
+  return errors.concat(validateExerciseNames(config.exercise_names, exerciseIds))
+}
+
+function validateExerciseNames(names, exerciseIds) {
+  if (names === undefined || names === null) return []
+  if (typeof names !== 'object' || Array.isArray(names)) return ['exercise_names must be an object']
+  var errors = []
+  var ids = Object.keys(names)
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i]
+    var entry = names[id]
+    if (exerciseIds.indexOf(id) === -1) {
+      errors.push('exercise_names has unknown exercise_id: ' + id)
+      continue
+    }
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      errors.push('invalid exercise_names entry for ' + id)
+      continue
+    }
+    var langs = ['es', 'en']
+    for (var k = 0; k < langs.length; k++) {
+      var value = entry[langs[k]]
+      if (value === undefined || value === null) continue
+      if (typeof value !== 'string' || value.length > BATTLE_LIMITS.maxExerciseNameLength) {
+        errors.push('invalid exercise_names.' + langs[k] + ' for ' + id)
+      }
     }
   }
   return errors
@@ -477,6 +544,7 @@ module.exports = {
   isTerminal: isTerminal,
   canAcceptJoin: canAcceptJoin,
 
+  BATTLE_LIMITS: BATTLE_LIMITS,
   validateConfiguration: validateConfiguration,
   nextProgress: nextProgress,
 

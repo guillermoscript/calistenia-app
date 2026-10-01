@@ -9,6 +9,7 @@ import type {
   BattleStatus,
   BattleWorkColumns,
 } from '../types/battle'
+import { BATTLE_SOURCES } from '../types/battle'
 
 export const BATTLE_STATUS_TRANSITIONS: Readonly<Record<BattleStatus, readonly BattleStatus[]>> = {
   draft: ['lobby', 'cancelled'],
@@ -67,19 +68,55 @@ export function canAcceptBattleJoin(status: BattleStatus): boolean {
   return status === 'lobby'
 }
 
+/**
+ * Topes de una configuración de batalla (#882). Antes solo había mínimos: con tres
+ * presets fijos no hacían falta, pero un circuito propio o un día de programa sí
+ * pueden traer 40 rondas o 5000 reps. Espejo EXACTO de `BATTLE_LIMITS` en
+ * `pb_hooks/utils/battles/state.js`; cambiar uno sin el otro deja al cliente
+ * aceptando lo que el servidor rechaza (o al revés).
+ */
+export const BATTLE_LIMITS = {
+  minRounds: 1,
+  maxRounds: 10,
+  minExercises: 1,
+  maxExercises: 8,
+  maxReps: 200,
+  maxSeconds: 600,
+  maxRestSeconds: 300,
+  maxTitleLength: 60,
+  maxExerciseNameLength: 80,
+} as const
+
 export function validateBattleConfiguration(config: BattleConfiguration): string[] {
   const errors: string[] = []
   if (!config || typeof config !== 'object') return ['configuration is required']
   if (typeof config.workout_template_id !== 'string' || !config.workout_template_id.trim()) {
     errors.push('workout_template_id is required')
   }
-  if (!Number.isInteger(config.rounds) || config.rounds < 1) errors.push('rounds must be a positive integer')
+  if (!Number.isInteger(config.rounds) || config.rounds < BATTLE_LIMITS.minRounds) {
+    errors.push('rounds must be a positive integer')
+  } else if (config.rounds > BATTLE_LIMITS.maxRounds) {
+    errors.push(`rounds must be at most ${BATTLE_LIMITS.maxRounds}`)
+  }
   if (config.scoring_mode !== 'rounds_then_reps_then_time') {
     errors.push('unsupported scoring_mode')
+  }
+  if (config.title !== undefined && config.title !== null) {
+    if (typeof config.title !== 'string') errors.push('title must be a string')
+    else if (config.title.trim().length > BATTLE_LIMITS.maxTitleLength) {
+      errors.push(`title must be at most ${BATTLE_LIMITS.maxTitleLength} characters`)
+    }
+  }
+  if (config.source !== undefined && config.source !== null
+    && !(BATTLE_SOURCES as readonly string[]).includes(config.source)) {
+    errors.push('unsupported source')
   }
   if (!Array.isArray(config.exercises) || config.exercises.length === 0) {
     errors.push('at least one exercise is required')
     return errors
+  }
+  if (config.exercises.length > BATTLE_LIMITS.maxExercises) {
+    errors.push(`at most ${BATTLE_LIMITS.maxExercises} exercises`)
   }
 
   const positions = new Set<number>()
@@ -98,17 +135,47 @@ export function validateBattleConfiguration(config: BattleConfiguration): string
     exerciseIds.add(exerciseId)
     if (!Number.isInteger(exercise.rest_seconds) || exercise.rest_seconds < 0) {
       errors.push(`invalid rest_seconds for ${exercise.exercise_id}`)
+    } else if (exercise.rest_seconds > BATTLE_LIMITS.maxRestSeconds) {
+      errors.push(`rest_seconds must be at most ${BATTLE_LIMITS.maxRestSeconds} for ${exerciseId}`)
     }
     if (exercise.target?.kind !== 'reps' && exercise.target?.kind !== 'seconds') {
       errors.push(`invalid target kind for ${exerciseId}`)
     }
     if (!Number.isInteger(exercise.target?.value) || exercise.target.value <= 0) {
       errors.push(`invalid target for ${exercise.exercise_id}`)
+    } else {
+      const max = exercise.target.kind === 'seconds' ? BATTLE_LIMITS.maxSeconds : BATTLE_LIMITS.maxReps
+      if (exercise.target.value > max) errors.push(`target must be at most ${max} for ${exerciseId}`)
     }
   }
   const orderedPositions = [...positions].sort((a, b) => a - b)
   if (orderedPositions.some((position, index) => position !== index)) {
     errors.push('exercise positions must be contiguous from 0')
+  }
+  errors.push(...validateExerciseNames(config.exercise_names, exerciseIds))
+  return errors
+}
+
+function validateExerciseNames(names: unknown, exerciseIds: Set<string>): string[] {
+  if (names === undefined || names === null) return []
+  if (typeof names !== 'object' || Array.isArray(names)) return ['exercise_names must be an object']
+  const errors: string[] = []
+  for (const [id, entry] of Object.entries(names as Record<string, unknown>)) {
+    if (!exerciseIds.has(id)) {
+      errors.push(`exercise_names has unknown exercise_id: ${id}`)
+      continue
+    }
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      errors.push(`invalid exercise_names entry for ${id}`)
+      continue
+    }
+    for (const lang of ['es', 'en'] as const) {
+      const value = (entry as Record<string, unknown>)[lang]
+      if (value === undefined || value === null) continue
+      if (typeof value !== 'string' || value.length > BATTLE_LIMITS.maxExerciseNameLength) {
+        errors.push(`invalid exercise_names.${lang} for ${id}`)
+      }
+    }
   }
   return errors
 }
