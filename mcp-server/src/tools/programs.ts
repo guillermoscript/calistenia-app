@@ -1017,7 +1017,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
       title: "Seed Program from JSON",
       description:
         "Import a complete program from a JSON object matching the program export format. " +
-        "Accepts the same structure as intermedio_balance_total.json: { program: {...}, phases: [{...}] }. " +
+        "Accepts the same structure as programs/intermedio-balance-total.json: { program: {...}, phases: [{...}] }. " +
         "Creates the program as official. All text is stored with i18n support.",
       schema: z
         .object({
