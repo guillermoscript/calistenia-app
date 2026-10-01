@@ -1250,7 +1250,7 @@
   "challenges.participants_other": "{{count}} participants",
   "challenges.emptyActive": "No active challenges",
   "challenges.emptyPast": "No past challenges",
-  "challenges.emptyBodyActive": "Pick one of the challenges above and your next workout already counts.",
+  "challenges.emptyBodyActive": "Pick one of the challenges below and your next workout already counts.",
   "challenges.emptyBodyPast": "When a challenge you joined ends, it stays here with its final standings.",
   "challenges.notFound": "This challenge no longer exists or you can't see it.",
 

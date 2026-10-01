@@ -1250,7 +1250,7 @@
   "challenges.participants_other": "{{count}} participantes",
   "challenges.emptyActive": "No hay retos activos",
   "challenges.emptyPast": "No hay retos pasados",
-  "challenges.emptyBodyActive": "Elige uno de los retos de arriba y tu próximo entrenamiento ya cuenta.",
+  "challenges.emptyBodyActive": "Elige uno de los retos de abajo y tu próximo entrenamiento ya cuenta.",
   "challenges.emptyBodyPast": "Cuando termine un reto en el que participes, se quedará aquí con su clasificación final.",
   "challenges.notFound": "Este reto ya no existe o no puedes verlo.",
 
