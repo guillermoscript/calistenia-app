@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import { useBattleHistory, type BattleHistoryEntry } from '@calistenia/core/hooks/useBattleHistory'
-import { relativeDate } from '@calistenia/core/lib/dateUtils'
+import { relativeDate, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { battleWorkColumns, type BattleOutcome } from '@calistenia/core/lib/battle'
 
 const OUTCOME_KEY: Record<BattleOutcome, string> = {
@@ -72,7 +72,7 @@ function HistoryRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string |
             {t('battle.exercises')}
           </Text>
           <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-            {relativeDate(when.slice(0, 10))}
+            {relativeDate(utcToLocalDateStr(when))}
             {rank !== null && standings.length > 0
               ? `  ·  ${t('battle.rankOf', { rank, total: standings.length })}`
               : ''}

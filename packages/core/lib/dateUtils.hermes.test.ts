@@ -72,6 +72,15 @@ describe('dateUtils con el toLocaleString de Hermes (Invalid Date)', () => {
     expect(utcToLocalDateStr('2026-09-29 22:00:00.000Z')).toBe('2026-09-30')
   })
 
+  it('#893: timestamp de PocketBase (con espacio) a su día local', () => {
+    setTimezone('America/Caracas')
+    // 22:11 del 30-sep en Caracas = 02:11 UTC del 1-oct
+    expect(utcToLocalDateStr('2026-10-01 02:11:47.198Z')).toBe('2026-09-30')
+    expect(utcToLocalDateStr('2026-10-01T02:11:47.198Z')).toBe('2026-09-30')
+    setTimezone('UTC')
+    expect(utcToLocalDateStr('2026-10-01 02:11:47.198Z')).toBe('2026-10-01')
+  })
+
   it('localMidnightAsUTCIn respeta el cambio de horario', () => {
     expect(localMidnightAsUTCIn('2026-03-24', 'America/New_York')).toBe('2026-03-24 04:00:00') // EDT
     expect(localMidnightAsUTCIn('2026-01-24', 'America/New_York')).toBe('2026-01-24 05:00:00') // EST

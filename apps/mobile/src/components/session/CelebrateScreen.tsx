@@ -22,6 +22,7 @@ import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { prepareTimingBreakdown } from '@calistenia/core/lib/exerciseTiming'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 
 interface CelebrateScreenProps {
   workoutTitle: string
@@ -63,7 +64,7 @@ export default function CelebrateScreen({
     exerciseCount: exercises.length,
     hour: new Date().getHours(),
   }))
-  const [today] = useState<string>(() => new Date().toISOString().slice(0, 10))
+  const [today] = useState<string>(() => todayStr())
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const [sharing, setSharing] = useState(false)
   const exerciseIds = useMemo(() => exercises.map(e => e.id), [exercises])
