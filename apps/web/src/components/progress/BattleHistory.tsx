@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { useBattleHistory, type BattleHistoryEntry } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { battleTitle } from '@calistenia/core/data/battle-presets'
 import type { BattleOutcome } from '@calistenia/core/lib/battle'
 
 const OUTCOME_KEY: Record<BattleOutcome, string> = {
@@ -20,10 +21,11 @@ const OUTCOME_KEY: Record<BattleOutcome, string> = {
 }
 
 function BattleRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string | null }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const { battle, outcome, rank, standings } = entry
   // Una batalla cancelada o caducada no tiene `finished_at`.
+  const title = battleTitle(battle.config, i18n.language)
   const when = battle.finished_at || battle.last_activity_at || battle.created
 
   return (
@@ -35,7 +37,8 @@ function BattleRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string | 
         <div className="flex items-center gap-3 min-w-0">
           <div className="text-xs text-muted-foreground w-16 shrink-0">{relativeDate(utcToLocalDateStr(when))}</div>
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate">
+            {title && <div className="text-sm font-medium truncate">{title}</div>}
+            <div className={cn('truncate', title ? 'text-[11px] text-muted-foreground' : 'text-sm font-medium')}>
               {battle.config.rounds} {t('battle.rounds')} · {battle.config.exercises.length} {t('battle.exercises')}
             </div>
             {rank !== null && standings.length > 0 && (

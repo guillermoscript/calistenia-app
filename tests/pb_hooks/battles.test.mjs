@@ -212,6 +212,61 @@ test("battle_invites no es accesible por la API de colecciones", async () => {
   assert.ok(res.status === 403 || res.status === 400, `esperaba acceso denegado, fue ${res.status}`)
 })
 
+// ── Batallas con título, origen y nombres congelados (#882) ──────────────────
+
+test("un draft con más rondas que el tope se rechaza con 400", async () => {
+  const creator = await createUser("Rondas De Mas")
+  const res = await api("/api/collections/battles/records", {
+    method: "POST",
+    token: await authAs(creator),
+    raw: true,
+    body: { creator: creator.id, status: "draft", revision: 0, config: config({ rounds: 11 }) },
+  })
+  assert.equal(res.status, 400)
+})
+
+const CUSTOM = {
+  workout_template_id: "program_day",
+  title: "Piernas + Core",
+  source: "program_day",
+  exercise_names: {
+    pushup: { es: "Flexiones", en: "Push-ups" },
+    squat: { es: "Sentadillas", en: "Squats" },
+  },
+}
+
+test("un draft con título, origen y nombres congelados se acepta", async () => {
+  const creator = await createUser("Con Titulo")
+  const battle = await createDraft(creator, CUSTOM)
+  assert.equal(battle.config.title, "Piernas + Core")
+  assert.equal(battle.config.source, "program_day")
+  assert.equal(battle.config.exercise_names.squat.en, "Squats")
+})
+
+test("la landing devuelve título, ejercicios en orden y nombres, sin identidades", async () => {
+  const creator = await createUser("Creador Titulo")
+  const battle = await createDraft(creator, CUSTOM)
+  await post(creator, `/api/battles/${battle.id}/publish`)
+  const token = await inviteToken(creator, battle.id)
+
+  const res = await api("/api/public/battle-invite", { method: "POST", body: { token } })
+  assert.equal(res.ok, true)
+  assert.equal(res.battle.title, "Piernas + Core")
+  assert.equal(res.battle.source, "program_day")
+  assert.deepEqual(res.battle.exercise_ids, ["pushup", "squat"])
+  assert.equal(res.battle.exercise_names.pushup.es, "Flexiones")
+  assert.ok(!JSON.stringify(res).includes(creator.id), "no filtra ids de usuario")
+})
+
+test("la landing de una batalla antigua devuelve título vacío y nombres vacíos", async () => {
+  const { creator, battleId } = await lobbyWithTwo()
+  const token = await inviteToken(creator, battleId)
+  const res = await api("/api/public/battle-invite", { method: "POST", body: { token } })
+  assert.equal(res.battle.title, "")
+  assert.deepEqual(res.battle.exercise_names, {})
+  assert.deepEqual(res.battle.exercise_ids, ["pushup", "squat"])
+})
+
 test("la landing de invitación no revela identidades", async () => {
   const { creator, battleId } = await lobbyWithTwo()
   const token = await inviteToken(creator, battleId)

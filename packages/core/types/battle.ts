@@ -230,6 +230,11 @@ export interface BattleInvitePreview {
     rounds: number
     exercise_count: number
     workout_template_id: string
+    /** Título, origen y nombres congelados al crear (#882); vacíos en batallas antiguas. */
+    title: string
+    source: BattleSource | ''
+    exercise_ids: string[]
+    exercise_names: Record<string, { es?: string; en?: string }>
     participant_count: number
     expires_at: string
   } | null
