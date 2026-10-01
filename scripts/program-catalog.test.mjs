@@ -27,6 +27,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { CONTRAINDICATION_VOCABULARY, EQUIPMENT_VOCABULARY, SKELETONS } from './lib/program-catalog.mjs'
 import { INJURY_IDS } from '../packages/core/types/onboarding.ts'
 import { matchUserToPrograms } from '../packages/core/lib/matchPrograms.ts'
+import { buildPayload, loadPrograms } from './generate-program-seed-migration.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -474,3 +475,117 @@ function expected(sk) {
     contraindications: sk.contraindications,
   }
 }
+
+// ─── 4. #761: `program.description` del JSON y la que se siembra ─────────────
+
+const DESCRIPTION_MIGRATION = '1790740000_program_descriptions_761.js'
+
+describe('descripción de la ficha (#761)', () => {
+  const loaded = loadPrograms()
+
+  it('lo que se siembra es SKELETONS, y el JSON de cada programa coincide con su español', () => {
+    for (const item of loaded) {
+      const seeded = buildPayload(item).program.description
+      expect(seeded, item.file).toEqual(item.entry.description)
+      expect(item.data.program.description, item.file).toBe(item.entry.description.es)
+    }
+  })
+
+  it('mutación: editar program.description del JSON sin tocar el catálogo rompe la siembra y lo explica', () => {
+    for (const item of loaded) {
+      const data = structuredClone(item.data)
+      data.program.description = item.entry.description.es + ' Necesitas una prensa de piernas.'
+      expect(() => buildPayload({ ...item, data }), item.file).toThrow(/program\.description no coincide con la de SKELETONS/)
+    }
+  })
+
+  it('mutación: sin program.description en el JSON se siembra la del catálogo', () => {
+    for (const item of loaded) {
+      const data = structuredClone(item.data)
+      delete data.program.description
+      expect(buildPayload({ ...item, data }).program.description, item.file).toEqual(item.entry.description)
+    }
+  })
+
+  it('Glúteo + Tonificación declara el material real: banda, silla o banco, escalón y toalla', () => {
+    const d = SKELETONS.find(sk => sk.slug === 'mujer-gluteo-tonificacion').description
+    expect(d.es).toMatch(/banda/i)
+    expect(d.es).toMatch(/silla/i)
+    expect(d.es).toMatch(/escal[oó]n/i)
+    expect(d.es).toMatch(/toalla/i)
+    expect(d.en).toMatch(/band/i)
+    expect(d.en).toMatch(/chair/i)
+    expect(d.en).toMatch(/step/i)
+    expect(d.en).toMatch(/towel/i)
+  })
+})
+
+describe.skipIf(!HAS_PB)('1790740000_program_descriptions_761 sobre PocketBase real', () => {
+  const s = {}
+  const migSource = readFileSync(join(REPO_MIGRATIONS, DESCRIPTION_MIGRATION), 'utf8')
+  const FIXES = JSON.parse(migSource.match(/const FIXES = (\[[\s\S]*?\n  \])/)[1])
+  const read = () => Object.fromEntries(
+    sqlQuery(s.db, "SELECT slug, description FROM programs WHERE is_official = 1 AND slug != ''")
+      .map(r => [r.slug, JSON.parse(r.description)]),
+  )
+
+  beforeAll(() => {
+    s.tmp = mkdtempSync(join(tmpdir(), 'desc-761-'))
+    s.dataDir = join(s.tmp, 'pb_data')
+    s.db = join(s.dataDir, 'data.db')
+    s.migDir = join(s.tmp, 'pb_migrations')
+    mkdirSync(s.dataDir, { recursive: true })
+    mkdirSync(s.migDir, { recursive: true })
+    for (const f of readdirSync(REPO_MIGRATIONS)) {
+      if (f === DESCRIPTION_MIGRATION) continue
+      cpSync(join(REPO_MIGRATIONS, f), join(s.migDir, f))
+    }
+    migrateUp(s.dataDir, s.migDir)
+
+    // Producción antes de #761: el texto viejo del catálogo en las seis filas,
+    // salvo handstand, que alguien editó a mano y no se debe pisar.
+    for (const f of FIXES) {
+      const desc = f.slug === 'handstand-roadmap' ? { es: 'Editado a mano', en: 'Hand edited' } : { es: f.from, en: 'old' }
+      sqlExec(s.db, `UPDATE programs SET description = ${sqlStr(JSON.stringify(desc))} WHERE is_official = 1 AND slug = ${sqlStr(f.slug)};`)
+    }
+    s.antes = read()
+
+    cpSync(join(REPO_MIGRATIONS, DESCRIPTION_MIGRATION), join(s.migDir, DESCRIPTION_MIGRATION))
+    s.salida1 = migrateUp(s.dataDir, s.migDir)
+    s.despues = read()
+
+    writeFileSync(join(s.migDir, '1790740001_descriptions_again.js'), migSource, 'utf8')
+    s.salida2 = migrateUp(s.dataDir, s.migDir)
+    s.despues2 = read()
+  }, 300_000)
+
+  afterAll(() => {
+    if (s.tmp) rmSync(s.tmp, { recursive: true, force: true })
+  })
+
+  it('el escenario partía del texto viejo', () => {
+    expect(s.antes['mujer-gluteo-tonificacion'].es).toMatch(/Bodyweight \+ ligas/)
+  })
+
+  it('las filas con el texto viejo quedan como SKELETONS (es y en)', () => {
+    for (const f of FIXES.filter(x => x.slug !== 'handstand-roadmap')) {
+      expect(s.despues[f.slug], f.slug).toEqual(SKELETONS.find(sk => sk.slug === f.slug).description)
+    }
+  })
+
+  it('no pisa una descripción editada a mano', () => {
+    expect(s.despues['handstand-roadmap']).toEqual({ es: 'Editado a mano', en: 'Hand edited' })
+    expect(s.salida1).toMatch(/5 de 6 descripciones actualizadas/)
+  })
+
+  it('las otras nueve filas no cambian', () => {
+    for (const sk of SKELETONS.filter(x => !FIXES.some(f => f.slug === x.slug))) {
+      expect(s.despues[sk.slug], sk.slug).toEqual(s.antes[sk.slug])
+    }
+  })
+
+  it('la segunda pasada no toca nada', () => {
+    expect(s.salida2).toMatch(/0 de 6 descripciones actualizadas/)
+    expect(s.despues2).toEqual(s.despues)
+  })
+})

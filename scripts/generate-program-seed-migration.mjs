@@ -287,6 +287,22 @@ export function loadPrograms() {
  * Exportada para los tests (ver `loadPrograms`).
  */
 export function buildPayload({ entry, file, data }) {
+  // #761: la descripción que se siembra es la de SKELETONS (lleva `en`; el JSON
+  // solo trae español). `program.description` del JSON NO se lee, así que dos
+  // textos podían divergir sin avisar y editar el del fichero era letra muerta.
+  // La fuente de verdad es el catálogo; el JSON, si la trae, tiene que
+  // coincidir con `description.es` o la siembra falla con el remedio.
+  const jsonDescription = data.program?.description
+  if (jsonDescription !== undefined && jsonDescription !== entry.description.es) {
+    throw new Error(
+      `${file}: program.description no coincide con la de SKELETONS ` +
+      `(scripts/lib/program-catalog.mjs), que es la que se siembra. ` +
+      `Edita la del catálogo (es y en) y copia el texto en español aquí, o bórrala del JSON.\n` +
+      `  JSON:     ${JSON.stringify(jsonDescription)}\n` +
+      `  catálogo: ${JSON.stringify(entry.description.es)}`,
+    )
+  }
+
   const program = {
     name: entry.name,
     description: entry.description,
