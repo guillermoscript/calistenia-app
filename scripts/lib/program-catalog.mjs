@@ -1,5 +1,5 @@
 /**
- * Metadatos de catálogo de los 15 programas oficiales (issue #615).
+ * Metadatos de catálogo de los 16 programas oficiales (issue #615, #740).
  *
  * Es lo que `programs/*.json` NO contiene: cada fichero de contenido trae
  * nombre, descripción, dificultad y duración, pero nada de lo que alimenta el
@@ -16,8 +16,9 @@
  * corresponde a `programs/<slug>.json`. `assertCatalogMatchesFiles()` lo
  * comprueba en vez de dejar que un fichero huérfano se sedimente en silencio.
  *
- * «Intermedio – Balance Total» NO está aquí: es un programa preexistente que el
- * seeder reetiqueta en lugar de crear, y no tiene fichero de contenido.
+ * «Intermedio – Balance Total» entró en #740: era el programa preexistente de
+ * abril (solo en la base, sin fichero de contenido); ahora tiene su
+ * `programs/intermedio-balance-total.json` y su entrada como los demás.
  */
 
 const i18n = (es, en) => ({ es, en })
@@ -62,7 +63,7 @@ export const EQUIPMENT_VOCABULARY = ['pull_bar', 'parallel_bars', 'bands', 'ring
 export const CONTRAINDICATION_VOCABULARY = ['shoulder', 'wrist', 'elbow', 'knee', 'ankle', 'lower_back']
 
 /**
- * Los 15 programas del catálogo curado, en el orden en que se siembran.
+ * Los 16 programas del catálogo curado, en el orden en que se siembran.
  *
  * Decisiones de etiquetado de la auditoría de entrenamiento (#713, 2026-09-08).
  * `goal_type` no es una descripción del programa sino la CELDA nivel × objetivo
@@ -107,7 +108,7 @@ export const CONTRAINDICATION_VOCABULARY = ['shoulder', 'wrist', 'elbow', 'knee'
  * PocketBase en `1789300000_programs_for_women_sort_order.js`.
  */
 export const SKELETONS = [
-  // level × goal (8 — Balance Total handles intermediate+maintain)
+  // level × goal (9)
   { slug: 'principiante-quema-grasa', name: i18n('Principiante · Quema Grasa', 'Beginner · Fat Burn'),
     description: i18n('Bajar grasa en casa 4 días/sem, con objetos de casa. Fuerza para no perder músculo, más cardio y nutrición.', 'Lose fat at home 4 days/week using things you already own. Strength to keep your muscle, plus cardio and nutrition.'),
     duration_weeks: 12, difficulty: 'beginner', goal_type: 'fat_loss', intensity: 'moderate', days_per_week: 4, equipment_required: [], contraindications: ['knee','ankle'],
@@ -128,6 +129,10 @@ export const SKELETONS = [
     description: i18n('Ganancia muscular 5 días/sem. Variaciones con más rango y pausa.', 'Muscle gain 5 days/week. Paused variations with extended range of motion.'),
     duration_weeks: 12, difficulty: 'intermediate', goal_type: 'muscle_gain', intensity: 'moderate', days_per_week: 5, equipment_required: ['pull_bar','parallel_bars'], contraindications: ['shoulder','elbow','wrist','knee'],
     for_women: false, sort_order: 50 },
+  { slug: 'intermedio-balance-total', name: i18n('Intermedio – Balance Total', 'Intermediate – Balance Total'),
+    description: i18n('Programa intermedio 6 días/semana. Fuerza, postura, core seguro sin crunches y lumbar. Progresión hacia muscle up, HSPU y pistol squat.', 'Intermediate 6 days/week program. Strength, posture, safe core work without crunches, and lower back. Progression toward the muscle-up, HSPU and pistol squat.'),
+    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'maintain', intensity: 'moderate', days_per_week: 6, equipment_required: ['pull_bar','parallel_bars','bands','weight'], contraindications: ['shoulder','wrist','elbow','knee','lower_back'],
+    for_women: false, sort_order: 55 },
   { slug: 'avanzado-cutting', name: i18n('Avanzado · Cutting Élite', 'Advanced · Elite Cutting'),
     description: i18n('Programa intenso 5 días/sem: cardio + alta frecuencia. Para atletas avanzados.', 'Intense 5 days/week program: cardio plus high-frequency strength. For advanced athletes.'),
     duration_weeks: 12, difficulty: 'advanced', goal_type: 'fat_loss', intensity: 'intense', days_per_week: 5, equipment_required: ['pull_bar','parallel_bars','bands'], contraindications: ['wrist','shoulder','elbow'],
