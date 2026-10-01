@@ -21,6 +21,7 @@ import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { getNotifRoute } from '@/lib/notification-route'
 import { timeAgoShort } from '@calistenia/core/lib/dateUtils'
+import { resolvePresetChallengeTitle } from '@calistenia/core/lib/challenge-presets'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,6 +71,8 @@ function getNotificationMessage(
       return t('notif.challengeJoin', { name })
     case 'challenge_complete':
       return t('notif.challengeComplete', { title: n.data?.challengeTitle || '' })
+    case 'challenge_reminder':
+      return t('notif.challengeReminder', { title: resolvePresetChallengeTitle({ title: n.data?.challengeTitle, preset_key: n.data?.presetKey }) })
     case 'achievement':
       return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementKey ? t(`achievements.${n.data.achievementKey}.name`, { defaultValue: n.data?.achievementName || t('notif.anAchievement') }) : n.data?.achievementName || t('notif.anAchievement') })}`
     case 'streak':

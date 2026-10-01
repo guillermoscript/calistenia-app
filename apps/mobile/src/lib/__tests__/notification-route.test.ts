@@ -128,7 +128,7 @@ describe('every notification route exists in the app (#859)', () => {
     'challenge_join', 'challenge_complete', 'achievement', 'streak', 'referral_signup',
     'referral_bonus', 'friend_streak', 'friend_achievement', 'friend_workout', 'friend_joined',
     'program_deleted', 'inactivity_24h', 'inactivity_72h', 'inactivity_7d', 'inactivity_14d',
-    'inactivity_new_start',
+    'inactivity_new_start', 'challenge_reminder',
   ]
 
   it.each(types)('in-app %s notification opens an existing route', type => {

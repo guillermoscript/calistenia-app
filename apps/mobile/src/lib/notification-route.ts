@@ -51,6 +51,7 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
 
     case 'challenge_join':
     case 'challenge_complete':
+    case 'challenge_reminder':
       return n.referenceId ? `/challenges/${n.referenceId}` : '/challenges'
 
     case 'achievement':
