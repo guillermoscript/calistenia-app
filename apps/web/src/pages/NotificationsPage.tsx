@@ -10,6 +10,7 @@ import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { timeAgoShort, localDay } from '@calistenia/core/lib/dateUtils'
+import { resolvePresetChallengeTitle } from '@calistenia/core/lib/challenge-presets'
 import { workoutTodayUrl } from '../lib/workout-today-url'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
@@ -63,6 +64,8 @@ function getNotificationMessage(
       return t('notif.challengeJoin', { name: n.actorName })
     case 'challenge_complete':
       return t('notif.challengeComplete', { title: n.data?.challengeTitle || '' })
+    case 'challenge_reminder':
+      return t('notif.challengeReminder', { title: resolvePresetChallengeTitle({ title: n.data?.challengeTitle, preset_key: n.data?.presetKey }) })
     case 'achievement':
       return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementKey ? t(`achievements.${n.data.achievementKey}.name`, { defaultValue: n.data?.achievementName || t('notif.anAchievement') }) : n.data?.achievementName || t('notif.anAchievement') })}`
     case 'streak':
@@ -123,6 +126,7 @@ function getNotificationRoute(n: AppNotification): string {
     }
     case 'challenge_join':
     case 'challenge_complete':
+    case 'challenge_reminder':
       return `/challenges/${n.referenceId}`
     case 'achievement':
       return n.data?.achievementKey ? '/achievements' : '/profile'

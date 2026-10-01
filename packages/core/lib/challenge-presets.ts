@@ -8,6 +8,7 @@ export type BeginnerChallengePresetId =
   | 'consistency_30_day'
   | 'first_10_workouts'
   | 'pushup_builder'
+  | 'first_pullup'
 
 export interface BeginnerChallengePreset {
   id: BeginnerChallengePresetId
@@ -19,6 +20,8 @@ export interface BeginnerChallengePreset {
    * para `exercise` y `total_exercise`; el resto de métricas lo ignoran.
    */
   exerciseSlug?: string
+  /** Clave i18n de la meta cuando «{{count}} {{unit}}» suena mal (p. ej. «1 reps»). */
+  targetKey?: string
   goal: number
   durationDays: number
   difficulty: 'beginner'
@@ -69,6 +72,22 @@ export const BEGINNER_CHALLENGE_PRESETS: readonly BeginnerChallengePreset[] = [
     exerciseSlug: 'pushup_std',
     goal: 100,
     durationDays: 30,
+    difficulty: 'beginner',
+    enabled: true,
+  },
+  {
+    // «Tu primera dominada» (#805). `most_pullups` lee el PR HISTÓRICO del
+    // usuario (`public_prs`), no algo acotado a la ventana: si ya tiene una
+    // dominada, el reto nace completo. Es lo mismo que le pasa a
+    // `first_10_workouts` y es aceptable para un logro de «primera vez».
+    // Sin urgencia real: 180 días (decisión de producto abierta, ver el PR).
+    id: 'first_pullup',
+    titleKey: 'challenge.preset.firstPullup.title',
+    descriptionKey: 'challenge.preset.firstPullup.description',
+    targetKey: 'challenge.preset.firstPullup.target',
+    metric: 'most_pullups',
+    goal: 1,
+    durationDays: 180,
     difficulty: 'beginner',
     enabled: true,
   },
@@ -156,6 +175,7 @@ export function resolvePresetChallengeDescription(challenge: { description?: str
  * diría "100 entrenamientos" cuando la meta son 100 reps.
  */
 export function getPresetTargetLabel(preset: BeginnerChallengePreset): string {
+  if (preset.targetKey) return i18n.t(preset.targetKey, { count: preset.goal })
   const unit = getMetricUnit(preset.metric, preset.exerciseSlug)
   return unit
     ? i18n.t('challenge.preset.targetUnit', { count: preset.goal, unit })

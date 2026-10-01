@@ -62,6 +62,13 @@ export const INACTIVITY_FAMILY: readonly string[] = [
   "inactivity_new_start",
 ];
 
+/**
+ * Tipos que cuentan para el tope de UN push diario. Además de la familia de
+ * inactividad, el aviso diario de los retos en solitario (#805): si hoy ya salió
+ * ese, no se manda un push de recuperación encima.
+ */
+export const DAILY_CAP_TYPES: readonly string[] = [...INACTIVITY_FAMILY, "challenge_reminder"];
+
 /** Días sin entrenar a partir de los que se deja de insistir. */
 export const REACTIVATION_MAX_DAYS = 42;
 
@@ -115,8 +122,9 @@ export function evaluateReactivation(input: {
   if (local.hour < INACTIVITY_MIN_HOUR || local.hour >= INACTIVITY_MAX_HOUR) return null;
 
   const family = sent.filter((s) => INACTIVITY_FAMILY.includes(s.type));
-  // Tope: uno al día local, sea del tipo que sea (también 24h/72h de #695).
-  if (family.some((s) => localParts(s.sentAt, tz).dateKey === local.dateKey)) return null;
+  // Tope: uno al día local, sea del tipo que sea (también 24h/72h de #695 y el
+  // aviso diario de un reto, #805).
+  if (sent.filter((s) => DAILY_CAP_TYPES.includes(s.type)).some((s) => localParts(s.sentAt, tz).dateKey === local.dateKey)) return null;
 
   const episode = family.filter((s) => s.sentAt.getTime() >= episodeStart.getTime());
   const sentInEpisode = (kind: ReactivationKind) => episode.some((s) => s.type === kind);
@@ -274,9 +282,9 @@ export async function loadStoppedCandidates(pb: any, now: Date): Promise<Reactiv
 /** Marcas de la familia de inactividad ya guardadas para este usuario. */
 async function loadSentMarks(pb: any, userId: string): Promise<SentMark[]> {
   try {
-    const typeFilter = INACTIVITY_FAMILY.map((_, i) => `type = {:k${i}}`).join(" || ");
+    const typeFilter = DAILY_CAP_TYPES.map((_, i) => `type = {:k${i}}`).join(" || ");
     const params: Record<string, string> = { uid: userId };
-    INACTIVITY_FAMILY.forEach((k, i) => { params[`k${i}`] = k; });
+    DAILY_CAP_TYPES.forEach((k, i) => { params[`k${i}`] = k; });
     const rows = await pb.collection("notifications").getFullList({
       filter: pb.filter(`user = {:uid} && (${typeFilter})`, params),
       fields: "type,created",

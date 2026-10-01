@@ -118,7 +118,11 @@ function categoryForType(type) {
     case "follow_request":
     case "follow_accepted": return "follows"
     case "challenge_join":
-    case "challenge_complete": return "challenges"
+    // challenge_reminder (#805): el aviso diario de un reto en solitario. Lo crea
+    // el dispatcher de mcp-server (que ya consulta esta categoría él mismo);
+    // se mapea aquí para que cualquier camino futuro respete «Retos».
+    case "challenge_complete":
+    case "challenge_reminder": return "challenges"
     case "achievement":
     case "streak": return "own_milestones"
     case "referral_signup":
