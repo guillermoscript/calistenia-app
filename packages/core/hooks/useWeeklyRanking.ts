@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { startOfWeekStr, localMidnightAsUTC } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
+import { authorDisplayName } from '../lib/author-name'
 import { countActivitySince, fetchRankingUserIds } from './useLeaderboard'
 
 export interface WeeklyRankingRow {
@@ -78,7 +79,7 @@ export function useWeeklyRanking(userId: string | null) {
         const user = users[i] as any
         return {
           ...row,
-          displayName: user?.display_name || user?.email?.split('@')[0] || '?',
+          displayName: authorDisplayName(user) || '?',
           avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
           isCurrentUser: row.userId === userId,
         }

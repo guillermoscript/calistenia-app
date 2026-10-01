@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { authorDisplayName, type AuthorLike } from '@calistenia/core/lib/author-name'
 import type { RecordModel } from 'pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
@@ -32,7 +33,7 @@ function mapPbItems(items: RecordModel[], excludeUserId: string): SearchResult[]
     .filter(u => u.id !== excludeUserId)
     .map(u => ({
       id: u.id,
-      displayName: u.display_name || u.name || u.username || '?',
+      displayName: authorDisplayName(u as AuthorLike) || '?',
       username: u.username || '',
       avatarUrl: getUserAvatarUrl(u, '100x100'),
     }))

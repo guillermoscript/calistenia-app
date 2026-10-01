@@ -184,8 +184,8 @@ describe('profileDisplayName', () => {
     expect(profileDisplayName({ name: 'Test B', email: 'b@x.test' })).toBe('Test B')
   })
 
-  it('cae a la parte local del correo cuando no hay ni display_name ni name', () => {
-    expect(profileDisplayName({ email: 'guille@x.test' })).toBe('guille')
+  it('no usa el correo como nombre (#892)', () => {
+    expect(profileDisplayName({ email: 'guille@x.test' })).toBe('')
   })
 
   it('sin correo visible (lo normal en un perfil ajeno) usa `name`', () => {

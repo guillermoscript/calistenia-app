@@ -4,7 +4,7 @@
  * Antes de este issue `created_by_name` miraba solo `display_name`, así que
  * quien se dio de alta con Google —que llega con `name` y sin `display_name`—
  * aparecía sin nombre en el catálogo. La cascada es la parte que hay que fijar,
- * y sobre todo su ORDEN: `email` es el último recurso, no un empate.
+ * y sobre todo su ORDEN: `email` no es un nombre en ningún caso (#892).
  */
 
 import { describe, it, expect } from 'vitest'
@@ -27,8 +27,14 @@ describe('authorDisplayName', () => {
       .toBe('Guillermo Marín')
   })
 
-  it('cae a `email` solo cuando no hay ningún nombre', () => {
-    expect(authorDisplayName({ email: 'g@local.test' })).toBe('g@local.test')
+  it('NUNCA usa el email (ni su prefijo) como nombre (#892)', () => {
+    expect(authorDisplayName({ email: 'ana@local.test' })).toBe('')
+    expect(authorDisplayName({ display_name: '', name: '', email: 'ana@local.test' })).toBe('')
+  })
+
+  it('cuenta con name y sin display_name sale igual en toda Comunidad (#892)', () => {
+    // Ranking y actividad pasan por esta misma función.
+    expect(authorDisplayName({ name: 'Ana Torres', display_name: '', email: 'ana@x.test' })).toBe('Ana Torres')
   })
 
   it('un campo en blanco NO cuenta como nombre', () => {
