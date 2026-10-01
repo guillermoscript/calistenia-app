@@ -616,6 +616,7 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
         </SettingsRow>
 
         <SettingsRow label={t('profile.remindersAndAlerts')} onClick={() => navigate('/reminders')} />
+        <SettingsRow label={t('achievements.profileRow')} value={t('achievements.profileHint')} onClick={() => navigate('/achievements')} />
       </div>
 
       <Kicker className="mb-1 mt-6">{t('profile.groupBody')}</Kicker>

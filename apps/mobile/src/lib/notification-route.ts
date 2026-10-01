@@ -54,7 +54,9 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
       return n.referenceId ? `/challenges/${n.referenceId}` : '/challenges'
 
     case 'achievement':
-      return '/profile'
+      // Los logros tempranos (#802) llevan `achievementKey` y tienen pantalla
+      // propia; las notificaciones viejas siguen cayendo en Perfil.
+      return n.data?.achievementKey ? '/achievements' : '/profile'
 
     case 'streak':
       // La racha vive en la pestaña Progreso (#859).

@@ -68,6 +68,7 @@ const LegalPage = lazy(() => import('./pages/LegalPage'))
 const SleepPage = lazy(() => import('./pages/SleepPage'))
 const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
+const AchievementsPage = lazy(() => import('./pages/AchievementsPage'))
 const BlogPage = lazy(() => import('./pages/BlogPage'))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
 const BlogLayout = lazy(() => import('./components/blog/BlogLayout'))
@@ -559,6 +560,7 @@ function AuthenticatedApp({
             <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
             <Route path="/settings/blocked" element={<BlockedUsersPage />} />
             <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
+            <Route path="/achievements" element={<AchievementsPage />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />

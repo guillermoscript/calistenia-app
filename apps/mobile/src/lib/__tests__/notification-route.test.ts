@@ -100,6 +100,10 @@ describe('five tabs and redirects (#859)', () => {
     expect(resolveNotifUrl('/profile')).toBe('/profile')
     expect(getNotifRoute(notification({ type: 'achievement' }))).toBe('/profile')
   })
+
+  it('opens the achievements screen for an early achievement (#802)', () => {
+    expect(getNotifRoute(notification({ type: 'achievement', data: { achievementKey: 'first_workout' } }))).toBe('/achievements')
+  })
 })
 
 describe('every notification route exists in the app (#859)', () => {
