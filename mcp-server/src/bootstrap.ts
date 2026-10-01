@@ -21,6 +21,7 @@ import { shutdownTracing } from "./instrumentation.js";
 import { startReminderScheduler, stopReminderScheduler } from "./api/reminder-dispatcher.js";
 import { startInactivityScheduler, stopInactivityScheduler } from "./api/inactivity-dispatcher.js";
 import { startReactivationScheduler, stopReactivationScheduler } from "./api/reactivation-dispatcher.js";
+import { startEmailScheduler, stopEmailScheduler } from "./api/email-dispatcher.js";
 import { startWeeklyInsightScheduler, stopWeeklyInsightScheduler } from "./api/weekly-insight-dispatcher.js";
 
 const FLAG = "__calistenia_bootstrapped__" as const;
@@ -49,6 +50,12 @@ if (!g[FLAG] && isServingProcess) {
     startReactivationScheduler();
   }
 
+  // #810: bienvenida y recuperación por email (Resend). Sin RESEND_API_KEY y
+  // EMAIL_UNSUBSCRIBE_SECRET no arranca aunque no esté a "off".
+  if (process.env.EMAIL_DISPATCH !== "off") {
+    startEmailScheduler();
+  }
+
   if (process.env.WEEKLY_INSIGHT_PUSH !== "off") {
     startWeeklyInsightScheduler();
   }
@@ -58,6 +65,7 @@ if (!g[FLAG] && isServingProcess) {
     stopReminderScheduler();
     stopInactivityScheduler();
     stopReactivationScheduler();
+    stopEmailScheduler();
     stopWeeklyInsightScheduler();
     await shutdownTracing();
     process.exit(0);
