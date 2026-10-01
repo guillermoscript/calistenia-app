@@ -161,8 +161,8 @@ test('onboarding completo activa el programa elegido (wizard de 7 pasos)', async
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await dismissOverlays(page)
   await selectDay(page)
-  // "Push – Pecho y tríceps" es del seed; el fallback usa "Empuje + Core Lumbar"
-  await expect(page.getByText(/Pecho y tríceps/i).first()).toBeVisible({ timeout: 8000 })
+  // "Push – Pecho y tríceps" (en: "Chest and triceps", los E2E corren en inglés) es del seed; el fallback usa "Empuje + Core Lumbar"
+  await expect(page.getByText(/Pecho y tríceps|Chest and triceps/i).first()).toBeVisible({ timeout: 8000 })
 })
 
 /**
