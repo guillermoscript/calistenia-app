@@ -9,7 +9,7 @@
 import { useTranslation } from 'react-i18next'
 import { Check, Flame } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import type { WeekCell, WeekSummary } from '@calistenia/core/lib/weekSummary'
+import { getMissedDaysNote, type WeekCell, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 import type { WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
 import type { HomeFirstWeek } from '@calistenia/core/lib/homeState'
 import type { WeekDay } from '@calistenia/core/types'
@@ -38,6 +38,7 @@ function cellLabelKey(cell: WeekCell): string {
     case 'in_progress': return 'home.week.cell.inProgress'
     case 'before_start': return 'home.week.cell.beforeStart'
     case 'today': return cell.trainable ? 'home.week.cell.today' : 'home.week.cell.todayRest'
+    case 'missed': return 'home.week.cell.missed'
     case 'planned': return 'home.week.cell.planned'
     default: return 'home.week.cell.rest'
   }
@@ -89,7 +90,9 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
                   cell.state === 'done' && cell.isToday && 'border-2 border-foreground',
                   cell.state === 'in_progress' && 'border-2 border-lime',
                   cell.state === 'today' && 'border-2 border-foreground',
-                  cell.state === 'planned' && 'border border-border',
+cell.state === 'planned' && 'border border-border',
+                  // Perdido (#809): distinto de un día por venir, pero sin pinta de error.
+                  cell.state === 'missed' && 'border border-amber-400/30',
                   cell.state === 'rest' && 'border border-dashed border-border text-muted-foreground',
                   cell.state === 'before_start' && 'border border-dashed border-border/60',
                 )}
@@ -100,6 +103,7 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
                   <span className="font-mono text-[10px] uppercase" aria-hidden="true">{t('home.week.todayShort')}</span>
                 )}
                 {cell.state === 'planned' && <span className="size-1.5 rounded-full bg-muted-foreground" aria-hidden="true" />}
+                {cell.state === 'missed' && <span className="size-1.5 rounded-full border border-amber-400" aria-hidden="true" />}
                 {cell.state === 'rest' && <span aria-hidden="true">–</span>}
               </div>
             </li>
@@ -135,6 +139,9 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
               {cell.isToday && cell.state !== 'done' && cell.state !== 'in_progress' && (
                 <span className="font-mono text-[11px] uppercase tracking-wider text-lime-text" aria-hidden="true">{t('home.week.todayShort')}</span>
               )}
+              {cell.state === 'missed' && (
+                <span className="size-1.5 rounded-full border border-amber-400" aria-hidden="true" />
+              )}
               {!cell.isToday && cell.state === 'planned' && minutes ? (
                 <span className="font-mono text-[11px] tracking-wider" aria-hidden="true">{minutes} min</span>
               ) : null}
@@ -142,6 +149,9 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
           )
         })}
       </ol>
+
+      {/* «Te saltaste el lunes. No pasa nada…» (#809). La primera semana ya tiene su empujón. */}
+      {!firstWeek && <MissedDaysNote week={week} locale={locale} />}
 
       {firstWeek ? (
         <FirstWeekGoal firstWeek={firstWeek} />
@@ -160,6 +170,21 @@ export default function HomeWeekStrip({ week, goal, streak, firstWeek, deload, w
         </p>
       ) : null}
     </section>
+  )
+}
+
+function MissedDaysNote({ week, locale }: { week: WeekSummary; locale: string }) {
+  const { t } = useTranslation()
+  const note = getMissedDaysNote(week)
+  if (!note) return null
+  return (
+    <p className="text-[13px] text-muted-foreground" data-testid="home-missed-days">
+      {t('home.week.missed', {
+        count: note.days.length,
+        // Sin `dayName`: aquí va dentro de una frase («el lunes»), no como etiqueta.
+        day: new Date(`${note.latest.day}T12:00:00`).toLocaleDateString(locale, { weekday: 'long' }),
+      })}
+    </p>
   )
 }
 

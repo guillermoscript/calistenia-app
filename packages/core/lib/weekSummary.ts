@@ -22,7 +22,7 @@ import { dayIdFromDateStr } from './programProgress'
 import { isTrainableDay } from './training-day'
 import type { DayId, ProgressMap, SessionDone, WeekDay } from '../types'
 
-export type WeekCellState = 'done' | 'today' | 'in_progress' | 'planned' | 'rest' | 'before_start'
+export type WeekCellState = 'done' | 'today' | 'in_progress' | 'missed' | 'planned' | 'rest' | 'before_start'
 
 export interface WeekCell {
   /** `YYYY-MM-DD`. */
@@ -30,8 +30,12 @@ export interface WeekCell {
   dayId: DayId
   /**
    * Precedencia: `done` > `in_progress` (solo hoy) > `before_start` > `today` >
-   * `planned` > `rest`. Un día pasado entrenable sin hacer sigue siendo
-   * `planned`: la UI decide si lo pinta como perdido (con `isPast`).
+   * `missed` > `planned` > `rest`.
+   *
+   * `missed` (#809) = día entrenable de esta semana, ANTERIOR a hoy y sin
+   * ninguna actividad. Se decide aquí y no en cada pantalla para que web y
+   * móvil digan lo mismo. Como `done`, mira la FECHA de la actividad y no la
+   * clave del entreno: cambiar de fase a mitad de semana no lo altera.
    */
   state: WeekCellState
   /** El programa planifica entreno ese día (y cae dentro de sus fechas). */
@@ -69,6 +73,8 @@ export interface WeekSummary {
   done: number
   /** Días entrenables del programa dentro de la semana. */
   planned: number
+  /** Celdas `missed`: entrenables, ya pasadas y sin actividad. */
+  missed: number
   /** Lunes → domingo. */
   cells: WeekCell[]
 }
@@ -89,6 +95,7 @@ export function getWeekSummary(input: WeekSummaryInput): WeekSummary {
 
   let done = 0
   let planned = 0
+  let missed = 0
   const cells = days.map((day): WeekCell => {
     const dayId = dayIdFromDateStr(day) as DayId
     const inProgram = (!validStart || day >= validStart) && (!validEnd || day <= validEnd)
@@ -103,12 +110,38 @@ export function getWeekSummary(input: WeekSummaryInput): WeekSummary {
     else if (isToday && inProgressToday) state = 'in_progress'
     else if (validSignup && day < validSignup) state = 'before_start'
     else if (isToday) state = 'today'
+    else if (trainable && day < today) state = 'missed'
     else state = trainable ? 'planned' : 'rest'
+    if (state === 'missed') missed++
 
     return { day, dayId, state, trainable, isToday, isPast: day < today }
   })
 
-  return { weekStart, weekEnd: days[6], done, planned, cells }
+  return { weekStart, weekEnd: days[6], done, planned, missed, cells }
+}
+
+/**
+ * Lo que necesita el mensaje de reencuadre de un día perdido (#809): «Te
+ * saltaste el lunes. No pasa nada…». `null` cuando no toca decir nada:
+ * - no hay días perdidos esta semana;
+ * - hoy ya hay actividad (hecha o en curso): ya ha vuelto, no hace falta empujar.
+ *
+ * El tono no habla de racha a propósito: la racha es semanal y perdona días
+ * sueltos (#801), así que un día perdido no la pone en peligro por sí solo.
+ */
+export interface MissedDaysNote {
+  /** Días perdidos, de lunes a domingo. */
+  days: WeekCell[]
+  /** El más reciente: el que se nombra cuando solo hay uno. */
+  latest: WeekCell
+}
+
+export function getMissedDaysNote(summary: WeekSummary): MissedDaysNote | null {
+  const today = summary.cells.find(c => c.isToday)
+  if (today && (today.state === 'done' || today.state === 'in_progress')) return null
+  const days = summary.cells.filter(c => c.state === 'missed')
+  if (days.length === 0) return null
+  return { days, latest: days[days.length - 1] }
 }
 
 /**
