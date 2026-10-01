@@ -9,6 +9,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.14.0] - 2026-10-02
+
+_Un inicio nuevo que te dice qué hacer hoy, pestaña Comunidad, racha semanal, logros, retos y batallas con tus propios días, y la app completa en inglés._
+
+### Añadido
+
+- **Inicio «qué hago hoy»** — El inicio te muestra tu entreno de hoy, tu semana y sugerencias «Para ti». Más simple hasta tu 3.er entreno.
+- **5 pestañas y Perfil desde el avatar** — Nueva navegación: Inicio, Entrenar, Progreso, Comunidad y más; tu Perfil se abre desde el avatar.
+- **Pestaña Comunidad** — Actividad, retos, batallas y ranking semanal en un solo sitio, con sugerencias de gente activa a la que seguir.
+- **Racha semanal y día perdido** — La racha cuenta por semanas con tu objetivo real, y si pierdes un día te lo decimos sin dramas.
+- **Logros, retos y batallas** — Hitos tempranos y pantalla de logros, el reto «Tu primera dominada» y batallas con un día de programa o tu propia batalla.
+- **App en inglés** — Ejercicios, repeticiones, macros, avisos y primer entreno traducidos; los avisos llegan en tu idioma.
+- **Más avisos que te acompañan** — Recuperación a los 7 y 14 días, «nuevo comienzo» los lunes y fin del descanso con la pantalla apagada.
+
 ## [1.13.2] - 2026-09-13
 
 _La notificación del entreno ahora tiene botón para detenerla, y los programas enseñan cada día por dentro y progresan semana a semana._
@@ -427,7 +441,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...HEAD
+[1.14.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...mobile-v1.14.0
 [1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
 [1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
 [1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0

@@ -9,6 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.14.0] - 2026-10-02
+
+_A new home that tells you what to do today, a Community tab, weekly streaks, achievements, challenges and battles with your own days, and the whole app in English._
+
+### Added
+
+- **Today-first home** — Home shows today's workout, your week and «For you» picks. Simpler until your 3rd workout.
+- **5 tabs and Profile from your avatar** — New navigation: Home, Train, Progress, Community and more; open your Profile from your avatar.
+- **Community tab** — Activity, challenges, battles and weekly ranking in one place, with suggestions of active people to follow.
+- **Weekly streak and missed days** — Your streak counts by weeks against your real goal, and a missed day is flagged gently.
+- **Achievements, challenges and battles** — Early milestones and an achievements screen, the «Your first pull-up» challenge, and battles from a program day or your own.
+- **App in English** — Exercises, reps, macros, reminders and first workout translated; notifications arrive in your language.
+- **Reminders that bring you back** — Comeback nudges at 7 and 14 days, Monday fresh starts, and rest-end alerts with the screen off.
+
 ## [1.13.2] - 2026-09-13
 
 _The workout notification now has a button to stop it, and programs show what each day contains and progress week by week._
@@ -427,7 +441,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...HEAD
+[1.14.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...mobile-v1.14.0
 [1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
 [1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
 [1.13.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.12.3...mobile-v1.13.0

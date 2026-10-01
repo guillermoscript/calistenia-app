@@ -1,6 +1,422 @@
 {
-  "generated": "2026-09-13T00:39:29.322Z",
+  "generated": "2026-10-01T22:10:10.022Z",
   "versions": [
+    {
+      "version": "1.14.0",
+      "date": "2026-10-02",
+      "summary": {
+        "es": "Un inicio nuevo que te dice qué hacer hoy, pestaña Comunidad, racha semanal, logros, retos y batallas con tus propios días, y la app completa en inglés.",
+        "en": "A new home that tells you what to do today, a Community tab, weekly streaks, achievements, challenges and battles with your own days, and the whole app in English."
+      },
+      "highlights": [
+        {
+          "icon": "🏠",
+          "type": "feat",
+          "title": {
+            "es": "Inicio «qué hago hoy»",
+            "en": "Today-first home"
+          },
+          "body": {
+            "es": "El inicio te muestra tu entreno de hoy, tu semana y sugerencias «Para ti». Más simple hasta tu 3.er entreno.",
+            "en": "Home shows today's workout, your week and «For you» picks. Simpler until your 3rd workout."
+          }
+        },
+        {
+          "icon": "🧭",
+          "type": "feat",
+          "title": {
+            "es": "5 pestañas y Perfil desde el avatar",
+            "en": "5 tabs and Profile from your avatar"
+          },
+          "body": {
+            "es": "Nueva navegación: Inicio, Entrenar, Progreso, Comunidad y más; tu Perfil se abre desde el avatar.",
+            "en": "New navigation: Home, Train, Progress, Community and more; open your Profile from your avatar."
+          }
+        },
+        {
+          "icon": "👥",
+          "type": "feat",
+          "title": {
+            "es": "Pestaña Comunidad",
+            "en": "Community tab"
+          },
+          "body": {
+            "es": "Actividad, retos, batallas y ranking semanal en un solo sitio, con sugerencias de gente activa a la que seguir.",
+            "en": "Activity, challenges, battles and weekly ranking in one place, with suggestions of active people to follow."
+          }
+        },
+        {
+          "icon": "🔥",
+          "type": "feat",
+          "title": {
+            "es": "Racha semanal y día perdido",
+            "en": "Weekly streak and missed days"
+          },
+          "body": {
+            "es": "La racha cuenta por semanas con tu objetivo real, y si pierdes un día te lo decimos sin dramas.",
+            "en": "Your streak counts by weeks against your real goal, and a missed day is flagged gently."
+          }
+        },
+        {
+          "icon": "🏆",
+          "type": "feat",
+          "title": {
+            "es": "Logros, retos y batallas",
+            "en": "Achievements, challenges and battles"
+          },
+          "body": {
+            "es": "Hitos tempranos y pantalla de logros, el reto «Tu primera dominada» y batallas con un día de programa o tu propia batalla.",
+            "en": "Early milestones and an achievements screen, the «Your first pull-up» challenge, and battles from a program day or your own."
+          }
+        },
+        {
+          "icon": "🌍",
+          "type": "feat",
+          "title": {
+            "es": "App en inglés",
+            "en": "App in English"
+          },
+          "body": {
+            "es": "Ejercicios, repeticiones, macros, avisos y primer entreno traducidos; los avisos llegan en tu idioma.",
+            "en": "Exercises, reps, macros, reminders and first workout translated; notifications arrive in your language."
+          }
+        },
+        {
+          "icon": "🔔",
+          "type": "feat",
+          "title": {
+            "es": "Más avisos que te acompañan",
+            "en": "Reminders that bring you back"
+          },
+          "body": {
+            "es": "Recuperación a los 7 y 14 días, «nuevo comienzo» los lunes y fin del descanso con la pantalla apagada.",
+            "en": "Comeback nudges at 7 and 14 days, Monday fresh starts, and rest-end alerts with the screen off."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Reto «Tu primera dominada» y aviso diario de retos en solitario (#805) (#907)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "323e5619"
+            },
+            {
+              "description": "Día perdido explícito y reencuadre amable en la semana (#809) (#900)",
+              "scope": "home",
+              "breaking": false,
+              "hash": "44efe4f4"
+            },
+            {
+              "description": "«Entrena con alguien» en el primer entreno y mismo programa para el invitado (#803) (#904)",
+              "scope": "referrals",
+              "breaking": false,
+              "hash": "d2e46789"
+            },
+            {
+              "description": "Promover Intermedio – Balance Total a programa curado (#740) (#905)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "aca60d95"
+            },
+            {
+              "description": "Hitos tempranos y pantalla de logros (#802) (#903)",
+              "scope": "achievements",
+              "breaking": false,
+              "hash": "7cce3cdb"
+            },
+            {
+              "description": "Sugerir gente activa para seguir a quien no tiene amigos (#806) (#902)",
+              "scope": "social",
+              "breaking": false,
+              "hash": "1ba86f1d"
+            },
+            {
+              "description": "Retar con un día de programa o con tu propia batalla (#882) (#899)",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "07e671fd"
+            },
+            {
+              "description": "Iconos en las opciones de «¿cómo conociste la app?» (#888)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "b91dedde"
+            },
+            {
+              "description": "Convertir un día de programa en batalla (#882) (#885)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "3b291b64"
+            },
+            {
+              "description": "«Entrenos» de Progreso y Perfil cuentan las sesiones de la cuenta (#869) (#875)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "35f055dc"
+            },
+            {
+              "description": "Inicio «qué hago hoy» por estados, semana y «Para ti» (#855) (#867)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "c3c84cfc"
+            },
+            {
+              "description": "Racha semanal con el objetivo efectivo — un solo algoritmo en cliente y servidor (#801) (#849)",
+              "scope": "streak",
+              "breaking": false,
+              "hash": "8ca4c8c0"
+            },
+            {
+              "description": "Inicio «qué hago hoy» — bloque Hoy por estados, semana y «Para ti» (#858) (#865)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "4e7d4d94"
+            },
+            {
+              "description": "5 pestañas, Perfil desde el avatar y redirecciones (#859) (#866)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "01163e17"
+            },
+            {
+              "description": "Navegación de 5 destinos y pantallas Entrenar, Progreso y Perfil (#856) (#868)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "fbe8bcfa"
+            },
+            {
+              "description": "Pestaña Comunidad — actividad, retos, batallas y ranking (#860) (#862)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "96fd2389"
+            },
+            {
+              "description": "Pantalla Comunidad con actividad, retos y ranking (#857) (#863)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "a45f1e3d"
+            },
+            {
+              "description": "Estado del inicio compartido, una sola semana y objetivo semanal efectivo (#853) (#864)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "0627bbb9"
+            },
+            {
+              "description": "Contrato de eventos del nuevo inicio (#854) (#861)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "fdc629a0"
+            },
+            {
+              "description": "Nombres de ejercicio, reps y macros en inglés (#847) (#848)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "42af2511"
+            },
+            {
+              "description": "Inicio simplificado hasta el 3.er entreno (#808) (#846)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "73cff1d7"
+            },
+            {
+              "description": "Recuperación a los 7/14 días y «nuevo comienzo» de los lunes (#807) (#843)",
+              "scope": "push",
+              "breaking": false,
+              "hash": "0920fcb3"
+            },
+            {
+              "description": "Objetivo «3 entrenos en tus primeros 7 días» en el inicio (#800) (#842)",
+              "scope": "activation",
+              "breaking": false,
+              "hash": "1ab5c4d5"
+            },
+            {
+              "description": "Guardar el idioma del usuario y mandar cada push en su idioma (#804) (#841)",
+              "scope": "push",
+              "breaking": false,
+              "hash": "523120b6"
+            },
+            {
+              "description": "Portadas e imágenes de ejercicio ampliables en web y móvil (#776)",
+              "scope": "",
+              "breaking": false,
+              "hash": "24608bcd"
+            },
+            {
+              "description": "Menos pasos antes de entrenar (#820) (#838)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "700093d4"
+            },
+            {
+              "description": "Informe de retención semanal reproducible desde OpenPanel (#831)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "57679cd2"
+            },
+            {
+              "description": "Contexto de abandono en workout_abandoned (#829)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "dabc0504"
+            },
+            {
+              "description": "Push primero y promesa del próximo entreno (#825) (#835)",
+              "scope": "celebración",
+              "breaking": false,
+              "hash": "629a5b1a"
+            },
+            {
+              "description": "Traduce al inglés el lote B y la regla bilingüe pasa a estricta (#799) (#837)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "6e2298e5"
+            },
+            {
+              "description": "Traduce al inglés el contenido del lote A (#798) (#836)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "44067430"
+            },
+            {
+              "description": "Primer entreno del día 0 a 3 ejercicios con nota técnica y regresión (#832)",
+              "scope": "",
+              "breaking": false,
+              "hash": "fab150ca"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "El onboarding espera el título del día también en inglés (#905) (#906)",
+              "scope": "e2e",
+              "breaking": false,
+              "hash": "f472a92c"
+            },
+            {
+              "description": "La descripción de la ficha de los programas llega a la base (#761) (#901)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "228c0e9d"
+            },
+            {
+              "description": "Balance Total sin las series repetidas en reps (#889) (#898)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "d563435e"
+            },
+            {
+              "description": "Una sola regla de nombre visible en Comunidad (#892) (#897)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "a5b5567c"
+            },
+            {
+              "description": "Retos activos primero y sugerencias debajo en Comunidad (#891) (#896)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "67b2692f"
+            },
+            {
+              "description": "Historial de batallas y cardio muestran el día local, no el UTC (#893) (#895)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "51b7ad94"
+            },
+            {
+              "description": "El ranking semanal de Comunidad cuenta solo entrenos de programa y libres (#890) (#894)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "348fd634"
+            },
+            {
+              "description": "Perfil conserva el scroll, sesiones de la cuenta y etiqueta sin partir (#881) (#887)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "6f480776"
+            },
+            {
+              "description": "Fechas y hora locales sin dayjs.tz, que falla en Hermes (#880) (#886)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "226294eb"
+            },
+            {
+              "description": "Las 4 pestañas de Progreso caben a 360-390 px (#873) (#876)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "187f53d4"
+            },
+            {
+              "description": "Recordatorios, avisos y fin del onboarding abren el día de hoy (#870) (#874)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "bebd28e1"
+            },
+            {
+              "description": "Limpia la última respuesta de notificación push tras consumirla (#830)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "5cb838a5"
+            },
+            {
+              "description": "Inglés por defecto para cualquier idioma que no sea español (#821) (#828)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "02b73812"
+            },
+            {
+              "description": "Validador avisa de campos de contenido sin traducir (#797) (#827)",
+              "scope": "programs",
+              "breaking": false,
+              "hash": "571f52df"
+            },
+            {
+              "description": "Traduce a inglés las pantallas del primer entreno, celebración y widgets (#834)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "1bc83c7d"
+            },
+            {
+              "description": "El permiso de push ya no se pide antes de la celebración del primer entreno (#833)",
+              "scope": "",
+              "breaking": false,
+              "hash": "51951017"
+            },
+            {
+              "description": "La traducción de Chrome dejaba de tirar la app entera (#790)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "baa005f5"
+            },
+            {
+              "description": "El entreno vuelve a ser foreground service de tipo specialUse (fin del descanso con pantalla apagada) (#779)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "c539146c"
+            },
+            {
+              "description": "El service worker ya no se come el bridge de OAuth (login Google en blanco en el móvil) (#777)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "a4767a70"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.13.2",
       "date": "2026-09-13",
