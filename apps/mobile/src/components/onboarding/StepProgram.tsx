@@ -21,6 +21,8 @@ interface Props {
   selecting: boolean
   userId?: string
   user: MatchUserInput
+  /** #803: programa de quien te invitó; va el primero, con insignia. */
+  invitedProgramId?: string | null
   onSelectProgram: (programId: string) => void
   /** Abre el editor de programas nativo (#224, paridad con web). */
   onCreateProgram: () => void
@@ -30,7 +32,7 @@ interface Props {
   onPickForMe: (programId: string) => Promise<void>
 }
 
-type ProgramTier = 'primary' | 'secondary' | 'other'
+type ProgramTier = 'invited' | 'primary' | 'secondary' | 'other'
 
 interface ProgramRow {
   program: ProgramMeta
@@ -52,7 +54,9 @@ const ProgramItem = memo(function ProgramItem({ item, isSelected, userId, onSele
 
   const borderClass = isSelected
     ? 'border-lime bg-lime/5'
-    : tier === 'primary'
+    : tier === 'invited'
+      ? 'border-lime/40 bg-lime/[0.04]'
+      : tier === 'primary'
       ? 'border-lime/30 bg-lime/[0.03]'
       : tier === 'secondary'
         ? 'border-sky-400/30 bg-sky-400/[0.03]'
@@ -84,6 +88,11 @@ const ProgramItem = memo(function ProgramItem({ item, isSelected, userId, onSele
               )}>
                 {program.name}
               </Text>
+              {tier === 'invited' ? (
+                <View className="px-1.5 py-0.5 rounded border border-lime/50 bg-lime/10">
+                  <Text className="text-[9px] text-lime">{t('onboarding.invitedProgram')}</Text>
+                </View>
+              ) : null}
               {tier === 'primary' ? (
                 <View className="px-1.5 py-0.5 rounded border border-lime/50 bg-lime/10">
                   <Text className="text-[9px] text-lime">{t('onboarding.forYou')}</Text>
@@ -147,7 +156,7 @@ const ProgramItem = memo(function ProgramItem({ item, isSelected, userId, onSele
 })
 
 export function StepProgram({
-  programs, selectedProgramId, selecting, userId, user,
+  programs, selectedProgramId, selecting, userId, user, invitedProgramId,
   onSelectProgram, onCreateProgram, onBack, onContinue, onPickForMe,
 }: Props) {
   const { t } = useTranslation()
@@ -155,7 +164,9 @@ export function StepProgram({
 
   const { primary, secondary, penalties } = matchUserToPrograms(user, programs)
 
+  const invited = invitedProgramId ? programs.find((p) => p.id === invitedProgramId) ?? null : null
   const pinnedIds = new Set<string>([
+    ...(invited ? [invited.id] : []),
     ...(primary ? [primary.id] : []),
     ...(secondary ? [secondary.id] : []),
   ])
@@ -171,6 +182,7 @@ export function StepProgram({
   const rest = programs.filter((p) => !pinnedIds.has(p.id)).sort(featuredSort)
 
   const ordered: ProgramRow[] = [
+    ...(invited ? [{ program: invited, tier: 'invited' as const, penalties: penalties.get(invited.id) ?? [] }] : []),
     ...(primary ? [{ program: primary, tier: 'primary' as const, penalties: penalties.get(primary.id) ?? [] }] : []),
     ...(secondary ? [{ program: secondary, tier: 'secondary' as const, penalties: penalties.get(secondary.id) ?? [] }] : []),
     ...rest.map((p) => ({ program: p, tier: 'other' as const, penalties: penalties.get(p.id) ?? [] })),

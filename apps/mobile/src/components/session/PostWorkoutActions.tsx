@@ -176,6 +176,7 @@ export function PostWorkoutActions({
     >
       {promptVisible && (
         <ReferralPrompt
+          first={totalSessions === 1}
           onShare={handlePromptInvite}
           onDismiss={handlePromptDismiss}
         />
@@ -270,9 +271,12 @@ export function PostWorkoutActions({
 }
 
 function ReferralPrompt({
+  first,
   onShare,
   onDismiss,
 }: {
+  /** #803: primer entreno de la cuenta; copy de «entrena con alguien». */
+  first: boolean
   onShare: (channel: ReferralShareChannel) => void
   onDismiss: () => void
 }) {
@@ -282,7 +286,7 @@ function ReferralPrompt({
     <View className="mb-4 border-l border-lime pl-3.5">
       <View className="mb-1.5 flex-row items-center justify-between">
         <Text className="font-mono text-[9px] uppercase tracking-[3px] text-lime">
-          {t('referral.prompt.kicker')}
+          {t(first ? 'referral.prompt.kickerFirst' : 'referral.prompt.kicker')}
         </Text>
         <Pressable
           onPress={onDismiss}
@@ -296,7 +300,7 @@ function ReferralPrompt({
       </View>
 
       <Text className="mb-3 font-sans text-[13px] leading-[18px] text-foreground/80">
-        {t('referral.prompt.question')}
+        {t(first ? 'referral.prompt.questionFirst' : 'referral.prompt.question')}
       </Text>
 
       <View className="flex-row flex-wrap gap-2">

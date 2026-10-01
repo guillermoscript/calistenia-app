@@ -32,7 +32,9 @@ export function shouldShowReferralPrompt({
   totalSessions,
   now = Date.now(),
 }: ReferralPromptEligibility): boolean {
-  if (!userId || !referralCode || totalSessions < 3) return false
+  // #803: primer entreno (momento de más intención) y, si se descartó,
+  // otra oportunidad desde el 3.º. El cooldown de 14 días corta ambos.
+  if (!userId || !referralCode || !(totalSessions === 1 || totalSessions >= 3)) return false
   if (promptedThisSession.has(userId)) return false
   return !isReferralPromptOnCooldown(userId, now)
 }

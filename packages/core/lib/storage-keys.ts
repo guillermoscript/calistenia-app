@@ -60,6 +60,8 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   // onboarding (#694). Un solo uso y ligada al usuario: no debe arrancar una
   // sesión a quien entre después con otra cuenta.
   'calistenia_first_workout_pending',
+  // invited-program — programa del referrer a preseleccionar en el onboarding (#803).
+  'calistenia_invited_program',
   // battleInviteHandoff — token de invitación pendiente. Es una credencial de un solo
   // uso para una plaza: no puede sobrevivir a un cambio de cuenta.
   'calistenia_battle_invite_token',

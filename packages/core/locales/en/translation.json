@@ -3157,6 +3157,9 @@
   "referral.prompt.copy": "COPY LINK",
   "referral.prompt.whatsapp": "WHATSAPP",
   "referral.prompt.dismiss": "Not now",
+  "referral.prompt.kickerFirst": "FIRST WORKOUT",
+  "referral.prompt.questionFirst": "First workout done. Train with someone: invite them with your link and they will start on your same program.",
+  "onboarding.invitedProgram": "LIKE YOUR FRIEND",
 
   "blog.title": "Blog",
   "blog.subtitle": "Tips, tutorials, and guides for your calisthenics training",

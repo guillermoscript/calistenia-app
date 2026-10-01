@@ -29,6 +29,7 @@ const EXPECTED_KEYS = [
   'calistenia_exercise_favorites',
   'calistenia_health_last_sync',
   'calistenia_first_workout_pending',
+  'calistenia_invited_program',
   'calistenia_battle_invite_token',
   'calistenia_rq_cache',
   'calistenia_strength_active',
@@ -41,8 +42,8 @@ const EXPECTED_KEYS = [
 ]
 
 describe('USER_SCOPED_STORAGE_KEYS', () => {
-  it('contiene exactamente las 27 claves de localStorage por usuario', () => {
-    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(27)
+  it('contiene exactamente las 28 claves de localStorage por usuario', () => {
+    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(28)
     expect([...USER_SCOPED_STORAGE_KEYS].sort()).toEqual([...EXPECTED_KEYS].sort())
   })
 })

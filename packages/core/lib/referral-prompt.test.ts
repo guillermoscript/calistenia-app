@@ -25,10 +25,11 @@ beforeEach(() => {
 })
 
 describe('referral prompt eligibility', () => {
-  it('only shows from the third workout for an authenticated user with a code', () => {
+  it('shows on the first workout and from the third on, never at 0 or 2', () => {
     vi.mocked(storage.getItem).mockReturnValue(null)
 
-    expect(shouldShowReferralPrompt({ userId: 'u1', referralCode: 'CODE', totalSessions: 1, now: NOW })).toBe(false)
+    expect(shouldShowReferralPrompt({ userId: 'u1', referralCode: 'CODE', totalSessions: 0, now: NOW })).toBe(false)
+    expect(shouldShowReferralPrompt({ userId: 'u1', referralCode: 'CODE', totalSessions: 1, now: NOW })).toBe(true)
     expect(shouldShowReferralPrompt({ userId: 'u1', referralCode: 'CODE', totalSessions: 2, now: NOW })).toBe(false)
     expect(shouldShowReferralPrompt({ userId: 'u1', referralCode: 'CODE', totalSessions: 3, now: NOW })).toBe(true)
     expect(shouldShowReferralPrompt({ userId: null, referralCode: 'CODE', totalSessions: 3, now: NOW })).toBe(false)

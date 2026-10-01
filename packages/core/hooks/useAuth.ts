@@ -7,6 +7,7 @@ import { setTimezone } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, analyticsPlatform, op, trackCanonicalEvent } from '../lib/analytics'
 import { syncUserTimezone } from '../lib/timezone-sync'
 import { clearUserStorage } from '../lib/storage-keys'
+import { saveInvitedProgram, trackReferralProgramMatched } from '../lib/invited-program'
 import { qk } from '../lib/query-keys'
 import i18n from 'i18next'
 import type { AuthUser, UserRole, UserTier } from '../types'
@@ -101,7 +102,27 @@ export async function completeNewUserRegistration(
       result: 'converted',
       referrer_id: referrer.id,
     })
+    await resolveReferrerProgram(user.id, referrer.id)
   } catch { /* non-critical */ }
+}
+
+/**
+ * #803: deja el programa actual de quien invita para que el onboarding lo
+ * preseleccione. Sin programa activo no hay nada que hacer (flujo normal).
+ */
+async function resolveReferrerProgram(userId: string, referrerId: string): Promise<void> {
+  try {
+    const rec = await pb
+      .collection('user_programs')
+      .getFirstListItem(pb.filter('user = {:uid} && is_current = true', { uid: referrerId }), {
+        $autoCancel: false,
+      })
+    const programId = typeof rec.program === 'string' ? rec.program : ''
+    if (!programId) throw new Error('no program')
+    saveInvitedProgram(userId, referrerId, programId)
+  } catch {
+    trackReferralProgramMatched({ referrerId, programId: null, matched: false, stage: 'registration' })
+  }
 }
 
 interface UseAuthReturn {

@@ -3157,6 +3157,9 @@
   "referral.prompt.copy": "COPIAR ENLACE",
   "referral.prompt.whatsapp": "WHATSAPP",
   "referral.prompt.dismiss": "Ahora no",
+  "referral.prompt.kickerFirst": "PRIMER ENTRENO",
+  "referral.prompt.questionFirst": "Primer entreno hecho. Entrena con alguien: invítale con tu enlace y empezará en tu mismo programa.",
+  "onboarding.invitedProgram": "COMO TU AMIGO",
 
   "blog.title": "Blog",
   "blog.subtitle": "Consejos, tutoriales y guías para tu entrenamiento de calistenia",

@@ -20,6 +20,8 @@ interface Props {
   userId?: string
   /** Full user signals used by matchUserToPrograms. */
   user: MatchUserInput
+  /** #803: programa de quien te invitó; va el primero, con insignia. */
+  invitedProgramId?: string | null
   onSelectProgram: (programId: string) => void
   onCreateProgram: () => void
   onBack: () => void
@@ -29,7 +31,7 @@ interface Props {
 }
 
 export function StepProgram({
-  programs, selectedProgramId, selecting, userId, user,
+  programs, selectedProgramId, selecting, userId, user, invitedProgramId,
   onSelectProgram, onCreateProgram, onBack, onContinue, onPickForMe,
 }: Props) {
   const { t } = useTranslation()
@@ -48,12 +50,15 @@ export function StepProgram({
     if (!a.is_official && b.is_official) return 1
     return a.name.localeCompare(b.name)
   }
+  const invited = invitedProgramId ? programs.find(p => p.id === invitedProgramId) ?? null : null
   const pinnedIds = new Set<string>([
+    ...(invited ? [invited.id] : []),
     ...(primary ? [primary.id] : []),
     ...(secondary ? [secondary.id] : []),
   ])
   const rest = programs.filter(p => !pinnedIds.has(p.id)).sort(featuredSort)
-  const ordered: Array<{ program: ProgramMeta; tier: 'primary' | 'secondary' | 'other' }> = [
+  const ordered: Array<{ program: ProgramMeta; tier: 'invited' | 'primary' | 'secondary' | 'other' }> = [
+    ...(invited ? [{ program: invited, tier: 'invited' as const }] : []),
     ...(primary ? [{ program: primary, tier: 'primary' as const }] : []),
     ...(secondary ? [{ program: secondary, tier: 'secondary' as const }] : []),
     ...rest.map(p => ({ program: p, tier: 'other' as const })),
@@ -114,6 +119,8 @@ export function StepProgram({
                 'cursor-pointer transition-all duration-200 border-2',
                 isSelected
                   ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/5'
+                  : tier === 'invited'
+                    ? 'border-[hsl(var(--lime))]/40 bg-[hsl(var(--lime))]/[0.04] hover:border-[hsl(var(--lime))]/60'
                   : tier === 'primary'
                     ? 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/[0.03] hover:border-[hsl(var(--lime))]/50'
                     : tier === 'secondary'
@@ -136,6 +143,11 @@ export function StepProgram({
                     <span className={cn('font-medium text-sm', isSelected && 'text-[hsl(var(--lime))]')}>
                       {program.name}
                     </span>
+                    {tier === 'invited' && (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-[hsl(var(--lime))] border-[hsl(var(--lime))]/50 bg-[hsl(var(--lime))]/10">
+                        {t('onboarding.invitedProgram')}
+                      </Badge>
+                    )}
                     {tier === 'primary' && (
                       <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-[hsl(var(--lime))] border-[hsl(var(--lime))]/50 bg-[hsl(var(--lime))]/10">
                         {t('onboarding.forYou')}

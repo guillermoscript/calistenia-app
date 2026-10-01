@@ -60,6 +60,8 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   inviteSent: 'invite_sent',
   inviteLandingViewed: 'invite_landing_viewed',
   referralConverted: 'referral_converted',
+  /** #803: el invitado ve preseleccionado el programa de quien le invitó. */
+  referralProgramMatched: 'referral_program_matched',
   referralStatusViewed: 'referral_status_viewed',
   featuredChallengeViewed: 'featured_challenge_viewed',
   challengeViewed: 'challenge_viewed',
