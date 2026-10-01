@@ -64,7 +64,7 @@ function getNotificationMessage(
     case 'challenge_complete':
       return t('notif.challengeComplete', { title: n.data?.challengeTitle || '' })
     case 'achievement':
-      return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementName || t('notif.anAchievement') })}`
+      return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementKey ? t(`achievements.${n.data.achievementKey}.name`, { defaultValue: n.data?.achievementName || t('notif.anAchievement') }) : n.data?.achievementName || t('notif.anAchievement') })}`
     case 'streak':
       return n.data?.weeks != null
         ? t('notif.streakWeeks', { weeks: n.data.weeks })
@@ -125,7 +125,7 @@ function getNotificationRoute(n: AppNotification): string {
     case 'challenge_complete':
       return `/challenges/${n.referenceId}`
     case 'achievement':
-      return '/profile'
+      return n.data?.achievementKey ? '/achievements' : '/profile'
     case 'streak':
       return '/progress'
     case 'referral_signup':

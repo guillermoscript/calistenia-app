@@ -50,6 +50,7 @@ export const qk = {
   },
   notificationPrefs: (userId: string | null) =>
     ['notification_prefs', userId] as const,
+  achievements: (userId: string | null) => ['achievements', userId] as const,
   referrals: {
     all: ['referrals'] as const,
     list: (userId: string | null) => ['referrals', 'list', userId] as const,

@@ -560,6 +560,13 @@ export default function ProfileScreen() {
               bordered
               muted={muted} lime={lime}
             />
+            <SettingsRow
+              label={t('achievements.profileRow')}
+              value={t('achievements.profileHint')}
+              onPress={() => router.push('/achievements')}
+              bordered
+              muted={muted} lime={lime}
+            />
           </Card>
         </View>
 

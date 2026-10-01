@@ -147,6 +147,8 @@ function recordWorkout(userId, day) {
   var weekly = require(`${__hooks}/utils/weekly_streak.js`)
   var oldStreak = 0
   var newStreak = 0
+  var bestStreak = 0
+  var totalWorkouts = 0
 
   $app.runInTransaction(function (txApp) {
     // Se lee dentro de la transaccion: fuera, otra sesion en paralelo podria
@@ -173,7 +175,15 @@ function recordWorkout(userId, day) {
       id: statsId,
     }).execute()
 
-    newStreak = weekly.recomputeStreak(txApp, userId, serverToday()).current
+    var recomputed = weekly.recomputeStreak(txApp, userId, serverToday())
+    newStreak = recomputed.current
+    bestStreak = recomputed.best
+
+    var totals = arrayOf(new DynamicModel({ total: 0 }))
+    txApp.db().newQuery(
+      "SELECT COALESCE(total_sessions, 0) AS total FROM user_stats WHERE id = {:id}"
+    ).bind({ id: statsId }).all(totals)
+    totalWorkouts = totals.length > 0 ? Number(totals[0].total) || 0 : 0
   })
 
   try {
@@ -181,6 +191,18 @@ function recordWorkout(userId, day) {
     notifications.checkStreakMilestone(userId, oldStreak, newStreak)
   } catch (err) {
     console.log("[workout_stats] milestone de racha fallido para " + userId + ":", err)
+  }
+
+  // Logros tempranos (#802). Fuera de la transaccion y con su propio try: un
+  // fallo aqui no debe tumbar ni la racha ni el guardado de la sesion.
+  try {
+    var achievements = require(`${__hooks}/utils/achievements.js`)
+    achievements.awardEarlyAchievements(userId, {
+      totalWorkouts: totalWorkouts,
+      bestWeeklyStreak: bestStreak,
+    })
+  } catch (err) {
+    console.log("[workout_stats] logros tempranos fallidos para " + userId + ":", err)
   }
 }
 
