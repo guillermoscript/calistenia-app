@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { BattleStanding } from '../types/battle'
 import {
@@ -21,7 +23,18 @@ import {
   isBattleActiveForMe,
   validateBattleConfiguration,
   BATTLE_IDLE_AFTER_MS,
+  BATTLE_LIMITS,
 } from './battle'
+
+// La copia del servidor (CommonJS del JSVM), evaluada igual que en
+// battle-from-program-day.test.ts: los dos validadores son espejo y aquí se comprueba.
+const serverModule: {
+  exports: { validateConfiguration: (config: unknown) => string[]; BATTLE_LIMITS: unknown }
+} = { exports: {} as never }
+new Function('module', 'exports', readFileSync(resolve(__dirname, '../../../pb_hooks/utils/battles/state.js'), 'utf8'))(
+  serverModule, serverModule.exports,
+)
+const server = serverModule.exports
 
 const config = {
   workout_template_id: 'park-circuit-v1',
@@ -623,5 +636,56 @@ describe('battle results', () => {
       expect(view).toMatchObject({ me: null, outcome: 'none' })
       expect(view.rows).toHaveLength(1)
     })
+  })
+})
+
+describe('battle configuration limits (#882), same on core and server', () => {
+  const base = {
+    workout_template_id: 'custom',
+    rounds: 3,
+    scoring_mode: 'rounds_then_reps_then_time' as const,
+    exercises: [
+      { exercise_id: 'a', position: 0, target: { kind: 'reps' as const, value: 10 }, rest_seconds: 30 },
+      { exercise_id: 'b', position: 1, target: { kind: 'seconds' as const, value: 30 }, rest_seconds: 30 },
+    ],
+  }
+  const nExercises = (n: number) => Array.from({ length: n }, (_, i) => ({
+    exercise_id: `e${i}`, position: i, target: { kind: 'reps' as const, value: 10 }, rest_seconds: 30,
+  }))
+  const withEx = (over: object) => ({ ...base, exercises: [{ ...base.exercises[0], ...over }, base.exercises[1]] })
+
+  const cases: Array<[string, object, string | null]> = [
+    ['the base config', base, null],
+    ['10 rounds', { ...base, rounds: 10 }, null],
+    ['11 rounds', { ...base, rounds: 11 }, 'rounds must be at most 10'],
+    ['8 exercises', { ...base, exercises: nExercises(8) }, null],
+    ['9 exercises', { ...base, exercises: nExercises(9) }, 'at most 8 exercises'],
+    ['200 reps', withEx({ target: { kind: 'reps', value: 200 } }), null],
+    ['201 reps', withEx({ target: { kind: 'reps', value: 201 } }), 'target must be at most 200 for a'],
+    ['600 seconds', withEx({ target: { kind: 'seconds', value: 600 } }), null],
+    ['601 seconds', withEx({ target: { kind: 'seconds', value: 601 } }), 'target must be at most 600 for a'],
+    ['300 s rest', withEx({ rest_seconds: 300 }), null],
+    ['301 s rest', withEx({ rest_seconds: 301 }), 'rest_seconds must be at most 300 for a'],
+    ['a 60-char title', { ...base, title: 'x'.repeat(60) }, null],
+    ['a 61-char title', { ...base, title: 'x'.repeat(61) }, 'title must be at most 60 characters'],
+    ['a non-string title', { ...base, title: 5 }, 'title must be a string'],
+    ['a known source', { ...base, source: 'program_day' }, null],
+    ['an unknown source', { ...base, source: 'ai' }, 'unsupported source'],
+    ['names for its exercises', { ...base, exercise_names: { a: { es: 'Flexiones' }, b: { es: 'P', en: 'Plank' } } }, null],
+    ['a name for an unknown exercise', { ...base, exercise_names: { z: { es: 'Z' } } }, 'exercise_names has unknown exercise_id: z'],
+    ['a name that is too long', { ...base, exercise_names: { a: { en: 'x'.repeat(81) } } }, 'invalid exercise_names.en for a'],
+    ['names as an array', { ...base, exercise_names: [] }, 'exercise_names must be an object'],
+  ]
+
+  it.each(cases)('%s', (_label, cfg, error) => {
+    const core = validateBattleConfiguration(cfg as never)
+    const srv = server.validateConfiguration(cfg)
+    expect(srv).toEqual(core)
+    if (error) expect(core).toContain(error)
+    else expect(core).toEqual([])
+  })
+
+  it('exports the same limits on both sides', () => {
+    expect(server.BATTLE_LIMITS).toEqual(BATTLE_LIMITS)
   })
 })

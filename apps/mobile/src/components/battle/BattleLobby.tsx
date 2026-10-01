@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { View, Pressable, Share, Alert, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { Share2, Crown, Check } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -11,13 +10,12 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useBattleContext } from '@/contexts/BattleContext'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
-import { battleExerciseName, findBattlePreset } from '@calistenia/core/data/battle-presets'
+import { battleExerciseLabel, battleTitle } from '@calistenia/core/data/battle-presets'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 
 
 export default function BattleLobby() {
   const { t, i18n } = useTranslation()
-  const l = useLocalize()
   const { snapshot, isCreator, busy, can, actions } = useBattleContext()
   const [sharing, setSharing] = useState(false)
 
@@ -32,7 +30,7 @@ export default function BattleLobby() {
   if (!snapshot) return null
 
   const { battle, participants, me } = snapshot
-  const preset = findBattlePreset(battle.config.workout_template_id)
+  const circuitTitle = battleTitle(battle.config, i18n.language) || t('battle.title')
   const readyCount = participants.filter((p) => p.status === 'ready').length
 
   const handleShare = async () => {
@@ -59,7 +57,7 @@ export default function BattleLobby() {
   }
 
   const handleStart = () => {
-    Alert.alert((preset && l(preset.name)) || t('battle.title'), `${t('battle.start')}?`, [
+    Alert.alert(circuitTitle, `${t('battle.start')}?`, [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('battle.start'),
@@ -95,7 +93,7 @@ export default function BattleLobby() {
       {/* Cabecera */}
       <View className="items-center pt-4">
         <Text className="text-center font-bebas text-4xl leading-none text-foreground">
-          {(preset && l(preset.name)) || t('battle.title')}
+          {circuitTitle}
         </Text>
         <Text className="mt-1.5 font-mono text-xs text-lime">
           {battle.config.rounds} {t('battle.rounds')} · {battle.config.exercises.length} {t('battle.exercises')}
@@ -119,7 +117,7 @@ export default function BattleLobby() {
             className="flex-row items-center justify-between border-b border-border py-2.5"
           >
             <Text className="font-sans-medium text-foreground">
-              {battleExerciseName(battle.config.workout_template_id, exercise.exercise_id, i18n.language)}
+              {battleExerciseLabel(battle.config, exercise.exercise_id, i18n.language)}
             </Text>
             <Text className="font-mono text-xs text-muted-foreground">
               {exercise.target.value}{exercise.target.kind === 'seconds' ? 's' : ` ${t('battle.reps')}`}

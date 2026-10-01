@@ -17,13 +17,14 @@ import { useTranslation } from 'react-i18next'
 import { Swords } from 'lucide-react'
 
 import { previewBattleInvite } from '@calistenia/core/lib/battleApi'
+import { battleExerciseLabel, battleTitle } from '@calistenia/core/data/battle-presets'
 import type { BattleInvitePreview } from '@calistenia/core/types/battle'
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=tech.guille.calistenia'
 
 export default function BattleInviteLandingPage() {
   const { token } = useParams<{ token: string }>()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [preview, setPreview] = useState<BattleInvitePreview | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -37,6 +38,14 @@ export default function BattleInviteLandingPage() {
   }, [token])
 
   const unavailable = failed || (preview && !preview.ok)
+
+  // Título y nombres vienen congelados en la batalla (#882); sin título (batalla antigua
+  // sin preset conocido) no se enseña ninguno y queda el «Te han retado» de siempre.
+  const battle = preview?.ok ? preview.battle : null
+  const config = battle
+    ? { workout_template_id: battle.workout_template_id, title: battle.title, exercise_names: battle.exercise_names }
+    : null
+  const title = battleTitle(config, i18n.language)
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
@@ -55,10 +64,20 @@ export default function BattleInviteLandingPage() {
             <h1 className="font-bebas text-4xl leading-none text-foreground">
               {t('battle.invitedTitle')}
             </h1>
+            {title && (
+              <p className="font-mono text-[11px] uppercase tracking-[2px] text-foreground">{title}</p>
+            )}
             <p className="text-sm text-muted-foreground">
               {preview.battle.rounds} {t('battle.rounds')} · {preview.battle.exercise_count}{' '}
               {t('battle.exercises')}
             </p>
+            {config && preview.battle.exercise_ids.length > 0 && (
+              <ul className="flex flex-col gap-1 text-sm text-foreground">
+                {preview.battle.exercise_ids.map(id => (
+                  <li key={id}>{battleExerciseLabel(config, id, i18n.language)}</li>
+                ))}
+              </ul>
+            )}
             <p className="font-mono text-[11px] uppercase tracking-[2px] text-lime">
               {preview.battle.participant_count}{' '}
               {preview.battle.participant_count === 1

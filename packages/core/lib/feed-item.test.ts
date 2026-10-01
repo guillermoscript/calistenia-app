@@ -303,6 +303,14 @@ describe('describeFeedItem · batallas', () => {
     expect(describeFeedItem(battle('won')).title).toBe('Sprint 3 rondas')
   })
 
+  it('el título congelado de la batalla manda sobre el preset', () => {
+    const view = describeFeedItem(item({
+      type: 'battle',
+      battle: { battleId: 'b1', templateId: 'program_day', title: 'Piernas + Core', rank: 1, totalParticipants: 2, outcome: 'won', viewerTookPart: true },
+    }))
+    expect(view.title).toBe('Piernas + Core')
+  })
+
   it('dice "ganó" solo cuando ganó', () => {
     expect(describeFeedItem(battle('won')).verb).not.toBe(describeFeedItem(battle('lost')).verb)
   })

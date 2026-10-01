@@ -18,7 +18,7 @@ import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { cn } from '@/lib/utils'
 import BattleScoreCell from '@/components/battle/BattleScoreCell'
-import { battleExerciseName } from '@calistenia/core/data/battle-presets'
+import { battleExerciseLabel } from '@calistenia/core/data/battle-presets'
 import {
   battleDisplayRanks,
   battleParticipantActivity,
@@ -62,7 +62,7 @@ function activityLine(
   // La ronda es la que está en curso, no la que ya cerró.
   const round = entry.score.completed_rounds + 1
   return `${t('battle.roundsShort')}${round} · `
-    + battleExerciseName(config.workout_template_id, exercise.exercise_id, language)
+    + battleExerciseLabel(config, exercise.exercise_id, language)
 }
 
 interface BattleStandingsRowProps {

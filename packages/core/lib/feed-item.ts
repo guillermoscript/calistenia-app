@@ -224,7 +224,8 @@ function battleView(item: FeedItem): FeedItemView {
     verb: b?.outcome === 'won'
       ? tr('feed.verbWon', 'ganó')
       : tr('feed.verbFinished', 'terminó'),
-    title: preset ? localize(preset.name, currentLanguage()) : tr('feed.battleGeneric', 'Batalla'),
+    // El título congelado en la batalla (#882) manda; sin él, el nombre del preset.
+    title: b?.title || (preset ? localize(preset.name, currentLanguage()) : tr('feed.battleGeneric', 'Batalla')),
     detail: preset ? localize(preset.description, currentLanguage()) : null,
     metrics: null,
     badge: rankBadge(b?.rank ?? null, b?.totalParticipants ?? 0),

@@ -337,13 +337,14 @@ async function fetchBattles(ctx: FeedSourceContext): Promise<FeedSourceResult> {
     const standings = (Array.isArray(b.battle_standings) ? b.battle_standings : []) as BattleStanding[]
     const displayRanks = battleDisplayRanks(standings)
     const mine = standings.find(s => s.user === b.user)
-    const config = (b.battle_config ?? {}) as { workout_template_id?: string }
+    const config = (b.battle_config ?? {}) as { workout_template_id?: string; title?: unknown }
     return {
       ...baseItem(b as never, ctx, (b.battle_finished_at as string) || ''),
       type: 'battle',
       battle: {
         battleId: b.battle as string,
         templateId: config.workout_template_id || '',
+        title: typeof config.title === 'string' ? config.title.trim() : '',
         rank: mine ? displayRanks.get(mine.participant_id) ?? mine.rank : null,
         totalParticipants: standings.length,
         outcome: battleOutcomeFor(standings, b.user as string) === 'won' ? 'won'

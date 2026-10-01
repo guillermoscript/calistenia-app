@@ -50,11 +50,35 @@ export interface BattleWorkColumns {
   seconds: boolean
 }
 
+/** De dónde salió el circuito de una batalla (#882). */
+export const BATTLE_SOURCES = ['preset', 'program_day', 'custom'] as const
+export type BattleSource = typeof BATTLE_SOURCES[number]
+
+/** Nombre de un ejercicio congelado en la batalla; basta con uno de los dos idiomas. */
+export interface BattleExerciseNameEntry {
+  es?: string
+  en?: string
+}
+
 export interface BattleConfiguration {
   workout_template_id: string
   rounds: number
   exercises: BattleExerciseTarget[]
   scoring_mode: BattleScoringMode
+  /**
+   * Los tres campos siguientes son opcionales (#882): las batallas de preset y las
+   * anteriores a #882 no los llevan y se pintan con los datos del preset.
+   *
+   * `title`: escrito por el creador o generado al crear; máximo 60 caracteres.
+   */
+  title?: string
+  source?: BattleSource
+  /**
+   * Nombres por `exercise_id`, congelados al crear igual que el resto del circuito.
+   * Hacen falta en los días de programa y las batallas propias: el invitado no tiene
+   * el programa, y un id de slot (#599, «lun_1_2») no se puede buscar en el catálogo.
+   */
+  exercise_names?: Record<string, BattleExerciseNameEntry>
 }
 
 export interface Battle {
@@ -206,6 +230,11 @@ export interface BattleInvitePreview {
     rounds: number
     exercise_count: number
     workout_template_id: string
+    /** Título, origen y nombres congelados al crear (#882); vacíos en batallas antiguas. */
+    title: string
+    source: BattleSource | ''
+    exercise_ids: string[]
+    exercise_names: Record<string, { es?: string; en?: string }>
     participant_count: number
     expires_at: string
   } | null

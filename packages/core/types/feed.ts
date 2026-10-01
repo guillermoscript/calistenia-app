@@ -72,6 +72,8 @@ export interface FeedBattleMeta {
   battleId: string
   /** `config.workout_template_id`, la clave del preset de batalla. */
   templateId: string
+  /** `config.title` escrito o generado al crear (#882); vacío en batallas de preset antiguas. */
+  title?: string
   /** Puesto con empates ya resueltos (ver `battleDisplayRanks`, #453). */
   rank: number | null
   totalParticipants: number

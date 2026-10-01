@@ -151,6 +151,9 @@ var publicInviteLanding = http.route({ public: true, pathId: false, load: false,
 
   var config = state.jsonField(battle, 'config', {}) || {}
   var participants = state.findParticipants(app, battle.getString('id'))
+  var ordered = (Array.isArray(config.exercises) ? config.exercises.slice() : [])
+    .sort(function (a, b) { return (a.position || 0) - (b.position || 0) })
+    .map(function (exercise) { return exercise.exercise_id })
   respondWith({
     ok: true,
     reason: '',
@@ -160,6 +163,12 @@ var publicInviteLanding = http.route({ public: true, pathId: false, load: false,
       rounds: config.rounds || 0,
       exercise_count: Array.isArray(config.exercises) ? config.exercises.length : 0,
       workout_template_id: config.workout_template_id || '',
+      // Título, origen y nombres congelados al crear (#882): son del circuito, no de quien
+      // está dentro, así que siguen sin revelar identidades.
+      title: typeof config.title === 'string' ? config.title : '',
+      source: config.source || '',
+      exercise_ids: ordered,
+      exercise_names: config.exercise_names || {},
       participant_count: state.lobbyParticipants(participants).length,
       expires_at: invite.getString('expires_at'),
     },
