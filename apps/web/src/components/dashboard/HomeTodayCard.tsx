@@ -12,12 +12,13 @@
  * Cada acción emite su evento del contrato de #854 (`home_primary_cta`,
  * `home_change_day`, `home_secondary_tap`).
  */
-import { useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ChevronRight, Play, Footprints, StretchHorizontal } from 'lucide-react'
 import { Button } from '../ui/button'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet'
 import { cn } from '../../lib/utils'
 import { shareContent, shareWorkoutSession } from '../../lib/share'
 import DiscardSessionDialog from '../session/DiscardSessionDialog'
@@ -26,9 +27,13 @@ import { useAuthState } from '../../contexts/AuthContext'
 import { useActiveSession } from '../../contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '../../contexts/CardioSessionContext'
 import { useCircuitSession } from '../../contexts/CircuitSessionContext'
+import { useActiveBattle } from '../../hooks/useActiveBattle'
+import { useBattleProgramDay } from '../../hooks/useBattleProgramDay'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { shiftDay } from '@calistenia/core/lib/calendarWeek'
+import { WEEK_ORDER, isTrainableDay } from '@calistenia/core/lib/training-day'
+import { plannedSetCount } from '@calistenia/core/lib/session-funnel'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
 import {
@@ -43,8 +48,8 @@ import {
   trackHomeSecondaryTap,
   type HomeSecondaryTarget,
 } from '@calistenia/core/lib/home-analytics'
-import type { HomeDayRef, HomeState } from '@calistenia/core/lib/homeState'
-import type { CardioSession, Exercise, ProgramMeta, WeekDay, Workout } from '@calistenia/core/types'
+import { dayHasContent, homeDayType, type HomeDayRef, type HomeState } from '@calistenia/core/lib/homeState'
+import type { CardioSession, Exercise, SessionDone, ProgramMeta, WeekDay, Workout } from '@calistenia/core/types'
 import type { HomeToday } from './useHomeToday'
 
 // ── Piezas comunes ──────────────────────────────────────────────────────────
@@ -113,6 +118,20 @@ function Shell({ label, accent, children, testState }: { label: string; accent: 
     >
       {children}
     </section>
+  )
+}
+
+/** Rejilla de 3 celdas con filetes (diseño «Hecho hoy»): números Bebas, etiquetas mono. */
+function StatGrid({ items }: { items: { value: ReactNode; label: string }[] }) {
+  return (
+    <dl className="m-0 grid border-y border-border" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }} data-testid="home-done-stats">
+      {items.map((item, i) => (
+        <div key={item.label} className={cn('flex flex-col gap-0.5 py-3', i > 0 && 'border-l border-border pl-3.5')}>
+          <dd className="m-0 font-bebas text-[32px] leading-none">{item.value}</dd>
+          <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{item.label}</dt>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -211,15 +230,20 @@ interface HomeTodayCardProps {
 export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCardProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { activeProgram, programs, phases, weekDays, programProgress } = useWorkoutState()
+  const { activeProgram, programs, phases, weekDays, programProgress, progress } = useWorkoutState()
   const { selectProgram, getTotalSessions } = useWorkoutActions()
   const { user, userId } = useAuthState()
   const strength = useActiveSession()
   const cardio = useCardioSessionContext()
   const circuit = useCircuitSession()
   const [discardOpen, setDiscardOpen] = useState(false)
+  const battleDay = useBattleProgramDay()
+  const { data: activeBattle } = useActiveBattle()
+  // «Cambiar día» en el sitio (como el móvil): el bloque enseña otro día del programa.
+  const [chosenDay, setChosenDay] = useState<HomeDayRef | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
-  const { state, today, workoutFor } = home
+  const { state, today, workoutFor, phase } = home
   const locale = i18n.language
   const kind = state.kind
 
@@ -231,9 +255,40 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
     trackHomeSecondaryTap({ target, state: kind })
     fn()
   }
+  const dayRefs = useMemo((): HomeDayRef[] => {
+    if (!activeProgram) return []
+    const trainable = WEEK_ORDER
+      .map(id => weekDays.find(d => d.id === id))
+      .filter((d): d is WeekDay => isTrainableDay(d))
+    return trainable
+      .filter(d => dayHasContent(d, workoutFor(d.id)))
+      .map((d): HomeDayRef => ({
+        dayId: d.id,
+        date: today,
+        workoutKey: `p${phase}_${d.id}`,
+        dayType: homeDayType(d.type),
+        index: trainable.findIndex(x => x.id === d.id) + 1,
+        of: trainable.length,
+      }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `workoutFor` se recrea cada render; lo que cambia es el programa/fase
+  }, [activeProgram, weekDays, phase, today])
+  const canChangeDay = dayRefs.length > 1
+
+  // Una sesión en curso manda: al volver, el bloque enseña hoy.
+  const inProgress = state.kind === 'in_progress'
+  useEffect(() => {
+    if (inProgress) setChosenDay(null)
+  }, [inProgress])
+
   const changeDay = () => {
     trackHomeChangeDay()
-    navigate('/workout')
+    if (canChangeDay) setPickerOpen(true)
+    else navigate('/workout')
+  }
+  const chooseDay = (day: HomeDayRef) => {
+    setPickerOpen(false)
+    const isTodaysOwn = state.kind === 'training_day' && day.dayId === state.day.dayId
+    setChosenDay(isTodaysOwn ? null : day)
   }
 
   /** Arranca el día del programa: fuerza/yoga directo a la sesión, el resto por su pantalla. */
@@ -308,7 +363,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
     if (!next) return null
     const meta = dayMeta(next)
     const tomorrowRest = next.date > shiftDay(today, 1) && kind === 'done_today'
-    const open = secondary(target, () => navigate(`/workout?day=${next.dayId}`))
+    const open = secondary(target, () => setChosenDay(next))
     if (withButton) {
       return (
         <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
@@ -345,6 +400,103 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
     else toast.error(t('programs.switchError', { defaultValue: 'Error al cambiar de programa. Intenta de nuevo.' }))
   }
 
+  /** Bloque de un día del programa: el de hoy, o el elegido con «Cambiar día». */
+  const trainingBlock = (day: HomeDayRef, deload: boolean, chosen: boolean) => {
+    const workout = workoutFor(day.dayId)
+    const weekDay = weekDays.find(d => d.id === day.dayId)
+    const kickerKey = day.dayType === 'cardio'
+      ? 'home.kicker.todayCardio'
+      : day.dayType === 'circuit'
+        ? 'home.kicker.todayCircuit'
+        : day.dayType === 'yoga' ? 'home.kicker.todayYoga' : 'home.kicker.today'
+    const startLabel = day.dayType === 'cardio'
+      ? t('home.action.startCardio')
+      : day.dayType === 'circuit'
+        ? t('home.action.startCircuit')
+        : day.dayType === 'yoga' ? t('home.action.startYoga') : t('home.action.start')
+    const cardioCfg = day.dayType === 'cardio' ? weekDay?.cardioConfig : undefined
+    const circuitCfg = day.dayType === 'circuit' ? weekDay?.circuitConfig : undefined
+    const title = cardioCfg
+      ? focusOfDay(t, weekDays, day.dayId) || t(`cardio.${cardioCfg.activityType || 'running'}`)
+      : circuitCfg
+        ? localize(circuitCfg.name, locale)
+        : workout?.title || focusOfDay(t, weekDays, day.dayId)
+    const nextPhase = programProgress.currentPhase < phases.length ? programProgress.currentPhase + 1 : null
+    return (
+      <Shell label={t('home.a11y.today')} accent testState={chosen ? 'chosen_day' : 'training_day'}>
+        <div className="-my-2.5 flex items-center justify-between">
+          <Kicker>
+            {chosen
+              ? t('home.kicker.chosenDay', { day: t(`day.inSentence.${day.dayId}`) })
+              : t(kickerKey, { index: day.index, total: day.of })}
+          </Kicker>
+          {chosen ? (
+            <TextAction onClick={() => setChosenDay(null)} className="pl-3">{t('home.action.backToToday')}</TextAction>
+          ) : canChangeDay ? (
+            <TextAction onClick={changeDay} className="pl-3">{t('home.action.changeDay')}</TextAction>
+          ) : null}
+        </div>
+        {!chosen && inactive}
+        {deload && (
+          <span className="self-start rounded-md border border-lime/40 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-lime-text">
+            {t('home.deload.banner')}
+          </span>
+        )}
+        <div className="flex flex-col gap-1.5 lg:gap-2">
+          <Title>{title}</Title>
+          {cardioCfg
+            ? activeProgram && <Meta>{activeProgram.name}</Meta>
+            : circuitCfg
+              ? <Meta>{t('circuit.summary', { rounds: circuitCfg.rounds, exercises: circuitCfg.exercises.length })}</Meta>
+              : dayMeta(day) && <Meta>{dayMeta(day)}</Meta>}
+        </div>
+        {cardioCfg ? (
+          <>
+            <Stats items={[
+              { value: cardioCfg.targetDistanceKm ? `${cardioCfg.targetDistanceKm} km` : '—', label: t('home.cardio.target') },
+              { value: cardioCfg.targetDurationMin ? `${cardioCfg.targetDurationMin} min` : '—', label: t('home.cardio.duration') },
+              { value: 'Z2', label: t('home.cardio.easyPace') },
+            ]} />
+            {cardioCfg.targetDistanceKm ? (
+              <p className="m-0 text-sm text-muted-foreground">{t('home.cardio.gpsHint', { km: cardioCfg.targetDistanceKm })}</p>
+            ) : null}
+          </>
+        ) : circuitCfg ? (
+          <ul className="m-0 flex list-none flex-col p-0">
+            {circuitCfg.exercises.slice(0, 3).map((ex, i) => (
+              <li key={`${ex.exerciseId}-${i}`} className="flex h-8 items-center justify-between gap-3 border-t border-border text-sm last:border-b">
+                <span className="truncate">{localize(ex.name, locale)}</span>
+                <Meta className="shrink-0">{ex.workSecondsOverride ? `${ex.workSecondsOverride} s` : ex.reps ?? ''}</Meta>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ExerciseList workout={workout} />
+        )}
+        {deload && (
+          <p className="m-0 text-sm text-muted-foreground">
+            {nextPhase
+              ? t('home.deload.body', { phase: programProgress.currentPhase, next: nextPhase })
+              : t('home.deload.bodyLastPhase', { phase: programProgress.currentPhase })}
+          </p>
+        )}
+        <div className="flex flex-col gap-3.5">
+          {programLine}
+          <PrimaryAction onClick={primary(() => startDay(day))}>{startLabel}</PrimaryAction>
+          {/* Solo si el día se puede jugar como batalla (#882): fuerza con ejercicios. */}
+          {day.dayType === 'strength' && battleDay.convert(day.dayId, { phase })?.ok ? (
+            <TextAction
+              onClick={() => navigate(`/battle-create?origin=program_day&phase=${phase}&day=${day.dayId}`)}
+              className="self-center"
+            >
+              {t('battle.challengeFriend')}
+            </TextAction>
+          ) : null}
+        </div>
+      </Shell>
+    )
+  }
+
   if (state.modifiers.loading) {
     return (
       <div
@@ -353,6 +505,40 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
         className="h-[380px] rounded-xl border border-border bg-card motion-safe:animate-pulse lg:h-[460px]"
       />
     )
+  }
+
+  const picker = (
+    <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
+      <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-xl">
+        <SheetHeader>
+          <SheetTitle>{t('home.changeDay.title')}</SheetTitle>
+          <SheetDescription className="sr-only">{t('home.changeDay.title')}</SheetDescription>
+        </SheetHeader>
+        <ul className="m-0 mt-2 flex list-none flex-col p-0" data-testid="home-day-picker">
+          {dayRefs
+            .filter(d => d.dayId !== chosenDay?.dayId)
+            .map(d => {
+              const title = d.dayType === 'cardio' ? t('cardio.title') : workoutFor(d.dayId)?.title || focusOfDay(t, weekDays, d.dayId)
+              return (
+                <li key={d.dayId}>
+                  <button
+                    type="button"
+                    onClick={() => chooseDay(d)}
+                    className="flex min-h-11 w-full items-center justify-between gap-3 border-t border-border py-2 text-left text-sm hover:bg-muted/40"
+                  >
+                    <span className="font-medium">{t(`day.${d.dayId}`)}</span>
+                    <span className="truncate text-muted-foreground">{title}</span>
+                  </button>
+                </li>
+              )
+            })}
+        </ul>
+      </SheetContent>
+    </Sheet>
+  )
+
+  if (chosenDay && state.kind !== 'in_progress') {
+    return <>{trainingBlock(chosenDay, false, true)}{picker}</>
   }
 
   switch (state.kind) {
@@ -365,7 +551,11 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
       let target = '/session'
       let startedAt: number | null = null
       let setsDone = 0
-      if (activity.type === 'cardio') {
+      if (activity.type === 'battle') {
+        title = t('battle.kicker')
+        continueLabel = t('home.inProgress.continueBattle')
+        target = activeBattle ? `/battle/${activeBattle.id}` : '/community?tab=battles'
+      } else if (activity.type === 'cardio') {
         title = t(`cardio.${cardio.activityType || 'running'}`)
         detail = `${cardio.distance.toFixed(2)} km · ${Math.floor(cardio.duration / 60)} min`
         continueLabel = t('home.inProgress.continueCardio')
@@ -404,10 +594,12 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
             <Title>{title}</Title>
             {detail && <Meta>{detail}</Meta>}
           </div>
-          {activity.type !== 'cardio' && activity.type !== 'circuit' && <ExerciseList workout={strength.workout} compactOnly />}
+          {activity.type !== 'cardio' && activity.type !== 'circuit' && activity.type !== 'battle' && <ExerciseList workout={strength.workout} compactOnly />}
           <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-6">
             <PrimaryAction onClick={primary(() => navigate(target))}>{continueLabel}</PrimaryAction>
-            <TextAction onClick={() => setDiscardOpen(true)} className="self-center">{t('home.action.discard')}</TextAction>
+            {activity.type !== 'battle' && (
+              <TextAction onClick={() => setDiscardOpen(true)} className="self-center">{t('home.action.discard')}</TextAction>
+            )}
           </div>
           <DiscardSessionDialog open={discardOpen} onOpenChange={setDiscardOpen} setsCount={setsDone} onConfirm={discard} />
         </Shell>
@@ -546,6 +738,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
       const workout = day ? workoutFor(day.dayId) : null
       const isMonday = new Date(`${today}T12:00:00`).getDay() === 1
       return (
+        <>
         <Shell label={t('home.kicker.comeback')} accent testState="comeback">
           <Kicker>{isMonday ? t('home.kicker.comebackNewWeek') : t('home.kicker.comeback')}</Kicker>
           <div className="flex flex-col gap-1.5">
@@ -565,6 +758,8 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
           </PrimaryAction>
           <TextAction onClick={changeDay} className="self-center">{t('home.action.chooseOtherDay')}</TextAction>
         </Shell>
+        {picker}
+        </>
       )
     }
 
@@ -577,18 +772,26 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
         && utcToLocalDateStr(cardioLastSession.started_at.replace(' ', 'T')) === today
         ? cardioLastSession
         : null
+      const entry = progress?.[`done_${today}_${day.workoutKey}`] as SessionDone | undefined
+      const doneMinutes = entry?.durationSeconds ? Math.round(entry.durationSeconds / 60) : null
+      const strengthStats = variant === 'cardio' ? [] : [
+        ...(doneMinutes ? [{ value: doneMinutes, label: t('home.done.minutes') }] : []),
+        ...(workout?.exercises?.length ? [{ value: plannedSetCount(workout.exercises), label: t('home.done.sets') }] : []),
+      ]
       const summaryPath = todaysCardio?.id ? `/cardio/session/${todaysCardio.id}` : `/session/${today}/${day.workoutKey}`
       return (
         <Shell label={t('home.a11y.done')} accent={false} testState="done_today">
           <Kicker>{t('home.kicker.doneToday')}</Kicker>
           <Title>{title}</Title>
-          {todaysCardio && (
-            <Stats items={[
+          {todaysCardio ? (
+            <StatGrid items={[
               { value: todaysCardio.distance_km.toFixed(1), label: t('home.cardio.distance') },
               { value: Math.round(todaysCardio.duration_seconds / 60), label: t('home.cardio.minutes') },
               { value: todaysCardio.avg_pace ? formatPace(todaysCardio.avg_pace) : '—', label: t('home.cardio.pace') },
             ]} />
-          )}
+          ) : strengthStats.length > 0 ? (
+            <StatGrid items={strengthStats} />
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <SecondaryAction onClick={secondary('summary', () => navigate(summaryPath))}>{t('home.action.viewSummary')}</SecondaryAction>
             <SecondaryAction
@@ -672,85 +875,8 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
     }
 
     // ── Toca entrenar (Main / Cardio / Descarga) ────────────────────────────
-    case 'training_day': {
-      const { day, deload } = state
-      const workout = workoutFor(day.dayId)
-      const weekDay = weekDays.find(d => d.id === day.dayId)
-      const kickerKey = day.dayType === 'cardio'
-        ? 'home.kicker.todayCardio'
-        : day.dayType === 'circuit'
-          ? 'home.kicker.todayCircuit'
-          : day.dayType === 'yoga' ? 'home.kicker.todayYoga' : 'home.kicker.today'
-      const startLabel = day.dayType === 'cardio'
-        ? t('home.action.startCardio')
-        : day.dayType === 'circuit'
-          ? t('home.action.startCircuit')
-          : day.dayType === 'yoga' ? t('home.action.startYoga') : t('home.action.start')
-      const cardioCfg = day.dayType === 'cardio' ? weekDay?.cardioConfig : undefined
-      const circuitCfg = day.dayType === 'circuit' ? weekDay?.circuitConfig : undefined
-      const title = cardioCfg
-        ? focusOfDay(t, weekDays, day.dayId) || t(`cardio.${cardioCfg.activityType || 'running'}`)
-        : circuitCfg
-          ? localize(circuitCfg.name, locale)
-          : workout?.title || focusOfDay(t, weekDays, day.dayId)
-      const nextPhase = programProgress.currentPhase < phases.length ? programProgress.currentPhase + 1 : null
-      return (
-        <Shell label={t('home.a11y.today')} accent testState="training_day">
-          <div className="-my-2.5 flex items-center justify-between">
-            <Kicker>{t(kickerKey, { index: day.index, total: day.of })}</Kicker>
-            <TextAction onClick={changeDay} className="pl-3">{t('home.action.changeDay')}</TextAction>
-          </div>
-          {inactive}
-          {deload && (
-            <span className="self-start rounded-md border border-lime/40 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-lime-text">
-              {t('home.deload.banner')}
-            </span>
-          )}
-          <div className="flex flex-col gap-1.5 lg:gap-2">
-            <Title>{title}</Title>
-            {cardioCfg
-              ? activeProgram && <Meta>{activeProgram.name}</Meta>
-              : circuitCfg
-                ? <Meta>{t('circuit.summary', { rounds: circuitCfg.rounds, exercises: circuitCfg.exercises.length })}</Meta>
-                : dayMeta(day) && <Meta>{dayMeta(day)}</Meta>}
-          </div>
-          {cardioCfg ? (
-            <>
-              <Stats items={[
-                { value: cardioCfg.targetDistanceKm ? `${cardioCfg.targetDistanceKm} km` : '—', label: t('home.cardio.target') },
-                { value: cardioCfg.targetDurationMin ? `${cardioCfg.targetDurationMin} min` : '—', label: t('home.cardio.duration') },
-                { value: 'Z2', label: t('home.cardio.easyPace') },
-              ]} />
-              {cardioCfg.targetDistanceKm ? (
-                <p className="m-0 text-sm text-muted-foreground">{t('home.cardio.gpsHint', { km: cardioCfg.targetDistanceKm })}</p>
-              ) : null}
-            </>
-          ) : circuitCfg ? (
-            <ul className="m-0 flex list-none flex-col p-0">
-              {circuitCfg.exercises.slice(0, 3).map((ex, i) => (
-                <li key={`${ex.exerciseId}-${i}`} className="flex h-8 items-center justify-between gap-3 border-t border-border text-sm last:border-b">
-                  <span className="truncate">{localize(ex.name, locale)}</span>
-                  <Meta className="shrink-0">{ex.workSecondsOverride ? `${ex.workSecondsOverride} s` : ex.reps ?? ''}</Meta>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <ExerciseList workout={workout} />
-          )}
-          {deload && (
-            <p className="m-0 text-sm text-muted-foreground">
-              {nextPhase
-                ? t('home.deload.body', { phase: programProgress.currentPhase, next: nextPhase })
-                : t('home.deload.bodyLastPhase', { phase: programProgress.currentPhase })}
-            </p>
-          )}
-          <div className="flex flex-col gap-3.5">
-            {programLine}
-            <PrimaryAction onClick={primary(() => startDay(day))}>{startLabel}</PrimaryAction>
-          </div>
-        </Shell>
-      )
-    }
+    case 'training_day':
+      return <>{trainingBlock(state.day, state.deload, false)}{picker}</>
   }
 
 }

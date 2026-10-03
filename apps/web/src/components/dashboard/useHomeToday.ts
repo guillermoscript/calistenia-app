@@ -13,6 +13,7 @@ import { useAuthState } from '../../contexts/AuthContext'
 import { useActiveSession } from '../../contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '../../contexts/CardioSessionContext'
 import { useCircuitSession } from '../../contexts/CircuitSessionContext'
+import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
 import { getHomeState, dayHasContent, type HomeActiveActivity, type HomeState } from '@calistenia/core/lib/homeState'
@@ -96,7 +97,12 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
     return days
   }, [progress, lastCardioDay])
 
+  // Hoy es la pantalla que más tiempo está abierta: aquí sí se refresca sola (paridad con móvil).
+  const { data: activeBattle } = useActiveBattle({ poll: true })
+  const battleOngoing = isBattleOngoing(activeBattle)
+
   const activeActivity = useMemo((): HomeActiveActivity | null => {
+    if (battleOngoing) return { type: 'battle', startedDay: null, workoutKey: null }
     if (strength.isActive && strength.workout) {
       return {
         type: strength.source === 'free' ? 'free' : 'strength',
@@ -115,7 +121,7 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
       }
     }
     return null
-  }, [strength.isActive, strength.workout, strength.source, strength.startedAt, strength.workoutKey,
+  }, [battleOngoing, strength.isActive, strength.workout, strength.source, strength.startedAt, strength.workoutKey,
     cardio.state, cardio.programDayKey, circuit.isActive, circuit.circuit, circuit.startedAt, circuit.programDayKey])
 
   const programWeekDays = activeProgram ? weekDays : NO_WEEK_DAYS

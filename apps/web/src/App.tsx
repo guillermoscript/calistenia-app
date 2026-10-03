@@ -17,6 +17,9 @@ import { MarketingUnmask } from './components/MarketingUnmask'
 import DiscoverySurvey from './components/DiscoverySurvey'
 // Lazy loaded: secondary pages (split into separate chunks)
 const BattleInviteLandingPage = lazy(() => import('./pages/BattleInviteLandingPage'))
+const BattlePage = lazy(() => import('./pages/BattlePage'))
+const BattleCreatePage = lazy(() => import('./pages/BattleCreatePage'))
+const BattleHistoryPage = lazy(() => import('./pages/BattleHistoryPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const NutritionPage = lazy(() => import('./pages/NutritionPage'))
 const MealLoggerPage = lazy(() => import('./pages/MealLoggerPage'))
@@ -151,6 +154,9 @@ function getBreadcrumbKey(pathname: string): string | null {
   if (RE_PROGRAM_DETAIL.test(pathname)) return 'breadcrumb.programDetail'
   if (RE_EXERCISE_DETAIL.test(pathname)) return 'breadcrumb.exerciseDetail'
   if (RE_SESSION_DETAIL.test(pathname)) return 'breadcrumb.sessionDetail'
+  if (pathname === '/battle-create') return 'battle.newBattle'
+  if (pathname === '/battle-history') return 'battle.historyTitle'
+  if (pathname.startsWith('/battle/')) return 'battle.title'
   if (pathname === '/challenges/new') return 'breadcrumb.newChallenge'
   if (RE_CHALLENGE_DETAIL.test(pathname)) return 'breadcrumb.challengeDetail'
   if (RE_COMMUNITY_PROGRAM_DETAIL.test(pathname)) return 'breadcrumb.communityProgramDetail'
@@ -546,6 +552,9 @@ function AuthenticatedApp({
             <Route path="/s/:id" element={<PublicSessionDetailPage />} />
             <Route path="/cardio/session/:id" element={<CardioSessionDetailPage />} />
             <Route path="/community" element={<CommunityPage userId={userId!} />} />
+            <Route path="/battle/:id" element={<BattlePage userId={userId!} />} />
+            <Route path="/battle-create" element={<BattleCreatePage userId={userId!} />} />
+            <Route path="/battle-history" element={<BattleHistoryPage userId={userId!} />} />
             <Route path="/feed" element={<ActivityFeedPage userId={userId!} />} />
             <Route path="/community-programs" element={<CommunityProgramsPage userId={userId!} />} />
             <Route path="/community-programs/:id" element={<CommunityProgramDetailPage userId={userId!} />} />
