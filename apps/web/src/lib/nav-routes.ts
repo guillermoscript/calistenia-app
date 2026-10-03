@@ -64,7 +64,7 @@ const NAV_ROUTES: NavRoute[] = [
   { path: '/progress',  labelKey: 'nav.progress',  icon: ChartIcon,     section: 'main', tabOrder: 3, activeFor: ['/calendar', '/sleep', '/session/'] },
   {
     path: '/community', labelKey: 'nav.community', icon: FriendsIcon,   section: 'main', tabOrder: 4,
-    activeFor: ['/feed', '/challenges', '/leaderboard', '/friends', '/referrals', '/community-programs', '/races', '/add/', '/u/'],
+    activeFor: ['/feed', '/challenges', '/leaderboard', '/friends', '/referrals', '/community-programs', '/races', '/battle', '/battle-create', '/battle-history', '/add/', '/u/'],
   },
 
   // Atajos del sidebar de escritorio.

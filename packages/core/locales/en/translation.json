@@ -5033,6 +5033,7 @@
   "battle.rematchError": "Couldn't create the rematch. Try again.",
   "battle.shareResult": "Share result",
   "battle.sharePreparing": "Generating…",
+  "battle.linkCopied": "Link copied: paste it into a chat to invite someone.",
 
   "update.requiredTitle": "Update the app",
   "update.requiredBody": "This version is no longer supported. Update to keep training.",

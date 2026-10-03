@@ -5,13 +5,12 @@
  *
  * Este componente SOLO se monta si `paraTiEnabled` (3.er entreno de la cuenta
  * y ninguna actividad en curso): así las consultas de retos, seguidos, amigos
- * y nutrición no se lanzan para quien aún no las va a ver. Web no tiene
- * batallas, así que `hasActiveBattle` va siempre a `false`.
+ * y nutrición no se lanzan para quien aún no las va a ver.
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Apple, Camera, ChevronRight, Trophy, Users, Compass } from 'lucide-react'
+import { Apple, Camera, ChevronRight, Swords, Trophy, Users, Compass } from 'lucide-react'
 import { useChallenges } from '@calistenia/core/hooks/useChallenges'
 import { useFeaturedChallenge } from '@calistenia/core/hooks/useFeaturedChallenge'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
@@ -25,6 +24,7 @@ import { daysAgoStr, diffDays, todayStr } from '@calistenia/core/lib/dateUtils'
 import type { HomeStateKind } from '@calistenia/core/lib/homeState'
 import { useWorkoutState } from '../../contexts/WorkoutContext'
 import { useFriendsTrainedToday } from '../../hooks/useFriendsTrainedToday'
+import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
 
 const DESKTOP_QUERY = '(min-width: 1024px)'
 
@@ -68,6 +68,7 @@ export default function HomeParaTi({ userId, homeKind, accountSessions }: HomePa
   const { programs: communityPrograms } = useCommunityPrograms(userId)
   const { ids: friendsToday } = useFriendsTrainedToday(userId, following.map(f => f.id))
   const { goals, getDailyTotals } = useNutrition(userId)
+  const { data: battle } = useActiveBattle()
 
   const loggedFoodLast7Days = Array.from({ length: 7 }, (_, i) => daysAgoStr(i))
     .some(day => getDailyTotals(day).calories > 0)
@@ -76,7 +77,7 @@ export default function HomeParaTi({ userId, homeKind, accountSessions }: HomePa
   const kinds = getParaTi({
     homeKind,
     accountSessions,
-    hasActiveBattle: false,
+    hasActiveBattle: isBattleOngoing(battle),
     joinedChallenges: joined.length,
     friendsTrainedToday: friendsToday.length,
     loggedFoodLast7Days,
@@ -88,6 +89,14 @@ export default function HomeParaTi({ userId, homeKind, accountSessions }: HomePa
 
   const rows = kinds.map((kind): Row | null => {
     switch (kind) {
+      case 'battle':
+        return battle ? {
+          kind,
+          icon: <Swords className="size-4" />,
+          title: battle.status === 'live' ? t('battle.barLive') : t('home.paraTi.battleYourTurn'),
+          hint: t('home.paraTi.viewActivity'),
+          to: `/battle/${battle.id}`,
+        } : null
       case 'challenge_progress': {
         const c = joined[0]
         const left = Math.max(0, diffDays(c.ends_at.slice(0, 10), today))

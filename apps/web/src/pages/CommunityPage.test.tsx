@@ -54,6 +54,9 @@ vi.mock('@calistenia/core/lib/analytics', async (orig) => ({
 
 vi.mock('../components/FeaturedChallengeCard', () => ({ default: () => <div data-testid="featured-challenge" /> }))
 vi.mock('../components/friends/ActivityFeedWidget', () => ({ default: () => <div data-testid="friends-feed" /> }))
+vi.mock('../components/battle/CommunityBattles', () => ({
+  default: ({ userId }: { userId: string }) => <div data-testid="battles-tab" data-user={userId} />,
+}))
 vi.mock('./ChallengesPage', () => ({
   default: ({ embedded }: { embedded?: boolean }) => <div data-testid="challenges-page" data-embedded={String(!!embedded)} />,
 }))
@@ -117,6 +120,18 @@ describe('CommunityPage', () => {
     renderAt('/community?tab=challenges')
     expect(selectedTab()).toBe('community.tab.challenges')
     expect(screen.getByTestId('challenges-page').dataset.embedded).toBe('true')
+  })
+
+  it('opens the Batallas tab (4th, between Retos and Ranking) from ?tab=battles', async () => {
+    const user = userEvent.setup()
+    renderAt('/community?tab=battles')
+    expect(selectedTab()).toBe('nav.battles')
+    expect(screen.getByTestId('battles-tab').dataset.user).toBe('me')
+    expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+      'community.tab.activity', 'community.tab.challenges', 'nav.battles', 'community.tab.ranking',
+    ])
+    await user.click(screen.getByRole('tab', { name: 'community.tab.activity' }))
+    expect(screen.queryByTestId('battles-tab')).toBeNull()
   })
 
   it('writes the tab into the URL and the back button returns to the previous one', async () => {

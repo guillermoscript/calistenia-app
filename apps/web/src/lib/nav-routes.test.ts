@@ -77,6 +77,8 @@ describe('isNavItemActive', () => {
     expect(activeTab('/session/2026-09-29/p1_lun')).toEqual(['/progress'])
     expect(activeTab('/challenges/xyz')).toEqual(['/community'])
     expect(activeTab('/feed')).toEqual(['/community'])
+    expect(activeTab('/battle/abc')).toEqual(['/community'])
+    expect(activeTab('/battle-create')).toEqual(['/community'])
     expect(activeTab('/u/abc')).toEqual(['/community'])
     expect(activeTab('/pantry/recipes')).toEqual(['/nutrition'])
   })

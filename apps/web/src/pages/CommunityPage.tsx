@@ -11,14 +11,16 @@ import FeaturedChallengeCard from '../components/FeaturedChallengeCard'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ChallengesPage from './ChallengesPage'
+import CommunityBattles from '../components/battle/CommunityBattles'
 import LeaderboardPage from './LeaderboardPage'
 
-const TABS = ['activity', 'challenges', 'ranking'] as const
+const TABS = ['activity', 'challenges', 'battles', 'ranking'] as const
 type CommunityTab = (typeof TABS)[number]
 
 const TAB_LABEL: Record<CommunityTab, string> = {
   activity: 'community.tab.activity',
   challenges: 'community.tab.challenges',
+  battles: 'nav.battles',
   ranking: 'community.tab.ranking',
 }
 
@@ -32,7 +34,7 @@ interface CommunityPageProps {
 }
 
 /**
- * Tablero Comunidad (#857): junta lo social que estaba repartido en rutas
+ * Tablero Comunidad (#857, Batallas en paridad con móvil): junta lo social que estaba repartido en rutas
  * sueltas. No duplica pantallas: Retos y Ranking renderizan `ChallengesPage` y
  * `LeaderboardPage` en modo `embedded`, y sus rutas propias siguen vivas porque
  * las usan las push y los enlaces compartidos.
@@ -96,7 +98,7 @@ export default function CommunityPage({ userId }: CommunityPageProps) {
         <div
           role="tablist"
           aria-label={t('community.tabsAriaLabel')}
-          className="grid grid-cols-3 gap-1 rounded-lg border border-border p-[3px]"
+          className="grid grid-cols-4 gap-1 rounded-lg border border-border p-[3px]"
         >
           {TABS.map(id => (
             <button
@@ -111,7 +113,7 @@ export default function CommunityPage({ userId }: CommunityPageProps) {
               onClick={() => selectTab(id)}
               onKeyDown={onTabKeyDown}
               className={cn(
-                'h-11 rounded-md text-[10px] font-medium tracking-widest uppercase transition-colors',
+                'h-11 rounded-md text-[10px] font-medium tracking-widest uppercase transition-colors px-1 truncate',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 tab === id ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
               )}
@@ -125,6 +127,7 @@ export default function CommunityPage({ userId }: CommunityPageProps) {
       <div role="tabpanel" id={`community-panel-${tab}`} aria-labelledby={`community-tab-${tab}`}>
         {tab === 'activity' && <ActivityTab userId={userId} onSeeRanking={() => selectTab('ranking')} />}
         {tab === 'challenges' && <ChallengesPage userId={userId} embedded />}
+        {tab === 'battles' && <CommunityBattles userId={userId} />}
         {tab === 'ranking' && <LeaderboardPage userId={userId} embedded />}
       </div>
     </div>

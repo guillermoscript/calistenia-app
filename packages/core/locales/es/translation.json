@@ -5033,6 +5033,7 @@
   "battle.rematchError": "No se pudo crear la revancha. Inténtalo otra vez.",
   "battle.shareResult": "Compartir resultado",
   "battle.sharePreparing": "Generando…",
+  "battle.linkCopied": "Enlace copiado: pégalo en un chat para invitar.",
 
   "update.requiredTitle": "Actualiza la app",
   "update.requiredBody": "Esta versión ya no es compatible. Actualiza para seguir entrenando.",

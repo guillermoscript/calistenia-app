@@ -1,5 +1,6 @@
 import type React from 'react'
 import { Link } from 'react-router-dom'
+import { Swords } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '@calistenia/core/data/workouts'
 import { DAY_BY_INDEX } from '@calistenia/core/lib/training-day'
@@ -7,6 +8,8 @@ import { localDay } from '@calistenia/core/lib/dateUtils'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import { useWorkoutState, useWorkoutActions } from '../../contexts/WorkoutContext'
 import { useTrainingWeek } from '../../hooks/useTrainingWeek'
+import { useBattleProgramDay } from '../../hooks/useBattleProgramDay'
+import { battleChallengeHref } from '../../lib/battle-create'
 import { useProgramSwitcher } from '../program/ProgramSwitcher'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
@@ -51,6 +54,7 @@ export default function TrainHub() {
   const { isWorkoutDone, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { streak } = useTrainingWeek()
   const { openSwitcher, switcherModal } = useProgramSwitcher()
+  const battleDay = useBattleProgramDay()
 
   const PHASES = phases || FALLBACK_PHASES
   const WEEK_DAYS = weekDays || FALLBACK_WEEK_DAYS
@@ -124,13 +128,15 @@ export default function TrainHub() {
             const workout = getWorkout(phaseId, day.id)
             const minutes = workout ? calculateWorkoutDuration(workout.exercises) : 0
             const done = isWorkoutDone(`p${phaseId}_${day.id}`)
+            // «Retar» (#882): solo en días de fuerza que se pueden jugar como batalla.
+            const challengeable = !!battleDay.convert(day.id, { phase: phaseId })?.ok
             return (
-              <li key={day.id}>
+              <li key={day.id} className="flex items-center">
                 <Link
                   to={`/workout?day=${day.id}`}
                   aria-current={isToday ? 'date' : undefined}
                   className={cn(
-                    'flex items-center gap-3 min-h-12 py-2 border-b border-border text-sm transition-colors hover:bg-muted/40 -mx-2 px-2 rounded-md',
+                    'flex flex-1 min-w-0 items-center gap-3 min-h-12 py-2 border-b border-border text-sm transition-colors hover:bg-muted/40 -mx-2 px-2 rounded-md',
                     isToday ? 'font-medium text-foreground' : done ? 'text-muted-foreground' : 'text-foreground',
                   )}
                 >
@@ -147,6 +153,16 @@ export default function TrainHub() {
                   )}
                   {done ? <span className="sr-only">{t('dashboard.completed')}</span> : null}
                 </Link>
+                {challengeable ? (
+                  <Link
+                    to={battleChallengeHref(phaseId, day.id)}
+                    aria-label={`${t('battle.challengeFriend')}: ${dayName}`}
+                    title={t('battle.challengeFriend')}
+                    className="ml-1 size-11 shrink-0 flex items-center justify-center rounded-full border-b border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                  >
+                    <Swords className="size-4" aria-hidden />
+                  </Link>
+                ) : null}
               </li>
             )
           })}

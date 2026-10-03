@@ -50,8 +50,10 @@ const h = vi.hoisted(() => ({
   })),
   useFriendsTrainedToday: vi.fn(() => ({ ids: [] as string[], loading: false })),
   matchDesktop: false,
+  battle: null as null | { id: string; status: string },
   workouts: {} as Record<string, Workout | null>,
   strengthActive: null as null | { title: string; exercises: Exercise[] },
+  progress: {} as Record<string, unknown>,
 }))
 
 vi.mock('../components/dashboard/useHomeToday', () => ({ useHomeToday: () => h.home }))
@@ -72,12 +74,14 @@ vi.mock('../contexts/WorkoutContext', () => ({
     settings: { weeklyGoal: 4 },
     activeProgram: h.home.state.kind === 'no_program' ? null : { id: 'p1', name: 'Programa Uno', duration_weeks: 8 },
     programs: h.programs,
+    progress: h.progress,
     phases: [{ id: 1, name: 'Base', weeks: '1-4' }, { id: 2, name: 'Fuerza', weeks: '5-8' }],
     weekDays: WEEK_DAYS,
     programProgress: { currentPhase: 1, totalWeeks: 8, currentWeek: 2, percent: 25 },
   }),
   useWorkoutActions: () => ({
     getTotalSessions: () => 12,
+    getWorkout: (_phase: number, dayId: string) => h.workouts[dayId] ?? null,
     selectProgram: h.selectProgram,
   }),
 }))
@@ -111,6 +115,10 @@ vi.mock('@calistenia/core/hooks/useFeaturedChallenge', () => ({ useFeaturedChall
 vi.mock('@calistenia/core/hooks/useFollows', () => ({ useFollows: h.useFollows }))
 vi.mock('@calistenia/core/hooks/useCommunityPrograms', () => ({ useCommunityPrograms: h.useCommunityPrograms }))
 vi.mock('@calistenia/core/hooks/useNutrition', () => ({ useNutrition: h.useNutrition }))
+vi.mock('../hooks/useActiveBattle', () => ({
+  useActiveBattle: () => ({ data: h.battle }),
+  isBattleOngoing: (b: { status?: string } | null | undefined) => !!b && ['lobby', 'ready', 'live'].includes(b.status ?? ''),
+}))
 vi.mock('../hooks/useFriendsTrainedToday', () => ({ useFriendsTrainedToday: h.useFriendsTrainedToday }))
 
 vi.mock('@calistenia/core/lib/home-analytics', async importOriginal => {
@@ -231,6 +239,8 @@ beforeEach(() => {
   h.programs = []
   h.workouts = { mie: WORKOUT, lun: WORKOUT, vie: WORKOUT }
   h.strengthActive = null
+  h.battle = null
+  h.progress = {}
   h.useChallenges.mockReturnValue({ active: [] })
   h.useFeaturedChallenge.mockReturnValue({ card: null })
   h.useFollows.mockReturnValue({ following: [] })
@@ -251,6 +261,13 @@ describe('DashboardPage · un bloque por estado', () => {
     expect(screen.getAllByText('Dominadas').length).toBeGreaterThan(0)
     expect(screen.getByText('home.action.changeDay')).toBeInTheDocument()
     expect(screen.queryByText('home.deload.banner')).not.toBeInTheDocument()
+  })
+
+  it('training_day de fuerza: «Retar a un amigo» abre la batalla con el día; en cardio no sale', async () => {
+    const user = userEvent.setup()
+    mount()
+    await user.click(screen.getByText('battle.challengeFriend'))
+    expect(h.navigate).toHaveBeenCalledWith('/battle-create?origin=program_day&phase=1&day=mie')
   })
 
   it('training_day de cardio: objetivo, «Empezar cardio» y sin lista de ejercicios', () => {
@@ -382,6 +399,18 @@ describe('DashboardPage · un bloque por estado', () => {
     expect(h.endSession).toHaveBeenCalledTimes(1)
   })
 
+  it('in_progress de batalla: «Continuar batalla» lleva a la sala y no se descarta desde aquí', async () => {
+    h.battle = { id: 'b1', status: 'live' }
+    h.home = makeHome({ kind: 'in_progress', activity: { type: 'battle' }, fromAnotherDay: false })
+    const user = userEvent.setup()
+    mount()
+    expect(state('in_progress')).toBe(true)
+    expect(screen.getByTestId('home-primary')).toHaveTextContent('home.inProgress.continueBattle')
+    expect(screen.queryByText('home.action.discard')).not.toBeInTheDocument()
+    await user.click(screen.getByTestId('home-primary'))
+    expect(h.navigate).toHaveBeenCalledWith('/battle/b1')
+  })
+
   it('loading: esqueleto y ni bloque «Hoy» ni «Para ti»', () => {
     h.home = makeHome({ kind: 'training_day', day: dayRef('mie'), deload: false }, { mods: { loading: true } })
     mount()
@@ -449,21 +478,48 @@ describe('DashboardPage · botón principal', () => {
     expect(url).toContain('dayKey=p1_sab')
   })
 
-  it('«Cambiar día» emite home_change_day y va a /workout', async () => {
+  it('«Cambiar día» emite home_change_day y abre el selector en el sitio', async () => {
     const user = userEvent.setup()
     mount()
     await user.click(screen.getByText('home.action.changeDay'))
     expect(analytics.trackHomeChangeDay).toHaveBeenCalledTimes(1)
-    expect(h.navigate).toHaveBeenCalledWith('/workout')
+    expect(h.navigate).not.toHaveBeenCalled()
+    expect(screen.getByTestId('home-day-picker')).toBeInTheDocument()
   })
 
-  it('una acción secundaria emite home_secondary_tap con destino y estado', async () => {
+  it('elegir un día enseña ese día con «Elegido» y «Volver a hoy» lo deshace', async () => {
+    const user = userEvent.setup()
+    mount()
+    await user.click(screen.getByText('home.action.changeDay'))
+    const picker = screen.getByTestId('home-day-picker')
+    expect(within(picker).queryByText('day.mie')).toBeInTheDocument() // hoy sigue elegible
+    await user.click(within(picker).getByText('day.vie'))
+    expect(h.navigate).not.toHaveBeenCalled()
+    expect(screen.getByTestId('home-today').getAttribute('data-state')).toBe('chosen_day')
+    expect(screen.getByText('home.kicker.chosenDay:day.inSentence.vie')).toBeInTheDocument()
+    await user.click(screen.getByText('home.action.backToToday'))
+    expect(state('training_day')).toBe(true)
+    expect(screen.queryByText('home.action.backToToday')).not.toBeInTheDocument()
+  })
+
+  it('una acción secundaria emite home_secondary_tap y enseña el día en el sitio', async () => {
     h.home = makeHome({ kind: 'rest_day', comingSoon: false, next: dayRef('vie', 'strength', '2026-10-02') })
     const user = userEvent.setup()
     mount()
     await user.click(screen.getByText('home.action.viewWorkout'))
     expect(analytics.trackHomeSecondaryTap).toHaveBeenCalledWith({ target: 'next_day', state: 'rest_day' })
-    expect(h.navigate).toHaveBeenCalledWith('/workout?day=vie')
+    expect(state('chosen_day')).toBe(true)
+  })
+
+  it('done_today de fuerza: minutos de la sesión y series planificadas', () => {
+    h.progress = { [`done_${TODAY}_p1_mie`]: { durationSeconds: 48 * 60 } }
+    h.home = makeHome({ kind: 'done_today', day: dayRef('mie'), variant: 'default', next: null })
+    mount()
+    const stats = screen.getByTestId('home-done-stats')
+    expect(within(stats).getByText('48')).toBeInTheDocument()
+    expect(within(stats).getByText('home.done.minutes')).toBeInTheDocument()
+    expect(within(stats).getByText('9')).toBeInTheDocument() // 3 ejercicios × 3 series
+    expect(within(stats).getByText('home.done.sets')).toBeInTheDocument()
   })
 })
 
@@ -552,6 +608,18 @@ describe('DashboardPage · Para ti', () => {
     expect(h.useFriendsTrainedToday).toHaveBeenCalledWith('u1', ['f1'])
     const rows = within(screen.getByTestId('home-para-ti')).getAllByRole('button')
     expect(rows).toHaveLength(2)
+  })
+
+  it('con una batalla en marcha, su fila va la primera y lleva a la sala', async () => {
+    seedParaTiData()
+    h.battle = { id: 'b1', status: 'lobby' }
+    h.home = makeHome({ kind: 'training_day', day: dayRef('mie'), deload: false }, { sessions: 3 })
+    const user = userEvent.setup()
+    mount()
+    const rows = within(screen.getByTestId('home-para-ti')).getAllByRole('button')
+    expect(rows[0]).toHaveTextContent('home.paraTi.battleYourTurn')
+    await user.click(rows[0])
+    expect(h.navigate).toHaveBeenCalledWith('/battle/b1')
   })
 
   it('en escritorio pinta hasta 3 filas', () => {
