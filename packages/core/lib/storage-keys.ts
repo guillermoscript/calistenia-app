@@ -25,6 +25,7 @@ export const FREE_SESSION_QUEUE_KEY = 'calistenia_free_session_queue'
 export const LUMBAR_CHECKS_KEY = 'calistenia_lumbar_checks'
 
 export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
+  'calistenia_fasting_cache',
   // useProgress
   'calistenia_progress',
   'calistenia_settings',

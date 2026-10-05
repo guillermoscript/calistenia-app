@@ -1,8 +1,8 @@
 /**
- * NutritionPage (mobile) — pantalla de nutrición con dos sub-vistas:
+ * NutritionPage (mobile) — pantalla de nutrición con tres sub-vistas:
  * HOY (seguimiento: date nav, ring + macros, agua, comidas, coach/tendencia)
  * y PLANIFICAR (hub de planificación: despensa, plan IA del día, plan desde
- * despensa, plan semanal). FAB logger con cámara compartido entre ambas.
+ * despensa, plan semanal), y AYUNOS (temporizador, metas e historial).
  */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
@@ -31,6 +31,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import { useFasting } from '@calistenia/core/hooks/useFasting'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
@@ -55,6 +56,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useMobileMealLoggerActions } from '@/lib/use-mobile-meal-logger-actions'
 import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
 import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
+import FastingPanel, { FastingOverview } from '@/components/nutrition/FastingPanel'
 import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
 import MealLoggerSheet from '@/components/nutrition/MealLoggerSheet'
 import { OneShotHint } from '@/components/ui/one-shot-hint'
@@ -80,7 +82,7 @@ export default function NutritionTab() {
   const { action, date: dateParam } = useLocalSearchParams<{ action?: string; date?: string }>()
 
   const [selectedDate, setSelectedDate] = useState(dateParam || todayStr())
-  const [activeTab, setActiveTab] = useState<'today' | 'plan'>('today')
+  const [activeTab, setActiveTab] = useState<'today' | 'plan' | 'fasting'>('today')
   const [showCoach, setShowCoach] = useState(false)
   const [loggerVisible, setLoggerVisible] = useState(false)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
@@ -94,6 +96,7 @@ export default function NutritionTab() {
 
   // ─── Core hooks ─────────────────────────────────────────────────────────────
   const nutrition = useNutrition(userId)
+  const fasting = useFasting(userId)
   const pantryDepletion = usePantryDepletion(userId, {
     captureException: (e, op) => Sentry.captureException(e, { tags: { feature: 'pantry', op } }),
     onConfirmSuccess: () => haptics.success(),
@@ -179,7 +182,10 @@ export default function NutritionTab() {
 
   // ─── Deep-link quick-add (calistenia://nutrition?action=camera|text) ─────────
   useEffect(() => {
-    if (action === 'camera' || action === 'text') {
+    if (action === 'fasting') {
+      setActiveTab('fasting')
+      router.setParams({ action: undefined })
+    } else if (action === 'camera' || action === 'text') {
       setLoggerVisible(true)
       router.setParams({ action: undefined })
     }
@@ -411,6 +417,46 @@ export default function NutritionTab() {
     return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
   }
 
+  const nutritionHeader = (
+    <View className="pt-4 pb-2 flex-row items-start justify-between">
+      <View className="flex-1">
+        <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">{t('nutrition.subtitle')}</Text>
+        <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+      </View>
+      <View className="mt-1"><ProfileAvatarButton /></View>
+    </View>
+  )
+  const nutritionTabs = (
+    <View className="flex-row mb-5 border-b border-border">
+      {(['today', 'plan', 'fasting'] as const).map(tab => (
+        <Pressable
+          key={tab}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === tab }}
+          onPress={() => { haptics.selection(); setActiveTab(tab) }}
+          className={cn('flex-1 min-h-11 items-center justify-center pb-2.5 -mb-px border-b-2', activeTab === tab ? 'border-lime-400' : 'border-transparent')}
+        >
+          <Text className={cn('font-bebas text-base tracking-[2px]', activeTab === tab ? 'text-lime-400' : 'text-muted-foreground')}>
+            {tab === 'fasting' ? t('fasting.title') : t(`nutrition.tabs.${tab}`)}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  )
+
+  // Ayunos funciona sin configurar previamente las metas de nutrición.
+  if (activeTab === 'fasting') {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <ScrollView contentContainerClassName="px-4 pb-10" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {nutritionHeader}
+          {nutritionTabs}
+          <FastingPanel fasting={fasting} />
+        </ScrollView>
+      </SafeAreaView>
+    )
+  }
+
   // ─── Loading skeleton ────────────────────────────────────────────────────────
   // Solo se espera al perfil cuando toca estrenar el wizard: congela sus props
   // en `useState`, así que montarlo antes lo deja vacío para siempre. En modo
@@ -418,9 +464,9 @@ export default function NutritionTab() {
   if (!isReady || (!goals && !profileLoaded)) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-        <View className="px-4 pt-4 pb-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">{t('nutrition.subtitle')}</Text>
-          <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+        <View className="px-4">
+          {nutritionHeader}
+          {nutritionTabs}
         </View>
         <View className="px-4 gap-3 mt-4">
           {[1, 2, 3].map(i => (
@@ -435,7 +481,10 @@ export default function NutritionTab() {
   if (!goals || showGoalSetup) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-        <ScrollView contentContainerClassName="px-4 py-6" keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerClassName="px-4 pb-10" keyboardShouldPersistTaps="handled">
+          {nutritionHeader}
+          {nutritionTabs}
+          <FastingOverview fasting={fasting} onOpen={() => setActiveTab('fasting')} />
           <NutritionGoalSetup
             onSave={handleSaveGoals}
             onCancel={goals ? () => { setShowGoalSetup(false); setPendingGoal(null) } : undefined}
@@ -461,16 +510,7 @@ export default function NutritionTab() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View className="pt-4 pb-2 flex-row items-start justify-between">
-          <View className="flex-1">
-            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">
-              {t('nutrition.subtitle')}
-            </Text>
-            <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
-          </View>
-          <View className="mt-1"><ProfileAvatarButton /></View>
-        </View>
+        {nutritionHeader}
 
         {/* Phase change banner (US-14) */}
         {phaseChangeBanner && (
@@ -523,26 +563,8 @@ export default function NutritionTab() {
           </View>
         )}
 
-        {/* Sub-vistas: HOY (seguimiento) / PLANIFICAR (hub de planes) */}
-        <View className="flex-row mb-5 border-b border-border">
-          {(['today', 'plan'] as const).map(tab => (
-            <Pressable
-              key={tab}
-              onPress={() => { haptics.selection(); setActiveTab(tab) }}
-              className={cn(
-                'flex-1 items-center pb-2.5 -mb-px border-b-2',
-                activeTab === tab ? 'border-lime-400' : 'border-transparent',
-              )}
-            >
-              <Text className={cn(
-                'font-bebas text-base tracking-[2px]',
-                activeTab === tab ? 'text-lime-400' : 'text-muted-foreground',
-              )}>
-                {tab === 'today' ? t('nutrition.tabs.today') : t('nutrition.tabs.plan')}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {nutritionTabs}
+        <FastingOverview fasting={fasting} onOpen={() => setActiveTab('fasting')} />
 
         {/* Hint one-shot: primera comida con foto (#235) */}
         {activeTab === 'today' && (

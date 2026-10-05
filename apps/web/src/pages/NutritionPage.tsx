@@ -14,6 +14,8 @@ import MealSuggestions from '../components/nutrition/MealSuggestions'
 import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
 import DailySummaryCard from '../components/nutrition/DailySummaryCard'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import { useFasting } from '@calistenia/core/hooks/useFasting'
+import FastingPanel, { FastingActiveCard } from '../components/nutrition/FastingPanel'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
@@ -90,10 +92,11 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') || todayStr())
   // Sub-vistas HOY (seguimiento) / PLANIFICAR (hub de planes); 'weekly' es el
   // valor legado de los deep-links previos al rediseño.
-  const [activeTab, setActiveTab] = useState<'today' | 'plan'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'plan' | 'fasting'>(() => {
     const tab = searchParams.get('tab')
-    return tab === 'plan' || tab === 'weekly' ? 'plan' : 'today'
+    return tab === 'fasting' ? 'fasting' : tab === 'plan' || tab === 'weekly' ? 'plan' : 'today'
   })
+  const fasting = useFasting(userId)
 
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
 
@@ -148,10 +151,15 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   // Sync URL with selected date and fetch entries on-demand
   useEffect(() => {
     fetchEntriesForDate(selectedDate)
+  }, [selectedDate, fetchEntriesForDate])
+
+  useEffect(() => {
     // Keep URL in sync (replace to avoid polluting history on every date change)
-    const isToday = selectedDate === todayStr()
-    setSearchParams(isToday ? {} : { date: selectedDate }, { replace: true })
-  }, [selectedDate, fetchEntriesForDate, setSearchParams])
+    const params: Record<string, string> = {}
+    if (selectedDate !== todayStr()) params.date = selectedDate
+    if (activeTab !== 'today') params.tab = activeTab
+    setSearchParams(params, { replace: true })
+  }, [selectedDate, activeTab, setSearchParams])
 
   // Preload last 7 days for weekly chart (single batch request)
   useEffect(() => {
@@ -294,11 +302,13 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       )}
 
       {/* Sub-vistas: HOY (seguimiento) / PLANIFICAR (hub de planes) — ocultas mientras el wizard de metas está abierto (edición) */}
-      {isReady && goals && !showGoalSetup && (
-        <div className="flex border-b border-border mb-6">
-          {(['today', 'plan'] as const).map(tab => (
+      {!showGoalSetup && (
+        <div className="flex border-b border-border mb-6" role="tablist" aria-label={t('nutrition.title')}>
+          {(['today', 'plan', 'fasting'] as const).map(tab => (
             <button
               key={tab}
+              role="tab"
+              aria-selected={activeTab === tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
                 'flex-1 pb-2.5 -mb-px border-b-2 text-center font-bebas text-base tracking-[2px] transition-colors',
@@ -307,14 +317,14 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
-              {tab === 'today' ? t('nutrition.tabs.today') : t('nutrition.tabs.plan')}
+              {t(`nutrition.tabs.${tab}`)}
             </button>
           ))}
         </div>
       )}
 
       {/* Date picker — solo en HOY (PLANIFICAR siempre trabaja sobre el día en curso); oculto en edición de metas */}
-      {(!isReady || !goals || (activeTab === 'today' && !showGoalSetup)) && (
+      {activeTab === 'today' && !showGoalSetup && (
         <div data-testid="nutrition-date" className="flex items-center gap-3 mb-6">
           <button
             onClick={() => setSelectedDate(addDays(selectedDate, -1))}
@@ -347,9 +357,13 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         </div>
       )}
 
-      {/* Solo se espera al perfil cuando toca estrenar el wizard: en modo
-          edición el pre-relleno sale de `goals`, que ya está cargado. */}
-      {(!isReady || (!goals && !profileLoaded)) ? (
+      {activeTab !== 'fasting' && !showGoalSetup && <FastingActiveCard session={fasting.activeSession} onOpen={() => setActiveTab('fasting')} />}
+
+      {/* Ayunos guarda sus propias metas: puede usarse antes de configurar macros. */}
+      {activeTab === 'fasting' && !showGoalSetup ? <FastingPanel fasting={fasting} /> :
+      /* Solo se espera al perfil cuando toca estrenar el wizard: en modo
+          edición el pre-relleno sale de `goals`, que ya está cargado. */
+      (!isReady || (!goals && !profileLoaded)) ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
