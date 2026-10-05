@@ -78,7 +78,7 @@ function inTransaction(e, callback) {
   }
 }
 
-function updateRequest(e) {
+function updateRequest(e, next) {
   assertOwnerUnchanged(e.record)
   validateRequestDates(e)
   var body = e.requestInfo().body
@@ -101,11 +101,11 @@ function updateRequest(e) {
     // Keep unspecified fields from latest; neither the submitted revision nor
     // timestamp metadata is writable. The model hook increments the revision.
     e.record = latest
-    e.next()
+    next()
   })
 }
 
-function saveSession(e, updating) {
+function saveSession(e, updating, next) {
   if (updating) assertOwnerUnchanged(e.record)
   inTransaction(e, function (txApp) {
     if (updating) {
@@ -120,7 +120,7 @@ function saveSession(e, updating) {
       e.record.set("revision", 1)
     }
     validateSession(txApp, e.record)
-    e.next()
+    next()
   })
 }
 

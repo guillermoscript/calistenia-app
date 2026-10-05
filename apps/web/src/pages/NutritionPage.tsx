@@ -317,7 +317,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
-              {t(`nutrition.tabs.${tab}`)}
+              {tab === 'fasting' ? t('fasting.title') : t(`nutrition.tabs.${tab}`)}
             </button>
           ))}
         </div>
