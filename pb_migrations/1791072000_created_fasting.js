@@ -30,6 +30,7 @@ migrate((app) => {
       userField,
       { id: "date_fasting_started", name: "started_at", type: "date", required: true },
       { id: "date_fasting_ended", name: "ended_at", type: "date" },
+      { id: "number_fasting_revision", name: "revision", type: "number", required: true, min: 1, onlyInt: true },
       { id: "number_fasting_goal", name: "goal_hours", type: "number", required: true, min: 1, max: 48 },
       { id: "text_fasting_notes", name: "notes", type: "text", max: 2000 },
       { id: "text_fasting_client", name: "client_id", type: "text", max: 100 },

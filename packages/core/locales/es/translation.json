@@ -5495,5 +5495,6 @@
   "fasting.error.offline": "Necesitas conexión para guardar cambios. Tu temporizador e historial guardados siguen disponibles.",
   "fasting.error.signIn": "Inicia sesión para guardar tus ayunos.",
   "fasting.error.load": "No se pudieron cargar tus ayunos. Reintenta antes de guardar cambios.",
-  "fasting.error.save": "No se pudo guardar el cambio. Reintenta; tu registro anterior se conserva."
+  "fasting.error.save": "No se pudo guardar el cambio. Reintenta; tu registro anterior se conserva.",
+  "fasting.error.conflict": "Este ayuno cambió en otro dispositivo. Actualiza y vuelve a abrirlo antes de guardar."
 }

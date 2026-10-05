@@ -2,6 +2,15 @@
 
 // These guards apply to all writes, including superusers and direct SDK clients.
 // Every callback has an isolated JSVM; require the helper inside each callback.
+onRecordCreateRequest(function (e) {
+  require(`${__hooks}/utils/fasting.js`).validateRequestDates(e)
+  e.next()
+}, "fasting_sessions")
+
+onRecordUpdateRequest(function (e) {
+  require(`${__hooks}/utils/fasting.js`).updateRequest(e)
+}, "fasting_sessions")
+
 onRecordCreate(function (e) {
   require(`${__hooks}/utils/fasting.js`).saveSession(e, false)
 }, "fasting_sessions")

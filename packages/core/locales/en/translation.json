@@ -5495,5 +5495,6 @@
   "fasting.error.offline": "A connection is needed to save changes. Your saved timer and history remain available.",
   "fasting.error.signIn": "Sign in to save your fasts.",
   "fasting.error.load": "Your fasts could not be loaded. Retry before saving changes.",
-  "fasting.error.save": "The change could not be saved. Retry; your previous record is preserved."
+  "fasting.error.save": "The change could not be saved. Retry; your previous record is preserved.",
+  "fasting.error.conflict": "This fast changed on another device. Refresh and reopen it before saving."
 }

@@ -9,6 +9,7 @@ export interface FastingSession {
   endedAt: string | null
   goalHours: number
   notes: string
+  revision?: number
 }
 
 export interface FastingSessionInput {
@@ -17,6 +18,7 @@ export interface FastingSessionInput {
   endedAt: string | null
   goalHours: number
   notes?: string
+  revision?: number
 }
 
 export interface FastingSettings {
@@ -46,6 +48,12 @@ export function normalizeFastingTimestamp(value: string): string {
   const timestamp = parseFastingTimestamp(value)
   if (!Number.isFinite(timestamp)) throw new FastingError('invalidDate')
   return new Date(timestamp).toISOString()
+}
+
+/** Admitir coma decimal del teclado español sin aceptar separadores de miles. */
+export function parseFastingGoalHours(value: string): number {
+  const text = value.trim()
+  return /^\d+(?:[.,]\d+)?$/.test(text) ? Number(text.replace(',', '.')) : NaN
 }
 
 export function validateFastingSettings(settings: Pick<FastingSettings, 'goalHours' | 'weeklyGoal'>): void {
@@ -123,17 +131,16 @@ export function formatFastingDuration(ms: number): string {
     .map(value => String(value).padStart(2, '0')).join(':')
 }
 
-export function toLocalDateTimeInput(iso: string): string {
-  return wallClock(getTimezone(), parseFastingTimestamp(normalizeFastingTimestamp(iso))).format('YYYY-MM-DDTHH:mm')
+export function toLocalDateTimeInput(iso: string, timezone = getTimezone()): string {
+  return wallClock(timezone, parseFastingTimestamp(normalizeFastingTimestamp(iso))).format('YYYY-MM-DDTHH:mm')
 }
 
 /** Reject calendar rollovers and nonexistent local times instead of silently moving them. */
-export function fromLocalDateTimeInput(value: string): string {
+export function fromLocalDateTimeInput(value: string, timezone = getTimezone()): string {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) throw new FastingError('invalidDate')
   try {
     const wall = Date.parse(`${value}:00.000Z`)
     if (!Number.isFinite(wall) || new Date(wall).toISOString().slice(0, 16) !== value) throw new FastingError('invalidDate')
-    const timezone = getTimezone()
     // Intl funciona en Hermes; dayjs.tz depende de parsear cadenas locales.
     // Considerar ambos lados de un cambio de hora y validar la vuelta exacta:
     // una hora inexistente no tiene candidato; una repetida usa la primera.
@@ -152,7 +159,7 @@ export function fromLocalDateTimeInput(value: string): string {
 }
 
 const SERVER_ERROR_CODES: Record<string, string> = {
-  fasting_date: 'invalidDate', fasting_future: 'futureDate', fasting_order: 'endBeforeStart',
+  fasting_conflict: 'conflict', fasting_date: 'invalidDate', fasting_future: 'futureDate', fasting_order: 'endBeforeStart',
   fasting_invalid_date: 'invalidDate', fasting_future_date: 'futureDate',
   fasting_end_before_start: 'endBeforeStart', fasting_overlap: 'overlap',
   fasting_already_active: 'alreadyActive', fasting_invalid_goal: 'invalidGoal',

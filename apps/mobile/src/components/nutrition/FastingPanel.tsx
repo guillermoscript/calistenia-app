@@ -14,7 +14,7 @@ import { haptics } from '@/lib/haptics'
 import { subscribeFastingClock } from '@/lib/fasting-clock'
 import type { UseFastingReturn } from '@calistenia/core/hooks/useFasting'
 import { getTimezone } from '@calistenia/core/lib/dateUtils'
-import { FASTING_PRESETS, formatFastingDuration, fromLocalDateTimeInput, getFastingErrorKey, getFastingProgress, getFastingSummary, toLocalDateTimeInput, type FastingSession } from '@calistenia/core/lib/fasting'
+import { FASTING_PRESETS, formatFastingDuration, fromLocalDateTimeInput, getFastingErrorKey, getFastingProgress, getFastingSummary, parseFastingGoalHours, toLocalDateTimeInput, type FastingSession } from '@calistenia/core/lib/fasting'
 
 type Props = { fasting: UseFastingReturn }
 type Editor = { mode: 'start' | 'finish' | 'manual' | 'edit'; session?: FastingSession }
@@ -77,9 +77,10 @@ function DateTimeFields({ value, onChange, label, disabled }: { value: string; o
 function FastingEditor({ editor, fasting, onClose, defaultHours }: Props & { editor: Editor; onClose: () => void; defaultHours: number }) {
   const { t } = useTranslation()
   const session = editor.session
-  const [start, setStart] = useState(() => toLocalDateTimeInput(session?.startedAt ?? new Date(Date.now() - (editor.mode === 'manual' ? defaultHours * 3600000 : 0)).toISOString()))
+  const [timezone] = useState(getTimezone)
+  const [start, setStart] = useState(() => toLocalDateTimeInput(session?.startedAt ?? new Date(Date.now() - (editor.mode === 'manual' ? defaultHours * 3600000 : 0)).toISOString(), timezone))
   const [defaultEnd] = useState(() => session?.endedAt ?? new Date().toISOString())
-  const [end, setEnd] = useState(() => toLocalDateTimeInput(defaultEnd))
+  const [end, setEnd] = useState(() => toLocalDateTimeInput(defaultEnd, timezone))
   const [hours, setHours] = useState(String(session?.goalHours ?? defaultHours))
   const [notes, setNotes] = useState(session?.notes ?? '')
   const [error, setError] = useState<string | null>(null)
@@ -96,15 +97,16 @@ function FastingEditor({ editor, fasting, onClose, defaultHours }: Props & { edi
     setSaving(true)
     try {
       // Conservar segundos originales al editar solo notas o confirmar el final.
-      const startedAt = session && start === toLocalDateTimeInput(session.startedAt) ? session.startedAt : fromLocalDateTimeInput(start)
-      const endedAt = hasEnd ? (end === toLocalDateTimeInput(defaultEnd) ? defaultEnd : fromLocalDateTimeInput(end)) : null
-      const goalHours = Number(hours)
+      const startedAt = session && start === toLocalDateTimeInput(session.startedAt, timezone) ? session.startedAt : fromLocalDateTimeInput(start, timezone)
+      const endedAt = hasEnd ? (end === toLocalDateTimeInput(defaultEnd, timezone) ? defaultEnd : fromLocalDateTimeInput(end, timezone)) : null
+      const goalHours = parseFastingGoalHours(hours)
       if (!hours.trim() || !Number.isFinite(goalHours) || goalHours < 1 || goalHours > 48) {
         setError('fasting.error.invalidGoal'); return
       }
+      const revision = session?.revision !== undefined ? { revision: session.revision } : {}
       if (editor.mode === 'start') await fasting.startFast({ startedAt, goalHours, notes })
-      else if (editor.mode === 'finish' && session) await fasting.finishFast(session.id, { endedAt: endedAt!, notes })
-      else await fasting.saveFast({ id: session?.id, startedAt, endedAt, goalHours, notes })
+      else if (editor.mode === 'finish' && session) await fasting.finishFast(session.id, { endedAt: endedAt!, notes, ...revision })
+      else await fasting.saveFast({ id: session?.id, startedAt, endedAt, goalHours, notes, ...revision })
       haptics.success()
       onClose()
     } catch (err) { setError(getFastingErrorKey(err)); haptics.error() }
@@ -127,7 +129,7 @@ function FastingEditor({ editor, fasting, onClose, defaultHours }: Props & { edi
               {editor.mode !== 'finish' && <View className="gap-2"><Kicker>{t('fasting.durationGoal')}</Kicker><Input accessibilityLabel={t('fasting.durationGoal')} value={hours} onChangeText={setHours} keyboardType="decimal-pad" editable={!busy} className="h-12 font-mono" /><Text className="text-xs text-muted-foreground">{t('fasting.customHint')}</Text></View>}
               <View className="gap-2"><Kicker>{t('fasting.notes')}</Kicker><Input accessibilityLabel={t('fasting.notes')} value={notes} onChangeText={setNotes} placeholder={t('fasting.notesPlaceholder')} multiline textAlignVertical="top" maxLength={2000} editable={!busy} className="h-28 py-3" /></View>
               {editor.mode === 'finish' && <Text className="text-sm text-muted-foreground">{t('fasting.finishHint')}</Text>}
-              {editor.mode !== 'finish' && Number(hours) >= 24 && <Text className="text-xs leading-5 text-muted-foreground">{t('fasting.extendedNotice')}</Text>}
+              {editor.mode !== 'finish' && parseFastingGoalHours(hours) >= 24 && <Text className="text-xs leading-5 text-muted-foreground">{t('fasting.extendedNotice')}</Text>}
               {error && <Text accessibilityRole="alert" className="text-sm text-red-500">{t(error)}</Text>}
               <Button size="lg" variant="limeSolid" disabled={busy} onPress={() => { void save() }}><Text>{t(busy ? 'fasting.saving' : 'fasting.save')}</Text></Button>
               <Button size="lg" variant="outline" disabled={busy} onPress={onClose}><Text>{t('fasting.cancel')}</Text></Button>
@@ -143,19 +145,20 @@ export default function FastingPanel({ fasting }: Props) {
   const { t, i18n } = useTranslation()
   const now = useFastingNow()
   const [editor, setEditor] = useState<Editor | null>(null)
-  const [goal, setGoal] = useState(String(fasting.settings.goalHours))
-  const [weeklyGoal, setWeeklyGoal] = useState(String(fasting.settings.weeklyGoal))
+  const [goalOverride, setGoal] = useState<string | null>(null)
+  const [weeklyOverride, setWeeklyGoal] = useState<string | null>(null)
+  const goal = goalOverride ?? String(fasting.settings.goalHours)
+  const weeklyGoal = weeklyOverride ?? String(fasting.settings.weeklyGoal)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
   const [historyLimit, setHistoryLimit] = useState(10)
-  useEffect(() => { setGoal(String(fasting.settings.goalHours)); setWeeklyGoal(String(fasting.settings.weeklyGoal)) }, [fasting.settings.goalHours, fasting.settings.weeklyGoal])
   const active = fasting.activeSession
   const progress = active ? getFastingProgress(active, now) : null
   const summary = useMemo(() => getFastingSummary(fasting.sessions, now), [fasting.sessions, now])
   const completed = fasting.sessions.filter(s => s.endedAt).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
   const busy = fasting.isSaving || saving
-  const goalNumber = Number(goal)
+  const goalNumber = parseFastingGoalHours(goal)
   const validGoal = goal.trim() !== '' && Number.isFinite(goalNumber) && goalNumber >= 1 && goalNumber <= 48
 
   const mutate = async (action: () => Promise<unknown>) => {
@@ -178,19 +181,24 @@ export default function FastingPanel({ fasting }: Props) {
     const weekly = Number(weeklyGoal)
     if (!goal.trim() || !Number.isFinite(goalNumber) || goalNumber < 1 || goalNumber > 48) { setError('fasting.error.invalidGoal'); Alert.alert(t('fasting.title'), t('fasting.error.invalidGoal')); return }
     if (!weeklyGoal.trim() || !Number.isInteger(weekly) || weekly < 1 || weekly > 7) { setError('fasting.error.invalidWeeklyGoal'); Alert.alert(t('fasting.title'), t('fasting.error.invalidWeeklyGoal')); return }
-    void mutate(() => fasting.saveSettings({ goalHours: goalNumber, weeklyGoal: weekly }))
+    void mutate(async () => {
+      await fasting.saveSettings({ goalHours: goalNumber, weeklyGoal: weekly })
+      setGoal(null)
+      setWeeklyGoal(null)
+    })
   }
 
-  if (fasting.isLoading) return <View className="py-14 items-center gap-4"><ActivityIndicator color="#a3e635" /><Text className="text-muted-foreground">{t('fasting.loading')}</Text></View>
-  if (fasting.error && fasting.sessions.length === 0) return (
-    <View className="gap-4 rounded-lg border border-red-500/30 p-5">
-      <Text accessibilityRole="alert" className="text-sm text-red-500">{t(error ?? getFastingErrorKey(fasting.error))}</Text>
-      <Button variant="outline" size="lg" disabled={busy} onPress={() => { void mutate(fasting.refresh) }}><Text>{t('fasting.retry')}</Text></Button>
-    </View>
-  )
-
+  const loadFailed = Boolean(fasting.error) && fasting.sessions.length === 0
   return (
     <View className="gap-7 pb-4">
+      {fasting.isLoading ? (
+        <View className="py-14 items-center gap-4"><ActivityIndicator color="#a3e635" /><Text className="text-muted-foreground">{t('fasting.loading')}</Text></View>
+      ) : loadFailed ? (
+        <View className="gap-4 rounded-lg border border-red-500/30 p-5">
+          <Text accessibilityRole="alert" className="text-sm text-red-500">{t(error ?? getFastingErrorKey(fasting.error))}</Text>
+          <Button variant="outline" size="lg" disabled={busy} onPress={() => { void mutate(fasting.refresh) }}><Text>{t('fasting.retry')}</Text></Button>
+        </View>
+      ) : <>
       {!!(error || fasting.error) && <View className="gap-3 rounded-lg border border-red-500/30 p-4"><Text accessibilityRole="alert" className="text-sm text-red-500">{t(error ?? getFastingErrorKey(fasting.error))}</Text><Button variant="outline" disabled={busy} onPress={() => { void mutate(fasting.refresh) }}><Text>{t('fasting.retry')}</Text></Button></View>}
       <View className="rounded-xl border border-lime/30 bg-card p-5 gap-4">
         <View className="flex-row items-center justify-between"><Kicker tone="lime">{t(active ? 'fasting.active' : 'fasting.ready')}</Kicker><Clock3 size={20} color="#a3e635" /></View>
@@ -249,6 +257,8 @@ export default function FastingPanel({ fasting }: Props) {
         })}
         {completed.length > historyLimit && <Button variant="outline" size="lg" onPress={() => setHistoryLimit(limit => limit + 10)}><Text>{t('fasting.showMore')}</Text></Button>}
       </View>
+      </>}
+      {/* Posición estable: un fallo de refetch no desmonta ni borra el borrador. */}
       {editor && <FastingEditor key={`${editor.mode}:${editor.session?.id ?? 'new'}`} editor={editor} fasting={fasting} defaultHours={validGoal ? goalNumber : fasting.settings.goalHours} onClose={() => setEditor(null)} />}
     </View>
   )

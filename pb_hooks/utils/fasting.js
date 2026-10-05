@@ -41,20 +41,33 @@ function validateSession(app, record) {
   }
 }
 
-function saveSession(e, updating) {
-  if (updating) assertOwnerUnchanged(e.record)
+function conflict() {
+  throw new ApiError(409, "This fasting session changed. Refresh before saving.", {
+    revision: new ValidationError("fasting_conflict", "This session changed on another device."),
+  })
+}
+
+function validateRequestDates(e) {
+  // requestInfo().body already contains prepared DateTime values here. Rebind
+  // the original rereadable HTTP body to distinguish an invalid end from "".
+  var raw = new DynamicModel({ ended_at: "" })
+  try { e.bindBody(raw) } catch (_) {
+    invalid("ended_at", "fasting_date", "The end must be a valid date.")
+  }
+  // A supplied nonempty end must never silently become an active session.
+  if (raw.ended_at !== "" && !e.record.getString("ended_at")) {
+    invalid("ended_at", "fasting_date", "The end must be a valid date.")
+  }
+}
+
+function inTransaction(e, callback) {
   var originalApp = e.app
   var failure = null
   try {
-    // Serialize the read-check-write together. The partial unique index also
-    // protects a double start, but alone cannot prevent overlapping history.
     originalApp.runInTransaction(function (txApp) {
       e.app = txApp
-      try {
-        validateSession(txApp, e.record)
-        e.next()
-      } catch (err) {
-        failure = err // preserve the field-level API error across the Go boundary
+      try { callback(txApp) } catch (err) {
+        failure = err // preserve field-level API errors across the Go boundary
         throw err
       }
     })
@@ -65,4 +78,55 @@ function saveSession(e, updating) {
   }
 }
 
-module.exports = { assertOwnerUnchanged: assertOwnerUnchanged, saveSession: saveSession }
+function updateRequest(e) {
+  assertOwnerUnchanged(e.record)
+  validateRequestDates(e)
+  var body = e.requestInfo().body
+  var expected = body.expected_revision
+  if (typeof expected !== "number" || !isFinite(expected) || Math.floor(expected) !== expected || expected < 1) conflict()
+  inTransaction(e, function (txApp) {
+    // API rules have already authenticated the owner before this request hook.
+    // Reload under the same write transaction as the save, then compare both
+    // the client's revision and the server snapshot loaded before the hook.
+    var latest
+    try { latest = txApp.findRecordById("fasting_sessions", e.record.getString("id")) }
+    catch (_) { throw new NotFoundError("The session no longer exists.") }
+    var revision = latest.getInt("revision")
+    if (expected !== revision || e.record.original().getInt("revision") !== revision) conflict()
+    var fields = ["started_at", "ended_at", "goal_hours", "notes", "client_id"]
+    for (var i = 0; i < fields.length; i++) {
+      var field = fields[i]
+      if (Object.prototype.hasOwnProperty.call(body, field)) latest.set(field, e.record.get(field))
+    }
+    // Keep unspecified fields from latest; neither the submitted revision nor
+    // timestamp metadata is writable. The model hook increments the revision.
+    e.record = latest
+    e.next()
+  })
+}
+
+function saveSession(e, updating) {
+  if (updating) assertOwnerUnchanged(e.record)
+  inTransaction(e, function (txApp) {
+    if (updating) {
+      var latest
+      try { latest = txApp.findRecordById("fasting_sessions", e.record.getString("id")) }
+      catch (_) { throw new NotFoundError("The session no longer exists.") }
+      // Also reject stale direct model saves. Revisions remain server-owned
+      // for superuser writes, SDK clients and internal hooks alike.
+      if (e.record.original().getInt("revision") !== latest.getInt("revision")) conflict()
+      e.record.set("revision", latest.getInt("revision") + 1)
+    } else {
+      e.record.set("revision", 1)
+    }
+    validateSession(txApp, e.record)
+    e.next()
+  })
+}
+
+module.exports = {
+  assertOwnerUnchanged: assertOwnerUnchanged,
+  saveSession: saveSession,
+  updateRequest: updateRequest,
+  validateRequestDates: validateRequestDates,
+}

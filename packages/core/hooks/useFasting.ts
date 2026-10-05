@@ -20,7 +20,7 @@ export interface UseFastingReturn extends FastingData {
   refresh: () => Promise<void>
   saveSettings: (settings: Pick<FastingSettings, 'goalHours' | 'weeklyGoal'>) => Promise<void>
   startFast: (input?: { startedAt?: string; goalHours?: number; notes?: string }) => Promise<FastingSession>
-  finishFast: (id: string, input?: { endedAt?: string; notes?: string }) => Promise<FastingSession>
+  finishFast: (id: string, input?: { endedAt?: string; notes?: string; revision?: number }) => Promise<FastingSession>
   saveFast: (input: FastingSessionInput) => Promise<FastingSession>
   deleteFast: (id: string) => Promise<void>
 }
@@ -31,6 +31,7 @@ export function mapFastingSession(record: Record<string, unknown>): FastingSessi
     startedAt: normalizeFastingTimestamp(String(record.started_at)),
     endedAt: record.ended_at ? normalizeFastingTimestamp(String(record.ended_at)) : null,
     goalHours: Number(record.goal_hours), notes: String(record.notes ?? ''),
+    ...(record.revision === undefined ? {} : { revision: Number(record.revision) }),
   }
 }
 
@@ -40,6 +41,13 @@ function readCache(userId: string | null): FastingData | undefined {
     const cached = JSON.parse(storage.getItem(CACHE_KEY) || 'null')
     if (cached?.userId !== userId || !Array.isArray(cached?.data?.sessions)) return undefined
     validateFastingSettings(cached.data.settings)
+    for (const session of cached.data.sessions) {
+      if (!session || typeof session.id !== 'string' || !session.id || session.userId !== userId ||
+          typeof session.startedAt !== 'string' || (session.endedAt !== null && typeof session.endedAt !== 'string') ||
+          typeof session.notes !== 'string' ||
+          (session.revision !== undefined && (!Number.isInteger(session.revision) || session.revision < 1))) return undefined
+      validateFastingSession(session, [], Infinity)
+    }
     return cached.data
   } catch { return undefined }
 }
@@ -113,9 +121,21 @@ export function useFasting(userId: string | null): UseFastingReturn {
         })
         const payload = { goal_hours: action.settings.goalHours, weekly_goal: action.settings.weeklyGoal }
         const existing = found.items[0]
-        const record = existing
-          ? await pb.collection('fasting_settings').update(existing.id, payload, { requestKey: null })
-          : await pb.collection('fasting_settings').create({ ...payload, user: userId }, { requestKey: null })
+        let record
+        if (existing) record = await pb.collection('fasting_settings').update(existing.id, payload, { requestKey: null })
+        else {
+          try { record = await pb.collection('fasting_settings').create({ ...payload, user: userId }, { requestKey: null }) }
+          catch (error) {
+            const failure = error as { response?: { data?: { user?: { code?: string } } } }
+            if (failure?.response?.data?.user?.code !== 'validation_not_unique') throw error
+            // Otro dispositivo pudo crear la única fila entre la lectura y el POST.
+            const latest = await pb.collection('fasting_settings').getList(1, 1, {
+              filter: pb.filter('user = {:user}', { user: userId }), requestKey: null,
+            })
+            if (!latest.items[0] || pb.authStore.record?.id !== userId) throw error
+            record = await pb.collection('fasting_settings').update(latest.items[0].id, payload, { requestKey: null })
+          }
+        }
         const data = qc.getQueryData<FastingData>(key) ?? { sessions: [], settings: DEFAULT_FASTING_SETTINGS }
         const next = { ...data, settings: { id: record.id, goalHours: Number(record.goal_hours), weeklyGoal: Number(record.weekly_goal) } }
         // Cancel a poll that could have started while the write was in flight.
@@ -131,11 +151,16 @@ export function useFasting(userId: string | null): UseFastingReturn {
         await pb.collection('fasting_sessions').delete(action.id, { requestKey: null })
         next = { ...data, sessions: data.sessions.filter(s => s.id !== action.id) }
       } else {
+        if (action.input.id) {
+          const current = data.sessions.find(s => s.id === action.input.id)
+          if (!current || action.input.revision === undefined || current.revision !== action.input.revision) throw new FastingError('conflict')
+        }
         validateFastingSession(action.input, data.sessions)
         const payload = {
           started_at: normalizeFastingTimestamp(action.input.startedAt),
           ended_at: action.input.endedAt ? normalizeFastingTimestamp(action.input.endedAt) : '',
           goal_hours: action.input.goalHours, notes: action.input.notes?.trim() ?? '',
+          ...(action.input.id ? { expected_revision: action.input.revision } : {}),
         }
         const record = action.input.id
           ? await pb.collection('fasting_sessions').update(action.input.id, payload, { requestKey: null })
@@ -170,7 +195,7 @@ export function useFasting(userId: string | null): UseFastingReturn {
       const session = data.sessions.find(s => s.id === id)
       if (!session) throw new FastingError('load')
       if (session.endedAt !== null) throw new FastingError('alreadyEnded')
-      return saveFast({ ...session, endedAt: input.endedAt ?? new Date().toISOString(), notes: input.notes ?? session.notes })
+      return saveFast({ ...session, revision: input.revision ?? session.revision, endedAt: input.endedAt ?? new Date().toISOString(), notes: input.notes ?? session.notes })
     },
     saveFast,
     deleteFast: async id => { await mutation.mutateAsync({ type: 'delete', id }) },

@@ -2,7 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
   api, authAs, create, createAs, createUser, getOne, getOneAs,
-  list, listAs, remove, update,
+  list, listAs, remove, update, superToken,
 } from "./helpers/client.mjs"
 
 const HOUR = 3600000
@@ -15,6 +15,11 @@ const settings = (user, overrides = {}) => ({
   user: user.id, goal_hours: 16, weekly_goal: 3, ...overrides,
 })
 async function patchAs(user, collection, id, body, raw = false) {
+  if (collection === "fasting_sessions" && !Object.hasOwn(body, "expected_revision")) {
+    let latest
+    try { latest = await getOne(collection, id) } catch (err) { if (err.status !== 404) throw err }
+    body = { ...body, expected_revision: latest?.revision ?? 1 }
+  }
   return api(`/api/collections/${collection}/records/${id}`, {
     method: "PATCH", token: await authAs(user), body, raw,
   })
@@ -204,4 +209,101 @@ test("owner can discard a session and account deletion cascades private data", a
   for (const collection of ["fasting_sessions", "fasting_settings"]) {
     assert.equal((await list(collection, `user = '${user.id}'`)).length, 0)
   }
+})
+
+
+test("stale active edits and stale finish attempts cannot overwrite a remote finish", async () => {
+  const user = await createUser("Fasting Stale Revision")
+  const active = await createAs(user, "fasting_sessions", session(user, { ended_at: "", revision: 900 }))
+  assert.equal(active.revision, 1, "the server ignores a client-chosen revision")
+  const endedAt = ago(1)
+  const finished = await patchAs(user, "fasting_sessions", active.id, {
+    ended_at: endedAt, notes: "Finished on device B", expected_revision: active.revision,
+  })
+  assert.equal(finished.revision, 2)
+  for (const ended_at of ["", ago(2)]) {
+    const stale = await patchAs(user, "fasting_sessions", active.id, {
+      started_at: active.started_at, ended_at, goal_hours: active.goal_hours,
+      notes: "Stale device A", expected_revision: active.revision,
+    }, true)
+    assert.equal(stale.status, 409)
+    assert.equal((await stale.json()).data.revision.code, "fasting_conflict")
+  }
+  const latest = await getOne("fasting_sessions", active.id)
+  assert.equal(latest.ended_at, finished.ended_at)
+  assert.equal(latest.notes, "Finished on device B")
+  assert.equal(latest.revision, 2)
+  const edited = await patchAs(user, "fasting_sessions", active.id, {
+    notes: "Fresh correction", expected_revision: latest.revision, revision: 99999,
+  })
+  assert.equal(edited.revision, 3)
+  assert.equal(edited.ended_at, finished.ended_at, "partial edits preserve the latest end")
+  assert.equal(edited.notes, "Fresh correction")
+})
+
+test("simultaneous updates from the same revision have exactly one winner", async () => {
+  const user = await createUser("Fasting Concurrent Revisions")
+  const active = await createAs(user, "fasting_sessions", session(user, { ended_at: "" }))
+  const results = await Promise.all(["A", "B"].map(device => patchAs(user, "fasting_sessions", active.id, {
+    ended_at: ago(1), notes: `Finished by ${device}`, expected_revision: active.revision,
+  }, true)))
+  assert.deepEqual(results.map(r => r.status).sort(), [200, 409])
+  const winner = await results.find(r => r.status === 200).json()
+  const latest = await getOne("fasting_sessions", active.id)
+  assert.equal(latest.revision, 2)
+  assert.equal(latest.ended_at, winner.ended_at)
+  assert.equal(latest.notes, winner.notes)
+})
+
+test("revision conflicts remain reliable when updated timestamps are identical", async () => {
+  // Disable only the temporary DB's autodate update to simulate equal clock
+  // timestamps deterministically. The integer CAS must still reject stale data.
+  const token = await superToken()
+  const schema = await api("/api/collections/fasting_sessions", { token })
+  const fields = schema.fields.map(field => field.name === "updated" ? { ...field, onUpdate: false } : field)
+  await api("/api/collections/fasting_sessions", { method: "PATCH", token, body: { fields } })
+  try {
+    const user = await createUser("Fasting Same Millisecond")
+    const active = await createAs(user, "fasting_sessions", session(user, { ended_at: "" }))
+    const first = await patchAs(user, "fasting_sessions", active.id, { notes: "First", expected_revision: active.revision })
+    assert.equal(first.updated, active.updated)
+    assert.equal(first.revision, 2)
+    const stale = await patchAs(user, "fasting_sessions", active.id, { notes: "Stale", expected_revision: active.revision }, true)
+    assert.equal(stale.status, 409)
+    const second = await patchAs(user, "fasting_sessions", active.id, { notes: "Second", expected_revision: first.revision })
+    assert.equal(second.updated, active.updated)
+    assert.equal(second.revision, 3)
+  } finally {
+    await api("/api/collections/fasting_sessions", { method: "PATCH", token, body: { fields: schema.fields } })
+  }
+})
+
+test("updates require integer expected revisions while missing/private sessions retain 404", async () => {
+  const user = await createUser("Fasting Expected Revision")
+  const other = await createUser("Fasting Revision Other")
+  const active = await createAs(user, "fasting_sessions", session(user, { ended_at: "" }))
+  for (const expected_revision of [undefined, null, "1", 0, -1, 1.5, 99]) {
+    const result = await patchAs(user, "fasting_sessions", active.id, { notes: "Invalid revision", expected_revision }, true)
+    assert.equal(result.status, 409)
+    assert.equal((await result.json()).data.revision.code, "fasting_conflict")
+  }
+  const privateEdit = await patchAs(other, "fasting_sessions", active.id, { notes: "Cannot see" }, true)
+  assert.equal(privateEdit.status, 404)
+  await remove("fasting_sessions", active.id)
+  const deletedEdit = await patchAs(user, "fasting_sessions", active.id, { notes: "Gone", expected_revision: 1 }, true)
+  assert.equal(deletedEdit.status, 404)
+})
+
+test("malformed optional end dates cannot silently create or reopen active sessions", async () => {
+  const user = await createUser("Fasting Invalid Optional End")
+  for (const ended_at of ["not-a-date", "2026-02-31T12:00:00Z", "2026-02-02T12:00:60Z", 12345]) {
+    await rejected(user, session(user, { ended_at }), "ended_at", "fasting_date")
+  }
+  const completed = await createAs(user, "fasting_sessions", session(user))
+  const invalid = await patchAs(user, "fasting_sessions", completed.id, { ended_at: "not-a-date" }, true)
+  assert.equal(invalid.status, 400)
+  assert.equal((await invalid.json()).data.ended_at.code, "fasting_date")
+  const latest = await getOne("fasting_sessions", completed.id)
+  assert.equal(latest.ended_at, completed.ended_at)
+  assert.equal(latest.revision, completed.revision)
 })

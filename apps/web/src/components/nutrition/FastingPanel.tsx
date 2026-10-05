@@ -5,7 +5,7 @@ import type { useFasting } from '@calistenia/core/hooks/useFasting'
 import { getTimezone } from '@calistenia/core/lib/dateUtils'
 import {
   FASTING_PRESETS, formatFastingDuration, fromLocalDateTimeInput,
-  getFastingErrorKey, getFastingProgress, getFastingSummary, toLocalDateTimeInput,
+  getFastingErrorKey, getFastingProgress, getFastingSummary, parseFastingGoalHours, toLocalDateTimeInput,
 } from '@calistenia/core/lib/fasting'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
@@ -17,7 +17,7 @@ import { cn } from '../../lib/utils'
 type FastingState = ReturnType<typeof useFasting>
 type Session = NonNullable<FastingState['activeSession']>
 type EditorMode = 'start' | 'finish' | 'past' | 'edit'
-interface Editor { mode: EditorMode; session?: Session; startedAt: string; endedAt: string; originalStart: string; originalEnd: string | null; goalHours: string; notes: string }
+interface Editor { timezone: string; mode: EditorMode; session?: Session; startedAt: string; endedAt: string; originalStart: string; originalEnd: string | null; goalHours: string; notes: string }
 
 function useNow() {
   const [now, setNow] = useState(Date.now)
@@ -53,8 +53,10 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
   const { t, i18n } = useTranslation()
   const now = useNow()
   const { sessions, activeSession, settings, isLoading, isSaving, error } = fasting
-  const [goalHours, setGoalHours] = useState(String(settings.goalHours))
-  const [weeklyGoal, setWeeklyGoal] = useState(String(settings.weeklyGoal))
+  const [goalOverride, setGoalHours] = useState<string | null>(null)
+  const [weeklyOverride, setWeeklyGoal] = useState<string | null>(null)
+  const goalHours = goalOverride ?? String(settings.goalHours)
+  const weeklyGoal = weeklyOverride ?? String(settings.weeklyGoal)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [deleting, setDeleting] = useState<Session | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
@@ -63,7 +65,6 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
   const [visibleCount, setVisibleCount] = useState(10)
   const saving = busy || isSaving
   const unavailable = Boolean(error) && sessions.length === 0
-  useEffect(() => { setGoalHours(String(settings.goalHours)); setWeeklyGoal(String(settings.weeklyGoal)) }, [settings.goalHours, settings.weeklyGoal])
   const summary = useMemo(() => getFastingSummary(sessions, now), [sessions, now])
   const history = useMemo(() => [...sessions].sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt)), [sessions])
   const dateLabel = (iso: string) => new Date(iso).toLocaleString(i18n.language, { dateStyle: 'medium', timeStyle: 'short', timeZone: getTimezone() })
@@ -76,14 +77,16 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
   }
   const openEditor = (mode: EditorMode, session?: Session) => {
     setLocalError(null)
-    const draftGoal = Number(goalHours) >= 1 && Number(goalHours) <= 48 ? Number(goalHours) : settings.goalHours
+    const parsedGoal = parseFastingGoalHours(goalHours)
+    const draftGoal = parsedGoal >= 1 && parsedGoal <= 48 ? parsedGoal : settings.goalHours
+    const timezone = getTimezone()
     const originalStart = session?.startedAt ?? new Date(mode === 'past' ? now - draftGoal * 3600000 : now).toISOString()
     const originalEnd = mode === 'finish' || mode === 'past' ? new Date(now).toISOString() : session?.endedAt ?? null
     setEditor({
-      mode, session,
+      timezone, mode, session,
       originalStart, originalEnd,
-      startedAt: toLocalDateTimeInput(originalStart),
-      endedAt: originalEnd ? toLocalDateTimeInput(originalEnd) : '',
+      startedAt: toLocalDateTimeInput(originalStart, timezone),
+      endedAt: originalEnd ? toLocalDateTimeInput(originalEnd, timezone) : '',
       goalHours: String(session?.goalHours ?? draftGoal), notes: session?.notes ?? '',
     })
   }
@@ -91,13 +94,21 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
     if (!editor) return
     void run(async () => {
       // A notes-only edit must not round away seconds from the original record.
-      const startedAt = editor.startedAt === toLocalDateTimeInput(editor.originalStart) ? editor.originalStart : fromLocalDateTimeInput(editor.startedAt)
-      const endedAt = editor.endedAt && editor.originalEnd && editor.endedAt === toLocalDateTimeInput(editor.originalEnd) ? editor.originalEnd : editor.endedAt ? fromLocalDateTimeInput(editor.endedAt) : null
-      const input = { startedAt, endedAt, goalHours: Number(editor.goalHours), notes: editor.notes }
+      const startedAt = editor.startedAt === toLocalDateTimeInput(editor.originalStart, editor.timezone) ? editor.originalStart : fromLocalDateTimeInput(editor.startedAt, editor.timezone)
+      const endedAt = editor.endedAt && editor.originalEnd && editor.endedAt === toLocalDateTimeInput(editor.originalEnd, editor.timezone) ? editor.originalEnd : editor.endedAt ? fromLocalDateTimeInput(editor.endedAt, editor.timezone) : null
+      const revision = editor.session?.revision !== undefined ? { revision: editor.session.revision } : {}
+      const input = { startedAt, endedAt, goalHours: parseFastingGoalHours(editor.goalHours), notes: editor.notes, ...revision }
       if (editor.mode === 'start') await fasting.startFast({ startedAt: input.startedAt, goalHours: input.goalHours, notes: input.notes })
-      else if (editor.mode === 'finish' && editor.session) await fasting.finishFast(editor.session.id, { endedAt: input.endedAt!, notes: input.notes })
+      else if (editor.mode === 'finish' && editor.session) await fasting.finishFast(editor.session.id, { endedAt: input.endedAt!, notes: input.notes, ...revision })
       else await fasting.saveFast({ ...input, id: editor.session?.id })
       setEditor(null)
+    })
+  }
+  const saveGoals = () => {
+    void run(async () => {
+      await fasting.saveSettings({ goalHours: parseFastingGoalHours(goalHours), weeklyGoal: Number(weeklyGoal) })
+      setGoalHours(null)
+      setWeeklyGoal(null)
     })
   }
   const errorKey = localError ?? (error ? getFastingErrorKey(error) : null)
@@ -108,7 +119,7 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
     </div>
   )
   const progress = activeSession ? getFastingProgress(activeSession, now) : null
-  const durationValid = Number(goalHours) >= 1 && Number(goalHours) <= 48
+  const durationValid = parseFastingGoalHours(goalHours) >= 1 && parseFastingGoalHours(goalHours) <= 48
   const weeklyValid = Number.isInteger(Number(weeklyGoal)) && Number(weeklyGoal) >= 1 && Number(weeklyGoal) <= 7
   const editorNeedsEnd = editor?.mode === 'finish' || editor?.mode === 'past' || Boolean(editor?.session?.endedAt)
 
@@ -132,10 +143,10 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
                 <div className="flex gap-3"><Button variant="outline" className="flex-1" disabled={saving} onClick={() => openEditor('edit', activeSession)}><Pencil />{t('fasting.edit')}</Button><Button variant="limeSolid" className="flex-1 font-bebas text-lg tracking-wide" disabled={saving} onClick={() => openEditor('finish', activeSession)}>{t('fasting.finish')}</Button></div>
               </CardContent>
             </Card>
-          ) : <Card><CardContent className="p-5 md:p-7 text-center"><Clock3 className="size-8 text-lime mx-auto mb-3" /><h3 className="font-bebas text-2xl">{t('fasting.ready')}</h3><p className="text-xs text-muted-foreground mt-1 mb-5">{t('fasting.readyDesc')}</p><div className="flex justify-center gap-3 flex-wrap"><Button variant="limeSolid" className="font-bebas text-lg tracking-wide px-6" disabled={saving || !durationValid} onClick={() => void run(() => fasting.startFast({ goalHours: Number(goalHours) }))}>{t('fasting.startNowWithGoal', { hours: Number(goalHours) })}</Button><Button variant="outline" disabled={saving || !durationValid} onClick={() => openEditor('start')}>{t('fasting.startedEarlier')}</Button></div></CardContent></Card>}
+          ) : <Card><CardContent className="p-5 md:p-7 text-center"><Clock3 className="size-8 text-lime mx-auto mb-3" /><h3 className="font-bebas text-2xl">{t('fasting.ready')}</h3><p className="text-xs text-muted-foreground mt-1 mb-5">{t('fasting.readyDesc')}</p><div className="flex justify-center gap-3 flex-wrap"><Button variant="limeSolid" className="font-bebas text-lg tracking-wide px-6" disabled={saving || !durationValid} onClick={() => void run(() => fasting.startFast({ goalHours: parseFastingGoalHours(goalHours) }))}>{t('fasting.startNowWithGoal', { hours: durationValid ? parseFastingGoalHours(goalHours) : settings.goalHours })}</Button><Button variant="outline" disabled={saving || !durationValid} onClick={() => openEditor('start')}>{t('fasting.startedEarlier')}</Button></div></CardContent></Card>}
 
-          <Card><CardContent className="p-5"><h3 className="font-bebas text-xl tracking-wide mb-4">{t('fasting.goals')}</h3><form onSubmit={e => { e.preventDefault(); void run(() => fasting.saveSettings({ goalHours: Number(goalHours), weeklyGoal: Number(weeklyGoal) })) }} className="space-y-4">
-            <div className="flex flex-wrap gap-2">{FASTING_PRESETS.map(hours => <Button key={hours} size="sm" variant={Number(goalHours) === hours ? 'lime' : 'outline'} aria-pressed={Number(goalHours) === hours} type="button" onClick={() => setGoalHours(String(hours))} disabled={saving}>{hours} h</Button>)}</div>
+          <Card><CardContent className="p-5"><h3 className="font-bebas text-xl tracking-wide mb-4">{t('fasting.goals')}</h3><form onSubmit={e => { e.preventDefault(); saveGoals() }} className="space-y-4">
+            <div className="flex flex-wrap gap-2">{FASTING_PRESETS.map(hours => <Button key={hours} size="sm" variant={parseFastingGoalHours(goalHours) === hours ? 'lime' : 'outline'} aria-pressed={parseFastingGoalHours(goalHours) === hours} type="button" onClick={() => setGoalHours(String(hours))} disabled={saving}>{hours} h</Button>)}</div>
             <div className="grid sm:grid-cols-2 gap-4"><label className="text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.customHours')}</span><Input type="number" min={1} max={48} step={0.5} value={goalHours} onChange={e => setGoalHours(e.target.value)} required disabled={saving} /></label><label className="text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.weeklyGoal')}</span><Input type="number" min={1} max={7} step={1} value={weeklyGoal} onChange={e => setWeeklyGoal(e.target.value)} required disabled={saving} /></label></div>
             <div className="flex items-center justify-between gap-4"><p className="text-[11px] text-muted-foreground">{t('fasting.goalAppliesNext')}</p><Button type="submit" variant="outline" disabled={saving || !durationValid || !weeklyValid}>{t('fasting.saveGoals')}</Button></div>
           </form></CardContent></Card>
@@ -161,8 +172,8 @@ export default function FastingPanel({ fasting }: { fasting: FastingState }) {
             {editor && <form className="space-y-4 pb-4" onSubmit={e => { e.preventDefault(); saveEditor() }}>
               {localError && <p role="alert" className="text-xs text-destructive">{t(localError)}</p>}
               <fieldset disabled={saving} className="space-y-4">
-                <label className="block text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.startedAt')}</span><Input type="datetime-local" value={editor.startedAt} max={toLocalDateTimeInput(new Date(now).toISOString())} required disabled={editor.mode === 'finish'} onChange={e => setEditor({ ...editor, startedAt: e.target.value })} /></label>
-                {editor.mode !== 'start' && <label className="block text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.endedAt')}{!editorNeedsEnd && ` (${t('fasting.optional')})`}</span><Input type="datetime-local" value={editor.endedAt} max={toLocalDateTimeInput(new Date(now).toISOString())} required={editorNeedsEnd} onChange={e => setEditor({ ...editor, endedAt: e.target.value })} /></label>}
+                <label className="block text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.startedAt')}</span><Input type="datetime-local" value={editor.startedAt} max={toLocalDateTimeInput(new Date(now).toISOString(), editor.timezone)} required disabled={editor.mode === 'finish'} onChange={e => setEditor({ ...editor, startedAt: e.target.value })} /></label>
+                {editor.mode !== 'start' && <label className="block text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.endedAt')}{!editorNeedsEnd && ` (${t('fasting.optional')})`}</span><Input type="datetime-local" value={editor.endedAt} max={toLocalDateTimeInput(new Date(now).toISOString(), editor.timezone)} required={editorNeedsEnd} onChange={e => setEditor({ ...editor, endedAt: e.target.value })} /></label>}
                 <label className="block text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.customHours')}</span><Input type="number" min={1} max={48} step={0.5} value={editor.goalHours} required disabled={editor.mode === 'finish'} onChange={e => setEditor({ ...editor, goalHours: e.target.value })} /></label>
                 <label className="block text-xs text-muted-foreground space-y-1.5"><span className="block">{t('fasting.notes')}</span><textarea className="w-full min-h-24 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" maxLength={1000} value={editor.notes} placeholder={t('fasting.notesPlaceholder')} onChange={e => setEditor({ ...editor, notes: e.target.value })} /></label>
               </fieldset>

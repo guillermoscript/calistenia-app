@@ -4,7 +4,7 @@ import {
   FASTING_HOUR_MS as HOUR, FastingError, formatFastingDuration,
   fromLocalDateTimeInput, getFastingErrorKey, getFastingProgress, getFastingSummary,
   normalizeFastingTimestamp, parseFastingTimestamp, toLocalDateTimeInput,
-  validateFastingSession, validateFastingSettings,
+  validateFastingSession, validateFastingSettings, parseFastingGoalHours,
   type FastingSession, type FastingSessionInput,
 } from './fasting'
 
@@ -199,5 +199,27 @@ describe('server error translation', () => {
     ['weekly_goal', 'validation_integer', 'invalidWeeklyGoal'], ['notes', 'validation_length', 'notesTooLong'],
   ])('maps generic PocketBase validation errors using field %s', (field, code, expected) => {
     expect(getFastingErrorKey({ response: { data: { [field]: { code } } } })).toBe(`fasting.error.${expected}`)
+  })
+})
+
+
+describe('localized custom goals', () => {
+  it.each(['16.5', '16,5', ' 16,5 '])('accepts a localized decimal %s', value => {
+    expect(parseFastingGoalHours(value)).toBe(16.5)
+  })
+  it.each(['', 'Infinity', '1,000.5', '1.000,5', '16,5,2'])('rejects malformed or ambiguous numeric text %s', value => {
+    expect(Number.isNaN(parseFastingGoalHours(value))).toBe(true)
+  })
+})
+
+describe('editor timezone snapshots', () => {
+  it('keeps the original editor timezone after the profile timezone changes', () => {
+    setTimezone('America/Caracas')
+    const editorTimezone = 'America/Caracas'
+    const instant = '2026-10-04T20:00:00.000Z'
+    const input = toLocalDateTimeInput(instant, editorTimezone)
+    setTimezone('Asia/Kathmandu')
+    expect(toLocalDateTimeInput(instant, editorTimezone)).toBe(input)
+    expect(fromLocalDateTimeInput(input, editorTimezone)).toBe(instant)
   })
 })

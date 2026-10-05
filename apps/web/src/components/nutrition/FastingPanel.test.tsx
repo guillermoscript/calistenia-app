@@ -2,11 +2,13 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { useFasting } from '@calistenia/core/hooks/useFasting'
 import { FastingError, toLocalDateTimeInput } from '@calistenia/core/lib/fasting'
+import { getTimezone, setTimezone } from '@calistenia/core/lib/dateUtils'
 import FastingPanel from './FastingPanel'
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'es' } }) }))
 
 type State = ReturnType<typeof useFasting>
+const originalTimezone = getTimezone()
 const now = new Date('2026-10-04T18:00:00Z').getTime()
 const active = { id: 'fast-1', userId: 'user-1', startedAt: '2026-10-03T18:00:00.000Z', endedAt: null, goalHours: 24, notes: 'Water' }
 function state(overrides: Partial<State> = {}): State {
@@ -20,7 +22,7 @@ function state(overrides: Partial<State> = {}): State {
 
 describe('FastingPanel', () => {
   beforeEach(() => vi.spyOn(Date, 'now').mockReturnValue(now))
-  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+  afterEach(() => { setTimezone(originalTimezone); vi.useRealTimers(); vi.restoreAllMocks() })
 
   it('derives elapsed time from timestamps and keeps a reached goal active', () => {
     vi.useFakeTimers()
@@ -135,4 +137,91 @@ describe('FastingPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'fasting.retry' }))
     await waitFor(() => expect(fasting.refresh).toHaveBeenCalledTimes(1))
   })
+
+  it('preserves a duration draft when a refetch changes only the weekly goal', async () => {
+    const fasting = state()
+    const { rerender } = render(<FastingPanel fasting={fasting} />)
+    fireEvent.click(screen.getByRole('button', { name: '36 h' }))
+    rerender(<FastingPanel fasting={{ ...fasting, settings: { goalHours: 16, weeklyGoal: 5 } }} />)
+    expect(screen.getByLabelText('fasting.customHours')).toHaveValue(36)
+    expect(screen.getByLabelText('fasting.weeklyGoal')).toHaveValue(5)
+    fireEvent.click(screen.getByRole('button', { name: 'fasting.startNowWithGoal' }))
+    await waitFor(() => expect(fasting.startFast).toHaveBeenCalledWith({ goalHours: 36 }))
+  })
+
+  it('preserves a weekly draft while updating an untouched duration from the server', () => {
+    const fasting = state()
+    const { rerender } = render(<FastingPanel fasting={fasting} />)
+    fireEvent.change(screen.getByLabelText('fasting.weeklyGoal'), { target: { value: '4' } })
+    rerender(<FastingPanel fasting={{ ...fasting, settings: { goalHours: 24, weeklyGoal: 3 } }} />)
+    expect(screen.getByLabelText('fasting.customHours')).toHaveValue(24)
+    expect(screen.getByLabelText('fasting.weeklyGoal')).toHaveValue(4)
+  })
+
+  it('retains goal drafts after a failed settings save', async () => {
+    const fasting = state({ saveSettings: vi.fn(async () => { throw new FastingError('offline') }) })
+    render(<FastingPanel fasting={fasting} />)
+    fireEvent.click(screen.getByRole('button', { name: '36 h' }))
+    fireEvent.change(screen.getByLabelText('fasting.weeklyGoal'), { target: { value: '5' } })
+    fireEvent.click(screen.getByRole('button', { name: 'fasting.saveGoals' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('fasting.error.offline'))
+    expect(screen.getByLabelText('fasting.customHours')).toHaveValue(36)
+    expect(screen.getByLabelText('fasting.weeklyGoal')).toHaveValue(5)
+  })
+
+  it('preserves exact instants for a notes-only edit after the profile timezone changes', async () => {
+    setTimezone('America/Caracas')
+    const completed = { ...active, startedAt: '2026-10-02T18:00:43.000Z', endedAt: '2026-10-03T18:00:58.000Z' }
+    const fasting = state({ sessions: [completed] })
+    const { rerender } = render(<FastingPanel fasting={fasting} />)
+    fireEvent.click(screen.getByRole('button', { name: 'fasting.editSession' }))
+    setTimezone('UTC')
+    rerender(<FastingPanel fasting={fasting} />)
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('fasting.notes'), { target: { value: 'Timezone changed' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'fasting.save' }))
+    await waitFor(() => expect(fasting.saveFast).toHaveBeenCalledWith({ id: 'fast-1', startedAt: completed.startedAt, endedAt: completed.endedAt, goalHours: 24, notes: 'Timezone changed' }))
+  })
+
+  it('interprets date edits and max dates in the timezone captured when the editor opened', async () => {
+    setTimezone('America/Caracas')
+    const completed = { ...active, startedAt: '2026-10-02T18:00:43.000Z', endedAt: '2026-10-03T18:00:58.000Z' }
+    const fasting = state({ sessions: [completed] })
+    const { rerender } = render(<FastingPanel fasting={fasting} />)
+    fireEvent.click(screen.getByRole('button', { name: 'fasting.editSession' }))
+    setTimezone('UTC')
+    rerender(<FastingPanel fasting={fasting} />)
+    const dialog = screen.getByRole('dialog')
+    const startInput = within(dialog).getByLabelText('fasting.startedAt')
+    expect(startInput).toHaveAttribute('max', '2026-10-04T14:00')
+    fireEvent.change(startInput, { target: { value: '2026-10-02T15:00' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'fasting.save' }))
+    await waitFor(() => expect(fasting.saveFast).toHaveBeenCalledWith({ id: 'fast-1', startedAt: '2026-10-02T19:00:00.000Z', endedAt: completed.endedAt, goalHours: 24, notes: completed.notes }))
+  })
+
+  it('sends the captured revision after a newer server record arrives and keeps a rejected draft', async () => {
+    const completed = { ...active, endedAt: new Date(now).toISOString(), revision: 1 }
+    const fasting = state({ sessions: [completed], saveFast: vi.fn(async () => { throw new FastingError('conflict') }) })
+    const { rerender } = render(<FastingPanel fasting={fasting} />)
+    fireEvent.click(screen.getByRole('button', { name: 'fasting.editSession' }))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('fasting.notes'), { target: { value: 'Local draft' } })
+    rerender(<FastingPanel fasting={{ ...fasting, sessions: [{ ...completed, revision: 2, notes: 'Remote note' }] }} />)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'fasting.save' }))
+    await waitFor(() => expect(fasting.saveFast).toHaveBeenCalledWith({ id: 'fast-1', startedAt: completed.startedAt, endedAt: completed.endedAt, goalHours: 24, notes: 'Local draft', revision: 1 }))
+    await waitFor(() => expect(within(dialog).getByRole('alert')).toHaveTextContent('fasting.error.conflict'))
+    expect(within(dialog).getByLabelText('fasting.notes')).toHaveValue('Local draft')
+  })
+
+  it('sends the original revision when finishing despite a newer active record arriving', async () => {
+    const original = { ...active, revision: 2 }
+    const fasting = state({ sessions: [original], activeSession: original })
+    const { rerender } = render(<FastingPanel fasting={fasting} />)
+    fireEvent.click(screen.getByRole('button', { name: 'fasting.finish', exact: true }))
+    const updated = { ...original, revision: 3, notes: 'Remote update' }
+    rerender(<FastingPanel fasting={{ ...fasting, sessions: [updated], activeSession: updated }} />)
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'fasting.confirmFinish' }))
+    await waitFor(() => expect(fasting.finishFast).toHaveBeenCalledWith('fast-1', { endedAt: new Date(now).toISOString(), notes: original.notes, revision: 2 }))
+  })
+
 })

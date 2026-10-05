@@ -26,7 +26,7 @@ import { getFastingProgress } from '@calistenia/core/lib/fasting'
 
 const clients: QueryClient[] = []
 const start = '2026-10-01T18:00:42.000Z'
-const row = { id: 'fast', user: 'owner', started_at: start, ended_at: '', goal_hours: 48, notes: '' }
+const row = { id: 'fast', user: 'owner', revision: 1, started_at: start, ended_at: '', goal_hours: 48, notes: '' }
 function mount(user = 'owner') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   clients.push(client)
@@ -41,13 +41,13 @@ beforeEach(() => {
   h.getFullList.mockImplementation(async () => [...h.records])
   h.getList.mockResolvedValue({ items: [] })
   h.create.mockImplementation(async (data: Record<string, unknown>) => {
-    const saved = { id: 'fast', ...data }
+    const saved = { id: 'fast', revision: 1, ...data }
     h.records.push(saved)
     return saved
   })
   h.update.mockImplementation(async (id: string, data: Record<string, unknown>) => {
     const previous = h.records.find(r => r.id === id)!
-    const next = { ...previous, ...data }
+    const next = { ...previous, ...data, revision: Number(previous.revision ?? 0) + 1 }
     h.records = h.records.map(r => r.id === id ? next : r)
     return next
   })
@@ -91,6 +91,36 @@ describe('fasting persistence and recovery', () => {
     await act(async () => { await expect(result.current.finishFast('fast')).rejects.toEqual({ status: 0 }) })
     expect(result.current.activeSession?.endedAt).toBeNull()
     expect(localStorage.getItem('calistenia_fasting_cache')).toBe(cache)
+  })
+
+  it('recovers a committed start after its response is lost and prevents a duplicate retry', async () => {
+    h.create.mockImplementation(async (data: Record<string, unknown>) => {
+      h.records = [{ id: 'fast', revision: 1, ...data }]
+      throw { status: 0 }
+    })
+    const { result } = mount()
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => { await expect(result.current.startFast({ startedAt: start, goalHours: 48 })).rejects.toEqual({ status: 0 }) })
+    await waitFor(() => expect(result.current.activeSession?.id).toBe('fast'))
+    await act(async () => { await expect(result.current.startFast({ startedAt: start, goalHours: 48 })).rejects.toThrow('alreadyActive') })
+    expect(h.create).toHaveBeenCalledTimes(1)
+    expect(result.current.sessions).toHaveLength(1)
+  })
+
+  it('recovers a committed finish after its response is lost and prevents reopening on retry', async () => {
+    h.records = [row]
+    h.update.mockImplementation(async (_id: string, data: Record<string, unknown>) => {
+      h.records = [{ ...row, ...data, revision: 2 }]
+      throw { status: 0 }
+    })
+    const { result } = mount()
+    await waitFor(() => expect(result.current.activeSession?.id).toBe('fast'))
+    const endedAt = '2026-10-03T18:00:42.000Z'
+    await act(async () => { await expect(result.current.finishFast('fast', { endedAt })).rejects.toEqual({ status: 0 }) })
+    await waitFor(() => expect(result.current.sessions[0].endedAt).toBe(endedAt))
+    expect(result.current.activeSession).toBeNull()
+    await act(async () => { await expect(result.current.finishFast('fast')).rejects.toThrow('alreadyEnded') })
+    expect(h.update).toHaveBeenCalledTimes(1)
   })
 
   it('does not expose the previous account’s timer when switching users', async () => {
@@ -145,6 +175,55 @@ describe('fasting persistence and recovery', () => {
     await act(async () => { resolve(row); await pending })
     expect(result.current.activeSession).toBeNull()
     expect(localStorage.getItem('calistenia_fasting_cache')).toBe(currentCache)
+  })
+
+  it('rejects a stale editor revision after another device finishes the fast', async () => {
+    h.records = [row]
+    const { result } = mount()
+    await waitFor(() => expect(result.current.activeSession?.revision).toBe(1))
+    const old = result.current.activeSession!
+    h.records = [{ ...row, revision: 2, ended_at: '2026-10-03T18:00:42.000Z', notes: 'Finished elsewhere' }]
+    await act(async () => { await result.current.refresh() })
+    await act(async () => { await expect(result.current.saveFast({ ...old, notes: 'Stale note' })).rejects.toThrow('conflict') })
+    expect(h.update).not.toHaveBeenCalled()
+    expect(result.current.activeSession).toBeNull()
+    expect(result.current.sessions[0].notes).toBe('Finished elsewhere')
+  })
+
+  it('sends the captured revision to reject a race occurring after the last refresh', async () => {
+    h.records = [row]
+    const { result } = mount()
+    await waitFor(() => expect(result.current.activeSession?.revision).toBe(1))
+    const conflict = { status: 409, response: { data: { revision: { code: 'fasting_conflict' } } } }
+    h.update.mockRejectedValue(conflict)
+    await act(async () => { await expect(result.current.finishFast('fast', { revision: 1 })).rejects.toBe(conflict) })
+    expect(h.update).toHaveBeenCalledWith('fast', expect.objectContaining({ expected_revision: 1 }), { requestKey: null })
+    expect(result.current.activeSession?.endedAt).toBeNull()
+  })
+
+  it.each([
+    { startedAt: 'bad' }, { goalHours: 0 }, { userId: 'other' }, { notes: null },
+  ])('ignores damaged or foreign cached sessions rather than exposing an invalid timer (%j)', async change => {
+    localStorage.setItem('calistenia_fasting_cache', JSON.stringify({ userId: 'owner', data: {
+      settings: { goalHours: 16, weeklyGoal: 3 },
+      sessions: [{ id: 'fast', userId: 'owner', startedAt: start, endedAt: null, goalHours: 48, notes: '', ...change }],
+    } }))
+    h.getFullList.mockRejectedValue({ status: 0 })
+    const { result } = mount()
+    expect(result.current.activeSession).toBeNull()
+    await waitFor(() => expect(result.current.error).toEqual({ status: 0 }))
+    expect(result.current.sessions).toEqual([])
+  })
+
+  it('recovers concurrent creation of the first settings row without creating duplicates', async () => {
+    const { result } = mount()
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    h.getList.mockResolvedValueOnce({ items: [] }).mockResolvedValue({ items: [{ id: 'settings', goal_hours: 24, weekly_goal: 3 }] })
+    h.create.mockRejectedValue({ status: 400, response: { data: { user: { code: 'validation_not_unique' } } } })
+    h.update.mockResolvedValue({ id: 'settings', goal_hours: 36, weekly_goal: 4 })
+    await act(async () => { await result.current.saveSettings({ goalHours: 36, weeklyGoal: 4 }) })
+    expect(h.create).toHaveBeenCalledTimes(1)
+    expect(h.update).toHaveBeenCalledWith('settings', { goal_hours: 36, weekly_goal: 4 }, { requestKey: null })
   })
 
   it('a stale background read cannot overwrite a newly persisted session', async () => {
