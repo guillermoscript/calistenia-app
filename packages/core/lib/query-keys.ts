@@ -11,6 +11,10 @@
  */
 
 export const qk = {
+  fasting: {
+    all: ['fasting'] as const,
+    data: (userId: string | null) => ['fasting', 'data', userId] as const,
+  },
   // — Auth / usuario —
   authReady: ['auth', 'ready'] as const,
   pbAvailable: ['pb', 'available'] as const,

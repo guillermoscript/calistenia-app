@@ -11,6 +11,7 @@ vi.mock('../platform', () => ({
 }))
 
 const EXPECTED_KEYS = [
+  'calistenia_fasting_cache',
   'calistenia_progress',
   'calistenia_settings',
   'calistenia_water',
@@ -42,8 +43,8 @@ const EXPECTED_KEYS = [
 ]
 
 describe('USER_SCOPED_STORAGE_KEYS', () => {
-  it('contiene exactamente las 28 claves de localStorage por usuario', () => {
-    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(28)
+  it('contiene exactamente las claves de localStorage por usuario', () => {
+    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(EXPECTED_KEYS.length)
     expect([...USER_SCOPED_STORAGE_KEYS].sort()).toEqual([...EXPECTED_KEYS].sort())
   })
 })

@@ -78,6 +78,8 @@ async function main() {
     bin,
     [
       "serve",
+      // Apply existing UP migrations, but never generate repo files from test schema edits.
+      "--automigrate=false",
       `--http=127.0.0.1:${pbPort}`,
       `--dir=${dataDir}`,
       `--migrationsDir=${join(ROOT, "pb_migrations")}`,
