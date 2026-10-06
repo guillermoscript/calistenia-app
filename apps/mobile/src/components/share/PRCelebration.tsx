@@ -44,7 +44,13 @@ export default function PRCelebration({
   const translateY = useRef(new Animated.Value(-200)).current
   const captureRef = useRef<ShareCardCaptureHandle>(null)
 
-  // Haptic + slide-in on mount
+  // El padre pasa `onDismiss` inline (identidad nueva en cada render): si el
+  // efecto dependiera de él, cada re-render del padre repetiría la vibración y
+  // reiniciaría el timer de 8 s (vibración infinita, toast que no se cierra).
+  const onDismissRef = useRef(onDismiss)
+  onDismissRef.current = onDismiss
+
+  // Haptic + slide-in on mount (una sola vez)
   useEffect(() => {
     haptics.success()
     Animated.spring(translateY, {
@@ -54,9 +60,9 @@ export default function PRCelebration({
       stiffness: 160,
     }).start()
 
-    const timer = setTimeout(onDismiss, 8000)
+    const timer = setTimeout(() => onDismissRef.current(), 8000)
     return () => clearTimeout(timer)
-  }, [onDismiss, translateY])
+  }, [translateY])
 
   const handleShare = useCallback(async () => {
     try {
