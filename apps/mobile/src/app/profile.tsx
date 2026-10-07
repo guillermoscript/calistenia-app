@@ -52,6 +52,7 @@ import {
 import { Chip } from '@/components/ui/chip'
 import { Textarea } from '@/components/ui/textarea'
 import { Sentry } from '@/lib/instrument'
+import { StravaProfileSection } from '@/components/strava/StravaProfileSection'
 
 type SaveState = 'idle' | 'saving' | 'saved'
 /** Temas de ajuste que se despliegan en la lista del final. */
@@ -781,6 +782,9 @@ export default function ProfileScreen() {
             ) : null}
           </Card>
         </View>
+
+        {/* Strava (#914): solo si el servidor la tiene configurada */}
+        <StravaProfileSection userId={(user?.id as string) ?? null} />
 
         {/* Sesión */}
         <Button

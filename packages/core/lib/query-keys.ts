@@ -163,6 +163,11 @@ export const qk = {
   sessionHrMetrics: (userId: string | null, date: string, workoutKey: string) =>
     ['session-hr-metrics', userId, date, workoutKey] as const,
 
+  // Estado de la conexión con Strava y subida de una sesión de cardio (#914).
+  stravaStatus: (userId: string | null) => ['strava-status', userId] as const,
+  stravaUpload: (userId: string | null, sessionId: string) =>
+    ['strava-upload', userId, sessionId] as const,
+
   // — Stats / leaderboard / perfil —
   // Perfil público de otro usuario (o el propio visto como público): stats, PRs,
   // calendario del mes, últimas sesiones y programa activo en una sola query.

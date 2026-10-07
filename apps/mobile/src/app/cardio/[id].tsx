@@ -22,6 +22,7 @@ import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import RouteMap from '@/components/cardio/RouteMap'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
+import { StravaUploadBlock } from '@/components/strava/StravaUploadBlock'
 import CardioShareButton from '@/components/share/CardioShareButton'
 import type { CardioSession } from '@calistenia/core/types'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
@@ -307,6 +308,8 @@ export default function CardioDetailScreen() {
             </Text>
           </View>
         )}
+
+        {isOwnSession && me ? <StravaUploadBlock userId={me.id} sessionId={session.id as string} /> : null}
 
         {/* Share button (full card with map) */}
         <CardioShareButton
