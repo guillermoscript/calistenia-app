@@ -10,6 +10,7 @@ import { useAuthState } from '../contexts/AuthContext'
 import CardioSessionStatsPanel from '../components/cardio/CardioSessionStatsPanel'
 import ElevationProfile from '../components/cardio/ElevationProfile'
 import CardioShareCard from '../components/cardio/CardioShareCard'
+import { StravaUploadBlock } from '../components/strava/StravaUploadBlock'
 import type { CardioSession } from '@calistenia/core/types'
 
 // Leaflet + RouteMap is ~150kb gzipped — split into its own chunk
@@ -207,6 +208,9 @@ export default function CardioSessionDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Subir a Strava (#914): solo el dueño; el bloque se oculta si no está configurado. */}
+      {isOwn && session.id && <StravaUploadBlock userId={userId} sessionId={session.id} />}
 
       {/* Share card */}
       <CardioShareCard

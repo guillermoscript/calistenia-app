@@ -26,6 +26,7 @@ import {
 } from '@calistenia/core/hooks/useProfileForm'
 import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
 import { PrivateAccountCard } from '../components/profile/PrivateAccountCard'
+import { StravaCard } from '../components/strava/StravaCard'
 import {
   SettingsRow, Field, UnitInput, Segmented, ChipToggle, DayToggle,
 } from '../components/profile/SettingsPanel'
@@ -819,6 +820,9 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
 
           {/* Cuenta privada (#422): interruptor que se queda aquí, no navega. */}
           <PrivateAccountCard userId={user?.id ?? null} />
+
+          {/* Strava (#914): solo si el servidor tiene credenciales. */}
+          <StravaCard userId={user?.id ?? null} />
 
           {/* Zona de peligro (#300): dentro de «cuenta», al final del todo, para
               que no se pulse de paso mientras se editan otros campos. */}
