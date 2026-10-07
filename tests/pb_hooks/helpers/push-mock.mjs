@@ -26,6 +26,20 @@ export function startPushMock(port) {
         res.end("{}")
         return
       }
+      if (req.url.startsWith("/strava/")) {
+        // Stub de Strava (#914): captura el cuerpo en crudo (multipart/form) y
+        // responde lo mínimo que usan los handlers.
+        captured.push({ path: req.url, method: req.method, raw: body, auth: req.headers.authorization || null })
+        const path = req.url.slice("/strava".length)
+        let out = {}
+        if (path === "/oauth/token") out = { access_token: "tok-nuevo", refresh_token: "ref-nuevo", expires_at: Math.floor(Date.now() / 1000) + 21600, athlete: { id: 777 } }
+        else if (req.method === "POST" && path === "/api/v3/uploads") out = { id: 555, status: "Your activity is still being processed.", activity_id: null, error: null }
+        else if (req.method === "GET" && path === "/api/v3/uploads/555") out = { id: 555, status: "Your activity is ready.", activity_id: 9001, error: null }
+        else if (path === "/api/v3/activities") out = { id: 9002 }
+        res.writeHead(200, { "Content-Type": "application/json" })
+        res.end(JSON.stringify(out))
+        return
+      }
       let parsed = null
       try { parsed = JSON.parse(body) } catch { /* body no-JSON */ }
       captured.push({

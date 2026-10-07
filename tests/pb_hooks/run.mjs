@@ -85,7 +85,12 @@ async function main() {
       `--migrationsDir=${join(ROOT, "pb_migrations")}`,
       `--hooksDir=${join(ROOT, "pb_hooks")}`,
     ],
-    { env: { ...process.env, AI_API_URL: mockUrl, INTERNAL_API_KEY: INTERNAL_KEY } }
+    { env: {
+      ...process.env, AI_API_URL: mockUrl, INTERNAL_API_KEY: INTERNAL_KEY,
+      // Strava apunta al stub del mock (#914); el secreto de state lo conocen los tests.
+      STRAVA_CLIENT_ID: "cid", STRAVA_CLIENT_SECRET: "csecret", STRAVA_STATE_SECRET: "state-secret-de-tests",
+      STRAVA_REDIRECT_URI: "http://localhost/api/strava/callback", STRAVA_API_BASE: `${mockUrl}/strava`,
+    } }
   )
   pb.stdout.on("data", (d) => (pbLog += d))
   pb.stderr.on("data", (d) => (pbLog += d))
