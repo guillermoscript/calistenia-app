@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getPlatform } from '../platform'
 import { pb } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC } from '../lib/dateUtils'
+import { todayStr, nowLocalForPB, localDateForPB } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, emitOnce, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { saveSettingsSerial } from '../lib/settingsWrite'
@@ -13,7 +13,7 @@ import { persistOrQueue, newClientId, cancelLastQueuedByTempId } from '../lib/of
 import { emitProgramMilestoneIfCompleted } from '../lib/program-milestone'
 import { invalidateAfterWorkout } from '../lib/workout-cache'
 import { patchProgressData, patchSettingsData, type ProgressData } from '../lib/progress-cache'
-import { WorkoutNotSavedError, removeOneWorkoutDone } from '../lib/workout-done'
+import { WorkoutNotSavedError, removeOneWorkoutDone, wallClockDayBounds } from '../lib/workout-done'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 export interface UseProgressMutationsReturn {
@@ -295,14 +295,17 @@ export function useProgressMutations(userId: string | null = null, activeProgram
 
     if (usePB && userId) {
       try {
-        const dayStart = localMidnightAsUTC(d)
-        const dayEndDate = new Date(new Date(`${d}T00:00:00`).getTime() + 86400000)
-        const dayEnd = localMidnightAsUTC(toLocalDateStr(dayEndDate))
+        // `completed_at` es hora de PARED (ver `wallClockDayBounds`): los
+        // límites en UTC desplazaban la ventana el offset de la zona y podían
+        // borrar el mismo entreno de un día vecino. El más reciente del día es
+        // el que se deshace.
+        const { from, to } = wallClockDayBounds(d)
         const records = await pb.collection('sessions').getList(1, 1, {
           requestKey: null,
+          sort: '-completed_at',
           filter: pb.filter(
-            'user = {:uid} && workout_key = {:key} && completed_at >= {:from} && completed_at < {:to}',
-            { uid: userId, key: workoutKey, from: dayStart, to: dayEnd },
+            'user = {:uid} && workout_key = {:key} && completed_at >= {:from} && completed_at <= {:to}',
+            { uid: userId, key: workoutKey, from, to },
           ),
         })
         if (records.items.length > 0) {

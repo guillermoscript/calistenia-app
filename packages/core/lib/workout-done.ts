@@ -49,3 +49,15 @@ export function removeOneWorkoutDone(prev: ProgressMap, doneKey: string): Progre
   }
   return next
 }
+
+/**
+ * Límites de un día para filtrar `sessions.completed_at`.
+ *
+ * Ese campo guarda la hora de PARED del usuario (`nowLocalForPB` /
+ * `localDateForPB`): PocketBase le pega una `Z` pero no es UTC. El día `d` es
+ * por tanto el rango literal `d 00:00:00`–`d 23:59:59.999`; convertir la
+ * medianoche local a UTC desplazaría la ventana el offset de la zona.
+ */
+export function wallClockDayBounds(day: string): { from: string; to: string } {
+  return { from: `${day} 00:00:00`, to: `${day} 23:59:59.999` }
+}
