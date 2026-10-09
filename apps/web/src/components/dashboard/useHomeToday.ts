@@ -16,11 +16,12 @@ import { useCircuitSession } from '../../contexts/CircuitSessionContext'
 import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
-import { getHomeState, dayHasContent, resolveLastActivityDay, type HomeActiveActivity, type HomeState } from '@calistenia/core/lib/homeState'
+import { getHomeState, dayHasContent, resolveLastActivityDay, type HomeState } from '@calistenia/core/lib/homeState'
+import { resolveHomeActiveActivity } from '@calistenia/core/lib/homeActiveActivity'
 import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 import { computeWeeklyStreak, type WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { toLocalDateStr, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getQueue } from '@calistenia/core/lib/offlineQueue'
 import type { CardioSession, WeekDay, Workout } from '@calistenia/core/types'
 
@@ -101,28 +102,22 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
   const { data: activeBattle } = useActiveBattle({ poll: true })
   const battleOngoing = isBattleOngoing(activeBattle)
 
-  const activeActivity = useMemo((): HomeActiveActivity | null => {
-    if (battleOngoing) return { type: 'battle', startedDay: null, workoutKey: null }
-    if (strength.isActive && strength.workout) {
-      return {
-        type: strength.source === 'free' ? 'free' : 'strength',
-        startedDay: strength.startedAt ? toLocalDateStr(new Date(strength.startedAt)) : null,
-        workoutKey: strength.workoutKey,
-      }
-    }
-    if (cardio.state === 'tracking' || cardio.state === 'paused') {
-      return { type: 'cardio', startedDay: null, workoutKey: cardio.programDayKey }
-    }
-    if (circuit.isActive && circuit.circuit) {
-      return {
-        type: 'circuit',
-        startedDay: circuit.startedAt ? toLocalDateStr(new Date(circuit.startedAt)) : null,
-        workoutKey: circuit.programDayKey ?? null,
-      }
-    }
-    return null
-  }, [battleOngoing, strength.isActive, strength.workout, strength.source, strength.startedAt, strength.workoutKey,
-    cardio.state, cardio.programDayKey, circuit.isActive, circuit.circuit, circuit.startedAt, circuit.programDayKey])
+  // La regla (batalla y, si no, la última que se empezó) vive en core: la misma que móvil.
+  const hasWorkout = !!strength.workout
+  const hasCircuit = !!circuit.circuit
+  const activeActivity = useMemo(() => resolveHomeActiveActivity({
+    battleOngoing,
+    strength: {
+      isActive: strength.isActive,
+      hasWorkout,
+      source: strength.source,
+      startedAt: strength.startedAt,
+      workoutKey: strength.workoutKey,
+    },
+    cardio: { state: cardio.state, startedAt: cardio.startedAt, programDayKey: cardio.programDayKey },
+    circuit: { isActive: circuit.isActive, hasCircuit, startedAt: circuit.startedAt, programDayKey: circuit.programDayKey },
+  }), [battleOngoing, strength.isActive, hasWorkout, strength.source, strength.startedAt, strength.workoutKey,
+    cardio.state, cardio.startedAt, cardio.programDayKey, circuit.isActive, hasCircuit, circuit.startedAt, circuit.programDayKey])
 
   const programWeekDays = activeProgram ? weekDays : NO_WEEK_DAYS
   const goal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)

@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
-import { isHomeTabPath } from '@/lib/home-active-activity'
+import { isHomeTabPath } from '@/lib/home-tab-path'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 

@@ -20,12 +20,12 @@ import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCircuitSession } from '@/contexts/CircuitSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
-import { resolveHomeActiveActivity } from '@/lib/home-active-activity'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { onTimezoneChange, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { dayHasContent as coreDayHasContent, getHomeState, resolveLastActivityDay, type HomeState } from '@calistenia/core/lib/homeState'
+import { resolveHomeActiveActivity } from '@calistenia/core/lib/homeActiveActivity'
 import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 import { getQueue } from '@calistenia/core/lib/offlineQueue'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
@@ -97,10 +97,11 @@ export function useHomeView(): HomeView {
     [progress, cardioSessions],
   )
 
+  // La regla (batalla y, si no, la última que se empezó) vive en core: la misma que web.
   const activeActivity = resolveHomeActiveActivity({
     battleOngoing: isBattleOngoing(battle),
-    cardio: { state: cardio.state, programDayKey: cardio.programDayKey },
-    circuit: { isActive: circuit.isActive, startedAt: circuit.startedAt, programDayKey: circuit.programDayKey },
+    cardio: { state: cardio.state, startedAt: cardio.startedAt, programDayKey: cardio.programDayKey },
+    circuit: { isActive: circuit.isActive, hasCircuit: !!circuit.circuit, startedAt: circuit.startedAt, programDayKey: circuit.programDayKey },
     strength: {
       isActive: session.isActive,
       hasWorkout: !!session.workout,

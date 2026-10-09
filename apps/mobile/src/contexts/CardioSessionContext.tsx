@@ -64,6 +64,11 @@ interface CardioSessionContextValue {
   gpsAccuracy: number | null
   programId: string | null
   programDayKey: string | null
+  /**
+   * Inicio de la sesión en curso (ms), o `null`. Lo usa «Hoy» para saber cuál
+   * de las actividades abiertas se empezó la última (`resolveHomeActiveActivity`).
+   */
+  startedAt: number | null
   /** false si el usuario denegó el permiso de ubicación. */
   start: (type: CardioActivityType, programId?: string, programDayKey?: string) => Promise<boolean>
   pause: () => void
@@ -95,6 +100,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const [note, setNote] = useState('')
   const [programId, setProgramId] = useState<string | null>(null)
   const [programDayKey, setProgramDayKey] = useState<string | null>(null)
+  // Espejo en estado de `startTimeRef`: un ref no se puede leer al renderizar.
+  const [startedAt, setStartedAt] = useState<number | null>(null)
 
   // Espejo en refs de lo que leen los callbacks de larga vida (el listener de
   // fixes del FGS y el intervalo del cronómetro): allí un valor capturado por
@@ -231,6 +238,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     programDayKeyRef.current = startProgramDayKey || null
     pausedDurationRef.current = 0
     startTimeRef.current = Date.now()
+    setStartedAt(startTimeRef.current)
 
     setSessionState('tracking')
     void haptics.medium()
@@ -451,6 +459,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     if (!saved) return
 
     startTimeRef.current = saved.startTime
+    setStartedAt(saved.startTime)
     pausedDurationRef.current = saved.pausedDuration
     programIdRef.current = saved.programId
     programDayKeyRef.current = saved.programDayKey
@@ -504,11 +513,12 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     gpsAccuracy,
     programId,
     programDayKey,
+    startedAt,
     start, pause, resume, finish, discard,
     getHistory, deleteSession, updateSessionNote,
     unsavedCount,
   }), [
-    state, activityType, error, note, programId, programDayKey,
+    state, activityType, error, note, programId, programDayKey, startedAt,
     points, pointsCount, distance, currentPace, currentSpeed, currentSplit, gpsAccuracy,
     duration, unsavedCount,
     start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote,
