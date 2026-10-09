@@ -33,9 +33,7 @@ import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
 import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { getEffectiveWeeklyGoal, trainableDaysPerWeek, DEFAULT_WEEKLY_GOAL } from '@calistenia/core/lib/weeklyGoal'
-import { activityDaysFromProgress } from '@calistenia/core/lib/weekSummary'
-import { computeWeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
-import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
+import { useTrainingWeek } from '@/lib/use-training-week'
 import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { usePrivateAccount } from '@calistenia/core/hooks/usePrivateAccount'
@@ -141,7 +139,6 @@ export default function ProfileScreen() {
   const { updateSettings } = useWorkoutActions()
   // `?section=goal` abre un panel directamente (el enlace «Objetivo» de Progreso).
   const params = useLocalSearchParams<{ section?: string }>()
-  const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
 
   // Lime se aclara/oscurece según el tema (paridad con reminders.tsx); muted = chevron gris.
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
@@ -214,13 +211,8 @@ export default function ProfileScreen() {
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   // El objetivo que tendría sin fijarlo a mano: los días de su programa (#853).
   const programGoal = (activeProgram && trainableDaysPerWeek(weekDays)) || DEFAULT_WEEKLY_GOAL
-  // Racha SEMANAL (#853), con la misma cuenta que Progreso: cualquier entreno,
-  // cardio libre incluido (misma query key, sin fetch extra).
-  const streak = computeWeeklyStreak(
-    [...activityDaysFromProgress(progress), ...cardioSessions.map(c => utcToLocalDateStr(c.started_at))],
-    weeklyGoal,
-    todayStr(),
-  )
+  // Racha SEMANAL (#853): la misma que Inicio y Progreso.
+  const { streak } = useTrainingWeek()
   const skills = buildSkills(settings as unknown as Record<string, number>)
   // #616: con inscripción activa la semana sale del programa (`started_at`);
   // sin ella se conserva el cálculo sobre `settings.startDate`, que es lo

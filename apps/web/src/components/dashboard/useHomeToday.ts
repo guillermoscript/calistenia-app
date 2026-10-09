@@ -4,8 +4,9 @@
  * Junta lo que ya tienen los contextos (programa, progreso, sesiones en curso,
  * contador de la cuenta) y se lo pasa a las funciones puras de core:
  * `getHomeState` decide el bloque «Hoy», `getWeekSummary` la semana y
- * `computeWeeklyStreak` la racha. No lanza consultas propias: el único dato de
- * red es el contador de la cuenta de `useHomeStage`, que ya existía.
+ * `useTrainingWeek` (core) los días de actividad, el objetivo y la racha. Las
+ * únicas consultas son el contador de la cuenta (`useHomeStage`) y las sesiones
+ * de cardio, que comparten caché con `useCardioStats`.
  */
 import { useEffect, useMemo, useState } from 'react'
 import { useWorkoutActions, useWorkoutState } from '../../contexts/WorkoutContext'
@@ -18,12 +19,12 @@ import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
 import { getHomeState, dayHasContent, resolveLastActivityDay, type HomeState } from '@calistenia/core/lib/homeState'
 import { resolveHomeActiveActivity } from '@calistenia/core/lib/homeActiveActivity'
-import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
-import { computeWeeklyStreak, type WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
-import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
+import type { WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
+import { useTrainingWeek } from '../../hooks/useTrainingWeek'
+import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { getQueue } from '@calistenia/core/lib/offlineQueue'
-import type { CardioSession, WeekDay, Workout } from '@calistenia/core/types'
+import type { WeekDay, Workout } from '@calistenia/core/types'
 
 const NO_WEEK_DAYS: readonly WeekDay[] = []
 
@@ -51,12 +52,6 @@ function pendingWrites(): number {
   }
 }
 
-/** Día local `YYYY-MM-DD` de un `started_at` de PocketBase (formatos mezclados, #673). */
-function cardioDay(session: CardioSession | null | undefined): string | null {
-  if (!session?.started_at) return null
-  return utcToLocalDateStr(session.started_at.replace(' ', 'T')) || null
-}
-
 export interface HomeToday {
   state: HomeState
   today: string
@@ -72,15 +67,14 @@ export interface HomeToday {
   workoutFor: (dayId: string) => Workout | null
 }
 
-export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToday {
-  const { settings, activeProgram, weekDays, programProgress, progress, programsReady } = useWorkoutState()
+export function useHomeToday(): HomeToday {
+  const { activeProgram, weekDays, programProgress, programsReady } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getLastSessionDate, getDoneDates, getTotalSessions } = useWorkoutActions()
   const { userId, user } = useAuthState()
   const strength = useActiveSession()
   const cardio = useCardioSessionContext()
   const circuit = useCircuitSession()
   const online = useOnline()
-  const today = todayStr()
   const phase = programProgress?.currentPhase || 1
 
   const account = useHomeStage(userId, getTotalSessions())
@@ -89,14 +83,8 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
   // Lo emitía ActivationCard, que sale del inicio: el evento no se puede perder.
   useTrackActivationReached(userId ?? null, activation)
 
-  const lastCardioDay = cardioDay(cardioLastSession)
-  const activityDays = useMemo(() => {
-    const days = activityDaysFromProgress(progress)
-    // El cardio libre no vive en el ProgressMap; de él solo tenemos la última
-    // sesión, que basta para que el día de hoy o de ayer no salga vacío.
-    if (lastCardioDay && !days.includes(lastCardioDay)) days.push(lastCardioDay)
-    return days
-  }, [progress, lastCardioDay])
+  // Días, objetivo y racha: los mismos que Entrenar, Progreso y Perfil.
+  const { today, activityDays, goal, streak } = useTrainingWeek()
 
   // Hoy es la pantalla que más tiempo está abierta: aquí sí se refresca sola (paridad con móvil).
   const { data: activeBattle } = useActiveBattle({ poll: true })
@@ -120,7 +108,6 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
     cardio.state, cardio.startedAt, cardio.programDayKey, circuit.isActive, hasCircuit, circuit.startedAt, circuit.programDayKey])
 
   const programWeekDays = activeProgram ? weekDays : NO_WEEK_DAYS
-  const goal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const signupDay = user?.created ? utcToLocalDateStr(user.created.replace(' ', 'T')) || null : null
 
   const week = useMemo(() => getWeekSummary({
@@ -131,11 +118,9 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
     inProgressToday: !!activeActivity && (!activeActivity.startedDay || activeActivity.startedDay === today),
   }), [today, activityDays, programWeekDays, signupDay, activeActivity])
 
-  const streak = useMemo(() => computeWeeklyStreak(activityDays, goal, today), [activityDays, goal, today])
-
   const lastActivityDay = useMemo(() => {
-    return resolveLastActivityDay(today, [getLastSessionDate(), lastCardioDay, activityDays[activityDays.length - 1] ?? null])
-  }, [getLastSessionDate, lastCardioDay, activityDays, today])
+    return resolveLastActivityDay(today, [getLastSessionDate(), activityDays[activityDays.length - 1] ?? null])
+  }, [getLastSessionDate, activityDays, today])
 
   const unsynced = pendingWrites() > 0
 

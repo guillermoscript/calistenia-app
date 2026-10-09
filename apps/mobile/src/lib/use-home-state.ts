@@ -11,7 +11,7 @@
  *   del programa) + cardio libre, en la semana de calendario.
  * - Actividad en curso: batalla, cardio, circuito y sesión de fuerza/libre.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useDayRollover } from '@/lib/use-day-rollover'
 import { isOnline, onConnectivityChange } from '@/lib/connectivity'
@@ -22,14 +22,13 @@ import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
-import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { onTimezoneChange, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { dayHasContent as coreDayHasContent, getHomeState, resolveLastActivityDay, type HomeState } from '@calistenia/core/lib/homeState'
 import { resolveHomeActiveActivity } from '@calistenia/core/lib/homeActiveActivity'
-import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
+import { getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 import { getQueue } from '@calistenia/core/lib/offlineQueue'
-import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { computeWeeklyStreak, type WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
+import type { WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
+import { useTrainingWeek } from '@/lib/use-training-week'
 import type { CardioSession, WeekDay } from '@calistenia/core/types'
 
 export interface HomeView {
@@ -65,13 +64,12 @@ function useOnline(): boolean {
 export function useHomeView(): HomeView {
   const user = useAuthUser()
   const uid = user?.id ?? null
-  const { settings, activeProgram, weekDays, programsReady, progress, programProgress, cardioDayConfigs, circuitDayConfigs } = useWorkoutState()
+  const { activeProgram, weekDays, programsReady, programProgress, cardioDayConfigs, circuitDayConfigs } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getTotalSessions, getDoneDates, getLastSessionDate } = useWorkoutActions()
   const session = useActiveSession()
   const circuit = useCircuitSession()
   const cardio = useCardioSessionContext()
   const { data: battle } = useActiveBattle()
-  const { sessions: cardioSessions } = useCardioSessions(uid)
   const account = useHomeStage(uid, getTotalSessions())
   const online = useOnline()
 
@@ -89,13 +87,8 @@ export function useHomeView(): HomeView {
   const phase = programProgress.currentPhase || 1
   const programDays = activeProgram ? weekDays : []
 
-  const activityDays = useMemo(
-    () => [
-      ...activityDaysFromProgress(progress),
-      ...cardioSessions.map(c => utcToLocalDateStr(c.started_at)),
-    ].filter(Boolean).sort(),
-    [progress, cardioSessions],
-  )
+  // Días, objetivo y racha: los mismos que Progreso y Perfil (y que web).
+  const { activityDays, cardioSessions, goal: weeklyGoal, streak } = useTrainingWeek(today)
 
   // La regla (batalla y, si no, la última que se empezó) vive en core: la misma que web.
   const activeActivity = resolveHomeActiveActivity({
@@ -122,7 +115,6 @@ export function useHomeView(): HomeView {
     )
   }
 
-  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   const week = getWeekSummary({
     today,
     activityDays,
@@ -130,9 +122,6 @@ export function useHomeView(): HomeView {
     signupDay,
     inProgressToday: !!activeActivity && (!activeActivity.startedDay || activeActivity.startedDay === today),
   })
-  // Racha de cliente con el objetivo de hoy para todas las semanas: la del
-  // servidor (#801) lleva el historial de objetivos.
-  const streak = computeWeeklyStreak(activityDays, weeklyGoal, today)
 
   const state = getHomeState({
     today,

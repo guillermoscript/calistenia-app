@@ -48,7 +48,7 @@ export default function DashboardPage({ cardioLastSession }: DashboardPageProps)
   const { t, i18n } = useTranslation()
   const { activeProgram, weekDays } = useWorkoutState()
   const { userId, user } = useAuthState()
-  const home = useHomeToday(cardioLastSession)
+  const home = useHomeToday()
   const { state, week, goal, streak, accountSessions } = home
 
   // #808 dejaba un «ver todo el inicio» por usuario; ya no hay nada que ver.

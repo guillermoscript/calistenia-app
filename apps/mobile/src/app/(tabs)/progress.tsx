@@ -32,9 +32,9 @@ import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
-import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import { activityDaysFromProgress } from '@calistenia/core/lib/weekSummary'
-import { computeWeeklyStreak, weeklyStreakHistory, type WeekHistoryEntry } from '@calistenia/core/lib/weeklyStreak'
+import type { WeekHistoryEntry } from '@calistenia/core/lib/weeklyStreak'
+import { STREAK_HISTORY_WEEKS } from '@calistenia/core/hooks/useWorkoutStreak'
+import { useTrainingWeek } from '@/lib/use-training-week'
 import { mondayOf } from '@calistenia/core/lib/calendarWeek'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
@@ -58,7 +58,7 @@ function rowKey(r: HistoryRow): string {
 }
 
 /** Semanas que enseña la tira de la racha. */
-const STREAK_WEEKS = 10
+const STREAK_WEEKS = STREAK_HISTORY_WEEKS
 
 export default function ProgressScreen() {
   const { t, i18n } = useTranslation()
@@ -66,7 +66,7 @@ export default function ProgressScreen() {
   const user = useAuthUser()
   const { colorScheme } = useColorScheme()
   const dark = colorScheme === 'dark'
-  const { progress, settings, activeProgram, weekDays } = useWorkoutState()
+  const { progress } = useWorkoutState()
   const { getWorkout, getTotalSessions, getMonthActivity } = useWorkoutActions()
   const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
   const { record: battleRecord } = useBattleHistory(user?.id ?? null)
@@ -120,18 +120,9 @@ export default function ProgressScreen() {
   // de analítica conserva la cifra del programa: es la que ya medía.
   const programSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
   const totalSessions = useAccountSessionCount(user?.id ?? null, progress)
-  const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
 
-  // Días con cualquier entreno: marcadores del programa (fuerza, yoga, cardio y
-  // circuito del programa) más el cardio libre, que ya está cargado.
-  const activityDays = useMemo(
-    () => [...activityDaysFromProgress(progress), ...cardioSessions.map(c => utcToLocalDateStr(c.started_at))],
-    [progress, cardioSessions],
-  )
-  // El objetivo es el efectivo de hoy para todas las semanas: el cliente no
-  // guarda el historial de cambios de objetivo (eso lo hace el servidor, #801).
-  const streak = useMemo(() => computeWeeklyStreak(activityDays, weeklyGoal, today), [activityDays, weeklyGoal, today])
-  const weeks = useMemo(() => weeklyStreakHistory(activityDays, weeklyGoal, today, STREAK_WEEKS), [activityDays, weeklyGoal, today])
+  // Días, objetivo, racha e historial: los mismos que Inicio y Perfil (y que web).
+  const { goal: weeklyGoal, streak, history: weeks } = useTrainingWeek()
 
   // Cardio de esta semana de calendario, para el subtítulo de su fila.
   const cardioWeek = useMemo(() => {
