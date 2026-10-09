@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
-import { authorDisplayName, type AuthorLike } from '@calistenia/core/lib/author-name'
-import type { RecordModel } from 'pocketbase'
+import { useUserSearch } from '@calistenia/core/hooks/useUserSearch'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { excludeBlocked } from '@calistenia/core/lib/blocks'
@@ -17,28 +15,8 @@ import { SUGGESTED_USERS_MAX_FOLLOWING } from '@calistenia/core/lib/suggested-us
 
 type Tab = 'siguiendo' | 'seguidores'
 
-interface SearchResult {
-  id: string
-  displayName: string
-  username: string
-  avatarUrl: string | null
-}
-
 interface FriendsPageProps {
   userId: string
-}
-
-// ── Pure helper — no closures over component state ───────────────────────────
-// [C1 fix] Extracted as a pure function so it can't go stale inside useCallback
-function mapPbItems(items: RecordModel[], excludeUserId: string): SearchResult[] {
-  return items
-    .filter(u => u.id !== excludeUserId)
-    .map(u => ({
-      id: u.id,
-      displayName: authorDisplayName(u as AuthorLike) || '?',
-      username: u.username || '',
-      avatarUrl: getUserAvatarUrl(u, '100x100'),
-    }))
 }
 
 // ── Skeleton Row ─────────────────────────────────────────────────────────────
@@ -64,15 +42,8 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
   const { blockedIds } = useBlocks(userId)
   const [tab, setTab] = useState<Tab>('siguiendo')
   const [search, setSearch] = useState('')
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [searching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState(false)
   const [copied, setCopied] = useState(false)
-  // [C2 fix] retryTrigger is a dependency of the search effect — incrementing it re-runs the search
-  const [retryTrigger, setRetryTrigger] = useState(0)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const queryRef = useRef('')
   const tabsRef = useRef<HTMLDivElement>(null)
 
   // Derive followerIds for mutual follow detection
@@ -108,58 +79,13 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
     }
   }
 
+  // Búsqueda acotada en servidor (máx. 20) desde core, la misma que el móvil.
+  // Antes la web se bajaba TODOS los usuarios con `getFullList` y filtraba en cliente.
   const query = search.trim()
-
-  // Fetch all users once, then filter client-side.
-  // PocketBase v0.27 returns 400 on ~ (LIKE) filters for the auth collection.
-  const allUsersRef = useRef<SearchResult[]>([])
-  const allUsersLoaded = useRef(false)
-
-  const loadAllUsers = useCallback(async () => {
-    if (allUsersLoaded.current) return allUsersRef.current
-    try {
-      const res = await pb.collection('users').getFullList({ $autoCancel: false })
-      allUsersRef.current = mapPbItems(res, userId)
-      allUsersLoaded.current = true
-      return allUsersRef.current
-    } catch (e) {
-      console.error('Failed to load users for search:', e)
-      throw e
-    }
-  }, [userId])
-
-  // Remote search — fetches all users, filters client-side
-  useEffect(() => {
-    if (query.length < 1) {
-      setSearchResults([])
-      setSearchError(false)
-      setSearching(false)
-      return
-    }
-    queryRef.current = query
-    clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true)
-      setSearchError(false)
-      try {
-        const allUsers = await loadAllUsers()
-        if (queryRef.current !== query) return // stale
-        const q = query.toLowerCase()
-        const filtered = allUsers.filter(u =>
-          u.displayName.toLowerCase().includes(q) ||
-          u.username.toLowerCase().includes(q)
-        )
-        setSearchResults(filtered)
-      } catch (e) {
-        console.error('Friend search failed:', e)
-        setSearchError(true)
-        setSearchResults([])
-      } finally {
-        setSearching(false)
-      }
-    }, 200)
-    return () => clearTimeout(debounceRef.current)
-  }, [query, userId, retryTrigger, loadAllUsers])
+  const { results: searchResults, searching, error: searchError, retry: retrySearch } = useUserSearch(search, {
+    excludeUserId: userId,
+    onError: e => console.error('Friend search failed:', e),
+  })
 
   // [C1 fix] loadMore uses the pure mapPbItems with userId param — no stale closures
   // Blocked users are excluded AFTER the text filter — see useBlocks/excludeBlocked.
@@ -308,8 +234,8 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
           {!searching && searchError && (
             <div className="text-center py-8">
               <div className="text-sm text-muted-foreground mb-3">{t('friends.searchErrorRetry')}</div>
-              {/* [C2 fix] Retry by bumping retryTrigger — no string manipulation, no race condition */}
-              <Button variant="outline" size="sm" onClick={() => setRetryTrigger(c => c + 1)}>{t('friends.retry')}</Button>
+              {/* Reintenta la búsqueda actual (el hook relanza la consulta) */}
+              <Button variant="outline" size="sm" onClick={retrySearch}>{t('friends.retry')}</Button>
             </div>
           )}
           {!searching && !searchError && visibleResults.length === 0 && (

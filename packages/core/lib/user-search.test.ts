@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildUserSearchFilter } from '../user-search-filter'
+import { buildUserSearchFilter } from './user-search'
 
 /**
  * Campos que existen de verdad en la colección `users` de PocketBase.
