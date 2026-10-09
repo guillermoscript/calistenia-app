@@ -2,16 +2,20 @@
  * Puntuación acumulativa de retos (#352): funciones puras sobre filas ya
  * descargadas, para que el fold sea testeable en el entorno node de vitest.
  *
- * Semántica de ventana: la comparte con el leaderboard existente —
- * `localMidnightAsUTC(starts_at)` … `localMidnightAsUTC(ends_at + 1 día)`,
- * es decir, días de calendario en la zona horaria del ESPECTADOR con el día
- * final incluido. Cambiar a la zona del creador exigiría persistir una tz en
+ * Semántica de ventana: la comparte con el leaderboard existente — días de
+ * calendario del reto, con el día final incluido. Para `sessions`/`sets_log`
+ * (hora de pared local, ver `wallClock.ts`) las cotas son `YYYY-MM-DD 00:00:00`
+ * … `YYYY-MM-DD 23:59:59.999` sin convertir; solo el cardio (instante UTC real)
+ * usa `localMidnightAsUTC(starts_at)` … `localMidnightAsUTC(ends_at + 1 día)`,
+ * en la zona del ESPECTADOR. Cambiar a la zona del creador exigiría persistir una tz en
  * el reto; queda fuera de alcance y documentado en el issue.
  *
  * Métricas descartadas por ahora (deliberadamente): peso total levantado
  * (`weight_kg` es escaso), ventanas semanales móviles, cacheo de scores en
  * servidor y zona horaria del creador.
  */
+import { wallClockDay } from './wallClock'
+
 
 import type { ChallengeMetric } from '../types'
 
@@ -111,16 +115,20 @@ export interface CardioRowForTotal {
  * registro doble del mismo entreno el mismo día no infla el total, y dos
  * entrenos distintos el mismo día sí cuentan ambos. El cardio se deduplica por
  * id de registro.
+ *
+ * `sessions.completed_at` guarda la hora de pared local del usuario (no un
+ * instante UTC), así que el día local son sus 10 primeros caracteres: convertirlo
+ * como UTC desplazaría el día según la zona y partiría o juntaría entrenos.
  */
 export function countWorkouts(
   sessions: SessionRowForTotal[],
   cardio: CardioRowForTotal[],
-  utcToLocalDay: (utc: string) => string,
 ): number {
   const sessionKeys = new Set<string>()
   for (const s of sessions) {
-    if (!s.completed_at) continue
-    sessionKeys.add(`${s.workout_key ?? ''}|${utcToLocalDay(s.completed_at)}`)
+    const day = wallClockDay(s.completed_at)
+    if (!day) continue
+    sessionKeys.add(`${s.workout_key ?? ''}|${day}`)
   }
   const cardioIds = new Set<string>()
   for (const c of cardio) {

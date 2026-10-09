@@ -2,7 +2,7 @@
  * Pantalla de Amigos — Siguiendo / Seguidores + búsqueda de usuarios + invitar.
  * Port móvil de apps/web/src/pages/FriendsPage.tsx
  */
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   View,
   ScrollView,
@@ -23,41 +23,19 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { shareReferralInvite, shareText, profileUrl } from '@/lib/share'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
-import { authorDisplayName } from '@calistenia/core/lib/author-name'
-import { isAutoCancelError } from '@calistenia/core/lib/pocketbase-errors'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { excludeBlocked } from '@calistenia/core/lib/blocks'
 import { Sentry } from '@/lib/instrument'
 import type { FollowUser } from '@calistenia/core/hooks/useFollows'
-import { buildUserSearchFilter } from '@/lib/user-search-filter'
+import { useUserSearch } from '@calistenia/core/hooks/useUserSearch'
+import type { UserSearchResult as SearchResult } from '@calistenia/core/lib/user-search'
 import { SuggestedUsers } from '@/components/social/SuggestedUsers'
 import { SUGGESTED_USERS_MAX_FOLLOWING } from '@calistenia/core/lib/suggested-users'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Tab = 'siguiendo' | 'seguidores'
-
-interface SearchResult {
-  id: string
-  displayName: string
-  username: string
-  avatarUrl: string | null
-}
-
-// ── Pure helper — no closures over component state ────────────────────────────
-
-function mapPbItems(items: any[], excludeUserId: string): SearchResult[] {
-  return items
-    .filter((u: any) => u.id !== excludeUserId)
-    .map((u: any) => ({
-      id: u.id,
-      displayName: authorDisplayName(u) || '?',
-      username: u.username || '',
-      avatarUrl: getUserAvatarUrl(u, '100x100'),
-    }))
-}
 
 // ── Skeleton row ──────────────────────────────────────────────────────────────
 
@@ -181,13 +159,6 @@ export default function FriendsScreen() {
 
   const [tab, setTab] = useState<Tab>('siguiendo')
   const [search, setSearch] = useState('')
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [searching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState(false)
-  const [retryTrigger, setRetryTrigger] = useState(0)
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const queryRef = useRef('')
 
   // Derive followerIds for mutual detection
   const followerIds = useMemo(() => new Set(followers.map((f) => f.id)), [followers])
@@ -196,38 +167,10 @@ export default function FriendsScreen() {
 
   const query = search.trim()
 
-  useEffect(() => {
-    if (query.length < 1) {
-      setSearchResults([])
-      setSearchError(false)
-      setSearching(false)
-      return
-    }
-    queryRef.current = query
-    clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true)
-      setSearchError(false)
-      try {
-        const { raw, params } = buildUserSearchFilter(query)
-        const res = await pb.collection('users').getList(1, 20, {
-          filter: pb.filter(raw, params),
-          // Clave propia: la búsqueda cancela la anterior sin pisar otras lecturas de `users` (#565).
-          requestKey: 'friends-user-search',
-        })
-        if (queryRef.current !== query) return // stale
-        setSearchResults(mapPbItems(res.items, userId ?? ''))
-      } catch (e) {
-        if (isAutoCancelError(e)) return // cancelada por la siguiente pulsación, no es error
-        Sentry.captureException(e, { tags: { feature: 'social', op: 'search_users' } })
-        setSearchError(true)
-        setSearchResults([])
-      } finally {
-        setSearching(false)
-      }
-    }, 200)
-    return () => clearTimeout(debounceRef.current)
-  }, [query, userId, retryTrigger])
+  const { results: searchResults, searching, error: searchError, retry: retrySearch } = useUserSearch(search, {
+    excludeUserId: userId,
+    onError: (e) => Sentry.captureException(e, { tags: { feature: 'social', op: 'search_users' } }),
+  })
 
   // Sort search results: already-followed first (bloqueados excluidos tras el filtro de texto)
   const sortedSearchResults = useMemo(
@@ -351,7 +294,7 @@ export default function FriendsScreen() {
               <Button
                 variant="outline"
                 size="sm"
-                onPress={() => setRetryTrigger((c) => c + 1)}
+                onPress={retrySearch}
               >
                 <Text className="font-mono text-xs">REINTENTAR</Text>
               </Button>

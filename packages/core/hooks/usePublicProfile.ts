@@ -17,7 +17,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
-import { todayStr, utcToLocalDateStr, localMidnightAsUTC } from '../lib/dateUtils'
+import { todayStr, utcToLocalDateStr } from '../lib/dateUtils'
+import { wallClockDayRange } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import {
   buildMonthActivity,
@@ -77,7 +78,8 @@ export function usePublicProfile(userId: string | null) {
           .getList(1, MONTH_SESSIONS_PAGE, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
               uid,
-              start: localMidnightAsUTC(`${yearMonth}-01`),
+              // `completed_at` es hora de pared local: cota sin convertir a UTC.
+              start: wallClockDayRange(`${yearMonth}-01`, `${yearMonth}-01`).from,
             }),
             sort: '-completed_at',
             $autoCancel: false,

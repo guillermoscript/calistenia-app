@@ -311,7 +311,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
         // Verify program exists
         const program = await pb.collection("programs").getOne(program_id);
 
-        await setCurrentProgramRepo(pb, userId, program_id);
+        await setCurrentProgramRepo(pb, userId, program_id, auth.getTimezone());
 
         return {
           content: [
@@ -960,7 +960,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // 4. Optionally set as current program
         if (input.set_as_current) {
-          await setCurrentProgramRepo(pb, userId, program.id);
+          await setCurrentProgramRepo(pb, userId, program.id, auth.getTimezone());
         }
 
         const summary = input.phases.map((p, i) => {
@@ -1167,7 +1167,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // Optionally set as current
         if (input.set_as_current) {
-          await setCurrentProgramRepo(pb, userId, program.id);
+          await setCurrentProgramRepo(pb, userId, program.id, auth.getTimezone());
         }
 
         const summary = input.phases.map((p) => {

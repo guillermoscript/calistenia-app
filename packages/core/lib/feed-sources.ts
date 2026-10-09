@@ -20,6 +20,7 @@
  */
 import { pb } from './pocketbase'
 import { utcToLocalDateStr } from './dateUtils'
+import { wallClockDay } from './wallClock'
 import { WORKOUTS } from '../data/workouts'
 import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from './session-key'
 import { getMetricLabel } from './challenges'
@@ -97,6 +98,12 @@ function baseItem(
   rec: { id: string; user: string },
   ctx: FeedSourceContext,
   rawTimestamp: string,
+  /**
+   * `true` si `rawTimestamp` es hora de pared local (`sessions.completed_at`):
+   * el día son sus 10 primeros caracteres. Con `false` es un instante UTC real
+   * (cardio/circuitos/`created`) y se convierte al día local del espectador.
+   */
+  isWallClock = false,
 ): Omit<FeedItem, 'type'> {
   const iso = toSortableIso(rawTimestamp)
   return {
@@ -105,7 +112,7 @@ function baseItem(
     displayName: ctx.userMap[rec.user]?.name || '?',
     avatarUrl: ctx.userMap[rec.user]?.avatarUrl || null,
     completedAt: iso,
-    date: utcToLocalDateStr(iso),
+    date: (isWallClock ? wallClockDay(rawTimestamp) : null) ?? utcToLocalDateStr(iso),
     cursor: rawTimestamp,
     workoutKey: '',
     workoutTitle: '',
@@ -144,7 +151,7 @@ async function fetchSessions(ctx: FeedSourceContext): Promise<FeedSourceResult> 
     const { isFree } = sessionKeyParts(workoutKey)
     const durationSeconds = (s.duration_seconds as number) || null
     return {
-      ...baseItem(s as never, ctx, (s.completed_at as string) || ''),
+      ...baseItem(s as never, ctx, (s.completed_at as string) || '', true),
       type: 'workout',
       workoutKey,
       // Sin este respaldo, una sesión libre aparecería con su clave cruda

@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
-import { startOfWeekStr, localMidnightAsUTC, todayStr } from '../lib/dateUtils'
+import { startOfWeekStr, todayStr } from '../lib/dateUtils'
+import { wallClockDayRange } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import { authorDisplayName } from '../lib/author-name'
 
@@ -74,9 +75,12 @@ export function useLeaderboard(userId: string | null) {
   const qc = useQueryClient()
   const [enabled, setEnabled] = useState(false)
 
-  const weekStartStr = localMidnightAsUTC(startOfWeekStr())
+  // `sessions.completed_at` es hora de pared local: cota de día sin pasar a UTC.
+  const weekStartDay = startOfWeekStr()
+  const weekStartStr = wallClockDayRange(weekStartDay, weekStartDay).from
   const today = todayStr()
-  const monthStartStr = localMidnightAsUTC(`${today.slice(0, 7)}-01`)
+  const monthStartDay = `${today.slice(0, 7)}-01`
+  const monthStartStr = wallClockDayRange(monthStartDay, monthStartDay).from
   // Memo obligatorio (#578): `qk.leaderboard` devuelve un array nuevo en cada
   // render; sin memo `load` cambiaba de identidad, el `useEffect([load])` de la
   // página se disparaba en cada render e invalidaba la query en bucle.

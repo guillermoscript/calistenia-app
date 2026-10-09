@@ -7,7 +7,7 @@
  * Todo lo que enseña ya tiene su pantalla (Comunidad #860, Nutrición, fotos);
  * aquí solo va el atajo.
  */
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -15,12 +15,13 @@ import { Camera, Flag, Swords, Trophy, Users, Utensils } from 'lucide-react-nati
 
 import { Text } from '@/components/ui/text'
 import { useWorkoutState } from '@/contexts/WorkoutContext'
-import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
+import { useActiveBattle } from '@/lib/use-active-battle'
 import { useChallenges } from '@calistenia/core/hooks/useChallenges'
 import { useFeaturedChallenge } from '@calistenia/core/hooks/useFeaturedChallenge'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useCommunityPrograms } from '@calistenia/core/hooks/useCommunityPrograms'
-import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
+import { useFriendsTrainedToday } from '@calistenia/core/hooks/useFriendsTrainedToday'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { daysAgoStr, diffDays, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { trackFeaturedChallengeOpened } from '@calistenia/core/lib/featured-challenge'
@@ -45,20 +46,16 @@ export default function ParaTi({ userId, homeKind, accountSessions, today, onTap
   const { data: battle } = useActiveBattle()
   const { active: challenges } = useChallenges(userId)
   const { card: featured } = useFeaturedChallenge(userId)
-  const { followingCount } = useFollows(userId)
+  const { following, followingCount } = useFollows(userId)
   const { programs: communityPrograms } = useCommunityPrograms(userId)
   const { entries: meals } = useNutrition(userId)
-  const { items: feed, load: loadFeed } = useActivityFeed(userId)
-
-  useEffect(() => { loadFeed() }, [loadFeed])
-
+  // Misma consulta que web (core): no depende de que el feed esté cargado.
+  const followedIds = useMemo(() => following.map(f => f.id), [following])
+  const { ids: friendIdsToday } = useFriendsTrainedToday(userId, followedIds)
   const friendsToday = useMemo(() => {
-    const seen = new Map<string, string>()
-    for (const it of feed) {
-      if (it.date === today && it.userId !== userId && !seen.has(it.userId)) seen.set(it.userId, it.displayName)
-    }
-    return [...seen.values()]
-  }, [feed, today, userId])
+    const byId = new Map(following.map(f => [f.id, f.displayName || f.username || '']))
+    return friendIdsToday.map(id => byId.get(id) ?? '')
+  }, [friendIdsToday, following])
 
   const since = daysAgoStr(6)
   const loggedFoodLast7Days = (meals ?? []).some(m => {

@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
-import { utcToLocalDateStr } from '../lib/dateUtils'
+import { getTimezone, utcToLocalDateStr } from '../lib/dateUtils'
+import { wallClockDayOf, wallClockDayRange, wallClockMs } from '../lib/wallClock'
 import { profileDisplayName } from '../lib/public-profile'
 import { qk } from '../lib/query-keys'
 import { buildSessionDetail } from './useSessionDetail'
@@ -20,21 +21,6 @@ export interface PublicSessionDetail extends SessionDetailResult {
   /** Wall-clock ms of the session, for "hace 2 h" style labels. */
   completedAt: number | null
   phase: number | null
-}
-
-/**
- * Ventana de holgura al pedir los sets de la sesión.
- *
- * `sets_log` no guarda la fecha local, solo `logged_at` (UTC), así que el día
- * se deriva con `utcToLocalDateStr` igual que en useProgress. Pedimos ±36 h
- * alrededor del cierre de la sesión para cubrir cualquier desfase de zona y
- * luego filtramos por día local en cliente — así el agrupado coincide con el
- * que ve el dueño en su propio detalle.
- */
-const SLACK_MS = 36 * 60 * 60 * 1000
-
-function pbDateTime(ms: number): string {
-  return new Date(ms).toISOString().replace('T', ' ').slice(0, 19)
 }
 
 /**
@@ -65,8 +51,10 @@ export function usePublicSessionDetail(
         $autoCancel: false,
       })
 
-      const completedRaw = rec.completed_at || rec.created
-      const date = utcToLocalDateStr(completedRaw)
+      // `completed_at` es hora de pared local (no UTC): el día son sus 10
+      // primeros caracteres. Solo `created` es un instante UTC real.
+      const date = wallClockDayOf(rec.completed_at, rec.created, getTimezone()) || utcToLocalDateStr(rec.created)
+      const completedMs = wallClockMs(rec.completed_at, rec.created)
       const workoutKey = rec.workout_key as string
       const ownerId = rec.user as string
 
@@ -98,16 +86,17 @@ export function usePublicSessionDetail(
 
       const progress: ProgressMap = { [`done_${date}_${workoutKey}`]: sessionEntry }
 
-      // Sets del dueño para ese workout_key en la ventana del día.
-      const completedMs = new Date(completedRaw).getTime()
+      // Sets del dueño para ese workout_key en el día local de la sesión
+      // (`logged_at` también es hora de pared local: cotas sin convertir).
+      const range = wallClockDayRange(date, date)
       const setsRes = await pb.collection('public_sets_log').getFullList({
         filter: pb.filter(
           'user = {:uid} && workout_key = {:wk} && logged_at >= {:from} && logged_at <= {:to}',
           {
             uid: ownerId,
             wk: workoutKey,
-            from: pbDateTime(completedMs - SLACK_MS),
-            to: pbDateTime(completedMs + SLACK_MS),
+            from: range.from,
+            to: range.to,
           },
         ),
         sort: '-logged_at',
@@ -115,8 +104,7 @@ export function usePublicSessionDetail(
       }).catch(() => [] as any[])
 
       setsRes.forEach((s: any) => {
-        const loggedRaw = s.logged_at || s.created
-        if (utcToLocalDateStr(loggedRaw) !== date) return
+        if (wallClockDayOf(s.logged_at, s.created, getTimezone()) !== date) return
         const k = `${date}_${s.workout_key}_${s.exercise_id}`
         if (!progress[k]) {
           progress[k] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
@@ -126,7 +114,7 @@ export function usePublicSessionDetail(
           note: s.note,
           weight: s.weight_kg || undefined,
           rpe: s.rpe || undefined,
-          timestamp: new Date(loggedRaw).getTime(),
+          timestamp: wallClockMs(s.logged_at, s.created),
         })
       })
 

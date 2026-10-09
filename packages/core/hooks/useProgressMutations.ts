@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getPlatform } from '../platform'
 import { pb } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC } from '../lib/dateUtils'
+import { todayStr, nowLocalForPB, localDateForPB } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, emitOnce, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { saveSettingsSerial } from '../lib/settingsWrite'
@@ -11,11 +11,20 @@ import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
 import { TRAINING_FUNNEL_EVENTS, sessionFunnelProperties } from '../lib/session-funnel'
 import { persistOrQueue, newClientId, cancelLastQueuedByTempId } from '../lib/offlineQueue'
 import { emitProgramMilestoneIfCompleted } from '../lib/program-milestone'
+import { invalidateAfterWorkout } from '../lib/workout-cache'
 import { patchProgressData, patchSettingsData, type ProgressData } from '../lib/progress-cache'
+import { WorkoutNotSavedError, removeOneWorkoutDone } from '../lib/workout-done'
+import { wallClockDayRange } from '../lib/wallClock'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 export interface UseProgressMutationsReturn {
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<void>
+  /**
+   * Rechaza con `WorkoutNotSavedError` si el servidor rechazó el entreno de
+   * forma determinista: el optimista ya está deshecho y el fallo reportado, el
+   * llamador solo tiene que avisar al usuario. Red caída y errores transitorios
+   * NO rechazan: el entreno queda en la cola offline y cuenta como hecho.
+   */
   markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   /**
@@ -55,6 +64,9 @@ export function useProgressMutations(userId: string | null = null, activeProgram
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => {
     const d = date || todayStr()
     const k = `${d}_${workoutKey}_${exerciseId}`
+    // Un `loadFromPB` ya en vuelo resolvería DESPUÉS del parche y se lo llevaría
+    // por delante: la serie aún no está en el servidor ni en la cola.
+    await qc.cancelQueries({ queryKey: key })
     patchProgress(prev => {
       const existing = prev[k] as ExerciseLog | undefined || { sets: [], date: d, workoutKey, exerciseId }
       const updated = { ...existing, sets: [...existing.sets, { ...setData, timestamp: setData.timestamp ?? Date.now() }] } as ExerciseLog
@@ -78,19 +90,25 @@ export function useProgressMutations(userId: string | null = null, activeProgram
           },
         })
       } catch (e) {
-        // Solo llega aquí un 4xx/5xx del servidor (lo de red ya está encolado).
-        // El progreso local sigue siendo autoritativo, así que el usuario no ve
-        // nada raro: si esto no se reporta, nadie se entera — es exactamente
-        // como el #376 estuvo meses tirando toda sesión libre.
+        // Solo llega aquí un rechazo determinista del servidor (4xx): la red y
+        // los 5xx/429/408 ya están encolados. El progreso local sigue siendo
+        // autoritativo, así que el usuario no ve nada raro: si esto no se
+        // reporta, nadie se entera — es exactamente como el #376 estuvo meses
+        // tirando toda sesión libre.
         getPlatform().reportError?.(e)
       }
     }
-  }, [usePB, userId, patchProgress])
+  }, [usePB, userId, patchProgress, qc, key])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
   const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     const d = date || todayStr()
     const k = `done_${d}_${workoutKey}`
+    // Cancelar ANTES del parche: un `loadFromPB` lanzado antes del create ya en
+    // vuelo resolvería después y pisaría el entreno optimista sin la sesión nueva
+    // (aún no está en el servidor ni en la cola, ver `pendingProgressRows`).
+    // `cancelQueries` resuelve rápido, la UI sigue viendo `done` al instante.
+    await qc.cancelQueries({ queryKey: key })
     patchProgress(prev => {
       // Repetir el mismo entrenamiento el mismo día reusa la clave done_; sumamos
       // al conteo previo para que getTotalSessions/getWeeklyDoneCount no lo pierdan.
@@ -154,16 +172,24 @@ export function useProgressMutations(userId: string | null = null, activeProgram
         // misma clave que usa el progreso local, para que deshacer el entreno
         // mientras sigue encolado pueda retirarlo (ver unmarkWorkoutDone) en vez
         // de dejar que resucite al reconectar.
-        await persistOrQueue(pb, {
+        const created = await persistOrQueue(pb, {
           collection: 'sessions', action: 'create', data: sessionData, tempId: k,
         })
+        // Con la fila ya en el servidor (y con la fecha bien leída, ver
+        // `buildProgressMap`) el refetch es seguro y deja al día Home, la racha y
+        // los totales. Si quedó encolada (`null`) lo reconcilia la cola.
+        if (created) invalidateAfterWorkout(qc, userId)
       } catch (e) {
-        // #376: este catch se tragó durante meses un 400 que impedía guardar
-        // TODA sesión libre. El progreso local sigue siendo autoritativo, así
-        // que el usuario no ve nada raro — por eso el fallo tiene que llegar al
-        // monitoreo o nadie se entera. Los fallos de red ya no pasan por aquí:
-        // los absorbe la cola.
+        // Solo llega aquí un rechazo determinista (4xx): la red y los errores
+        // transitorios del servidor los absorbe la cola. Dejar el optimista era
+        // mentir: la celebración decía «hecho» y el siguiente refetch borraba
+        // el entreno sin avisar. Se deshace igual que `unmarkWorkoutDone` (una
+        // sola marca, por si es una repetición del día) y el llamador avisa.
+        // #376: el reporte se queda — este catch se tragó durante meses un 400
+        // que impedía guardar TODA sesión libre.
+        patchProgress(prev => removeOneWorkoutDone(prev, k))
         getPlatform().reportError?.(e)
+        throw new WorkoutNotSavedError(workoutKey, e)
       }
     }
 
@@ -258,16 +284,8 @@ export function useProgressMutations(userId: string | null = null, activeProgram
     const k = `done_${d}_${workoutKey}`
     // PB borra UNA sola sesión del día; el cache decrementa su conteo en 1 y
     // solo elimina la clave cuando llega a 0 (soporta repeticiones del día).
-    patchProgress(prev => {
-      const next = { ...prev }
-      const entry = next[k] as SessionDone | undefined
-      if (entry?.done && (entry.count ?? 1) > 1) {
-        next[k] = { ...entry, count: (entry.count ?? 1) - 1 }
-      } else {
-        delete next[k]
-      }
-      return next
-    })
+    await qc.cancelQueries({ queryKey: key }) // mismo motivo que en markWorkoutDone
+    patchProgress(prev => removeOneWorkoutDone(prev, k))
 
     // #301: si la sesión que se deshace todavía está en la cola, nunca llegó al
     // servidor: se retira de la cola y no hay nada que borrar. Sin esto, marcar
@@ -278,25 +296,29 @@ export function useProgressMutations(userId: string | null = null, activeProgram
 
     if (usePB && userId) {
       try {
-        const dayStart = localMidnightAsUTC(d)
-        const dayEndDate = new Date(new Date(`${d}T00:00:00`).getTime() + 86400000)
-        const dayEnd = localMidnightAsUTC(toLocalDateStr(dayEndDate))
+        // `completed_at` es hora de PARED (ver `wallClockDayRange`): los
+        // límites en UTC desplazaban la ventana el offset de la zona y podían
+        // borrar el mismo entreno de un día vecino. El más reciente del día es
+        // el que se deshace.
+        const { from, to } = wallClockDayRange(d, d)
         const records = await pb.collection('sessions').getList(1, 1, {
           requestKey: null,
+          sort: '-completed_at',
           filter: pb.filter(
-            'user = {:uid} && workout_key = {:key} && completed_at >= {:from} && completed_at < {:to}',
-            { uid: userId, key: workoutKey, from: dayStart, to: dayEnd },
+            'user = {:uid} && workout_key = {:key} && completed_at >= {:from} && completed_at <= {:to}',
+            { uid: userId, key: workoutKey, from, to },
           ),
         })
         if (records.items.length > 0) {
           await pb.collection('sessions').delete(records.items[0].id)
+          invalidateAfterWorkout(qc, userId)
         }
       } catch (e) {
         console.warn('PB unmark session error:', e)
         getPlatform().reportError?.(e)
       }
     }
-  }, [usePB, userId, patchProgress])
+  }, [usePB, userId, patchProgress, qc, key])
 
   // ─── updateSettings ──────────────────────────────────────────────────────
   const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {

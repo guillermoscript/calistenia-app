@@ -11,7 +11,7 @@
  */
 import { useState, useMemo } from 'react'
 import { cn } from '../lib/utils'
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { fetchCatalogExerciseByRecordId } from '@calistenia/core/lib/catalogRecords'
 import { Button } from './ui/button'
 import { Loader } from './ui/loader'
 import { Input } from './ui/input'
@@ -31,7 +31,6 @@ import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
 import {
   CATALOG_CATEGORIES,
-  mapCatalogRecord,
   type CatalogExercise,
 } from '@calistenia/core/lib/exerciseCatalog'
 import { qk } from '@calistenia/core/lib/query-keys'
@@ -214,10 +213,10 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                     const recordId = await importExercise(wgerId)
                     setImportedIds(prev => new Set(prev).add(wgerId))
                     // Fetch the created record and add to program
-                    const rec = await pb.collection('exercises_catalog').getOne(recordId, { requestKey: null })
-                    // Mismo mapper que la lista: antes esto repetía la conversión
-                    // a mano y era donde se veía que `timer_seconds` no existe.
-                    handleAdd(mapCatalogRecord(rec))
+                    // Mismo mapper que la lista (lo aplica core): antes esto repetía
+                    // la conversión a mano y era donde se veía que `timer_seconds`
+                    // no existe.
+                    handleAdd(await fetchCatalogExerciseByRecordId(recordId))
                     // El catálogo está cacheado media hora (#609): sin esto, el
                     // ejercicio recién importado no saldría en la lista al
                     // reabrir el picker.

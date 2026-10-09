@@ -8,8 +8,8 @@
  * - push de progreso cada 3 s, reintentos 1/3/9 s, watchdog de 30 s →
  *   `apps/web/src/contexts/RaceContext.tsx:75-76,134-147`
  * - fixes peores de 30 m descartados, tramos de 0 a 500 m →
- *   `apps/web/src/lib/race/raceTracker.ts:30,70,76`
- * - reloj de servidor y rehidratación → `raceClock.ts` · `raceSnapshot.ts`
+ *   `packages/core/lib/race/raceTrack.ts`
+ * - reloj de servidor y rehidratación → `raceClock.ts` · `packages/core/lib/race/raceSnapshot.ts`
  * - quién gana según el modo → `packages/core/lib/race-sort.ts:22-42`
  * - entrar durante la cuenta atrás, no después →
  *   `pb_migrations/1776000004_allow_late_join.js:13`

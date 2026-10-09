@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthState } from '../../contexts/AuthContext'
 import { useRaceContext } from '../../contexts/RaceContext'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -8,7 +9,8 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration, pointsToGPX } from '@calistenia/core/lib/geo'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
-import { splitRoute, saveCardioRoute } from '@calistenia/core/lib/cardioRoutes'
+import { saveRaceAsWorkout } from '@calistenia/core/lib/race/raceApi'
+import { invalidateAfterWorkout } from '@calistenia/core/lib/workout-cache'
 import { fetchRaceRoute } from '@calistenia/core/lib/raceRoutes'
 import type { RaceGpsPoint } from '@calistenia/core/types/race'
 import RaceShareCard from './RaceShareCard'
@@ -16,6 +18,7 @@ import RaceShareCard from './RaceShareCard'
 export default function RaceResults() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user } = useAuthState()
   const { race, participants, me } = useRaceContext()
   const userName = user?.display_name
@@ -64,24 +67,9 @@ export default function RaceResults() {
       // `myTrack` si se pulsa nada más entrar: se pide aquí antes de rendirse,
       // o el entreno se guardaría sin ruta por una carrera de arranque.
       const track = myTrack.length ? myTrack : await fetchRaceRoute(me.id)
-      const session = {
-        user: userId,
-        activity_type: 'running',
-        gps_points: track.map(pt => ({
-          lat: pt.lat, lng: pt.lng, timestamp: (race.starts_at ? new Date(race.starts_at).getTime() : 0) + pt.t,
-        })),
-        distance_km: me.distance_km,
-        duration_seconds: me.duration_seconds,
-        avg_pace: me.avg_pace,
-        elevation_gain: 0,
-        started_at: race.starts_at || new Date().toISOString(),
-        finished_at: me.finished_at || race.finished_at || new Date().toISOString(),
-        note: `Race: ${race.name}`,
-      }
-      const { record, points } = splitRoute(session)
-      const saved = await pb.collection('cardio_sessions').create(record)
-      await saveCardioRoute(saved.id, userId, points)
-      setSavedId(saved.id)
+      const newId = await saveRaceAsWorkout(race, me, track, userId)
+      invalidateAfterWorkout(queryClient, userId, { cardio: true })
+      setSavedId(newId)
     } catch (e) {
       console.warn('save as workout failed:', e)
     } finally {

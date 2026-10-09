@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { pb, isPocketBaseAvailable, getCurrentUser } from '@calistenia/core/lib/pocketbase'
+import { getCurrentUser } from '@calistenia/core/lib/pocketbase'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
 import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
@@ -19,7 +19,8 @@ import { ArrowLeftIcon } from '../components/icons/nav-icons'
 import ImageLightbox, { ZoomHint } from '../components/ImageLightbox'
 import type { Priority } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
-import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
+import { inferCategory, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
+import { fetchCatalogExercise } from '@calistenia/core/lib/catalogRecords'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
@@ -228,27 +229,12 @@ export default function ExerciseDetailPage() {
     setImageIndex(0)
 
     const load = async () => {
-      // Try PB first
-      try {
-        const available = await isPocketBaseAvailable()
-        if (available && !cancelled) {
-          try {
-            // Try by slug first, then by id
-            const res = await pb.collection('exercises_catalog').getList(1, 1, {
-              requestKey: null,
-              filter: pb.filter('slug = {:val} || id = {:val}', { val: id }),
-            })
-            if (!cancelled && res.items.length > 0) {
-              setExercise(mapCatalogRecord(res.items[0]))
-              setLoading(false)
-              return
-            }
-          } catch {
-            // Fall through
-          }
-        }
-      } catch {
-        // PB not available
+      // PB primero, por el camino canónico de core (#474): slug o clave de PB.
+      const fromPb = await fetchCatalogExercise(id)
+      if (!cancelled && fromPb) {
+        setExercise(fromPb)
+        setLoading(false)
+        return
       }
 
       // Fallback to workouts data

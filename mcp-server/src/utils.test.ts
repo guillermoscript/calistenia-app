@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toDateStr, today, startOfWeek, daysAgo } from "./utils.js";
+import { toDateStr, today, startOfWeek, daysAgo, wallClockDayStr, wallClockStamp } from "./utils.js";
 
 describe("toDateStr", () => {
   const instant = "2026-03-01T01:30:00Z";
@@ -64,5 +64,31 @@ describe("daysAgo", () => {
     const todayUtcMs = new Date(`${today()}T00:00:00Z`).getTime();
     const sevenAgoMs = new Date(`${daysAgo(7)}T00:00:00Z`).getTime();
     expect(todayUtcMs - sevenAgoMs).toBe(7 * 24 * 60 * 60 * 1000);
+  });
+});
+
+describe("wallClockDayStr (sessions.completed_at / sets_log.logged_at)", () => {
+  it("el día es la hora de pared: no se desplaza con la zona", () => {
+    // 00:30 del 1 de marzo guardado como pared local. toDateStr lo trataría como
+    // instante UTC y en Los Ángeles lo movería al 28 de febrero.
+    expect(wallClockDayStr("2026-03-01 00:30:00.000Z", "America/Los_Angeles")).toBe("2026-03-01");
+    expect(toDateStr("2026-03-01 00:30:00.000Z", "America/Los_Angeles")).toBe("2026-02-28");
+    // 23:30 en Caracas (UTC-4): como UTC pasaría al día siguiente en Madrid.
+    expect(wallClockDayStr("2026-03-01 23:30:00.000Z", "Europe/Madrid")).toBe("2026-03-01");
+  });
+});
+
+describe("wallClockStamp (escritura)", () => {
+  it("sin valor escribe la hora de pared actual del usuario, sin T ni Z", () => {
+    expect(wallClockStamp(undefined, "Europe/Madrid")).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  });
+
+  it("un ISO con zona se convierte a la pared del usuario", () => {
+    expect(wallClockStamp("2026-07-05T22:30:00Z", "Europe/Madrid")).toBe("2026-07-06 00:30:00");
+    expect(wallClockStamp("2026-07-05T22:30:00Z", "America/Caracas")).toBe("2026-07-05 18:30:00");
+  });
+
+  it("un ISO sin zona ya es hora de pared", () => {
+    expect(wallClockStamp("2026-07-05T09:15:00", "Europe/Madrid")).toBe("2026-07-05 09:15:00");
   });
 });

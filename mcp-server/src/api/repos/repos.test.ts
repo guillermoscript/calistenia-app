@@ -138,8 +138,10 @@ describe("programs repo", () => {
 
     coll("user_programs").getFullList.mockResolvedValueOnce([]);
     coll("user_programs").getFirstListItem.mockRejectedValueOnce(new Error("404"));
-    await setCurrentProgram(pb, "u1", "p3");
+    await setCurrentProgram(pb, "u1", "p3", "Europe/Madrid");
     expect(coll("user_programs").create.mock.calls[0][0]).toMatchObject({ user: "u1", program: "p3", is_current: true });
+    // started_at es hora de pared local (como nowLocalForPB), no un ISO UTC con "T"/"Z".
+    expect(coll("user_programs").create.mock.calls[0][0].started_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
   });
 
   it("listProgramExercises narrows by phase and day", async () => {

@@ -21,6 +21,31 @@ import type { MCPServer } from "mcp-use";
 import { OAuthError, OAuthErrorCode, oauthCustomProvider, type OAuthAuthInfo } from "mcp-use/oauth";
 import { AuthManager, validateBearerToken, type UserContext } from "../auth.js";
 import { verifyStoredAccessToken } from "../oauth.js";
+import PocketBase from "pocketbase";
+
+const TZ_CACHE_TTL_MS = 10 * 60 * 1000;
+const tzCache = new Map<string, { tz: string; at: number }>();
+
+/**
+ * Zona del usuario para el camino OAuth, cuyo store no la persiste. Una lectura
+ * de `users.timezone` con el token de PB del usuario, cacheada 10 min por
+ * usuario. Cualquier fallo cae a "UTC" (el comportamiento anterior): nunca
+ * tumba la autenticación.
+ */
+async function lookupUserTimezone(pbUrl: string, userId: string, pbToken: string): Promise<string> {
+  const hit = tzCache.get(userId);
+  if (hit && Date.now() - hit.at < TZ_CACHE_TTL_MS) return hit.tz;
+  try {
+    const pb = new PocketBase(pbUrl);
+    pb.authStore.save(pbToken, null);
+    const rec = await pb.collection("users").getOne(userId, { fields: "timezone", requestKey: null });
+    const tz = String((rec as { timezone?: string }).timezone || "UTC");
+    tzCache.set(userId, { tz, at: Date.now() });
+    return tz;
+  } catch {
+    return "UTC";
+  }
+}
 
 /** Identity exposed to tool handlers as `ctx.auth.user`. */
 export interface BridgeUser {
@@ -89,7 +114,8 @@ export function pocketbaseOAuthBridge(pbUrl: string, serverUrl: string) {
             sub: stored.userId,
             email: stored.email,
             pbToken: stored.pbToken,
-            timezone: "UTC", // OAuth store doesn't persist tz (parity with legacy bridge)
+            // The OAuth store doesn't persist tz: read it from the user record.
+            timezone: await lookupUserTimezone(pbUrl, stored.userId, stored.pbToken),
             auth_method: "oauth",
           };
           return {

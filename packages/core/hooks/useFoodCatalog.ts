@@ -144,6 +144,40 @@ async function fetchFoodSearch(
 
 // ── Hook ──────────────────────────────────────────────────────────────────
 
+/** Un alimento del catálogo compartido, en la forma que pintan las sugerencias. */
+export interface CatalogTopFood {
+  name: string
+  portionLabel: string
+  protein: number
+  carbs: number
+  fat: number
+  calories: number
+}
+
+/**
+ * Los alimentos con más calorías de una categoría del catálogo (`category.slug`).
+ * Best-effort: si la consulta falla devuelve `[]` y quien llama usa su texto de respaldo.
+ */
+export async function fetchTopFoodsByCategory(category: string, limit = 4): Promise<CatalogTopFood[]> {
+  try {
+    const res = await pb.collection('foods').getList(1, limit, {
+      filter: pb.filter('category.slug = {:cat}', { cat: category }),
+      sort: '-calories',
+      expand: 'category',
+    })
+    return res.items.map(r => ({
+      name: r.name_display,
+      portionLabel: r.portion || '100g',
+      protein: r.protein,
+      carbs: r.carbs,
+      fat: r.fat,
+      calories: r.calories,
+    }))
+  } catch {
+    return []
+  }
+}
+
 /**
  * Catálogo de alimentos con búsqueda reactiva vía TanStack Query.
  *

@@ -5,15 +5,15 @@ import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 // La capa de API se mockea entera: aquí sólo se prueba QUIÉN llama a qué y
 // cuántas veces, que es justo lo que el #479 arregla.
-vi.mock('../../lib/race/raceApi', () => ({
+vi.mock('@calistenia/core/lib/race/raceApi', () => ({
   finishParticipant: vi.fn().mockResolvedValue(undefined),
   finishRace: vi.fn().mockResolvedValue(undefined),
   markDnf: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { finishParticipant, finishRace, markDnf } from '../../lib/race/raceApi'
-import { useRaceFinish } from './useRaceFinish'
-import type { RaceTracker, RaceTrackerStats } from '../../lib/race/raceTracker'
+import { finishParticipant, finishRace, markDnf } from '@calistenia/core/lib/race/raceApi'
+import { useRaceFinish } from '@calistenia/core/hooks/race/useRaceFinish'
+import type { RaceTracker, RaceTrackerStats } from '@calistenia/core/lib/race/raceTrack'
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 

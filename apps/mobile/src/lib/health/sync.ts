@@ -10,6 +10,10 @@
  */
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { DailyHealthSummary, HealthDataType, HealthSyncResult } from '@calistenia/core/types'
+import {
+  collapseSleepByDay, dropUndefined, earliestDay, latestByDay, localDay, minutesBetween,
+  planSleepMerge, planWeightMerge, type ExistingDatedRow as DatedRow,
+} from '@calistenia/core/lib/health-merge'
 import * as hc from './bridge'
 import { Sentry } from '@/lib/instrument'
 
@@ -17,7 +21,6 @@ import { Sentry } from '@/lib/instrument'
 // `getFullList()` devuelve `RecordModel`, cuyos campos son un índice laxo; estas
 // interfaces declaran solo lo que pide cada `fields:` de la query.
 
-interface DatedRow { id: string; date: string; source?: string }
 interface DailyCacheRow {
   id: string
   date: string
@@ -29,156 +32,48 @@ interface DailyCacheRow {
 
 const DAY_MS = 86_400_000
 
-/** Local YYYY-MM-DD for an ISO datetime (device timezone). */
-function localDay(iso: string): string {
-  const d = new Date(iso)
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${m}-${day}`
-}
-
-function minutesBetween(start: string, end: string): number {
-  return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000))
-}
-
-/** Latest reading per local day (by timestamp). */
-function latestByDay<T extends { time: string }>(samples: T[], pick: (s: T) => number): Record<string, number> {
-  const best: Record<string, { t: number; v: number }> = {}
-  for (const s of samples) {
-    const day = localDay(s.time)
-    const t = new Date(s.time).getTime()
-    if (!best[day] || t > best[day].t) best[day] = { t, v: pick(s) }
-  }
-  const out: Record<string, number> = {}
-  for (const d in best) out[d] = Math.round(best[d].v * 10) / 10
-  return out
-}
-
-function dropUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
-  const out: Partial<T> = {}
-  for (const k in obj) if (obj[k] !== undefined) out[k] = obj[k]
-  return out
-}
-
-/** Local "HH:MM" (device tz) for an ISO datetime. */
-function hhmm(iso: string): string {
-  const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-/** Coarse 1–5 sleep quality from asleep minutes (HC gives no quality score). */
-function sleepQualityFromMinutes(min: number): number {
-  const h = min / 60
-  if (h >= 9.5) return 4 // sobre-dormido
-  if (h >= 7) return 5
-  if (h >= 6) return 4
-  if (h >= 5) return 3
-  if (h >= 4) return 2
-  return 1
-}
-
-const dateKey = (raw: string): string => String(raw).split(' ')[0].split('T')[0]
-
-interface SleepDay { start: string; end: string; asleep: number; awake: number; id?: string }
-
-/** Collapse HC sleep sessions into one per wake-day (earliest bed, latest wake). */
-function sleepDays(sleep: hc.SleepSample[]): Record<string, SleepDay> {
-  const out: Record<string, SleepDay> = {}
-  for (const s of sleep) {
-    const day = localDay(s.endTime) // attribute to the wake day
-    const asleep = Math.max(0, minutesBetween(s.startTime, s.endTime) - s.awakeMinutes)
-    const cur = out[day]
-    if (!cur) {
-      out[day] = { start: s.startTime, end: s.endTime, asleep, awake: s.awakeMinutes, id: s.id }
-    } else {
-      if (new Date(s.startTime) < new Date(cur.start)) cur.start = s.startTime
-      if (new Date(s.endTime) > new Date(cur.end)) cur.end = s.endTime
-      cur.asleep += asleep
-      cur.awake += s.awakeMinutes
-    }
-  }
-  return out
-}
-
 /**
  * Merge watch sleep into `sleep_entries` so it shows in the calendar/sleep
- * tracking. NEVER overwrites a manual (or HealthKit) entry — only creates a row
- * for days with no entry, or updates one we previously imported
- * (source === 'health_connect'). Best-effort: errors here never fail the sync.
+ * tracking. La regla (nunca pisar lo manual) vive en `planSleepMerge` de core;
+ * aquí solo se leen las filas existentes y se ejecuta el plan. Best-effort:
+ * errors here never fail the sync.
  */
 async function mergeSleepEntries(userId: string, sleep: hc.SleepSample[]): Promise<number> {
-  const days = sleepDays(sleep)
-  const dates = Object.keys(days)
-  if (dates.length === 0) return 0
-  const minDay = dates.reduce((a, b) => (a < b ? a : b))
+  const days = collapseSleepByDay(sleep)
+  const minDay = earliestDay(Object.keys(days))
+  if (!minDay) return 0
   const existing = await pb.collection('sleep_entries').getFullList({
     requestKey: null,
     filter: pb.filter('user = {:uid} && date >= {:d}', { uid: userId, d: `${minDay} 00:00:00` }),
     fields: 'id,date,source',
   })
-  const byDate = new Map<string, { id: string; source?: string }>(
-    (existing as unknown as DatedRow[]).map((r) => [dateKey(r.date), r]),
-  )
-  let written = 0
-  for (const day of dates) {
-    const found = byDate.get(day)
-    if (found && found.source !== 'health_connect') continue // respeta lo manual
-    const info = days[day]
-    const payload = {
-      user: userId,
-      date: `${day} 00:00:00`,
-      bedtime: hhmm(info.start),
-      wake_time: hhmm(info.end),
-      duration_minutes: Math.round(info.asleep),
-      awake_minutes: Math.round(info.awake),
-      awakenings: 0,
-      quality: sleepQualityFromMinutes(info.asleep),
-      source: 'health_connect',
-      external_id: info.id ?? '',
-    }
-    if (found) await pb.collection('sleep_entries').update(found.id, payload)
-    else await pb.collection('sleep_entries').create(payload)
-    written++
+  const ops = planSleepMerge(userId, days, existing as unknown as DatedRow[])
+  for (const op of ops) {
+    if (op.kind === 'update') await pb.collection('sleep_entries').update(op.id, op.payload)
+    else await pb.collection('sleep_entries').create(op.payload)
   }
-  return written
+  return ops.length
 }
 
-/**
- * Merge watch weight (+ body fat) into `weight_entries`. Same manual-safe rule
- * as sleep. Best-effort.
- */
+/** Merge watch weight (+ body fat) into `weight_entries`. Misma regla (`planWeightMerge`). */
 async function mergeWeightEntries(
   userId: string,
   weightByDay: Record<string, number>,
   bodyFatByDay: Record<string, number>,
 ): Promise<number> {
-  const dates = Object.keys(weightByDay)
-  if (dates.length === 0) return 0
-  const minDay = dates.reduce((a, b) => (a < b ? a : b))
+  const minDay = earliestDay(Object.keys(weightByDay))
+  if (!minDay) return 0
   const existing = await pb.collection('weight_entries').getFullList({
     requestKey: null,
     filter: pb.filter('user = {:uid} && date >= {:d}', { uid: userId, d: `${minDay} 00:00:00` }),
     fields: 'id,date,source',
   })
-  const byDate = new Map<string, { id: string; source?: string }>(
-    (existing as unknown as DatedRow[]).map((r) => [dateKey(r.date), r]),
-  )
-  let written = 0
-  for (const day of dates) {
-    const found = byDate.get(day)
-    if (found && found.source !== 'health_connect') continue
-    const payload = dropUndefined({
-      user: userId,
-      date: `${day} 00:00:00`,
-      weight_kg: weightByDay[day],
-      body_fat_pct: bodyFatByDay[day],
-      source: 'health_connect',
-    })
-    if (found) await pb.collection('weight_entries').update(found.id, payload)
-    else await pb.collection('weight_entries').create(payload)
-    written++
+  const ops = planWeightMerge(userId, weightByDay, bodyFatByDay, existing as unknown as DatedRow[])
+  for (const op of ops) {
+    if (op.kind === 'update') await pb.collection('weight_entries').update(op.id, op.payload)
+    else await pb.collection('weight_entries').create(op.payload)
   }
-  return written
+  return ops.length
 }
 
 /**

@@ -81,8 +81,20 @@ export interface CoreLifecycle {
   onBackground(handler: () => void): () => void
 }
 
+/** Etiquetas opcionales para localizar un error en el monitoreo (Sentry tags). */
+export interface CoreErrorContext {
+  tags?: Record<string, string>
+}
+
 export interface CorePlatform {
   storage: CoreStorage
+  /**
+   * OPCIONAL: almacenamiento que NO sobrevive a cerrar la pestaña (web:
+   * `sessionStorage`). Para estado de una sola sesión, como el snapshot de una
+   * carrera en curso: F5 lo conserva, cerrar la pestaña es abandonar. Si falta
+   * (móvil: no hay pestañas), el facade `sessionScopedStorage` usa `storage`.
+   */
+  sessionStorage?: CoreStorage
   env: CoreEnv
   analytics: CoreAnalytics
   connectivity: CoreConnectivity
@@ -96,7 +108,7 @@ export interface CorePlatform {
   /** Solo RN: authStore persistente para el SDK de PocketBase. Web usa el default (localStorage). */
   pbAuthStore?: AsyncAuthStore
   /** Reporte de errores a monitoreo (web: Sentry browser; RN: @sentry/react-native). */
-  reportError?: (error: unknown) => void
+  reportError?: (error: unknown, context?: CoreErrorContext) => void
 }
 
 let platform: CorePlatform | null = null
@@ -127,6 +139,16 @@ export const storage: CoreStorage = {
   getItem: (key) => getPlatform().storage.getItem(key),
   setItem: (key, value) => getPlatform().storage.setItem(key, value),
   removeItem: (key) => getPlatform().storage.removeItem(key),
+}
+
+/**
+ * Como `storage`, pero con alcance de sesión cuando la plataforma lo distingue
+ * (web: `sessionStorage`); si no, cae a `storage`.
+ */
+export const sessionScopedStorage: CoreStorage = {
+  getItem: (key) => (getPlatform().sessionStorage ?? getPlatform().storage).getItem(key),
+  setItem: (key, value) => (getPlatform().sessionStorage ?? getPlatform().storage).setItem(key, value),
+  removeItem: (key) => (getPlatform().sessionStorage ?? getPlatform().storage).removeItem(key),
 }
 
 /** Unsubscribe que no hace nada — para cuando la plataforma no declara lifecycle. */

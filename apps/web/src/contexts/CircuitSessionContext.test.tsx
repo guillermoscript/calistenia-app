@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { CircuitDefinition } from '@calistenia/core/types'
 
 // pb/op se mockean: CircuitSessionContext los usa para persistir sesiones
@@ -88,8 +89,14 @@ function makeCircuit(overrides: Record<string, unknown> = {}): CircuitDefinition
 }
 
 function makeWrapper(userId: string | null) {
+  // El provider invalida la caché de entrenos al guardar el circuito.
+  const qc = new QueryClient()
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <CircuitSessionProvider userId={userId}>{children}</CircuitSessionProvider>
+    return (
+      <QueryClientProvider client={qc}>
+        <CircuitSessionProvider userId={userId}>{children}</CircuitSessionProvider>
+      </QueryClientProvider>
+    )
   }
 }
 
@@ -712,7 +719,11 @@ describe('restauración desde localStorage', () => {
     vi.resetModules()
     const fresh = await import('./CircuitSessionContext')
     function FreshWrapper({ children }: { children: ReactNode }) {
-      return <fresh.CircuitSessionProvider userId="u1">{children}</fresh.CircuitSessionProvider>
+      return (
+        <QueryClientProvider client={new QueryClient()}>
+          <fresh.CircuitSessionProvider userId="u1">{children}</fresh.CircuitSessionProvider>
+        </QueryClientProvider>
+      )
     }
     const { result } = renderHook(() => fresh.useCircuitSession(), { wrapper: FreshWrapper })
 
@@ -736,7 +747,11 @@ describe('restauración desde localStorage', () => {
     vi.resetModules()
     const fresh = await import('./CircuitSessionContext')
     function FreshWrapper({ children }: { children: ReactNode }) {
-      return <fresh.CircuitSessionProvider userId="u1">{children}</fresh.CircuitSessionProvider>
+      return (
+        <QueryClientProvider client={new QueryClient()}>
+          <fresh.CircuitSessionProvider userId="u1">{children}</fresh.CircuitSessionProvider>
+        </QueryClientProvider>
+      )
     }
     const { result } = renderHook(() => fresh.useCircuitSession(), { wrapper: FreshWrapper })
 
@@ -750,7 +765,11 @@ describe('restauración desde localStorage', () => {
     vi.resetModules()
     const fresh = await import('./CircuitSessionContext')
     function FreshWrapper({ children }: { children: ReactNode }) {
-      return <fresh.CircuitSessionProvider userId="u1">{children}</fresh.CircuitSessionProvider>
+      return (
+        <QueryClientProvider client={new QueryClient()}>
+          <fresh.CircuitSessionProvider userId="u1">{children}</fresh.CircuitSessionProvider>
+        </QueryClientProvider>
+      )
     }
     const { result } = renderHook(() => fresh.useCircuitSession(), { wrapper: FreshWrapper })
 

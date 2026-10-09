@@ -42,7 +42,8 @@
 
 import type PocketBase from 'pocketbase'
 import type { MonthActivity } from './monthActivity.types'
-import { addDaysIn, diffDaysIn, localMidnightAsUTCIn, todayStrIn, utcToLocalDateStrIn } from './tzDate'
+import { addDaysIn, diffDaysIn, todayStrIn, utcToLocalDateStrIn } from './tzDate'
+import { wallClockDayOf, wallClockDayRange } from './wallClock'
 import { bedtimeConsistencyMinutes, pctTrue, avgDefined } from './sleepStats'
 import { estimateBodyFatNavy } from './body-composition'
 import type { DailyHealthSummary, Sex } from '../types'
@@ -485,23 +486,24 @@ async function fetchWindow(
   }
 
   // 2. Entrenamientos de fuerza — el calendario los excluye a propósito
-  // (viven en `sessions`). Mismo campo `user` y misma fecha
-  // (completed_at || created) que usa useProgress.ts.
+  // (viven en `sessions`). `completed_at` es hora de pared local del usuario
+  // (no UTC): cotas de día y día = 10 primeros caracteres, sin convertir con
+  // `tz`. Solo el respaldo `created` es un instante UTC real.
   const strengthByDate: StrengthByDate = {}
   try {
     const sessions = (await pb.collection('sessions').getFullList({
       requestKey: null,
-      filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at < {:end}', {
+      filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', {
         uid: userId,
-        start: localMidnightAsUTCIn(start, tz),
-        end: localMidnightAsUTCIn(addDaysIn(end, 1, tz), tz),
+        start: wallClockDayRange(start, end).from,
+        end: wallClockDayRange(start, end).to,
       }),
       fields: 'id,completed_at,created,duration_seconds',
     })) as unknown as SessionLite[]
 
     const seconds: Record<string, number> = {}
     for (const s of sessions) {
-      const date = utcToLocalDateStrIn(s.completed_at || s.created || '', tz)
+      const date = wallClockDayOf(s.completed_at, s.created, tz)
       if (!date) continue
       const cur = strengthByDate[date] || (strengthByDate[date] = { workouts: 0, workoutMinutes: 0 })
       cur.workouts += 1

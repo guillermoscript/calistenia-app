@@ -29,7 +29,9 @@ import {
   goalForWeekFromChanges,
   HISTORICAL_WEEKLY_GOAL,
   streakDayOf,
+  weeklyStreakHistory,
   withGoalChange,
+  type WeekHistoryEntry,
   type WeeklyStreak,
 } from '../lib/weeklyStreak'
 import type { ProgressMap, Settings } from '../types'
@@ -69,7 +71,20 @@ async function fetchStreakDays(uid: string): Promise<string[]> {
   return [...days].sort()
 }
 
-const EMPTY_STREAK: WeeklyStreak = {
+/** Semanas de la tira de historial de Progreso (#856). */
+export const STREAK_HISTORY_WEEKS = 10
+
+/**
+ * La racha y, con los MISMOS días y el MISMO historial de objetivos, la tira de
+ * las últimas semanas: así «racha actual» y «últimas 10 semanas» no pueden
+ * contradecirse en ninguna pantalla.
+ */
+export interface WorkoutStreak extends WeeklyStreak {
+  history: WeekHistoryEntry[]
+}
+
+const EMPTY_STREAK: WorkoutStreak = {
+  history: [],
   current: 0,
   best: 0,
   thisWeek: { weekStart: '', done: 0, goal: HISTORICAL_WEEKLY_GOAL, met: false, remaining: HISTORICAL_WEEKLY_GOAL },
@@ -77,7 +92,7 @@ const EMPTY_STREAK: WeeklyStreak = {
 
 export function useWorkoutStreak({
   userId, progress, settings, effectiveGoal, goalReady, updateSettings,
-}: UseWorkoutStreakArgs): WeeklyStreak {
+}: UseWorkoutStreakArgs): WorkoutStreak {
   const today = todayStr()
 
   // Cambia al marcar o desmarcar un entreno: la clave nueva relee los días.
@@ -89,6 +104,9 @@ export function useWorkoutStreak({
     queryKey: qk.streakDays(userId, stamp),
     enabled: !!userId,
     staleTime: 60_000,
+    // Home: al volver a primer plano se relee si pasó el staleTime. Es una
+    // lectura derivada, sin escritura optimista que pueda pisar.
+    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
     queryFn: () => fetchStreakDays(userId!),
   })
@@ -113,6 +131,10 @@ export function useWorkoutStreak({
     // Recién marcado: su sesión puede no estar aún en el servidor. Hoy es el
     // mismo día que el servidor le pondrá (`completed_at` en hora local).
     if (doneToday) days.push(today)
-    return computeWeeklyStreak(days, goalForWeekFromChanges(log, HISTORICAL_WEEKLY_GOAL), today)
+    const goalForWeek = goalForWeekFromChanges(log, HISTORICAL_WEEKLY_GOAL)
+    return {
+      ...computeWeeklyStreak(days, goalForWeek, today),
+      history: weeklyStreakHistory(days, goalForWeek, today, STREAK_HISTORY_WEEKS),
+    }
   }, [userId, storedLog, goalReady, effectiveGoal, today, serverDays, doneToday])
 }

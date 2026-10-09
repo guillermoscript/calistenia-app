@@ -2,6 +2,8 @@ import { pb } from '../pocketbase'
 import { saveRaceRoute } from '../raceRoutes'
 import { serverNow } from '../serverClock'
 import { wrapPbError, RaceNotFoundError } from './errors'
+import { saveCardioSession } from '../cardio-session-api'
+import { buildRaceWorkoutRecord } from './raceWorkout'
 import type {
   Race,
   RaceParticipant,
@@ -220,4 +222,17 @@ export async function markDnf(participantId: string): Promise<void> {
       finished_at: new Date(serverNow()).toISOString(),
     })
   } catch (e) { throw wrapPbError(e) }
+}
+
+/**
+ * Crea el entreno de cardio de la carrera y su ruta; devuelve el id. Tras ello
+ * el caller debe llamar `invalidateAfterWorkout(qc, userId, { cardio: true })`.
+ */
+export function saveRaceAsWorkout(
+  race: Race,
+  me: RaceParticipant,
+  track: RaceGpsPoint[],
+  userId: string,
+): Promise<string> {
+  return saveCardioSession(buildRaceWorkoutRecord(race, me, track, userId))
 }

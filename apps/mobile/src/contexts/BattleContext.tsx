@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { useBattle, type UseBattleResult } from '@calistenia/core/hooks/useBattle'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { qk } from '@calistenia/core/lib/query-keys'
 
 const BattleContext = createContext<UseBattleResult | null>(null)
 
@@ -35,7 +36,7 @@ export function BattleProvider({ battleId, children }: { battleId: string; child
   const mySeat = snapshot?.me?.status
   useEffect(() => {
     if (!battleStatus) return
-    void queryClient.invalidateQueries({ queryKey: ['battle'] })
+    void queryClient.invalidateQueries({ queryKey: qk.battles.all })
   }, [battleStatus, mySeat, queryClient])
 
   // El progreso hecho sin conexión no es fiable, así que al volver del segundo plano

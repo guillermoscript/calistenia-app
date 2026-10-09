@@ -7,6 +7,7 @@ import {
   assertBattleTransition,
   canAcceptBattleJoin,
   canMutateBattle,
+  isBattleOngoing,
   canViewBattle,
   compareBattleScores,
   battleDisplayRanks,
@@ -687,5 +688,17 @@ describe('battle configuration limits (#882), same on core and server', () => {
 
   it('exports the same limits on both sides', () => {
     expect(server.BATTLE_LIMITS).toEqual(BATTLE_LIMITS)
+  })
+})
+
+describe('isBattleOngoing', () => {
+  const b = (status: string) => ({ status }) as never
+  it('solo cuenta salas abiertas o en marcha', () => {
+    expect(isBattleOngoing(b('lobby'))).toBe(true)
+    expect(isBattleOngoing(b('ready'))).toBe(true)
+    expect(isBattleOngoing(b('live'))).toBe(true)
+    for (const s of ['draft', 'finished', 'expired', 'cancelled']) expect(isBattleOngoing(b(s))).toBe(false)
+    expect(isBattleOngoing(null)).toBe(false)
+    expect(isBattleOngoing(undefined)).toBe(false)
   })
 })

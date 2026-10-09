@@ -16,6 +16,11 @@ export interface QueuedAction {
    */
   tempId?: string
   timestamp: number
+  /**
+   * Replays que fallaron con un error TRANSITORIO del servidor (5xx/429/408).
+   * Solo existe para poner tope: ver `MAX_TRANSIENT_REPLAYS`.
+   */
+  attempts?: number
 }
 
 function generateId(): string {
@@ -113,8 +118,8 @@ export function clearQueue(): void {
 /**
  * ¿El error es de red (sin respuesta del server) y por tanto procede encolar /
  * reintentar? PocketBase ClientResponseError trae `status: 0` cuando no hubo
- * respuesta (red caída, DNS, timeout). Un 4xx/5xx con status es respuesta del
- * server: determinista, NO se encola (lo revierte onError de la mutación).
+ * respuesta (red caída, DNS, timeout). Un error con status es respuesta del
+ * server: para decidir qué hacer con él, ver `classifyWriteError`.
  */
 export function isNetworkError(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
@@ -123,6 +128,37 @@ export function isNetworkError(error: unknown): boolean {
   }
   return true // sin forma de status conocido → tratar como red
 }
+
+/**
+ * Qué hacer con una escritura que falló:
+ *
+ * - `network`: no hubo respuesta → encolar y reintentar al reconectar.
+ * - `transient`: el servidor respondió, pero con algo que no depende del dato
+ *   (5xx: PB reiniciándose en un deploy, el proxy con un 502/504; 429: límite
+ *   de peticiones; 408: timeout). El MISMO payload puede entrar dentro de un
+ *   rato, así que se trata como la red: encolar. Antes se descartaba, y un
+ *   entreno terminado durante un deploy se perdía en silencio.
+ * - `deterministic`: el servidor rechazó ESTE dato (400 de validación, 403 de
+ *   regla, 404…). Reintentarlo daría lo mismo: hay que deshacer lo optimista y
+ *   avisar.
+ */
+export type WriteErrorKind = 'network' | 'transient' | 'deterministic'
+
+export function classifyWriteError(error: unknown): WriteErrorKind {
+  if (isNetworkError(error)) return 'network'
+  const s = (error as { status?: unknown }).status
+  if (typeof s === 'number' && (s >= 500 || s === 429 || s === 408)) return 'transient'
+  return 'deterministic'
+}
+
+/**
+ * Tope de replays con error transitorio antes de dar un item por perdido. Un
+ * 5xx que se repite en tantos drenados distintos (cada uno lo dispara un
+ * arranque, una reconexión o un login) ya no es un deploy: es un fallo del
+ * servidor con ESE dato, y conservarlo para siempre dejaría el aviso de «sin
+ * sincronizar» encendido sin remedio.
+ */
+export const MAX_TRANSIENT_REPLAYS = 10
 
 /**
  * ¿El servidor rechazó el replay porque el registro YA existe?
@@ -189,11 +225,13 @@ export async function persistOrQueue(pb: PocketBase, spec: WriteSpec): Promise<a
   try {
     return await run()
   } catch (e) {
-    if (isNetworkError(e)) {
+    if (classifyWriteError(e) !== 'deterministic') {
       enqueue(spec)
       return null
     }
-    throw e // 4xx/5xx determinista → que onError revierta el optimista
+    // Rechazo determinista: el llamador tiene que deshacer su optimista y
+    // avisar (ver `markWorkoutDone`); reintentarlo no lo arreglaría.
+    throw e
   }
 }
 
@@ -211,10 +249,12 @@ function runExclusive<T>(fn: () => Promise<T>): Promise<T> {
 let drainInFlight: Promise<boolean> | null = null
 
 /**
- * Vacía la cola contra PocketBase. Conserva los items que fallen por red (para
- * el próximo intento) y descarta los que fallen con respuesta del server (4xx/5xx
- * "poison" — reintentarlos colgaría la cola para siempre). Devuelve true si
- * procesó al menos un item (para que el llamador invalide queries y reconcilie).
+ * Vacía la cola contra PocketBase. Conserva los items que fallen por red o con
+ * un error transitorio del servidor (5xx/429/408, hasta `MAX_TRANSIENT_REPLAYS`)
+ * para el próximo intento, y descarta los que el servidor rechace de forma
+ * determinista (4xx "poison" — reintentarlos colgaría la cola para siempre).
+ * Devuelve true si procesó al menos un item (para que el llamador invalide
+ * queries y reconcilie).
  *
  * Concurrencia: dos drenados simultáneos (StrictMode monta efectos dos veces;
  * boot + evento online; varias pestañas) leerían el mismo snapshot de la cola y
@@ -261,8 +301,18 @@ async function drainQueue(pb: PocketBase): Promise<boolean> {
           break
       }
     } catch (e) {
-      if (isNetworkError(e)) {
+      const kind = classifyWriteError(e)
+      if (kind === 'network') {
         remaining.push(item) // sigue offline → reintentar luego
+      } else if (kind === 'transient') {
+        // El servidor está caído o saturado, no el dato mal: un entreno
+        // encolado no puede perderse porque el drenado coincidió con un deploy.
+        const attempts = (item.attempts ?? 0) + 1
+        if (attempts < MAX_TRANSIENT_REPLAYS) {
+          remaining.push({ ...item, attempts })
+        } else {
+          getPlatform().reportError?.(e)
+        }
       } else if (isAlreadyPersistedError(e)) {
         // El create ya había llegado (se perdió su respuesta, no la petición):
         // el índice único lo rechaza. Descartar sin ruido y contar como
@@ -275,7 +325,11 @@ async function drainQueue(pb: PocketBase): Promise<boolean> {
     }
   }
 
-  setQueue(remaining)
+  // Lo que se encoló MIENTRAS se drenaba (p.ej. un entreno terminado justo
+  // con el servidor dando 503) no estaba en el snapshot: reescribir la cola
+  // solo con `remaining` lo borraría.
+  const seen = new Set(queue.map(a => a.id))
+  setQueue([...remaining, ...getQueue().filter(a => !seen.has(a.id))])
   return processedAny
 }
 

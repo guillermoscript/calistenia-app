@@ -2841,6 +2841,8 @@
   "session.discardWithSets": "You have {{count}} set(s) logged. They will be saved but the session will be marked as incomplete.",
   "session.discardEmpty": "The session will be discarded without saving anything.",
   "session.discardButton": "DISCARD SESSION",
+  "session.saveFailedTitle": "Your workout couldn't be saved",
+  "session.saveFailedBody": "The server rejected it, so it won't count toward your progress. We've been notified of the error.",
   "session.lastSetTitle": "Last set done!",
   "session.noteCardTitle": "Session note",
   "session.noteCardSubtitle": "How did it go? Anything worth noting?",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { deriveActivation, resolveHomeStage } from './activation'
-import { dayHasContent, getHomeState, HOME_STATE_PRECEDENCE, type HomeStateInput } from './homeState'
+import { dayHasContent, getHomeState, resolveLastActivityDay, HOME_STATE_PRECEDENCE, type HomeStateInput } from './homeState'
 import type { DayId, DayType, WeekDay } from '../types'
 
 const day = (id: DayId, type: DayType, extra: Partial<WeekDay> = {}): WeekDay =>
@@ -257,5 +257,15 @@ describe('dayHasContent', () => {
     expect(dayHasContent(day('lun', 'cardio'), null)).toBe(false)
     expect(dayHasContent(day('lun', 'circuit', { circuitConfig: { exercises: [1] } as unknown as WeekDay['circuitConfig'] }), null)).toBe(true)
     expect(dayHasContent(day('lun', 'rest'), { exercises: [1] })).toBe(false)
+  })
+})
+
+describe('resolveLastActivityDay', () => {
+  it('toma el mayor candidato válido y no futuro', () => {
+    expect(resolveLastActivityDay(TUESDAY, ['2026-09-20', null, '2026-09-28', undefined, '2026-10-05', 'basura'])).toBe('2026-09-28')
+  })
+  it('sin candidatos válidos → null', () => {
+    expect(resolveLastActivityDay(TUESDAY, [null, undefined, '2026-12-01'])).toBeNull()
+    expect(resolveLastActivityDay(TUESDAY, [])).toBeNull()
   })
 })

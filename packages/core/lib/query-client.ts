@@ -10,9 +10,11 @@
  * síncrono (localStorage en web, MMKV en mobile) en un persister de React Query.
  * La app lo pasa a PersistQueryClientProvider.
  */
-import { QueryClient, onlineManager } from '@tanstack/react-query'
+import { QueryClient, defaultShouldDehydrateQuery, onlineManager } from '@tanstack/react-query'
+import type { DehydrateOptions, Query } from '@tanstack/react-query'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { getPlatform, storage } from '../platform'
+import { qk } from './query-keys'
 
 /** Errores de PocketBase con status HTTP — para decidir si reintentar. */
 function statusOf(error: unknown): number | undefined {
@@ -153,6 +155,98 @@ export function trimPersistedCache(value: string): string | null {
   parsed.clientState.queries = queries.filter((q: unknown) => !dropped.has(q))
   const out = JSON.stringify(parsed)
   return out.length <= PERSIST_MAX_CHARS ? out : null
+}
+
+/**
+ * Queries que NO se persisten en disco (denylist por prefijo de key).
+ *
+ * Por qué (Sentry «caché persistido descartado: 2,3M > 600k»): sin
+ * `dehydrateOptions` se persistía TODA la caché y el tope de
+ * `PERSIST_MAX_CHARS` se comía el trabajo útil. Solo vale la pena persistir lo
+ * que da un primer pintado offline y NO tiene ya otra fuente local. Excluidas:
+ *  - Las que arrancan con `initialData` desde localStorage (progreso/sesiones,
+ *    peso, sueño, medidas, agua, plan semanal, recordatorios): persistirlas
+ *    duplica lo que el hook ya lee de LS.
+ *  - El catálogo de ejercicios: `useCatalogExerciseList` cae a la lista
+ *    estática del bundle (`query.data ?? getStaticCatalogList()`).
+ *  - Listas grandes o efímeras que se refetchean al abrir la pantalla (muro,
+ *    reacciones, comentarios, detalles/estadísticas de programa, cardio,
+ *    búsquedas de comida, nutrición por fecha/rango, detalle de reto y de
+ *    programa de comunidad, PRs de carreras, usuarios sugeridos).
+ * Se conservan, entre otras: programs.catalog / enrollment / detail /
+ * overrides, streak-days / account-sessions, app-config, feed.meta y
+ * nutrition today / goals.
+ *
+ * Cada prefijo sale de un constructor de `qk` (nada de strings sueltos): si se
+ * renombra una key, el test de `query-client.persist-filter.test.ts` falla en
+ * vez de volver a persistirlo todo en silencio. Un prefijo casa por SEGMENTOS
+ * (`['feed','sessions']` excluye `['feed','sessions',uid,ids]` pero no
+ * `['feed','meta',uid]`).
+ */
+export const NO_PERSIST_KEY_PREFIXES: readonly (readonly unknown[])[] = [
+  // — con initialData desde localStorage —
+  qk.sessions(null, null).slice(0, 1),
+  qk.weight(null).slice(0, 1),
+  qk.sleep(null).slice(0, 1),
+  qk.bodyMeasurements(null).slice(0, 1),
+  qk.weeklyMealPlan.active(null).slice(0, 1), // también `days`
+  qk.water.day(null, '').slice(0, 1),
+  qk.workoutReminders(null).slice(0, 1),
+  // — catálogo con fallback estático en el bundle —
+  qk.exerciseCatalog,
+  // — programas: vistas de detalle / estadísticas / vista previa pública —
+  qk.programs.detailView(null).slice(0, 2),
+  qk.programs.stats([]).slice(0, 2),
+  qk.programs.publicPreview(null).slice(0, 2),
+  // — social: páginas del muro (el `feed.meta` pequeño SÍ se persiste) —
+  qk.feed.sessions(null, []).slice(0, 2),
+  qk.feed.users([]).slice(0, 2),
+  qk.reactions(null, []).slice(0, 1),
+  qk.comments.all,
+  qk.commentReactions('', null).slice(0, 1),
+  qk.suggestedUsers(null).slice(0, 1),
+  // — cardio, comida, nutrición salvo today/goals —
+  qk.cardioSessions(null).slice(0, 1),
+  qk.foods.search('').slice(0, 1),
+  qk.wgerSearch('', '').slice(0, 1),
+  qk.nutrition.byDate(null, '').slice(0, 2),
+  qk.nutrition.range(null, '', '').slice(0, 2),
+  qk.nutrition.badges(null).slice(0, 2),
+  qk.nutrition.insightDaily(null, '').slice(0, 2),
+  // — retos, programas de comunidad y carreras: detalle —
+  qk.challenge('').slice(0, 1),
+  qk.challengeLeaderboard('', null).slice(0, 1),
+  qk.expressProgress('').slice(0, 1),
+  qk.communityProgram('', null).slice(0, 1),
+  qk.races.prsFinished(null).slice(0, 3),
+]
+
+function startsWithSegments(key: readonly unknown[], prefix: readonly unknown[]): boolean {
+  if (key.length < prefix.length) return false
+  for (let i = 0; i < prefix.length; i++) if (key[i] !== prefix[i]) return false
+  return true
+}
+
+/** `true` si la query con esa key no debe escribirse en el caché persistido. */
+export function isNoPersistKey(queryKey: readonly unknown[]): boolean {
+  return NO_PERSIST_KEY_PREFIXES.some((prefix) => startsWithSegments(queryKey, prefix))
+}
+
+/**
+ * `dehydrateOptions` COMPARTIDO por web y mobile (se pasa dentro de
+ * `persistOptions`): una sola fuente para que las apps no diverjan.
+ *
+ * - Queries: lo normal de React Query (solo las `success`) menos la denylist.
+ * - Mutaciones: NUNCA. Ninguna mutación del código registra `mutationFn` por
+ *   defecto (`setMutationDefaults`) ni se llama a `resumePausedMutations`, así
+ *   que una mutación pausada rehidratada no tiene función con la que
+ *   reanudarse: persistirla solo ensancha el envelope sin servir de nada. El
+ *   trabajo offline lo cubre `offlineQueue`, no la caché de React Query.
+ */
+export const CORE_DEHYDRATE_OPTIONS: DehydrateOptions = {
+  shouldDehydrateQuery: (query: Query) =>
+    defaultShouldDehydrateQuery(query) && !isNoPersistKey(query.queryKey),
+  shouldDehydrateMutation: () => false,
 }
 
 /**

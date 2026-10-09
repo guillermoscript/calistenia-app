@@ -20,7 +20,8 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
 import type { BattleConfiguration } from '@calistenia/core/types/battle'
 
-import { useActiveBattle, isBattleOngoing } from '../hooks/useActiveBattle'
+import { useActiveBattle } from '@calistenia/core/hooks/useActiveBattle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
 import { useBattleProgramDay } from '../hooks/useBattleProgramDay'
 import {
   BATTLE_ORIGINS, addCustomItem, customBattleConfig, parseOrigin, parsePhase, type BattleOrigin, type CustomItem,
@@ -30,6 +31,7 @@ import { Kicker } from '../components/ui/kicker'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
 import { OriginChip, SectionLabel } from '../components/battle/BattleCreateParts'
 import { CustomSection, PresetSection, ProgramDaySection } from '../components/battle/BattleCreateSections'
+import { qk } from '@calistenia/core/lib/query-keys'
 
 export default function BattleCreatePage({ userId }: { userId: string }) {
   const { t, i18n } = useTranslation()
@@ -121,7 +123,7 @@ export default function BattleCreatePage({ userId }: { userId: string }) {
         participant_count: 1, result: 'created', template: toSend.workout_template_id,
         battle_source: toSend.source ?? 'preset', exercise_count: toSend.exercises.length,
       })
-      void queryClient.invalidateQueries({ queryKey: ['battle'] })
+      void queryClient.invalidateQueries({ queryKey: qk.battles.all })
       navigate(`/battle/${battleId}`, { replace: true })
     } catch (e) {
       setError((e as Error).message)

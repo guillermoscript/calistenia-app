@@ -2,9 +2,8 @@ import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms, type ActiveEnrollment } from '@calistenia/core/hooks/usePrograms'
 import { useWeekAwareGetWorkout, useProgramProgress } from '@calistenia/core/hooks/useProgramProgress'
-import { useWorkoutStreak } from '@calistenia/core/hooks/useWorkoutStreak'
+import { useWorkoutStreak, type WorkoutStreak } from '@calistenia/core/hooks/useWorkoutStreak'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
-import type { WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
 import type { ProgramProgress } from '@calistenia/core/lib/programProgress'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, CircuitDefinition, ExerciseTiming } from '@calistenia/core/types'
 
@@ -52,7 +51,7 @@ interface WorkoutActions {
   /** Racha semanal viva, en semanas: la misma que `user_stats` (#801). */
   getCurrentStreak: () => number
   /** La racha semanal entera, con la semana en curso (`thisWeek`). */
-  getWeeklyStreak: () => WeeklyStreak
+  getWeeklyStreak: () => WorkoutStreak
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
   /** Días con sesión completada, 'YYYY-MM-DD' ascendente (#800). */

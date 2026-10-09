@@ -180,6 +180,19 @@ export function dayHasContent(
   return (workout?.exercises?.length ?? 0) > 0
 }
 
+/**
+ * Último día con actividad para `getHomeState.lastActivityDay`: el mayor de los
+ * candidatos válidos que no sea futuro. Web y móvil pasan las mismas fuentes
+ * (última sesión, último cardio y el último de `activityDays`) para no divergir.
+ */
+export function resolveLastActivityDay(
+  today: string,
+  candidates: ReadonlyArray<string | null | undefined>,
+): string | null {
+  const valid = candidates.filter((d): d is string => isDayStr(d) && d <= today)
+  return valid.sort().pop() ?? null
+}
+
 export function getHomeState(input: HomeStateInput): HomeState {
   const { today, activeProgram, programProgress, account, activation } = input
   const hasContent = input.dayHasContent ?? (() => true)

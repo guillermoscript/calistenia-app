@@ -20,7 +20,7 @@ vi.mock('i18next', () => ({
   },
 }))
 
-import { capitalizeFirst, describeFeedItem, feedItemTarget } from './feed-item'
+import { capitalizeFirst, describeFeedItem, feedItemTarget, feedPublicPath } from './feed-item'
 import { NO_PHASE } from './session-key'
 import type { FeedItem } from '../types/feed'
 
@@ -392,5 +392,25 @@ describe('feedItemTarget · a dónde se puede ir', () => {
   it('sin bloque de datos no hay destino que abrir', () => {
     expect(feedItemTarget(item({ type: 'challenge' }), false)).toBeNull()
     expect(feedItemTarget(item({ type: 'race' }), false)).toBeNull()
+  })
+})
+
+describe('feedPublicPath · enlace para compartir', () => {
+  it('sesión y cardio van por su id, sin prefijo de idioma', () => {
+    expect(feedPublicPath(item({ type: 'workout' }))).toBe('/s/x1')
+    expect(feedPublicPath(item({ type: 'cardio' }))).toBe('/cardio/session/x1')
+  })
+
+  it('reto y carrera van por SU id', () => {
+    const c = item({ type: 'challenge', challenge: { challengeId: 'c9', title: 'x', metricLabel: '', goal: 0, startsAt: '', endsAt: '', status: '', role: 'joined' } })
+    expect(feedPublicPath(c)).toBe('/challenges/c9')
+    expect(feedPublicPath(item({ type: 'race', race: { raceId: 'r1' } as never }))).toBe('/race/r1')
+  })
+
+  it('circuito, batalla y bloques vacíos no tienen enlace', () => {
+    expect(feedPublicPath(item({ type: 'circuit' }))).toBe('')
+    expect(feedPublicPath(item({ type: 'battle' }))).toBe('')
+    expect(feedPublicPath(item({ type: 'challenge' }))).toBe('')
+    expect(feedPublicPath(item({ type: 'race' }))).toBe('')
   })
 })

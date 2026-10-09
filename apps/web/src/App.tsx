@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER, CORE_DEHYDRATE_OPTIONS } from '@calistenia/core/lib/query-client'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { WorkoutProvider, useWorkoutState, useWorkoutActions } from './contexts/WorkoutContext'
@@ -732,7 +732,7 @@ export default function App() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER }}
+      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER, dehydrateOptions: CORE_DEHYDRATE_OPTIONS }}
     >
       <AuthProvider>
         <AppInner />

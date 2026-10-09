@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activityDaysFromProgress, getMissedDaysNote, getWeekDoneDays, getWeekSummary } from './weekSummary'
+import { activityDaysFor, activityDaysFromProgress, getMissedDaysNote, getWeekDoneDays, getWeekSummary } from './weekSummary'
 import type { DayId, DayType, ProgressMap, WeekDay } from '../types'
 
 const day = (id: DayId, type: DayType): WeekDay => ({ id, name: id, focus: id, type, color: '#fff' })
@@ -152,5 +152,30 @@ describe('getWeekDoneDays', () => {
     }
     expect(getWeekDoneDays(TODAY, progress)).toBe(2)
     expect(getWeekDoneDays(TODAY, progress, ['2026-09-29', '2026-09-30', '2026-10-02'])).toBe(3)
+  })
+})
+
+describe('activityDaysFor', () => {
+  const progress: ProgressMap = {
+    'done_2026-09-28_p1_lun': { done: true, date: '2026-09-28', workoutKey: 'p1_lun', note: '' },
+  }
+
+  it('suma TODAS las sesiones de cardio libre, sin repetidos y ordenado', () => {
+    const days = activityDaysFor(progress, [
+      { started_at: '2026-09-30T12:00:00Z' },
+      { started_at: '2026-09-29 12:00:00.000Z' },
+      { started_at: '2026-09-29T15:00:00Z' },
+      { started_at: '2026-09-28T12:00:00Z' },
+    ])
+    expect(days).toEqual(['2026-09-28', '2026-09-29', '2026-09-30'])
+  })
+
+  it('ignora cardio sin fecha o con fecha inválida', () => {
+    expect(activityDaysFor(progress, [{ started_at: '' }, { started_at: null }, {}, { started_at: 'nope' }]))
+      .toEqual(['2026-09-28'])
+  })
+
+  it('sin cardio equivale a activityDaysFromProgress', () => {
+    expect(activityDaysFor(progress)).toEqual(activityDaysFromProgress(progress))
   })
 })

@@ -17,11 +17,12 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { PortalHost } from '@rn-primitives/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER } from '@calistenia/core/lib/query-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE, PERSIST_BUSTER, CORE_DEHYDRATE_OPTIONS } from '@calistenia/core/lib/query-client'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
+import { setupFocusManager } from '@/lib/setup-focus-manager'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHandoff'
 
@@ -55,6 +56,7 @@ SplashScreen.preventAutoHideAsync()
 // Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
 // init-core ya corrió (primer import del archivo), así que el adapter está listo.
 setupOnlineManager()
+setupFocusManager()
 const queryClient = createQueryClient()
 const persister = createCorePersister()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
@@ -291,7 +293,7 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER }}
+        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: PERSIST_BUSTER, dehydrateOptions: CORE_DEHYDRATE_OPTIONS }}
       >
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <KeyboardProvider>

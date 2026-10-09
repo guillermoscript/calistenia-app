@@ -164,6 +164,13 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     initialData: () => ({ progress: lsGetProgress(), settings: ensureStartDate(lsGetSettings()) }),
     initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
     staleTime: 30_000,
+    // OJO: aquí NO se activa `refetchOnWindowFocus` a propósito, aunque Home
+    // lea esta query. `markWorkoutDone` hace `cancelQueries` ANTES del parche
+    // optimista, pero eso solo cancela fetches ya en vuelo: uno lanzado por el
+    // foco DESPUÉS del parche y mientras el create sigue esperando a la red
+    // (la fila aún no está en el servidor ni en la cola) devolvería el mapa sin
+    // el entreno y lo pisaría. Home se pone al día por la invalidación tras el
+    // servidor (`invalidateAfterWorkout`) y por el refetch al montar.
     queryFn: () => loadFromPB(userId!),
   })
 

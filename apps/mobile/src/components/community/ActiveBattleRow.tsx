@@ -11,7 +11,8 @@ import { useTranslation } from 'react-i18next'
 import { ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
-import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
+import { useActiveBattle } from '@/lib/use-active-battle'
 
 export default function ActiveBattleRow() {
   const { t } = useTranslation()

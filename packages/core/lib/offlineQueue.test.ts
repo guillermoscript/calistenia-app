@@ -5,7 +5,9 @@ import {
   clearQueue,
   cancelQueuedByTempId,
   cancelLastQueuedByTempId,
+  classifyWriteError,
   isAlreadyPersistedError,
+  MAX_TRANSIENT_REPLAYS,
   newClientId,
   patchQueuedByTempId,
   persistOrQueue,
@@ -146,6 +148,37 @@ describe('persistOrQueue', () => {
     ).rejects.toMatchObject({ status: 400 })
     expect(getQueue()).toHaveLength(0)
   })
+
+  // Un deploy reinicia PB y el proxy responde 502/503 un rato: el entreno que
+  // se termina justo entonces no puede perderse.
+  it('online con 5xx transitorio: encola y devuelve null, sin relanzar', async () => {
+    const pb = makePb()
+    responses.sessions = { ok: false, status: 503 }
+    const rec = await persistOrQueue(pb, { collection: 'sessions', action: 'create', data: { client_id: 'x' }, tempId: 'done_k' })
+    expect(rec).toBeNull()
+    expect(getQueue()).toMatchObject([{ collection: 'sessions', tempId: 'done_k' }])
+  })
+})
+
+describe('classifyWriteError', () => {
+  it('sin respuesta (status 0/ausente) o sin forma de error de PB → red', () => {
+    expect(classifyWriteError({ status: 0 })).toBe('network')
+    expect(classifyWriteError({ status: undefined })).toBe('network')
+    expect(classifyWriteError(new Error('boom'))).toBe('network')
+    expect(classifyWriteError(null)).toBe('network')
+  })
+
+  it('5xx, 429 y 408 son transitorios: no dependen del dato', () => {
+    for (const status of [500, 502, 503, 504, 429, 408]) {
+      expect(classifyWriteError({ status })).toBe('transient')
+    }
+  })
+
+  it('el resto de 4xx es un rechazo determinista', () => {
+    for (const status of [400, 401, 403, 404, 409, 422]) {
+      expect(classifyWriteError({ status })).toBe('deterministic')
+    }
+  })
 })
 
 describe('isAlreadyPersistedError', () => {
@@ -240,6 +273,53 @@ describe('processQueue', () => {
     expect(did).toBe(false)
     expect(getQueue()).toHaveLength(0)
     expect(reportError).toHaveBeenCalledTimes(1)
+  })
+
+  it('un 5xx en el replay NO descarta el item: sigue en la cola y cuenta el intento', async () => {
+    enqueue({ collection: 'sessions', action: 'create', data: { client_id: 'abc' }, tempId: 'done_k' })
+    const pb = makePb()
+    responses.sessions = { ok: false, status: 502 }
+    const did = await processQueue(pb)
+    expect(did).toBe(false)
+    expect(getQueue()).toMatchObject([{ tempId: 'done_k', attempts: 1 }])
+    expect(reportError).not.toHaveBeenCalled()
+
+    // Cuando el servidor vuelve, el replay entra.
+    responses.sessions = { ok: true }
+    expect(await processQueue(pb)).toBe(true)
+    expect(getQueue()).toHaveLength(0)
+  })
+
+  it('tras MAX_TRANSIENT_REPLAYS drenados con 5xx se da por perdido y se reporta', async () => {
+    enqueue({ collection: 'sessions', action: 'create', data: {} })
+    const pb = makePb()
+    responses.sessions = { ok: false, status: 500 }
+    for (let i = 1; i < MAX_TRANSIENT_REPLAYS; i++) {
+      await processQueue(pb)
+      expect(getQueue()).toHaveLength(1)
+    }
+    await processQueue(pb)
+    expect(getQueue()).toHaveLength(0)
+    expect(reportError).toHaveBeenCalledTimes(1)
+  })
+
+  it('lo que se encola mientras se drena no se pierde al reescribir la cola', async () => {
+    enqueue({ collection: 'water_entries', action: 'create', data: { amount_ml: 250 } })
+    const pb = makePb()
+    const realCreate = pb.collection
+    pb.collection = (name: string) => {
+      const c = realCreate(name)
+      return {
+        ...c,
+        create: async (data: any) => {
+          // Un entreno terminado justo durante el drenado.
+          enqueue({ collection: 'sessions', action: 'create', data: { n: 1 }, tempId: 'done_k' })
+          return c.create(data)
+        },
+      }
+    }
+    await processQueue(pb)
+    expect(getQueue()).toMatchObject([{ collection: 'sessions', tempId: 'done_k' }])
   })
 
   it('cola vacía → no-op, devuelve false', async () => {

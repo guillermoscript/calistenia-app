@@ -18,6 +18,7 @@
  * (barra de fase, «Semana N de M»).
  */
 import { isDayStr, mondayOf, weekDaysFrom } from './calendarWeek'
+import { utcToLocalDateStr } from './dateUtils'
 import { dayIdFromDateStr } from './programProgress'
 import { isTrainableDay } from './training-day'
 import type { DayId, ProgressMap, SessionDone, WeekDay } from '../types'
@@ -160,6 +161,30 @@ export function activityDaysFromProgress(progress: ProgressMap): string[] {
     if (isDayStr(day)) out.add(day)
   }
   return [...out].sort()
+}
+
+/**
+ * Días con actividad de CUALQUIER tipo: los marcadores del `ProgressMap`
+ * (`activityDaysFromProgress`) más las sesiones de cardio LIBRE, que no viven
+ * ahí. Sin repetidos y ordenados (el último es el día más reciente).
+ *
+ * `started_at` del cardio es UTC real (a diferencia de `sessions.completed_at`,
+ * que es hora de pared), así que se pasa a día local con `utcToLocalDateStr`.
+ * Es la única fuente de los días de actividad: Inicio, Entrenar, Progreso y
+ * Perfil de web y móvil la usan, para que la tira de la semana y la racha no
+ * discrepen entre pantallas.
+ */
+export function activityDaysFor(
+  progress: ProgressMap,
+  cardioSessions: ReadonlyArray<{ started_at?: string | null }> = [],
+): string[] {
+  const days = new Set(activityDaysFromProgress(progress))
+  for (const s of cardioSessions) {
+    if (!s.started_at) continue
+    const day = utcToLocalDateStr(s.started_at)
+    if (isDayStr(day)) days.add(day)
+  }
+  return [...days].sort()
 }
 
 /**

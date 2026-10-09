@@ -197,7 +197,7 @@ export function useAdjustPantryItem(userId: string | null) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
       qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
-      qc.invalidateQueries({ queryKey: ['pantry', 'spend'] })
+      qc.invalidateQueries({ queryKey: qk.pantry.spendAll })
     },
   })
 }
@@ -260,7 +260,7 @@ export function useConsumePantryMatches(userId: string | null) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
       qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
-      qc.invalidateQueries({ queryKey: ['pantry', 'spend'] })
+      qc.invalidateQueries({ queryKey: qk.pantry.spendAll })
     },
   })
 }

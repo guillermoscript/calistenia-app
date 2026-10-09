@@ -49,14 +49,23 @@ describe('useHomeStage (#808)', () => {
     h.collection.mockReset()
   })
 
-  it('cuenta las filas de `sessions` del usuario, sin filtro de programa', async () => {
+  it('cuenta fuerza, circuitos y cardio del usuario, sin filtro de programa', async () => {
     h.getList.mockResolvedValue({ totalItems: 0, items: [] })
     renderHook(() => useHomeStage('u1', 0), { wrapper })
-    await waitFor(() => expect(h.getList).toHaveBeenCalled())
-    expect(h.collection).toHaveBeenCalledWith('sessions')
-    const [, , opts] = h.getList.mock.calls[0]
-    expect(opts.filter).toContain('user = {:uid}')
-    expect(opts.filter).not.toContain('program')
+    await waitFor(() => expect(h.getList).toHaveBeenCalledTimes(3))
+    const names = h.collection.mock.calls.map(c => c[0]).sort()
+    expect(names).toEqual(['cardio_sessions', 'circuit_sessions', 'sessions'])
+    for (const [, , opts] of h.getList.mock.calls) {
+      expect(opts.filter).toContain('user = {:uid}')
+      expect(opts.filter).not.toContain('program')
+    }
+  })
+
+  it('suma las tres colecciones: el cardio y los circuitos cuentan para la etapa', async () => {
+    h.getList.mockImplementation(() => Promise.resolve({ totalItems: 1, items: [] }))
+    const { result } = renderHook(() => useHomeStage('u1', 0), { wrapper })
+    await waitFor(() => expect(result.current.sessions).toBe(3))
+    expect(result.current.stage).toBe('full')
   })
 
   it('usuario nuevo: pending mientras carga, first en cuanto llega el 0', async () => {
@@ -68,7 +77,8 @@ describe('useHomeStage (#808)', () => {
   })
 
   it('veterano recién cambiado de programa: el contador de la cuenta lo deja en full y se recuerda', async () => {
-    h.getList.mockResolvedValue({ totalItems: 42, items: [] })
+    // 14 por colección × 3 colecciones = 42 entrenos de la cuenta.
+    h.getList.mockResolvedValue({ totalItems: 14, items: [] })
     const { result } = renderHook(() => useHomeStage('u1', 0), { wrapper })
     await waitFor(() => expect(result.current.stage).toBe('full'))
     expect(result.current.sessions).toBe(42)

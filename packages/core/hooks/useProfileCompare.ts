@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
-import { startOfWeekStr, todayStr, localMidnightAsUTC } from '../lib/dateUtils'
+import { startOfWeekStr, todayStr } from '../lib/dateUtils'
+import { wallClockDayRange } from '../lib/wallClock'
 
 export interface CompareStats {
   sessionsThisWeek: number
@@ -55,8 +56,11 @@ export function useProfileCompare() {
     queryFn: async (): Promise<CompareStats> => {
       // Recalculamos dentro del queryFn para asegurar valores frescos al ejecutar
       const innerToday = todayStr()
-      const weekStart = localMidnightAsUTC(startOfWeekStr())
-      const monthStart = localMidnightAsUTC(`${innerToday.slice(0, 7)}-01`)
+      // `sessions.completed_at` es hora de pared local: cotas de día sin UTC.
+      const weekStartDay = startOfWeekStr()
+      const monthStartDay = `${innerToday.slice(0, 7)}-01`
+      const weekStart = wallClockDayRange(weekStartDay, weekStartDay).from
+      const monthStart = wallClockDayRange(monthStartDay, monthStartDay).from
 
       // Ventana de 7 días para sueño y nutrición
       const d = new Date()

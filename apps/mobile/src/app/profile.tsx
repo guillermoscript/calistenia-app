@@ -33,15 +33,12 @@ import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
 import { useAccountSessionCount } from '@calistenia/core/hooks/useAccountSessionCount'
 import { getEffectiveWeeklyGoal, trainableDaysPerWeek, DEFAULT_WEEKLY_GOAL } from '@calistenia/core/lib/weeklyGoal'
-import { activityDaysFromProgress } from '@calistenia/core/lib/weekSummary'
-import { computeWeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
-import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
+import { useTrainingWeek } from '@/lib/use-training-week'
 import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { usePrivateAccount } from '@calistenia/core/hooks/usePrivateAccount'
-import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 import {
-  fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
+  fetchProfileBody, saveProfileBody, bodyFromUserRecord,
 } from '@calistenia/core/hooks/useProfileForm'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
@@ -142,7 +139,6 @@ export default function ProfileScreen() {
   const { updateSettings } = useWorkoutActions()
   // `?section=goal` abre un panel directamente (el enlace «Objetivo» de Progreso).
   const params = useLocalSearchParams<{ section?: string }>()
-  const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
 
   // Lime se aclara/oscurece según el tema (paridad con reminders.tsx); muted = chevron gris.
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
@@ -215,13 +211,8 @@ export default function ProfileScreen() {
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
   // El objetivo que tendría sin fijarlo a mano: los días de su programa (#853).
   const programGoal = (activeProgram && trainableDaysPerWeek(weekDays)) || DEFAULT_WEEKLY_GOAL
-  // Racha SEMANAL (#853), con la misma cuenta que Progreso: cualquier entreno,
-  // cardio libre incluido (misma query key, sin fetch extra).
-  const streak = computeWeeklyStreak(
-    [...activityDaysFromProgress(progress), ...cardioSessions.map(c => utcToLocalDateStr(c.started_at))],
-    weeklyGoal,
-    todayStr(),
-  )
+  // Racha SEMANAL (#853): la misma que Inicio y Progreso.
+  const { streak } = useTrainingWeek()
   const skills = buildSkills(settings as unknown as Record<string, number>)
   // #616: con inscripción activa la semana sale del programa (`started_at`);
   // sin ella se conserva el cálculo sobre `settings.startDate`, que es lo
@@ -279,24 +270,20 @@ export default function ProfileScreen() {
     if (!user || bodySaveState === 'saving' || !bodyLoaded) return
     setBodySaveState('saving')
     try {
-      await pb.collection('users').update(user.id, {
-        display_name: name.trim(),
-        ...bodyUserPatch({ weight, height, activityLevel }),
-      })
-      // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
-      // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
-      // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
-      await saveBodyDemographics(bodyGoalId, age, sex, (e) => {
-        Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_age_sex' } })
+      await saveProfileBody({
+        userId: user.id,
+        patch: { display_name: name.trim() },
+        body: { weight, height, activityLevel },
+        bodyGoalId, age, sex,
+        queryClient,
+        onSoftError: (step, e) => {
+          Sentry.captureException(e, {
+            tags: { feature: 'profile', op: step === 'age_sex' ? 'update_body_age_sex' : 'recompute_auto_goal' },
+          })
+        },
       })
       setBodySaveState('saved')
       setTimeout(() => setBodySaveState('idle'), 2000)
-      // Reactivo (#243 F3): si el goal nutricional guardado es 'auto', refresca
-      // sus macros con los datos corporales recién guardados. Best-effort — un
-      // fallo aquí no debe bloquear el feedback de guardado de arriba.
-      recomputeAutoNutritionGoal(user.id, queryClient).catch((e) => {
-        Sentry.captureException(e, { tags: { feature: 'profile', op: 'recompute_auto_goal' } })
-      })
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_fields' } })
       setBodySaveState('idle')

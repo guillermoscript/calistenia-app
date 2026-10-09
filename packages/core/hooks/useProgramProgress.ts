@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { nowLocalForPB, todayStr, utcToLocalDateStr } from '../lib/dateUtils'
+import { wallClockDay } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import {
   completedWorkoutsFromProgress,
@@ -81,7 +82,9 @@ export function useProgramProgress({
     phases,
     weekDays,
     completed,
-    utcToLocalDay: utcToLocalDateStr,
+    // `user_programs.started_at` se escribe con `nowLocalForPB()`: hora de pared
+    // local, no UTC, así que su día son los 10 primeros caracteres.
+    utcToLocalDay: (stamp: string) => wallClockDay(stamp) ?? utcToLocalDateStr(stamp),
     today,
     phaseOverride: activeEnrollment?.current_phase ?? null,
   }), [activeEnrollment, activeProgram, phases, weekDays, completed, today])

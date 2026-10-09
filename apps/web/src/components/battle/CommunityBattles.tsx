@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Swords } from 'lucide-react'
 
-import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
+import { useActiveBattle } from '@calistenia/core/hooks/useActiveBattle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
 import BattleHistoryList from './BattleHistoryList'
 
 export function ActiveBattleRow() {

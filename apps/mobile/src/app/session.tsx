@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useKeepAwake } from 'expo-keep-awake'
+import { useTranslation } from 'react-i18next'
 
 import type { ExerciseTiming, Workout } from '@calistenia/core/types'
 import { useFreeSessionTemplates } from '@calistenia/core/hooks/useFreeSessionTemplates'
@@ -31,6 +33,7 @@ export default function SessionScreen() {
   } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const router = useRouter()
+  const { t } = useTranslation()
   const authUser = useAuthUser()
   const { saveTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
 
@@ -50,25 +53,34 @@ export default function SessionScreen() {
   // guarda respondería con un `replace('/(tabs)')` que se come el destino.
   const leavingTo = useRef(false)
 
-  // Sin sesión activa → volver al dashboard
+  // Sin sesión activa → volver al dashboard. Solo cubre abrir /session sin
+  // sesión (deep link, arranque en frío, restauración): la salida deliberada
+  // la hacen los handlers con UNA sola navegación y `leavingTo` ya marcado, así
+  // que cerrar la sesión (isActive → false) no dispara aquí una segunda.
   useEffect(() => {
     if (leavingTo.current) return
     if (!isActive || !workout) {
+      leavingTo.current = true
       router.replace('/(tabs)')
     }
   }, [isActive, workout, router])
 
+  // Salida deliberada: marca antes de cerrar la sesión para que la guarda no
+  // compita con `router.back()` (doble navegación y remontaje del Home).
   const goHome = useCallback(() => {
+    leavingTo.current = true
     if (router.canGoBack()) router.back()
     else router.replace('/(tabs)')
   }, [router])
 
   const handleGoToDashboard = useCallback(() => {
+    leavingTo.current = true
     endSession()
     goHome()
   }, [endSession, goHome])
 
   const handleExitSession = useCallback(() => {
+    leavingTo.current = true
     saveFreeTemplate()
     endSession()
     goHome()
@@ -98,7 +110,11 @@ export default function SessionScreen() {
       cooldownSkipped: wcData.cooldownSkipped,
       cooldownDurationSeconds: wcData.cooldownDurationSeconds,
     }, undefined, undefined, timing ? { durationSeconds: timing.durationSeconds, exerciseTimings: timing.exerciseTimings } : undefined)
-  }, [saveFreeTemplate, onMarkDone, getWarmupCooldownData])
+      // Solo rechaza si el servidor no aceptó el entreno (sin red queda en la
+      // cola y no llega aquí). Core ya lo ha quitado del progreso y reportado:
+      // la celebración sigue, pero el usuario tiene que saber que no contó.
+      .catch(() => Alert.alert(t('session.saveFailedTitle'), t('session.saveFailedBody')))
+  }, [saveFreeTemplate, onMarkDone, getWarmupCooldownData, t])
 
   if (!isActive || !workout) return null
 

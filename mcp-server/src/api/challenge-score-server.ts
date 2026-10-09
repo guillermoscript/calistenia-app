@@ -22,6 +22,9 @@
  *   un privado en el último puesto con 0 es peor mentira que no listarlo. El
  *   propio usuario siempre se ve a sí mismo. Cuántos quedaron fuera se
  *   devuelve en `hidden_private_count` para poder decirlo en voz alta.
+ * - **`sessions.completed_at` y `sets_log.logged_at` son hora de pared local**
+ *   (no UTC): sus cotas son días sin convertir (`challengeWallWindow`) y su día
+ *   son los 10 primeros caracteres. Solo el cardio usa instantes UTC.
  * - **La ventana es del ESPECTADOR.** `starts_at` … `ends_at + 1 día` en la
  *   zona horaria de quien mira, igual que el leaderboard de la app. Aquí la
  *   zona entra como parámetro (`tzDate`) porque este proceso atiende a muchos
@@ -41,7 +44,8 @@ import {
   sumExerciseTotal,
 } from "@calistenia/core/lib/cumulative-scoring";
 import { parseRepsForPR } from "@calistenia/core/lib/pr-utils";
-import { addDaysIn, localMidnightAsUTCIn, utcToLocalDateStrIn } from "@calistenia/core/lib/tzDate";
+import { addDaysIn, localMidnightAsUTCIn } from "@calistenia/core/lib/tzDate";
+import { wallClockDay, wallClockDayRange } from "@calistenia/core/lib/wallClock";
 import { toIsoTextDatetime } from "@calistenia/core/lib/pbTextDatetime";
 import { listChallengeParticipants, type PB, type RecordModel } from "./repos/index.js";
 
@@ -135,6 +139,16 @@ export function challengeWindow(challenge: ScorableChallenge, tz: string): { sta
 }
 
 /**
+ * La misma ventana para `sessions` / `sets_log`, cuyos `completed_at` /
+ * `logged_at` guardan la hora de pared local del usuario (no UTC): cotas de día
+ * sin convertir. El cardio sigue usando `challengeWindow` (instantes UTC reales).
+ */
+export function challengeWallWindow(challenge: ScorableChallenge): { start: string; end: string } {
+  const { from, to } = wallClockDayRange(challenge.starts_at.slice(0, 10), challenge.ends_at.slice(0, 10));
+  return { start: from, end: to };
+}
+
+/**
  * Puntuación de UN participante. Nunca lanza: un fallo de lectura vale 0, igual
  * que en el cliente, porque un ranking incompleto es mejor que ninguno.
  */
@@ -158,14 +172,14 @@ async function computeScore(
   tz: string,
 ): Promise<number> {
   const { start, end } = challengeWindow(challenge, tz);
+  const wall = challengeWallWindow(challenge);
   const slug = challenge.exercise_slug ?? "";
-  const utcToLocalDay = (utc: string) => utcToLocalDateStrIn(utc, tz);
 
   switch (challenge.metric) {
     case "exercise": {
       // Mejor serie del ejercicio dentro de la ventana.
       if (!slug) return 0;
-      const sets = await publicSets(pb, userId, slug, start, end, "reps");
+      const sets = await publicSets(pb, userId, slug, wall.start, wall.end, "reps");
       let best = 0;
       for (const s of sets) {
         const n = parseRepsForPR(s.reps as string);
@@ -176,15 +190,15 @@ async function computeScore(
     case "total_exercise": {
       if (!slug) return 0;
       // `id` es imprescindible: es la clave de dedupe de sumExerciseTotal.
-      const sets = await publicSets(pb, userId, slug, start, end, "id,reps");
+      const sets = await publicSets(pb, userId, slug, wall.start, wall.end, "id,reps");
       return sumExerciseTotal(sets as Array<{ id?: string; reps?: string | null }>);
     }
     case "most_sessions": {
       const page = await pb.collection("public_sessions").getList(1, 1, {
         filter: pb.filter("user = {:userId} && completed_at >= {:start} && completed_at <= {:end}", {
           userId,
-          start,
-          end,
+          start: wall.start,
+          end: wall.end,
         }),
         requestKey: null,
       });
@@ -202,13 +216,12 @@ async function computeScore(
     }
     case "total_workouts": {
       const [sessions, cardio] = await Promise.all([
-        publicSessions(pb, userId, start, end, "workout_key,completed_at"),
+        publicSessions(pb, userId, wall.start, wall.end, "workout_key,completed_at"),
         publicCardio(pb, userId, start, end, "id,started_at"),
       ]);
       return countWorkouts(
         sessions as Array<{ workout_key?: string; completed_at?: string }>,
         cardio as Array<{ id?: string; started_at?: string }>,
-        utcToLocalDay,
       );
     }
     case "total_distance": {
@@ -216,9 +229,9 @@ async function computeScore(
       return sumDistanceKm(cardio as Array<{ id?: string; distance_km?: number }>);
     }
     case "longest_streak": {
-      const sessions = await publicSessions(pb, userId, start, end, "completed_at");
+      const sessions = await publicSessions(pb, userId, wall.start, wall.end, "completed_at");
       const days = [
-        ...new Set(sessions.map((s) => (s.completed_at ? utcToLocalDay(s.completed_at as string) : ""))),
+        ...new Set(sessions.map((s) => wallClockDay(s.completed_at as string) ?? "")),
       ]
         .filter(Boolean)
         .sort();

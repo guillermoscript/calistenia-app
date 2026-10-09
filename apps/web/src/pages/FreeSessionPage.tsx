@@ -1,14 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
-import type { RecordModel } from 'pocketbase'
 import { FREE_SESSION_QUEUE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
-import { WORKOUTS } from '@calistenia/core/data/workouts'
-import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
+import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
-import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
@@ -68,102 +63,6 @@ const CAT_TEXT: Record<string, string> = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function inferCategory(exercise: { name: string; muscles: string; note: string }, dayType: string): string {
-  const name = exercise.name.toLowerCase()
-  const muscles = exercise.muscles.toLowerCase()
-  const note = exercise.note.toLowerCase()
-
-  if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
-      name.includes('front lever') || name.includes('back lever') || name.includes('planche') ||
-      name.includes('human flag') || name.includes('skill')) return 'skill'
-  if (name.includes('stretch') || name.includes('yoga') || name.includes('mobility') ||
-      name.includes('movilidad') || name.includes('cat-cow') || name.includes('pigeon') ||
-      name.includes('thoracic') || name.includes('cossack') || name.includes('90/90')) return 'movilidad'
-  if (muscles.includes('core') || name.includes('hollow') || name.includes('plank') ||
-      name.includes('dead bug') || name.includes('side plank')) return 'core'
-  if (dayType === 'lumbar' || name.includes('bird-dog') || name.includes('superman') ||
-      name.includes('glute bridge') || note.includes('lumbar')) return 'lumbar'
-  if (name.includes('push-up') || name.includes('push up') || name.includes('dip') ||
-      name.includes('pike') || name.includes('hspu')) return 'push'
-  if (name.includes('pull-up') || name.includes('pull up') || name.includes('chin-up') ||
-      name.includes('row') || name.includes('face pull') || name.includes('australian') ||
-      name.includes('inverted')) return 'pull'
-  if (name.includes('squat') || name.includes('lunge') || name.includes('bulgarian') ||
-      name.includes('pistol') || name.includes('nordic') || name.includes('step-up') ||
-      name.includes('calf') || name.includes('wall sit') || name.includes('jump squat') ||
-      name.includes('box jump') || name.includes('good morning') ||
-      dayType === 'legs') return 'legs'
-  if (name.includes('burpee') || dayType === 'full') return 'full'
-  return dayType || 'full'
-}
-
-function extractExercisesFromWorkouts(): CatalogExercise[] {
-  const seen = new Map<string, CatalogExercise>()
-  for (const [, workout] of Object.entries(WORKOUTS)) {
-    const dayType = workout.day === 'lun' ? 'push'
-      : workout.day === 'mar' ? 'pull'
-      : workout.day === 'mie' ? 'lumbar'
-      : workout.day === 'jue' ? 'legs'
-      : 'full'
-    for (const ex of workout.exercises) {
-      if (seen.has(ex.id)) continue
-      seen.set(ex.id, {
-        id: ex.id, name: ex.name, muscles: ex.muscles,
-        category: inferCategory(ex, dayType), priority: ex.priority,
-        sets: ex.sets, reps: ex.reps, rest: ex.rest,
-        note: ex.note, youtube: ex.youtube,
-        isTimer: ex.isTimer, timerSeconds: ex.timerSeconds,
-        demoImages: ex.demoImages, demoVideo: ex.demoVideo,
-      })
-    }
-  }
-  // Add supplementary exercises
-  for (const ex of SUPPLEMENTARY_EXERCISES) {
-    if (seen.has(ex.id)) continue
-    seen.set(ex.id, {
-      id: ex.id, name: ex.name, muscles: ex.muscles,
-      category: ex.category, priority: ex.priority,
-      sets: ex.sets, reps: ex.reps, rest: ex.rest,
-      note: ex.note, youtube: ex.youtube,
-      isTimer: ex.isTimer, timerSeconds: ex.timerSeconds,
-    })
-  }
-
-  // Add exercises from master catalog JSON. Carga perezosa (#486): quien llama
-  // ya ha esperado a `loadCatalogIndex()`.
-  const catalogCategories = getCatalogIndexSync()?.raw.categories ?? {}
-  for (const catData of Object.values(catalogCategories)) {
-    for (const ex of catData.exercises || []) {
-      if (seen.has(ex.id)) continue
-      seen.set(ex.id, {
-        id: ex.id, name: ex.name, muscles: ex.muscles || '',
-        category: ex.category || 'full',
-        // El catálogo JSON no está validado: `priority` llega como `string`.
-        priority: (ex.priority || 'med') as CatalogExercise['priority'],
-        sets: ex.sets ?? 3, reps: ex.reps || '8-12', rest: ex.rest ?? 60,
-        note: ex.note || '', youtube: ex.youtube_query || '',
-        isTimer: ex.isTimer || false, timerSeconds: ex.timerSeconds,
-        demoImages: ex.images?.length ? ex.images : undefined,
-      })
-    }
-  }
-
-  return Array.from(seen.values()).sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
-}
-
-function mapPBRecord(rec: RecordModel): CatalogExercise {
-  return {
-    id: catalogExerciseIdentity(rec), name: rec.name ?? '', muscles: rec.muscles ?? '',
-    category: rec.category || 'full', priority: rec.priority || 'med',
-    sets: rec.default_sets ?? 3, reps: rec.default_reps || '8-12',
-    rest: rec.default_rest ?? 90, note: rec.note || (rec.description ?? ''),
-    youtube: rec.youtube || '',
-    isTimer: rec.is_timer || false, timerSeconds: rec.timer_seconds,
-    demoImages: rec.default_images ? (Array.isArray(rec.default_images) ? rec.default_images : [rec.default_images]) : undefined,
-    demoVideo: rec.demo_video,
-  }
-}
 
 function catalogToExercise(cat: CatalogExercise, locale = 'es'): Exercise {
   return {
@@ -226,9 +125,17 @@ export default function FreeSessionPage() {
   const { startCircuit } = useCircuitSession()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'exercises' | 'circuit' | 'ia'>('exercises')
-  const [catalog, setCatalog] = useState<CatalogExercise[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState(false)
+  // El catálogo sale de core (#474): el bundle fusionado con `exercises_catalog`.
+  // `id` es la identidad canónica (slug), la que viaja a `sets_log`; la clave
+  // aleatoria de PB nunca. Sin PB sigue habiendo catálogo, así que ya no hay
+  // estado de «error de carga» que reintentar.
+  const { exercises: catalogList, loading } = useCatalogExerciseList()
+  const catalog = useMemo<CatalogExercise[]>(
+    () => catalogList
+      .map(ex => ({ ...ex, id: ex.slug }))
+      .sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es'))),
+    [catalogList],
+  )
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryId>('todos')
   const [activeEquipment, setActiveEquipment] = useState<string | null>(null)
@@ -246,38 +153,6 @@ export default function FreeSessionPage() {
   useEffect(() => {
     if (selected.length === 0) setQueueOpen(false)
   }, [selected.length])
-
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      setLoadError(false)
-      try {
-        const available = await isPocketBaseAvailable()
-        if (available && !cancelled) {
-          try {
-            const res = await pb.collection('exercises_catalog').getList(1, 200, { requestKey: null, sort: 'name' })
-            if (!cancelled && res.items.length > 0) {
-              setCatalog(res.items.map(mapPBRecord))
-              setLoading(false)
-              return
-            }
-          } catch { /* fall through to hardcoded */ }
-        }
-      } catch { /* PB not available */ }
-      if (!cancelled) {
-        // El catálogo empaquetado se carga bajo demanda (#486).
-        await loadCatalogIndex()
-        const fallback = extractExercisesFromWorkouts()
-        if (fallback.length === 0) {
-          setLoadError(true)
-        }
-        setCatalog(fallback)
-        setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
 
   const filtered = useMemo(() => {
     let result = catalog
@@ -345,33 +220,6 @@ export default function FreeSessionPage() {
     navigate('/session')
     setTimeout(() => { startingRef.current = false }, 100)
   }, [contextStartSession, navigate, t])
-
-  const handleRetryLoad = useCallback(() => {
-    setLoading(true)
-    setLoadError(false)
-    setCatalog([])
-    // Re-trigger the load effect
-    const load = async () => {
-      try {
-        const available = await isPocketBaseAvailable()
-        if (available) {
-          const res = await pb.collection('exercises_catalog').getList(1, 200, { requestKey: null, sort: 'name' })
-          if (res.items.length > 0) {
-            setCatalog(res.items.map(mapPBRecord))
-            setLoading(false)
-            return
-          }
-        }
-      } catch { /* fall through */ }
-      // El catálogo empaquetado se carga bajo demanda (#486).
-      await loadCatalogIndex()
-      const fallback = extractExercisesFromWorkouts()
-      if (fallback.length === 0) setLoadError(true)
-      setCatalog(fallback)
-      setLoading(false)
-    }
-    load()
-  }, [])
 
   const handleCircuitStart = useCallback((circuit: CircuitDefinition) => {
     startCircuit(circuit, 'custom')
@@ -538,13 +386,6 @@ export default function FreeSessionPage() {
           {/* Exercise list */}
           {loading ? (
             <Loader label={t('freeSession.loadingCatalog')} className="py-16" />
-          ) : loadError && catalog.length === 0 ? (
-            <div className="py-16 text-center space-y-3">
-              <div className="text-muted-foreground text-sm">{t('freeSession.loadError')}</div>
-              <Button variant="outline" size="sm" onClick={handleRetryLoad}>
-                {t('freeSession.retry')}
-              </Button>
-            </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center">
               <div className="text-muted-foreground text-sm">

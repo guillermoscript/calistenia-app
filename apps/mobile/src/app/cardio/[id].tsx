@@ -5,7 +5,7 @@
  *
  * Ruta: /cardio/[id]
  */
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { View, ScrollView, ActivityIndicator, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -14,119 +14,24 @@ import { ArrowLeft } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useAuthUser } from '@/lib/use-auth-user'
-import { pb } from '@calistenia/core/lib/pocketbase'
-import { authorDisplayName } from '@calistenia/core/lib/author-name'
+import { useCardioSessionDetail } from '@calistenia/core/hooks/useCardioSessionDetail'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
-import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import RouteMap from '@/components/cardio/RouteMap'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import CardioShareButton from '@/components/share/CardioShareButton'
-import type { CardioSession } from '@calistenia/core/types'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const LIME = 'hsl(74 90% 45%)'
-
-/** Convert a raw PocketBase record to CardioSession shape. */
-function toCardioSession(raw: Record<string, unknown>): CardioSession {
-  return {
-    id: raw.id as string,
-    user: raw.user as string | undefined,
-    activity_type: (raw.activity_type as CardioSession['activity_type']) ?? 'running',
-    // La ruta ya no viaja en el registro: llega de `cardio_routes` (#299).
-    gps_points: [],
-    distance_km: (raw.distance_km as number) ?? 0,
-    duration_seconds: (raw.duration_seconds as number) ?? 0,
-    avg_pace: (raw.avg_pace as number) ?? 0,
-    elevation_gain: (raw.elevation_gain as number) ?? 0,
-    started_at: (raw.started_at as string) ?? '',
-    finished_at: (raw.finished_at as string) ?? '',
-    note: raw.note as string | undefined,
-    calories_burned: raw.calories_burned as number | undefined,
-    max_pace: raw.max_pace as number | undefined,
-    avg_speed_kmh: raw.avg_speed_kmh as number | undefined,
-    max_speed_kmh: raw.max_speed_kmh as number | undefined,
-    splits: Array.isArray(raw.splits) ? (raw.splits as CardioSession['splits']) : [],
-    hr_avg: raw.hr_avg as number | undefined,
-    hr_max: raw.hr_max as number | undefined,
-    calories_actual: raw.calories_actual as number | undefined,
-  }
-}
 
 export default function CardioDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const me = useAuthUser()
 
-  const [session, setSession] = useState<CardioSession | null>(null)
-  const [authorName, setAuthorName] = useState<string | undefined>(undefined)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!id) return
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        // `public_cardio_sessions` y no la tabla base (#386): esta pantalla se
-        // abre desde el muro sobre la sesión de otra persona, y la tabla base
-        // pasó a owner-only. La view no lleva FC ni calorías del reloj — se
-        // piden aparte más abajo, solo si la sesión es propia.
-        const raw = await pb.collection('public_cardio_sessions').getOne(id, {
-          expand: 'user',
-          $autoCancel: false,
-        })
-        if (cancelled) return
-
-        const cs = toCardioSession(raw as unknown as Record<string, unknown>)
-        setSession(cs)
-
-        // Pull author display name from expand or fallback
-        const expandedUser = (raw as any).expand?.user
-        if (expandedUser) {
-          setAuthorName(
-            authorDisplayName(expandedUser) || undefined,
-          )
-        }
-
-        // Solo el dueño puede leer su ruta y su frecuencia cardiaca, así que ni
-        // se piden para una sesión ajena abierta desde el muro: ahorra un 404
-        // por visita.
-        if (cs.user && cs.user === me?.id) {
-          const points = await fetchCardioRoute(cs.id as string)
-          if (!cancelled && points.length) setSession((prev) => (prev ? { ...prev, gps_points: points } : prev))
-
-          try {
-            const priv = await pb.collection('cardio_sessions').getOne(cs.id as string, {
-              $autoCancel: false,
-              fields: 'hr_avg,hr_max,calories_actual',
-            })
-            if (!cancelled) {
-              setSession((prev) => (prev ? {
-                ...prev,
-                hr_avg: priv.hr_avg as number | undefined,
-                hr_max: priv.hr_max as number | undefined,
-                calories_actual: priv.calories_actual as number | undefined,
-              } : prev))
-            }
-          } catch { /* sesión sin métricas de reloj */ }
-        }
-      } catch (e) {
-        if (!cancelled) setError('No se pudo cargar la sesión.')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    void load()
-    return () => { cancelled = true }
-    // `me?.id` decide si se pide la ruta: si la pantalla monta antes que el
-    // auth, hay que reintentar cuando llegue.
-  }, [id, me?.id])
-
-  const isOwnSession = !!me && !!session?.user && me.id === session.user
+  const { session, authorName, loading, error: loadFailed, isOwn: isOwnSession } = useCardioSessionDetail(id, me?.id)
+  const error = loadFailed ? 'No se pudo cargar la sesión.' : null
 
   // Mismo evento y misma propiedad que web (#636 §5).
   const sessionLoaded = !!session

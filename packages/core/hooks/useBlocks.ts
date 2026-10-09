@@ -71,12 +71,12 @@ export function useBlocks(userId: string | null): UseBlocksReturn {
     qc.invalidateQueries({ queryKey: qk.follows(userId) })
     qc.invalidateQueries({ queryKey: qk.feed.all })
     qc.invalidateQueries({ queryKey: qk.comments.all })
-    qc.invalidateQueries({ queryKey: ['comment-reactions'] })
-    qc.invalidateQueries({ queryKey: ['reactions'] })
+    qc.invalidateQueries({ queryKey: qk.roots.commentReactions })
+    qc.invalidateQueries({ queryKey: qk.roots.reactions })
     qc.invalidateQueries({ queryKey: qk.notifications.all })
-    qc.invalidateQueries({ queryKey: ['leaderboard'] })
-    qc.invalidateQueries({ queryKey: ['challenges'] })
-    qc.invalidateQueries({ queryKey: ['challenge-leaderboard'] })
+    qc.invalidateQueries({ queryKey: qk.roots.leaderboard })
+    qc.invalidateQueries({ queryKey: qk.roots.challenges })
+    qc.invalidateQueries({ queryKey: qk.roots.challengeLeaderboard })
   }, [qc, key, userId])
 
   const blockMutation = useMutation({

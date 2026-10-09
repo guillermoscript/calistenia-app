@@ -336,27 +336,32 @@ function fakePb(rows: FakeRows, calls: FilterCall[] = []): InsightDeps['pb'] {
 describe('buildInsightContext (deps inyectadas)', () => {
   const nowIso = new Date().toISOString()
 
-  it('agrupa por el día LOCAL de la zona inyectada, no por la del proceso', async () => {
-    // Kiritimati (UTC+14) y Pago Pago (UTC-11) están a 25 h: el mismo instante
-    // cae SIEMPRE en fechas de calendario distintas.
-    const results: Record<string, string> = {}
+  it('el día de una sesión es su hora de pared: no se desplaza con la zona inyectada', async () => {
+    // `sessions.completed_at` guarda la hora de pared local del usuario, así que
+    // el día son sus 10 primeros caracteres sea cual sea la zona. Kiritimati
+    // (UTC+14) y Pago Pago (UTC-11) estan a 25 h: leyendo la marca como UTC y
+    // convirtiendo, la sesion de las 00:30 caeria en dias distintos.
     for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
-      const pb = fakePb({ sessions: [{ id: 's1', completed_at: nowIso, duration_seconds: 600 }] })
+      const probe = await buildInsightContext(
+        { pb: fakePb({}), tz, fetchActivity: async () => emptyInsightActivity(), warn: () => {} },
+        'u1',
+        { days: 7 },
+      )
+      const day = probe.period.end
+      const pb = fakePb({ sessions: [{ id: 's1', completed_at: `${day} 00:30:00.000Z`, duration_seconds: 600 }] })
       const ctx = await buildInsightContext(
         { pb, tz, fetchActivity: async () => emptyInsightActivity(), warn: () => {} },
         'u1',
         { days: 7 },
       )
       expect(ctx.rows).toHaveLength(1)
+      expect(ctx.rows[0].date).toBe(day)
       expect(ctx.rows[0].workouts).toBe(1)
       expect(ctx.rows[0].workoutMinutes).toBe(10)
-      expect(ctx.period.end).toBe(ctx.rows[0].date)
-      results[tz] = ctx.rows[0].date
     }
-    expect(results['Pacific/Kiritimati']).not.toBe(results['Pacific/Pago_Pago'])
   })
 
-  it('el filtro de sessions usa la medianoche local de la zona inyectada', async () => {
+  it('el filtro de sessions usa cotas de hora de pared (no medianoche local en UTC)', async () => {
     const calls: FilterCall[] = []
     const pb = fakePb({}, calls)
     const ctx = await buildInsightContext(
@@ -367,9 +372,8 @@ describe('buildInsightContext (deps inyectadas)', () => {
     const sessionsCall = calls.find((c) => c.expr.startsWith('user = {:uid} && completed_at'))
     expect(sessionsCall).toBeDefined()
     const params = sessionsCall!.params as { start: string; end: string }
-    // Medianoche de `start` en Nueva York = 04:00 o 05:00 UTC (DST), nunca 00:00.
-    expect(params.start.startsWith(ctx.period.start)).toBe(true)
-    expect(params.start.endsWith('00:00:00')).toBe(false)
+    expect(params.start).toBe(`${ctx.period.start} 00:00:00`)
+    expect(params.end).toBe(`${ctx.period.end} 23:59:59.999`)
   })
 
   it('degrada a "sin datos" si fetchActivity lanza, y sigue con las demás fuentes', async () => {

@@ -628,3 +628,9 @@ export function isBattleActiveForMe(
   if (mySeat === null) return amCreator && status !== 'live'
   return mySeat !== 'finished' && mySeat !== 'left'
 }
+
+/** Una batalla con gente dentro (sala abierta o en marcha); el resto no se enseña. */
+export function isBattleOngoing(battle: Battle | null | undefined): battle is Battle {
+  const status = battle?.status
+  return status === 'lobby' || status === 'ready' || status === 'live'
+}

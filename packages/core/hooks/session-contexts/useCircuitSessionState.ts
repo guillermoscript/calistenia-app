@@ -15,10 +15,12 @@
  * de que Metro y Vite resuelvan una única copia de React.
  */
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { CircuitDefinition } from '../../types'
 import { pb } from '../../lib/pocketbase'
 import { CIRCUIT_ACTIVE_KEY as STORAGE_KEY } from '../../lib/storage-keys'
 import { op } from '../../lib/analytics'
+import { invalidateAfterWorkout } from '../../lib/workout-cache'
 import { persistOrQueue, processQueue, newClientId } from '../../lib/offlineQueue'
 import {
   CIRCUIT_COLLECTION,
@@ -189,6 +191,7 @@ export function useCircuitSessionState({
   analyticsProps,
   reportError,
 }: UseCircuitSessionStateOptions): CircuitSessionState {
+  const queryClient = useQueryClient()
   // Restore síncrono — el storage de core es síncrono en ambas plataformas (en
   // móvil, un caché en memoria hidratado en el boot), así que el primer render
   // ya tiene el estado correcto.
@@ -431,6 +434,8 @@ export function useCircuitSessionState({
         data,
       })
       if (record === null) saved = false // quedó encolada
+      // En el servidor: el check del día, la racha y los totales ya pueden releerse.
+      else invalidateAfterWorkout(queryClient, userId)
     } catch (e) {
       report(e, 'save_session')
       saved = false
@@ -455,7 +460,7 @@ export function useCircuitSessionState({
     setCircuit(null)
     setProgress(INITIAL_PROGRESS)
     setIsPaused(false)
-  }, [circuit, userId, progress, source, report, track])
+  }, [circuit, userId, progress, source, report, track, queryClient])
 
   const abandonCircuit = useCallback(() => {
     clearStorage()

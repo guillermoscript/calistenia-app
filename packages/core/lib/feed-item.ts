@@ -302,6 +302,33 @@ export function feedItemTarget(item: FeedItem, isOwnPost: boolean): FeedItemTarg
   }
 }
 
+/**
+ * Ruta PÚBLICA (sin origen ni idioma) para compartir una actividad, o `''` si no
+ * tiene. Es la tabla que comparten web y móvil; cada app antepone su origen.
+ *
+ * Una sesión de fuerza se comparte por `/s/:id` y NO por
+ * `/session/:date/:workoutKey`: esa segunda ruta pinta el ProgressMap del
+ * usuario logueado, así que el enlace de tu entreno abría el de quien lo
+ * recibía —o nada—. `/s/:id` reconstruye la sesión desde PocketBase y funciona
+ * para cualquiera.
+ *
+ * Circuito y batalla no tienen vista pública: se comparte solo el texto en
+ * lugar de un enlace que al receptor le daría un error.
+ *
+ * OJO: sin prefijo `/es|/en`. Solo las páginas de marketing lo llevan
+ * (`localizedWebUrl`); con prefijo `/race` deja de casar con los App Links y
+ * con el hook de vista previa de carreras.
+ */
+export function feedPublicPath(item: FeedItem): string {
+  switch (item.type) {
+    case 'workout': return `/s/${item.id}`
+    case 'cardio': return `/cardio/session/${item.id}`
+    case 'challenge': return item.challenge ? `/challenges/${item.challenge.challengeId}` : ''
+    case 'race': return item.race ? `/race/${item.race.raceId}` : ''
+    default: return ''
+  }
+}
+
 /** Acento por tipo, para quien solo necesite el color (widgets compactos). */
 export function feedAccentFor(item: FeedItem): FeedAccent | null {
   if (item.type === 'workout') return item.phase === NO_PHASE ? 'free' : null

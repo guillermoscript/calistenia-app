@@ -115,10 +115,8 @@ describe('sumExerciseTotal', () => {
 })
 
 describe('countWorkouts', () => {
-  const utcToLocalDay = (utc: string) => utc.slice(0, 10)
-
   it('returns 0 for no sessions and no cardio', () => {
-    expect(countWorkouts([], [], utcToLocalDay)).toBe(0)
+    expect(countWorkouts([], [])).toBe(0)
   })
 
   it('dedupes sessions by (workout_key, local day)', () => {
@@ -126,7 +124,7 @@ describe('countWorkouts', () => {
       { workout_key: 'w1', completed_at: '2026-08-01T10:00:00Z' },
       { workout_key: 'w1', completed_at: '2026-08-01T20:00:00Z' },
     ]
-    expect(countWorkouts(sessions, [], utcToLocalDay)).toBe(1)
+    expect(countWorkouts(sessions, [])).toBe(1)
   })
 
   it('counts the same workout_key on different days separately', () => {
@@ -134,7 +132,7 @@ describe('countWorkouts', () => {
       { workout_key: 'w1', completed_at: '2026-08-01T10:00:00Z' },
       { workout_key: 'w1', completed_at: '2026-08-02T10:00:00Z' },
     ]
-    expect(countWorkouts(sessions, [], utcToLocalDay)).toBe(2)
+    expect(countWorkouts(sessions, [])).toBe(2)
   })
 
   it('counts different workout_keys on the same day separately', () => {
@@ -142,7 +140,17 @@ describe('countWorkouts', () => {
       { workout_key: 'w1', completed_at: '2026-08-01T10:00:00Z' },
       { workout_key: 'w2', completed_at: '2026-08-01T10:00:00Z' },
     ]
-    expect(countWorkouts(sessions, [], utcToLocalDay)).toBe(2)
+    expect(countWorkouts(sessions, [])).toBe(2)
+  })
+
+  it('el día de una sesión es la hora de pared (no se desplaza por zona)', () => {
+    // 00:30 y 23:30 del mismo día local: un solo entreno, el 1 de agosto.
+    // Leídas como UTC y pasadas a Madrid/Caracas habrían caído en días distintos.
+    const sessions = [
+      { workout_key: 'w1', completed_at: '2026-08-01 00:30:00.000Z' },
+      { workout_key: 'w1', completed_at: '2026-08-01 23:30:00.000Z' },
+    ]
+    expect(countWorkouts(sessions, [])).toBe(1)
   })
 
   it('dedupes cardio by unique id', () => {
@@ -150,18 +158,18 @@ describe('countWorkouts', () => {
       { id: 'c1', started_at: '2026-08-01T10:00:00Z' },
       { id: 'c1', started_at: '2026-08-01T10:00:00Z' },
     ]
-    expect(countWorkouts([], cardio, utcToLocalDay)).toBe(1)
+    expect(countWorkouts([], cardio)).toBe(1)
   })
 
   it('sums sessions and cardio', () => {
     const sessions = [{ workout_key: 'w1', completed_at: '2026-08-01T10:00:00Z' }]
     const cardio = [{ id: 'c1', started_at: '2026-08-01T10:00:00Z' }]
-    expect(countWorkouts(sessions, cardio, utcToLocalDay)).toBe(2)
+    expect(countWorkouts(sessions, cardio)).toBe(2)
   })
 
   it('ignores sessions without completed_at', () => {
     const sessions = [{ workout_key: 'w1' }]
-    expect(countWorkouts(sessions, [], utcToLocalDay)).toBe(0)
+    expect(countWorkouts(sessions, [])).toBe(0)
   })
 })
 

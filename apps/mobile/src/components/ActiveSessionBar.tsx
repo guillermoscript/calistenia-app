@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
-import { isHomeTabPath } from '@/lib/home-active-activity'
+import { isHomeTabPath } from '@/lib/home-tab-path'
 
 export default function ActiveSessionBar() {
   const { t } = useTranslation()

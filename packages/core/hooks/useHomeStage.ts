@@ -7,11 +7,14 @@
  * vuelve a 0 y, por sí solo, devolvería al inicio simple a quien lleva meses
  * entrenando. Por eso se cruza con el total de filas de `sessions` del usuario
  * en todos sus programas: la misma fuente, sin el filtro de programa.
+ *
+ * «Entreno» es el de la cuenta (`countAccountSessions`: fuerza + circuitos +
+ * cardio), igual que en Progreso y Perfil. Antes Home contaba solo `sessions`
+ * y un usuario solo de cardio o circuitos se veía como cuenta nueva.
  */
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { pb } from '../lib/pocketbase'
-import { qk } from '../lib/query-keys'
+import { accountSessionsQueryOptions } from './useAccountSessionCount'
 import { storage } from '../platform'
 import {
   ACTIVATION_TARGET_SESSIONS,
@@ -35,19 +38,7 @@ function readFlag(key: string): boolean {
  */
 export function useHomeStage(userId: string | null | undefined, programSessions: number): HomeStageView {
   const uid = userId || null
-  const { data, fetchStatus } = useQuery({
-    queryKey: qk.lifetimeSessions(uid),
-    enabled: !!uid,
-    staleTime: 60_000,
-    queryFn: async (): Promise<number> => {
-      const res = await pb.collection('sessions').getList(1, 1, {
-        filter: pb.filter('user = {:uid}', { uid }),
-        fields: 'id',
-        $autoCancel: false,
-      })
-      return res.totalItems
-    },
-  })
+  const { data, fetchStatus } = useQuery(accountSessionsQueryOptions(uid))
 
   // Sin dato: «cargando» solo mientras la petición está en vuelo. Sin red (la
   // query queda en pausa) o con error se sigue con el contador del programa.

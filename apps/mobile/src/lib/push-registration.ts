@@ -14,7 +14,7 @@ import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
-import type PocketBase from 'pocketbase'
+import { upsertPushToken } from '@calistenia/core/lib/push-token'
 import type { PushPermissionState } from '@calistenia/core/lib/push-prompt'
 
 // Canal Android para notificaciones remotas (push).
@@ -26,7 +26,6 @@ const PUSH_CHANNEL_ID = 'push-notifications'
  * Registra el dispositivo para notificaciones push de Expo y guarda el token
  * en la colección `expo_push_tokens` de PocketBase.
  *
- * @param pb      Instancia singleton de PocketBase (ya inicializada).
  * @param userId  ID del usuario autenticado.
  * @param opts.requestPermission  Si es `false`, no dispara el diálogo del SO
  *   cuando el permiso aún no está concedido (`undetermined`): se limita a
@@ -37,7 +36,6 @@ const PUSH_CHANNEL_ID = 'push-notifications'
  * @returns El token registrado, o null si no se pudo obtener/guardar.
  */
 export async function registerPushTokenAsync(
-  pb: PocketBase,
   userId: string,
   opts: { requestPermission?: boolean } = {},
 ): Promise<string | null> {
@@ -102,42 +100,11 @@ export async function registerPushTokenAsync(
       }
     }
 
-    // ── 5. Upsert en PocketBase ───────────────────────────────────────────────
-    // Si el token ya existe (mismo dispositivo/reinstalación), no duplicamos.
-    //
-    // OJO: esta búsqueda solo puede encontrar tokens PROPIOS — `expo_push_tokens`
-    // es owner-only en `listRule`, así que el registro de otra cuenta no aparece
-    // (0 filas, sin error). Cuando el dispositivo cambia de dueño caemos al
-    // `create` de abajo a propósito: el hook `pb_hooks/push_token_takeover.pb.js`
-    // lo intercepta, borra el registro del dueño anterior y deja que el alta siga
-    // su curso. La reasignación NO se puede hacer desde aquí (ni la lectura ni el
-    // update de un registro ajeno pasan las reglas), así que no muevas esa lógica
-    // al cliente.
-    try {
-      const existing = await pb.collection('expo_push_tokens').getFirstListItem(
-        pb.filter('token = {:token}', { token }),
-      )
-      // Solo llega aquí si el token ya era de este usuario.
-      if (existing.user !== userId) {
-        // Inalcanzable con la listRule actual; se deja como red de seguridad por
-        // si algún día la colección se abre en lectura.
-        await pb.collection('expo_push_tokens').update(existing.id, {
-          user: userId,
-          platform: Platform.OS,
-        })
-        console.log('[push] Token existente reasignado al usuario actual.')
-      } else {
-        console.log('[push] Token ya registrado para este usuario.')
-      }
-    } catch (notFound) {
-      // getFirstListItem lanza si no hay resultados → crear nuevo registro.
-      await pb.collection('expo_push_tokens').create({
-        user: userId,
-        token,
-        platform: Platform.OS,
-      })
-      console.log('[push] Token registrado correctamente:', token)
-    }
+    // ── 5. Upsert en PocketBase (core: `upsertPushToken`) ─────────────────────
+    // Si el token ya existe (mismo dispositivo/reinstalación), no duplicamos. Ver
+    // en core por qué el cambio de dueño NO se resuelve desde el cliente.
+    const result = await upsertPushToken('expo_push_tokens', token, userId, { platform: Platform.OS })
+    console.log(`[push] Token ${result === 'created' ? 'registrado correctamente' : result === 'reassigned' ? 'reasignado al usuario actual' : 'ya registrado para este usuario'}.`)
 
     return token
   } catch (err) {

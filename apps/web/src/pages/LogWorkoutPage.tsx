@@ -1,13 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
-import type { RecordModel } from 'pocketbase'
-import { WORKOUTS, PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS } from '@calistenia/core/data/workouts'
-import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
+import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS } from '@calistenia/core/data/workouts'
+import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
 import dayjs from 'dayjs'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
+import { isWorkoutNotSavedError } from '@calistenia/core/lib/workout-done'
 import { cn } from '../lib/utils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { Button } from '../components/ui/button'
@@ -17,7 +15,6 @@ import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { resolveExerciseId } from '@calistenia/core/lib/resolveExerciseId'
-import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 import { toast } from 'sonner'
 import type { DayId } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
@@ -42,41 +39,6 @@ interface LogExercise {
   key: string
   name: string
   sets: LogSet[]
-}
-
-// ── Catalog helpers (same pattern as FreeSessionPage) ─────────────────────────
-
-function extractCatalog(): CatalogItem[] {
-  const seen = new Map<string, CatalogItem>()
-
-  for (const workout of Object.values(WORKOUTS)) {
-    for (const ex of workout.exercises) {
-      if (!seen.has(ex.id)) seen.set(ex.id, { id: ex.id, name: ex.name, muscles: ex.muscles })
-    }
-  }
-
-  for (const ex of SUPPLEMENTARY_EXERCISES) {
-    if (!seen.has(ex.id)) seen.set(ex.id, { id: ex.id, name: ex.name, muscles: ex.muscles })
-  }
-
-  // Carga perezosa (#486): quien llama ya ha esperado a `loadCatalogIndex()`.
-  const catalogCategories = getCatalogIndexSync()?.raw.categories ?? {}
-  for (const catData of Object.values(catalogCategories)) {
-    for (const ex of catData.exercises || []) {
-      if (!seen.has(ex.id)) seen.set(ex.id, { id: ex.id, name: ex.name ?? '', muscles: ex.muscles ?? '' })
-    }
-  }
-
-  return Array.from(seen.values()).sort((a, b) =>
-    localize(a.name, 'es').localeCompare(localize(b.name, 'es'))
-  )
-}
-
-function mapPBCatalog(rec: RecordModel): CatalogItem {
-  // Identity MUST be the stable, human-meaningful slug — never the random PB
-  // primary key (rec.id), which silently fragments score history. See
-  // `catalogExerciseIdentity()` for why (#474).
-  return { id: catalogExerciseIdentity(rec), name: rec.name ?? '', muscles: rec.muscles ?? '' }
 }
 
 function makeCustomId(name: string): string {
@@ -108,45 +70,17 @@ export default function LogWorkoutPage() {
   const [saving, setSaving] = useState(false)
 
   // ── Catalog loading ──────────────────────────────────────────────────────
-  const [catalog, setCatalog] = useState<CatalogItem[]>([])
+  // Catálogo de core (#474): el bundle es la base y PB sólo añade lo que no
+  // está en él. `id` es la identidad canónica (slug), la que registra las series.
+  const { exercises: catalogList } = useCatalogExerciseList()
+  const catalog = useMemo<CatalogItem[]>(
+    () => catalogList
+      .map(ex => ({ id: ex.slug, name: ex.name, muscles: ex.muscles ?? '' }))
+      .sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es'))),
+    [catalogList],
+  )
   const [search, setSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      // The bundled JSON is the authoritative base (full catalog, offline);
-      // PB only ADDS records not present in it (user-created / promoted).
-      // Se carga bajo demanda (#486), y hay que esperarlo antes de nada:
-      // `resolveExerciseId()` depende de él para dar la identidad canónica con
-      // la que se registran las series.
-      await loadCatalogIndex()
-      const base = extractCatalog()
-      const seen = new Set(base.map(item => item.id))
-      try {
-        const available = await isPocketBaseAvailable()
-        if (available && !cancelled) {
-          try {
-            const items = await pb.collection('exercises_catalog').getFullList({
-              batch: 500, sort: 'name', fields: 'slug,name,muscles', $autoCancel: false,
-            })
-            for (const rec of items) {
-              const mapped = mapPBCatalog(rec)
-              if (seen.has(mapped.id)) continue
-              seen.add(mapped.id)
-              base.push(mapped)
-            }
-          } catch { /* PB list failed — bundled catalog is enough */ }
-        }
-      } catch { /* PB not available */ }
-      if (!cancelled) {
-        base.sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
-        setCatalog(base)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
 
   const filteredCatalog = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -256,7 +190,10 @@ export default function LogWorkoutPage() {
       navigate(-1)
     } catch (e) {
       console.error(e)
-      toast.error(t('common.error'))
+      // Rechazado por el servidor: no se guardó nada (las series ni se
+      // intentan), así que se dice claro en vez del «error» genérico.
+      if (isWorkoutNotSavedError(e)) toast.error(t('session.saveFailedTitle'), { description: t('session.saveFailedBody') })
+      else toast.error(t('common.error'))
     } finally {
       setSaving(false)
     }

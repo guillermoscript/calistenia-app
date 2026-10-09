@@ -179,13 +179,18 @@ export const qk = {
   // de categorías. Cuelga de 'leaderboard' para caer en la misma invalidación.
   weeklyRanking: (userId: string | null, weekStart: string) =>
     ['leaderboard', 'week', userId, weekStart] as const,
-  // Filas de `sessions` del propio usuario en todos sus programas: el tramo del inicio simple (#808).
-  lifetimeSessions: (userId: string | null) => ['lifetime-sessions', userId] as const,
   profileCompare: (userId: string | null, weekStart: string, monthYYYYMM: string) =>
     ['profileCompare', userId, weekStart, monthYYYYMM] as const,
   // Lista cruda de sesiones cardio (por usuario). Fuente única que comparten
   // useCardioStats, useCardioSessions y las invalidaciones tras guardar/borrar.
   cardioSessions: (userId: string | null) => ['cardio-sessions', userId] as const,
+  // Detalle de UNA sesión cardio (pública + extras del dueño). Raíz propia y no
+  // colgada de `cardioSessions` para que ninguna lectura por prefijo de la lista
+  // cruda se tropiece con una entrada de forma distinta.
+  cardioSessionDetail: (sessionId: string | null, viewerId: string | null) =>
+    ['cardio-session-detail', sessionId, viewerId] as const,
+  cardioSessionOwnerExtras: (sessionId: string | null, viewerId: string | null) =>
+    ['cardio-session-detail', sessionId, viewerId, 'owner'] as const,
   // Días con entreno de las tres colecciones, para la racha semanal (#801).
   // `stamp` cambia al marcar un entreno y fuerza la relectura; invalidar
   // `streakDays(uid)` (sin stamp) alcanza a todas por prefijo.
@@ -277,6 +282,9 @@ export const qk = {
       ['food_history', 'recent', userId, limit] as const,
     hour: (userId: string | null, hour: number) =>
       ['food_history', 'hour', userId, hour] as const,
+    // Prefijos por usuario: todas las variantes de `limit` / `hour`.
+    recentAll: (userId: string | null) => ['food_history', 'recent', userId] as const,
+    hourAll: (userId: string | null) => ['food_history', 'hour', userId] as const,
   },
   mealTemplates: (userId: string | null) => ['meal_templates', userId] as const,
   freeSessionTemplates: (userId: string | null) =>
@@ -317,6 +325,8 @@ export const qk = {
     history: (userId: string | null) => ['pantry', 'history', userId] as const,
     spend: (userId: string | null, weekStart: string) =>
       ['pantry', 'spend', userId, weekStart] as const,
+    // Prefijo: el gasto de todas las semanas (y usuarios).
+    spendAll: ['pantry', 'spend'] as const,
     currency: (userId: string | null) => ['pantry', 'currency', userId] as const,
   },
 
@@ -332,10 +342,34 @@ export const qk = {
     list: (userId: string | null) => ['savedRecipes', 'list', userId] as const,
   },
 
+  // — Inicio —
+  home: {
+    // Amigos que han entrenado hoy («Para ti»). `idsKey` = ids unidos con coma.
+    friendsTrainedToday: (userId: string | null, today: string, idsKey: string) =>
+      ['home', 'friendsToday', userId, today, idsKey] as const,
+  },
+
   // — Batallas de circuito (issue #356) —
   battles: {
     // La barra flotante de las tabs; se invalida al terminar o salir de una batalla.
+    // Raíz: invalida activa e historial a la vez.
+    all: ['battle'] as const,
     active: () => ['battle', 'active'] as const,
     history: (userId: string | null) => ['battle', 'history', userId] as const,
+  },
+
+  // — Raíces para invalidar por prefijo —
+  // Familias cuya key es una función de varios argumentos: invalidar «todas»
+  // exige su primer segmento, y escribirlo a mano en cada hook es lo que dejó
+  // `['publicProfile']` como un no-op (la key real es 'public-profile').
+  // `query-keys.test.ts` comprueba que cada raíz es prefijo de su factoría.
+  roots: {
+    reactions: ['reactions'] as const,
+    commentReactions: ['comment-reactions'] as const,
+    leaderboard: ['leaderboard'] as const,
+    challenges: ['challenges'] as const,
+    challenge: ['challenge'] as const,
+    challengeLeaderboard: ['challenge-leaderboard'] as const,
+    publicProfile: ['public-profile'] as const,
   },
 } as const

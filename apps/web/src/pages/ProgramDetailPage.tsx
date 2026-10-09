@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
-import { localDay } from '@calistenia/core/lib/dateUtils'
-import { pb, isPocketBaseAvailable, getCurrentUser } from '@calistenia/core/lib/pocketbase'
-import { fetchProgramDetailRows } from '@calistenia/core/lib/programDetailQuery'
+import { localDay, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
+import { isPocketBaseAvailable, getCurrentUser } from '@calistenia/core/lib/pocketbase'
+import { fetchProgramDetailRows, fetchProgramRecord, fetchProgramLastSessionDays, fetchRelatedPrograms } from '@calistenia/core/lib/programDetailQuery'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import { calculateWorkoutDuration, formatDuration } from '@calistenia/core/lib/duration'
 import { inferDifficulty, DIFFICULTY_COLORS } from '@calistenia/core/lib/difficulty'
@@ -99,8 +99,9 @@ const PRIORITY_LABEL_KEY: Record<string, string> = {
 
 const DAY_ORDER = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
 
-function formatRelativeDate(isoDate: string): { text: string; fresh: boolean } {
-  const days = Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000)
+/** `day` es el día local YYYY-MM-DD (hora de pared del usuario), no un instante. */
+function formatRelativeDate(day: string): { text: string; fresh: boolean } {
+  const days = Math.max(0, diffDays(todayStr(), day))
   const fresh = days < 7
   if (days === 0) return { text: 'hoy', fresh }
   if (days === 1) return { text: 'ayer', fresh }
@@ -211,10 +212,7 @@ export default function ProgramDetailPage({
       // El `expand` trae el crédito del remix (#620): de qué programa salió esta
       // copia y quién lo escribió. Son dos saltos de relación que PocketBase
       // resuelve en esta misma petición.
-      const progRecord = await pb.collection('programs').getOne(programId, {
-        expand: 'forked_from,forked_from.created_by',
-        $autoCancel: false,
-      })
+      const progRecord = await fetchProgramRecord(programId)
       const forkedFrom = (progRecord.expand as any)?.forked_from
       const meta: ProgramMeta = {
         id: progRecord.id,
@@ -334,27 +332,8 @@ export default function ProgramDetailPage({
       // Fetch last session per workout day (for history context)
       if (userId) {
         try {
-          // `getFullList` con `fields` recortado, no `getList(1, 200)` (#614).
-          // De cada sesión aquí solo se usan tres columnas, así que antes se
-          // descargaban 200 registros enteros para quedarse con la fecha — y aun
-          // así quien pasara de 200 sesiones en el programa perdía la última fecha
-          // de los días que entrena poco, que son justo los que interesa recordar.
-          // Con `fields` acotado traerlas todas sale más barato que traer 200
-          // completas, y deja de haber un tope que miente.
-          const sessions = await pb.collection('sessions').getFullList({
-            batch: 500,
-            filter: pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
-            sort: '-completed_at',
-            fields: 'workout_key,completed_at,created',
-            $autoCancel: false,
-          })
-          const sessionMap: Record<string, string> = {}
-          sessions.forEach((s: RecordModel) => {
-            const key = s.workout_key as string
-            if (key && !sessionMap[key]) {
-              sessionMap[key] = s.completed_at || s.created
-            }
-          })
+          // Último día entrenado por día de programa (core: mismo filtro que useProgress).
+          const sessionMap = await fetchProgramLastSessionDays(userId, programId)
           setLastSessions(sessionMap)
         } catch {
           // Not critical
@@ -365,11 +344,8 @@ export default function ProgramDetailPage({
       // Solo públicos (#603): esto es una recomendación hacia fuera, no la lista
       // del autor, así que aquí no entran los borradores propios.
       try {
-        const relatedRes = await pb.collection('programs').getList(1, 6, {
-          filter: pb.filter('is_active = true && visibility = "public" && id != {:pid}', { pid: programId }),
-          sort: 'name',
-        })
-        setRelatedPrograms(relatedRes.items.map(p => ({
+        const relatedItems = await fetchRelatedPrograms(programId)
+        setRelatedPrograms(relatedItems.map(p => ({
           id: p.id,
           name: localize(p.name, locale),
           description: localize(p.description, locale),

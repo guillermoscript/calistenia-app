@@ -4,41 +4,41 @@ import { createRef, type MutableRefObject } from 'react'
 import type { Race } from '@calistenia/core/types/race'
 
 // El reintento del push sólo se observa por telemetría: no cambia nada en
-// pantalla, así que el espía sobre Sentry es la única prueba de que reporta.
-vi.mock('@sentry/react', () => ({
-  captureException: vi.fn(),
+// pantalla, así que el espía sobre `reportError` de la plataforma es la única
+// prueba de que reporta.
+const { reportError } = vi.hoisted(() => ({ reportError: vi.fn() }))
+vi.mock('@calistenia/core/platform', () => ({
+  getPlatform: () => ({ reportError }),
+  storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
 }))
 
-vi.mock('../../lib/race/raceApi', () => ({
+vi.mock('@calistenia/core/lib/race/raceApi', () => ({
   updateProgress: vi.fn(),
 }))
 
-vi.mock('../../lib/race/raceSnapshot', () => ({
+vi.mock('@calistenia/core/lib/race/raceSnapshot', () => ({
   loadRaceSnapshot: vi.fn().mockReturnValue(null),
   saveRaceSnapshot: vi.fn(),
 }))
 
-// El tracker real habla con la Geolocation API. Aquí sólo hace falta poder
+// El GPS real lo pone cada app (`createTracker`). Aquí sólo hace falta poder
 // empujar unas stats a mano para que el tick del push tenga algo que mandar.
 let emitStats: ((stats: RaceTrackerStats) => void) | null = null
-vi.mock('../../lib/race/raceTracker', () => ({
-  createRaceTracker: vi.fn((opts: { onUpdate: (s: RaceTrackerStats) => void }) => {
-    emitStats = opts.onUpdate
-    return {
-      start: vi.fn(),
-      stop: vi.fn(),
-      getStats: vi.fn().mockReturnValue(null),
-      getGpsTrack: vi.fn().mockReturnValue([]),
-      dispose: vi.fn(),
-    }
-  }),
-}))
+const createTracker = vi.fn((opts: { onUpdate: (s: RaceTrackerStats) => void }) => {
+  emitStats = opts.onUpdate
+  return {
+    start: vi.fn(),
+    stop: vi.fn(),
+    getStats: vi.fn().mockReturnValue(null),
+    getGpsTrack: vi.fn().mockReturnValue([]),
+    dispose: vi.fn(),
+  }
+})
 
-import * as Sentry from '@sentry/react'
-import { updateProgress } from '../../lib/race/raceApi'
-import { useRaceTracker } from './useRaceTracker'
-import { RaceAuthError } from '../../lib/race/errors'
-import type { RaceTracker, RaceTrackerStats } from '../../lib/race/raceTracker'
+import { updateProgress } from '@calistenia/core/lib/race/raceApi'
+import { useRaceTracker } from '@calistenia/core/hooks/race/useRaceTracker'
+import { RaceAuthError } from '@calistenia/core/lib/race/errors'
+import type { RaceTracker, RaceTrackerStats } from '@calistenia/core/lib/race/raceTrack'
 
 const PUSH_INTERVAL_MS = 3000
 const FIRST_BACKOFF_MS = 1000
@@ -79,6 +79,7 @@ function setup() {
       onStop: vi.fn(),
       onError,
       onGpsFix: vi.fn(),
+      createTracker: createTracker as never,
     }),
   )
 
@@ -93,7 +94,7 @@ async function emitFix() {
 describe('useRaceTracker — reporte del reintento del push', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.mocked(Sentry.captureException).mockClear()
+    reportError.mockClear()
     vi.mocked(updateProgress).mockReset()
     emitStats = null
   })
@@ -102,7 +103,7 @@ describe('useRaceTracker — reporte del reintento del push', () => {
     vi.useRealTimers()
   })
 
-  it('reporta a Sentry con los tags de móvil cuando el reintento también falla', async () => {
+  it('reporta el error con sus tags cuando el reintento también falla', async () => {
     const boom = new Error('network down')
     vi.mocked(updateProgress).mockRejectedValue(boom)
 
@@ -111,12 +112,12 @@ describe('useRaceTracker — reporte del reintento del push', () => {
 
     // Tick del push → falla → programa el reintento con el primer backoff.
     await act(async () => { await vi.advanceTimersByTimeAsync(PUSH_INTERVAL_MS) })
-    expect(Sentry.captureException).not.toHaveBeenCalled()
+    expect(reportError).not.toHaveBeenCalled()
 
     // Vence el backoff → el reintento falla → esto es lo que la web se tragaba.
     await act(async () => { await vi.advanceTimersByTimeAsync(FIRST_BACKOFF_MS) })
 
-    expect(Sentry.captureException).toHaveBeenCalledWith(boom, {
+    expect(reportError).toHaveBeenCalledWith(boom, {
       tags: { feature: 'race', op: 'push_progress_retry' },
     })
   })
@@ -133,7 +134,7 @@ describe('useRaceTracker — reporte del reintento del push', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(FIRST_BACKOFF_MS) })
 
     expect(updateProgress).toHaveBeenCalledTimes(2)
-    expect(Sentry.captureException).not.toHaveBeenCalled()
+    expect(reportError).not.toHaveBeenCalled()
   })
 
   it('un fallo de auth ni reintenta ni reporta: lo cuenta por onError', async () => {
@@ -147,6 +148,6 @@ describe('useRaceTracker — reporte del reintento del push', () => {
 
     expect(onError).toHaveBeenCalledWith('auth', 'race.sessionExpired')
     expect(updateProgress).toHaveBeenCalledTimes(1)
-    expect(Sentry.captureException).not.toHaveBeenCalled()
+    expect(reportError).not.toHaveBeenCalled()
   })
 })

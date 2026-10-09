@@ -22,6 +22,7 @@
  * - El objetivo se acota a 1-7: un 0 no puede dar por cumplida cualquier semana.
  */
 import { dayNumber, isDayStr, mondayOf, shiftDay } from './calendarWeek'
+import { wallClockDay } from './wallClock'
 
 /** Hitos de racha en semanas (sustituyen a 7/14/30/60/100 días). */
 export const WEEKLY_STREAK_MILESTONES = [4, 8, 12, 26, 52] as const
@@ -202,8 +203,7 @@ export function withGoalChange(log: readonly GoalChange[], goal: number, today: 
 export function streakDayOf(...stamps: unknown[]): string | null {
   for (const stamp of stamps) {
     if (typeof stamp !== 'string' || stamp === '') continue
-    const day = stamp.slice(0, 10)
-    return isDayStr(day) ? day : null
+    return wallClockDay(stamp)
   }
   return null
 }

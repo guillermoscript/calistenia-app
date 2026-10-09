@@ -4,25 +4,14 @@
  * Antes esto vivía duplicado en `apps/web/src/contexts/RaceContext.tsx` y
  * `apps/mobile/src/contexts/RaceContext.tsx` (338 y 335 L, ~89 % idénticas).
  *
- * A diferencia de `useCircuitSessionState` (#482 también, pero con TODAS sus
- * dependencias ya en core salvo storage/lifecycle), la carrera cuelga de
- * cuatro hooks de `hooks/race/` — conexión realtime, errores, fin de carrera y
- * tracker — que a su vez tocan GPS (`navigator.geolocation` en web,
- * `expo-location` en móvil) y snapshot local (`sessionStorage` vs
- * `AsyncStorage`). Esos dos puntos SÍ son de plataforma de verdad y no tienen
- * facade en `platform.ts` todavía (moverlos es aparte del alcance de este
- * hook); los cuatro hooks en sí son, por lo demás, idénticos en las dos apps.
- *
- * Solución: los cuatro hooks se INYECTAN por `options.hooks`, con el mismo
- * nombre y firma en las dos apps (ver el comment que dejó el port móvil en su
- * día). El provider de cada app los importa sin tocarlos y aquí se llaman
- * igual que si vivieran en este archivo — son funciones, y las reglas de
- * hooks sólo exigen que se llamen siempre en el mismo orden, cosa que aquí se
- * cumple. `clearRaceSnapshot` se inyecta suelto por la misma razón (guarda en
- * sessionStorage/AsyncStorage). El wake lock de pantalla (`useWakeLock` /
- * `useKeepAwakeWhile`) se queda en el provider de cada app: tampoco hay
- * facade para eso y no comparte estado con el resto de este hook, sólo lee su
- * valor de retorno.
+ * Los cuatro hooks de `hooks/race/` (conexión realtime, errores, fin de carrera
+ * y tracker) viven ya en core y se llaman aquí directamente. Lo único de
+ * plataforma que queda es el GPS del tracker (`navigator.geolocation` en web,
+ * `expo-location` en móvil), que entra por `options.createTracker`; el
+ * snapshot local usa el almacenamiento de `platform.ts`. El wake lock de
+ * pantalla (`useWakeLock` / `useKeepAwakeWhile`) se queda en el provider de
+ * cada app: no comparte estado con el resto de este hook, sólo lee su valor de
+ * retorno.
  *
  * Como con Circuit: **el estado y la lógica bajan a core; el `createContext`
  * se queda en la app** para no depender de que Metro y Vite resuelvan una
@@ -48,104 +37,14 @@ import {
   leaveRace,
 } from '../../lib/race/raceApi'
 import { measureOffset, serverNow, msUntil } from '../../lib/serverClock'
+import { clearRaceSnapshot } from '../../lib/race/raceSnapshot'
+import type { RaceTracker, RaceTrackerOptions, RaceTrackerStats } from '../../lib/race/raceTrack'
+import { useRaceErrors, type RaceErrorKind, type RaceErrorState } from '../race/useRaceErrors'
+import { useRaceConnection, type RacePhase } from '../race/useRaceConnection'
+import { useRaceFinish } from '../race/useRaceFinish'
+import { useRaceTracker } from '../race/useRaceTracker'
 
-// ── Tipos que antes vivían en `hooks/race/*` de cada app ───────────────────
-//
-// Idénticos byte a byte en las dos copias (aparte de imports). Se redeclaran
-// aquí en vez de importarse porque core no puede depender de `apps/*`; al ser
-// interfaces/uniones estructurales, TypeScript los acepta sin problema cuando
-// el provider inyecta los hooks reales de su app.
-
-export type RaceErrorKind = 'auth' | 'push' | 'gps' | 'realtime' | 'load'
-
-export interface RaceErrorState {
-  kind: RaceErrorKind
-  message: string
-}
-
-export interface RaceErrors {
-  lastError: RaceErrorState | null
-  setError: (kind: RaceErrorKind, message: string) => void
-  clearError: () => void
-  clearErrorKind: (kind: RaceErrorKind) => void
-}
-
-export type RacePhase =
-  | 'loading'
-  | 'not_found'
-  | 'lobby'
-  | 'countdown'
-  | 'racing'
-  | 'finished'
-  | 'cancelled'
-
-export interface RaceConnection {
-  race: Race | null
-  participants: RaceParticipant[]
-  phase: RacePhase
-  /** Última carrera conocida, para los callbacks de larga vida del tracker. */
-  raceRef: MutableRefObject<Race | null>
-}
-
-export interface RaceTrackerStats {
-  distance_km: number
-  duration_seconds: number
-  avg_pace: number
-  last_lat: number
-  last_lng: number
-}
-
-export interface RaceTracker {
-  start(): void
-  stop(): void
-  getGpsTrack(): RaceGpsPoint[]
-  getStats(): RaceTrackerStats | null
-  dispose(): void
-}
-
-export type FinishReason = 'time_deadline' | 'target_reached' | 'manual'
-
-export interface RaceFinish {
-  hasFinishedSelf: () => boolean
-  finishSelf: (reason: FinishReason) => Promise<void>
-  endRace: () => Promise<Error | null>
-  reset: () => void
-}
-
-export interface RaceTrackerResult {
-  myStats: RaceTrackerStats | null
-}
-
-/** Los cuatro hooks de `hooks/race/` que cada app inyecta sin modificarlos. */
-export interface RaceHooks {
-  useRaceErrors: () => RaceErrors
-  useRaceConnection: (opts: {
-    raceId: string
-    onError: (kind: RaceErrorKind, message: string) => void
-  }) => RaceConnection
-  useRaceFinish: (opts: {
-    raceId: string
-    getRace: () => Race | null
-    getMe: () => RaceParticipant | null
-    trackerRef: MutableRefObject<RaceTracker | null>
-    latestStatsRef: MutableRefObject<RaceTrackerStats | null>
-    onError: (kind: RaceErrorKind, message: string) => void
-  }) => RaceFinish
-  useRaceTracker: (opts: {
-    raceId: string
-    active: boolean
-    meId: string | null
-    startsAt: string | null
-    trackerRef: MutableRefObject<RaceTracker | null>
-    latestStatsRef: MutableRefObject<RaceTrackerStats | null>
-    getRace: () => Race | null
-    hasFinishedSelf: () => boolean
-    onTargetReached: () => void
-    onStop: () => void
-    onError: (kind: RaceErrorKind, message: string) => void
-    onGpsFix: () => void
-  }) => RaceTrackerResult
-}
+export type { RaceErrorKind, RaceErrorState, RacePhase, RaceTracker, RaceTrackerStats }
 
 export interface UseRaceStateOptions {
   raceId: string
@@ -155,9 +54,11 @@ export interface UseRaceStateOptions {
    * `{ platform: 'mobile' }`; la web no manda nada.
    */
   analyticsProps?: Record<string, unknown>
-  /** Borra el snapshot local de carrera en curso (sessionStorage/AsyncStorage). */
-  clearRaceSnapshot: () => void
-  hooks: RaceHooks
+  /**
+   * Crea el tracker con el GPS de la plataforma. Debe ser una función estable
+   * (de módulo): cambiarla reiniciaría el tracker.
+   */
+  createTracker: (opts: RaceTrackerOptions) => RaceTracker
 }
 
 export interface RaceState {
@@ -186,8 +87,7 @@ export function useRaceState({
   raceId,
   userId,
   analyticsProps,
-  clearRaceSnapshot,
-  hooks: { useRaceErrors, useRaceConnection, useRaceFinish, useRaceTracker },
+  createTracker,
 }: UseRaceStateOptions): RaceState {
   const analyticsPropsRef = useRef(analyticsProps)
   analyticsPropsRef.current = analyticsProps
@@ -247,6 +147,7 @@ export function useRaceState({
     onStop: resetFinish,
     onError: setError,
     onGpsFix: useCallback(() => clearErrorKind('gps'), [clearErrorKind]),
+    createTracker,
   })
 
   // El wake lock / keep-awake NO vive aquí: cada provider lo llama con el
@@ -293,7 +194,7 @@ export function useRaceState({
   // El snapshot se descarta en cualquier fase terminal, no sólo para quien pulsó.
   useEffect(() => {
     if (phase === 'finished' || phase === 'cancelled') clearRaceSnapshot()
-  }, [phase, clearRaceSnapshot])
+  }, [phase])
 
   // Un solo `race_completed` por carrera, no uno por cliente: cada participante
   // ejecuta finishRaceAction en su dispositivo, y el auto-finish y el watchdog
@@ -375,7 +276,7 @@ export function useRaceState({
     } catch (err) {
       setError('push', (err as Error).message)
     }
-  }, [raceId, setError, track, clearRaceSnapshot])
+  }, [raceId, setError, track])
 
   const finishRaceAction = useCallback(async () => {
     // Congelarse primero con las stats finales y la traza; después cerrar la
@@ -397,7 +298,7 @@ export function useRaceState({
       distance_km: stats?.distance_km ?? 0,
       duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
     })
-  }, [raceId, finishSelf, endRace, setError, clearRaceSnapshot])
+  }, [raceId, finishSelf, endRace, setError])
 
   const leaveAction = useCallback(async () => {
     const current = meRef.current

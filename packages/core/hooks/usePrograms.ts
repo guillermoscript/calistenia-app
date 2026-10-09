@@ -343,6 +343,58 @@ async function createAllInBatches(creates: BatchCreate[]): Promise<void> {
   }
 }
 
+/**
+ * Registro de `programs` (con o sin expand) → `ProgramMeta`.
+ *
+ * Compartido por el catálogo y por el respaldo de la inscripción activa: así el
+ * programa activo se pinta igual venga de donde venga.
+ */
+function toProgramMeta(
+  p: RecordModel,
+  locale: string,
+  discipline: 'yoga' | 'calistenia',
+): ProgramMeta {
+  // El original del que salió esta copia (#620). Puede faltar por tres vías
+  // distintas y ninguna es un error: el programa es un original, es un
+  // duplicado anterior a #620 (el vínculo no se guardaba), o su original se
+  // borró y PocketBase vació la relación no-cascade.
+  const forkedFrom = (p.expand as any)?.forked_from
+  return {
+    id:             p.id,
+    name:           localize(p.name, locale),
+    description:    localize(p.description, locale),
+    duration_weeks: p.duration_weeks,
+    created_by:     p.created_by || undefined,
+    // `display_name || name || email` y no solo `display_name` (#620): quien se
+    // dio de alta con Google llega con `name` y sin `display_name`, y salía sin
+    // nombre. Los tres campos son los que sobreviven al recorte de #411.
+    created_by_name: authorDisplayName((p.expand as any)?.created_by) || undefined,
+    forked_from:      p.forked_from || undefined,
+    // `localize` es obligatorio: el nombre es un `json {es,en}` y meterlo crudo
+    // en la frase del crédito pintaría «Basado en [object Object]».
+    forked_from_name: forkedFrom ? localize(forkedFrom.name, locale) || undefined : undefined,
+    forked_from_author: forkedFrom
+      ? authorDisplayName(forkedFrom.expand?.created_by) || undefined
+      : undefined,
+    is_official:    p.is_official || false,
+    is_featured:    p.is_featured || false,
+    for_women:      p.for_women || false,
+    sort_order:     typeof p.sort_order === 'number' ? p.sort_order : undefined,
+    visibility:     p.visibility || undefined,
+    difficulty:     p.difficulty || undefined,
+    cover_image:    p.cover_image || undefined,
+    cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
+    cover_focus:    p.cover_focus || undefined,
+    discipline,
+    goal_type:      p.goal_type || undefined,
+    skill:          p.skill || undefined,
+    intensity:      p.intensity || undefined,
+    days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
+    equipment_required: Array.isArray(p.equipment_required) ? p.equipment_required : undefined,
+    contraindications:  Array.isArray(p.contraindications) ? p.contraindications : undefined,
+  }
+}
+
 /** Catálogo (+ disciplina por programa) desde PB. */
 async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
   // Guard: sin token válido, el listRule `@request.auth.id != ""` de PocketBase
@@ -411,47 +463,7 @@ async function fetchCatalog(userId: string | null): Promise<ProgramMeta[]> {
     disciplineByProgram.set(pid, nonRest.length > 0 && nonRest.every(dc => dc.day_type === 'yoga') ? 'yoga' : 'calistenia')
   }
 
-  return catalogItems.map(p => {
-    // El original del que salió esta copia (#620). Puede faltar por tres vías
-    // distintas y ninguna es un error: el programa es un original, es un
-    // duplicado anterior a #620 (el vínculo no se guardaba), o su original se
-    // borró y PocketBase vació la relación no-cascade.
-    const forkedFrom = (p.expand as any)?.forked_from
-    return {
-    id:             p.id,
-    name:           localize(p.name, locale),
-    description:    localize(p.description, locale),
-    duration_weeks: p.duration_weeks,
-    created_by:     p.created_by || undefined,
-    // `display_name || name || email` y no solo `display_name` (#620): quien se
-    // dio de alta con Google llega con `name` y sin `display_name`, y salía sin
-    // nombre. Los tres campos son los que sobreviven al recorte de #411.
-    created_by_name: authorDisplayName((p.expand as any)?.created_by) || undefined,
-    forked_from:      p.forked_from || undefined,
-    // `localize` es obligatorio: el nombre es un `json {es,en}` y meterlo crudo
-    // en la frase del crédito pintaría «Basado en [object Object]».
-    forked_from_name: forkedFrom ? localize(forkedFrom.name, locale) || undefined : undefined,
-    forked_from_author: forkedFrom
-      ? authorDisplayName(forkedFrom.expand?.created_by) || undefined
-      : undefined,
-    is_official:    p.is_official || false,
-    is_featured:    p.is_featured || false,
-    for_women:      p.for_women || false,
-    sort_order:     typeof p.sort_order === 'number' ? p.sort_order : undefined,
-    visibility:     p.visibility || undefined,
-    difficulty:     p.difficulty || undefined,
-    cover_image:    p.cover_image || undefined,
-    cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
-    cover_focus:    p.cover_focus || undefined,
-    discipline:     disciplineByProgram.get(p.id) || 'calistenia',
-    goal_type:      p.goal_type || undefined,
-    skill:          p.skill || undefined,
-    intensity:      p.intensity || undefined,
-    days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
-    equipment_required: Array.isArray(p.equipment_required) ? p.equipment_required : undefined,
-    contraindications:  Array.isArray(p.contraindications) ? p.contraindications : undefined,
-    }
-  })
+  return catalogItems.map(p => toProgramMeta(p, locale, disciplineByProgram.get(p.id) || 'calistenia'))
 }
 
 export interface ProgramDetail {
@@ -515,10 +527,19 @@ export interface ActiveEnrollment {
   current_phase: number
   /** Opt-in de la progresión automática (#617). Apagado salvo que se pida. */
   auto_progress: boolean
+  /**
+   * Programa expandido, ya mapeado a `ProgramMeta`: respaldo de `activeProgram`
+   * cuando el catálogo no lo trae (falló, aún no cargó o el filtro de
+   * visibilidad lo deja fuera). Sin esto Home pintaba «sin programa» teniendo
+   * una inscripción válida.
+   */
+  programMeta?: ProgramMeta
 }
 
 function toEnrollment(rec: RecordModel): ActiveEnrollment {
+  const expanded = rec.expand?.program as RecordModel | undefined
   return {
+    programMeta: expanded ? toProgramMeta(expanded, i18n.language, 'calistenia') : undefined,
     id: rec.id,
     program: rec.program as string,
     started_at: (rec.started_at as string) || '',
@@ -554,8 +575,14 @@ export async function fetchActiveEnrollment(uid: string): Promise<ActiveEnrollme
     // apunta a un programa borrado, no que nos falte permiso para verlo.
     if (!rec.expand?.program) return null
     return toEnrollment(rec)
-  } catch {
-    return null // sin programa activo aún
+  } catch (e: any) {
+    // Solo un 404 (getFirstListItem no encontró fila) es «sin programa activo».
+    // Cualquier otro fallo —red caída, 5xx, token a medio refrescar, autocancel—
+    // se relanza: tragarlo resolvía la query CON ÉXITO a null, pisaba la
+    // inscripción cacheada (y la persistía en disco) y Home pasaba a «sin
+    // programa». Con la query en error React Query conserva el `data` previo.
+    if (e?.status === 404) return null
+    throw e
   }
 }
 
@@ -606,6 +633,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     queryKey: qk.programs.enrollment(userId),
     enabled: authReady,
     staleTime: 5 * 60 * 1000,
+    // Alimenta Home: al volver la app a primer plano se relee si ya caducó el
+    // staleTime (focusManager: AppState en móvil, visibilidad en web), así un
+    // cambio de programa hecho en otro dispositivo se ve sin reiniciar. Las
+    // escrituras locales de esta query ocurren DESPUÉS del servidor, sin
+    // parche optimista que pisar.
+    refetchOnWindowFocus: true,
     queryFn: () => fetchActiveEnrollment(userId!),
   })
 
@@ -629,7 +662,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   })
 
   const programs = catalogQuery.data ?? []
-  const activeProgram = activeProgramId ? (programs.find(p => p.id === activeProgramId) || null) : null
+  // Catálogo primero (trae autor, disciplina real…); si no lo trae, el programa
+  // que ya venía expandido en la inscripción. Ambos son referencias estables.
+  const activeProgram = activeProgramId
+    ? (programs.find(p => p.id === activeProgramId) ?? activeEnrollment?.programMeta ?? null)
+    : null
   const detail = detailQuery.data
   const phases = detail?.phases?.length ? detail.phases : FALLBACK_PHASES
   const weekDays = detail?.weekDays?.length ? detail.weekDays : FALLBACK_WEEK_DAYS
