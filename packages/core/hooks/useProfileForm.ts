@@ -20,7 +20,6 @@
 import { useCallback, useReducer } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
-import { recomputeAutoNutritionGoal } from './useNutrition'
 import { parseDecimal } from '../lib/bmi'
 import type {
   ActivityLevel, ConditionId, DayId, FocusAreaId, InjuryId, Intensity, Pace,
@@ -252,5 +251,9 @@ export async function saveProfileBody(opts: SaveProfileBodyOptions): Promise<voi
   const { userId, patch, body, bodyGoalId, age, sex, queryClient, onSoftError } = opts
   await pb.collection('users').update(userId, { ...patch, ...bodyUserPatch(body) })
   await saveBodyDemographics(bodyGoalId, age, sex, e => onSoftError?.('age_sex', e))
-  recomputeAutoNutritionGoal(userId, queryClient).catch(e => onSoftError?.('recompute_goal', e))
+  // Import dinámico: `useNutrition` arrastra el cliente de la API de IA y este
+  // módulo también lo importan los tests de formularios puros.
+  void import('./useNutrition')
+    .then(m => m.recomputeAutoNutritionGoal(userId, queryClient))
+    .catch(e => onSoftError?.('recompute_goal', e))
 }
