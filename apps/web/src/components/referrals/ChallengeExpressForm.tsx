@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { fetchCatalogRecords } from '@calistenia/core/lib/catalogRecords'
 import { shareContent } from '../../lib/share'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
@@ -42,12 +42,9 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
   useEffect(() => {
     const loadExercises = async () => {
       try {
-        const res = await pb.collection('exercises_catalog').getList(1, 200, {
-          sort: 'name',
-          fields: 'id,name',
-          $autoCancel: false,
-        })
-        setExercises(res.items.map(e => ({ id: e.id, name: localize(e.name, 'es') })))
+        // `challenges.exercise_id` es una relación: necesita la clave de PB, no el slug.
+        const items = await fetchCatalogRecords({ fields: 'id,name' })
+        setExercises(items.map(e => ({ id: e.id, name: localize(e.name, 'es') })))
       } catch { /* */ }
     }
     loadExercises()

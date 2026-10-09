@@ -260,6 +260,7 @@ export function mapCatalogIndexEntry(
     youtube: entry.youtube_search || entry.youtube_query || '',
     isTimer: entry.isTimer || false,
     timerSeconds: entry.timerSeconds,
+    demoImages: entry.images?.length ? entry.images : undefined,
     description: entry.description,
     difficulty: (entry.difficulty as DifficultyLevel) || undefined,
     equipment: Array.isArray(entry.equipment) && entry.equipment.length ? entry.equipment : undefined,

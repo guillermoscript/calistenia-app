@@ -3,12 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
-import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import type { CircuitDefinition, CircuitExercise } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
-import { catalogExerciseIdentity } from '@calistenia/core/lib/exerciseCatalog'
 import { moveItem } from '@calistenia/core/lib/reorder'
 
 // ── Catalog item (lightweight shape for the picker) ───────────────────────────
@@ -20,61 +18,26 @@ interface CatalogItem {
   reps: string
 }
 
-/** Build a de-duplicated catalog from the hardcoded WORKOUTS map. */
-function extractFallbackCatalog(): CatalogItem[] {
-  const seen = new Set<string>()
-  const items: CatalogItem[] = []
-  Object.values(WORKOUTS).forEach((w) =>
-    w.exercises.forEach((ex) => {
-      if (seen.has(ex.id)) return
-      seen.add(ex.id)
-      items.push({
-        exerciseId: ex.id,
-        name: ex.name as TranslatableField,
-        muscles: ex.muscles as TranslatableField,
-        reps: ex.reps,
-      })
-    }),
+/**
+ * El catálogo del picker sale de `useCatalogExerciseList()` de core (#474): el
+ * bundle fusionado con `exercises_catalog`, con la identidad canónica (`slug`)
+ * como `exerciseId`. Antes esto leía PB a pelo y caía a los ejercicios de
+ * `WORKOUTS`, así que sin PB el picker perdía los 1.578 del catálogo.
+ */
+function useCatalog(): CatalogItem[] {
+  const { exercises } = useCatalogExerciseList()
+  return useMemo(
+    () =>
+      exercises
+        .map((ex) => ({
+          exerciseId: ex.slug,
+          name: ex.name,
+          muscles: ex.muscles ?? '',
+          reps: ex.reps || '10',
+        }))
+        .sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es'))),
+    [exercises],
   )
-  return items.sort((a, b) =>
-    localize(a.name, 'es').localeCompare(localize(b.name, 'es')),
-  )
-}
-
-/** Hook that loads the exercise catalog once (PocketBase first, WORKOUTS fallback). */
-function useCatalog() {
-  const [catalog, setCatalog] = useState<CatalogItem[]>([])
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const available = await isPocketBaseAvailable()
-      if (available) {
-        try {
-          const res = await pb.collection('exercises_catalog').getList(1, 500, { requestKey: null, sort: 'name' })
-          if (!cancelled && res.items.length > 0) {
-            setCatalog(
-              res.items.map((r) => ({
-                exerciseId: catalogExerciseIdentity(r),
-                name: r.name as TranslatableField,
-                muscles: (r.muscles ?? '') as TranslatableField,
-                reps: r.reps ?? '10',
-              })),
-            )
-            return
-          }
-        } catch {
-          /* fall through */
-        }
-      }
-      if (!cancelled) setCatalog(extractFallbackCatalog())
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  return catalog
 }
 
 // ── Props ──────────────────────────────────────────────────────────────────────

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { useQueryClient } from '@tanstack/react-query'
+import { qk } from '@calistenia/core/lib/query-keys'
+import { useCatalogExerciseList } from '@calistenia/core/hooks/useExerciseCatalog'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
-import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
-import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
 import { MUSCLE_GROUPS, getMuscleGroupLabelKey, getMuscleGroups } from '@calistenia/core/lib/muscles'
@@ -14,8 +14,6 @@ import { useWgerSearch } from '@calistenia/core/hooks/useWgerSearch'
 import { useFavorites } from '@calistenia/core/hooks/useFavorites'
 import WgerResultCard from '../components/WgerResultCard'
 import type { Priority, DifficultyLevel } from '@calistenia/core/types'
-import { localize } from '@calistenia/core/lib/i18n-db'
-import { inferCategory, mapCatalogRecord, type CatalogExercise } from '@calistenia/core/lib/exerciseCatalog'
 import ExerciseThumbnail from '../components/ExerciseThumbnail'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
@@ -82,113 +80,6 @@ const DIFFICULTY_STYLE: Record<DifficultyLevel, { text: string; bg: string; bord
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function inferDifficulty(phase: number): DifficultyLevel {
-  if (phase <= 1) return 'beginner'
-  if (phase <= 2) return 'intermediate'
-  return 'advanced'
-}
-
-function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] {
-  const seen = new Map<string, CatalogExercise>()
-
-  for (const [_key, workout] of Object.entries(WORKOUTS)) {
-    const dayType = workout.day === 'lun' ? 'push'
-      : workout.day === 'mar' ? 'pull'
-      : workout.day === 'mie' ? 'lumbar'
-      : workout.day === 'jue' ? 'legs'
-      : 'full'
-
-    for (const ex of workout.exercises) {
-      if (seen.has(ex.id)) continue
-      seen.set(ex.id, {
-        id: ex.id,
-        slug: ex.id,
-        name: ex.name,
-        muscles: ex.muscles,
-        category: inferCategory(ex, dayType),
-        priority: ex.priority,
-        sets: ex.sets,
-        reps: ex.reps,
-        rest: ex.rest,
-        note: ex.note,
-        youtube: ex.youtube,
-        isTimer: ex.isTimer,
-        timerSeconds: ex.timerSeconds,
-        demoImages: ex.demoImages,
-        demoVideo: ex.demoVideo,
-        difficulty: ex.difficulty || inferDifficulty(workout.phase),
-      })
-    }
-  }
-
-  // Add supplementary exercises
-  for (const ex of SUPPLEMENTARY_EXERCISES) {
-    if (seen.has(ex.id)) continue
-    seen.set(ex.id, {
-      id: ex.id,
-      slug: ex.id,
-      name: ex.name,
-      muscles: ex.muscles,
-      category: ex.category,
-      priority: ex.priority,
-      sets: ex.sets,
-      reps: ex.reps,
-      rest: ex.rest,
-      note: ex.note,
-      youtube: ex.youtube,
-      isTimer: ex.isTimer,
-      timerSeconds: ex.timerSeconds,
-      difficulty: ex.difficulty,
-    })
-  }
-
-  // Add exercises from master catalog JSON (wger-sourced + any new).
-  // El catálogo se carga perezosamente (#486); quien llama aquí ya ha esperado
-  // a `loadCatalogIndex()`.
-  const catalogCategories = getCatalogIndexSync()?.raw.categories ?? {}
-  for (const catData of Object.values(catalogCategories)) {
-    for (const ex of catData.exercises || []) {
-      if (seen.has(ex.id)) {
-        // Enrich existing exercise with images/taxonomy from catalog
-        const existing = seen.get(ex.id)!
-        if (!existing.demoImages?.length && ex.images?.length) {
-          existing.demoImages = ex.images
-        }
-        if (!existing.muscle_groups?.length && Array.isArray(ex.muscle_groups)) {
-          existing.muscle_groups = ex.muscle_groups
-        }
-        if (!existing.equipment?.length && Array.isArray(ex.equipment)) {
-          existing.equipment = ex.equipment
-        }
-        continue
-      }
-      seen.set(ex.id, {
-        id: ex.id,
-        slug: ex.id,
-        name: ex.name,
-        muscles: ex.muscles || '',
-        category: ex.category || 'full',
-        // El catálogo JSON no está validado: `priority` y `difficulty` llegan como `string`. Los
-        // casts acotan la suposición a esos campos, en vez de tapar el objeto con un `any`.
-        priority: (ex.priority || 'med') as Priority,
-        sets: ex.sets ?? 3,
-        reps: ex.reps || '8-12',
-        rest: ex.rest ?? 60,
-        note: ex.note || '',
-        youtube: ex.youtube_query || '',
-        isTimer: ex.isTimer || false,
-        timerSeconds: ex.timerSeconds,
-        demoImages: ex.images?.length ? ex.images : undefined,
-        difficulty: ex.difficulty as DifficultyLevel | undefined,
-        equipment: Array.isArray(ex.equipment) ? ex.equipment : undefined,
-        muscle_groups: Array.isArray(ex.muscle_groups) ? ex.muscle_groups : undefined,
-      })
-    }
-  }
-
-  return Array.from(seen.values()).sort((a, b) => localize(a.name, locale).localeCompare(localize(b.name, locale)))
-}
 
 // ── Category placeholder icons ───────────────────────────────────────────────
 
@@ -269,8 +160,15 @@ export default function ExerciseLibraryPage() {
   const { t, i18n } = useTranslation()
   const l = useLocalize()
   const navigate = useNavigate()
-  const [exercises, setExercises] = useState<CatalogExercise[]>([])
-  const [loading, setLoading] = useState(true)
+  // La lista sale de core (#474): el bundle fusionado con `exercises_catalog`,
+  // con la identidad canónica de cada ejercicio. Antes esta página leía PB a
+  // pelo y, sin PB, reconstruía a mano una lista parcial desde `WORKOUTS`.
+  const { exercises: catalogList, loading } = useCatalogExerciseList()
+  const queryClient = useQueryClient()
+  const exercises = useMemo(
+    () => [...catalogList].sort((a, b) => l(a.name).localeCompare(l(b.name))),
+    [catalogList, l],
+  )
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryId>('todos')
   const [activeMuscle, setActiveMuscle] = useState<string | null>(null)
@@ -317,43 +215,6 @@ export default function ExerciseLibraryPage() {
     }
     return ids
   }, [state.activeProgram, state.phases, state.weekDays, actions])
-
-  // Fetch from PB, fallback to hardcoded
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      try {
-        const available = await isPocketBaseAvailable()
-        if (available && !cancelled) {
-          try {
-            const res = await pb.collection('exercises_catalog').getList(1, 500, { requestKey: null, sort: 'name' })
-            if (!cancelled && res.items.length > 0) {
-              setExercises(res.items.map(mapCatalogRecord))
-              setLoading(false)
-              return
-            }
-          } catch {
-            // Collection might not exist, fall through to hardcoded
-          }
-        }
-      } catch {
-        // PB not available
-      }
-
-      if (!cancelled) {
-        await loadCatalogIndex()
-        setExercises(extractExercisesFromWorkouts(i18n.language))
-        setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-    // Carga única: meter `i18n.language` aquí dispararía un refetch completo del
-    // catálogo a PocketBase en cada cambio de idioma. El precio conocido es que
-    // el orden alfabético inicial se queda con el idioma de carga; los nombres
-    // visibles y la búsqueda sí se re-localizan (ver el memo `filtered`). (#484)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- carga única del catálogo
-
 
   // Filtered exercises
   const filtered = useMemo(() => {
@@ -800,13 +661,11 @@ export default function ExerciseLibraryPage() {
                 suggestion={suggestion}
                 onImport={async (wgerId) => {
                   try {
-                    const recordId = await importExercise(wgerId)
+                    await importExercise(wgerId)
                     setImportedIds(prev => new Set(prev).add(wgerId))
-                    // Optimistic update: add to local exercises
-                    try {
-                      const rec = await pb.collection('exercises_catalog').getOne(recordId, { requestKey: null })
-                      setExercises(prev => [...prev, mapCatalogRecord(rec)].sort((a, b) => l(a.name).localeCompare(l(b.name))))
-                    } catch { /* Will show on next load */ }
+                    // El catálogo está cacheado media hora: se invalida para que
+                    // el recién importado aparezca en la lista.
+                    queryClient.invalidateQueries({ queryKey: qk.exerciseCatalog })
                   } catch (err) {
                     console.error('Import failed:', err)
                   }
