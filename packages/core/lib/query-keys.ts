@@ -347,6 +347,8 @@ export const qk = {
   // — Batallas de circuito (issue #356) —
   battles: {
     // La barra flotante de las tabs; se invalida al terminar o salir de una batalla.
+    // Raíz: invalida activa e historial a la vez.
+    all: ['battle'] as const,
     active: () => ['battle', 'active'] as const,
     history: (userId: string | null) => ['battle', 'history', userId] as const,
   },

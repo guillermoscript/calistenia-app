@@ -200,3 +200,10 @@ describe('qk.home.friendsTrainedToday', () => {
     expect(k).not.toEqual(qk.home.friendsTrainedToday('u1', '2026-10-09', 'a'))
   })
 })
+
+describe('qk.battles.all', () => {
+  it('es prefijo de la activa y del historial (invalidarla las cubre)', () => {
+    expect(qk.battles.active().slice(0, 1)).toEqual(qk.battles.all)
+    expect(qk.battles.history('u1').slice(0, 1)).toEqual(qk.battles.all)
+  })
+})
