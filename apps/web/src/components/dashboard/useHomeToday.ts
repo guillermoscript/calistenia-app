@@ -16,7 +16,7 @@ import { useCircuitSession } from '../../contexts/CircuitSessionContext'
 import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
 import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
-import { getHomeState, dayHasContent, type HomeActiveActivity, type HomeState } from '@calistenia/core/lib/homeState'
+import { getHomeState, dayHasContent, resolveLastActivityDay, type HomeActiveActivity, type HomeState } from '@calistenia/core/lib/homeState'
 import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
 import { computeWeeklyStreak, type WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
@@ -139,9 +139,7 @@ export function useHomeToday(cardioLastSession?: CardioSession | null): HomeToda
   const streak = useMemo(() => computeWeeklyStreak(activityDays, goal, today), [activityDays, goal, today])
 
   const lastActivityDay = useMemo(() => {
-    const candidates = [getLastSessionDate(), lastCardioDay, activityDays[activityDays.length - 1] ?? null]
-      .filter((d): d is string => !!d && d <= today)
-    return candidates.sort().pop() ?? null
+    return resolveLastActivityDay(today, [getLastSessionDate(), lastCardioDay, activityDays[activityDays.length - 1] ?? null])
   }, [getLastSessionDate, lastCardioDay, activityDays, today])
 
   const unsynced = pendingWrites() > 0

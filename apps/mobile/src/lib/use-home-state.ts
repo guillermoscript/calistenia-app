@@ -25,8 +25,9 @@ import { useHomeStage } from '@calistenia/core/hooks/useHomeStage'
 import { useActivation, useTrackActivationReached } from '@calistenia/core/hooks/useActivation'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { onTimezoneChange, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
-import { getHomeState, type HomeState } from '@calistenia/core/lib/homeState'
+import { dayHasContent as coreDayHasContent, getHomeState, resolveLastActivityDay, type HomeState } from '@calistenia/core/lib/homeState'
 import { activityDaysFromProgress, getWeekSummary, type WeekSummary } from '@calistenia/core/lib/weekSummary'
+import { getQueue } from '@calistenia/core/lib/offlineQueue'
 import { getEffectiveWeeklyGoal } from '@calistenia/core/lib/weeklyGoal'
 import { computeWeeklyStreak, type WeeklyStreak } from '@calistenia/core/lib/weeklyStreak'
 import type { CardioSession, WeekDay } from '@calistenia/core/types'
@@ -46,6 +47,15 @@ export interface HomeView {
   todayCardio: CardioSession | null
 }
 
+/** Escrituras en la cola offline aún sin subir (misma lectura que web). */
+function pendingWrites(): number {
+  try {
+    return getQueue().length
+  } catch {
+    return 0
+  }
+}
+
 function useOnline(): boolean {
   const [online, setOnline] = useState(isOnline)
   useEffect(() => onConnectivityChange(setOnline), [])
@@ -55,8 +65,8 @@ function useOnline(): boolean {
 export function useHomeView(): HomeView {
   const user = useAuthUser()
   const uid = user?.id ?? null
-  const { settings, activeProgram, weekDays, programsReady, progress, programProgress, circuitDayConfigs } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getTotalSessions, getDoneDates } = useWorkoutActions()
+  const { settings, activeProgram, weekDays, programsReady, progress, programProgress, cardioDayConfigs, circuitDayConfigs } = useWorkoutState()
+  const { getWorkout, isWorkoutDone, getTotalSessions, getDoneDates, getLastSessionDate } = useWorkoutActions()
   const session = useActiveSession()
   const circuit = useCircuitSession()
   const cardio = useCardioSessionContext()
@@ -100,12 +110,15 @@ export function useHomeView(): HomeView {
     },
   })
 
+  // La regla es la de core (la misma que web). `weekDays` es plano y sin fase:
+  // su cardio/circuito sale de la fila de la fase más baja, así que se pisa con
+  // la config de la fase en curso (`p{fase}_{día}`) antes de preguntar.
   const dayHasContent = (day: WeekDay): boolean => {
     const key = `p${phase}_${day.id}`
-    // Un día de cardio siempre se puede hacer: sin config es cardio libre.
-    if (day.type === 'cardio') return true
-    if (day.type === 'circuit') return (circuitDayConfigs[key]?.exercises.length ?? 0) > 0
-    return (getWorkout(phase, day.id)?.exercises.length ?? 0) > 0
+    return coreDayHasContent(
+      { ...day, cardioConfig: cardioDayConfigs[key], circuitConfig: circuitDayConfigs[key] },
+      getWorkout(phase, day.id),
+    )
   }
 
   const weeklyGoal = getEffectiveWeeklyGoal(settings, activeProgram ? { weekDays } : null)
@@ -127,12 +140,13 @@ export function useHomeView(): HomeView {
     weekDays: programDays,
     dayHasContent,
     isWorkoutDone,
-    lastActivityDay: activityDays.length ? activityDays[activityDays.length - 1] : null,
+    lastActivityDay: resolveLastActivityDay(today, [getLastSessionDate(), activityDays[activityDays.length - 1] ?? null]),
     activeActivity,
     account,
     activation,
     week: { done: week.done, goal: weeklyGoal },
     offline: !online,
+    unsynced: pendingWrites() > 0,
     loading: !programsReady,
   })
 
