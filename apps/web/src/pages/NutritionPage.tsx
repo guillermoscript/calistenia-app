@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as Sentry from '@sentry/react'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
-import { previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
+import { previewNutritionGoal } from '@calistenia/core/lib/nutritionGoal'
+import { syncUserPrimaryGoal } from '@calistenia/core/lib/nutrition-profile'
 import { op } from '@calistenia/core/lib/analytics'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
@@ -30,7 +31,6 @@ import WaterTracker from '../components/WaterTracker'
 import { CoachPanel } from '../components/nutrition/CoachPanel'
 import { QualityScoreBadge } from '../components/nutrition/QualityScoreBadge'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import { useNutritionProfilePrefill } from '@calistenia/core/hooks/useNutritionProfilePrefill'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -247,10 +247,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     // Wizard saves are user-reviewed/editable on step 5 → 'manual'.
     await saveGoals({ ...newGoals, source: 'manual' })
     // Best-effort sync users.primary_goal (never blocks the save on failure).
-    const pg = nutritionGoalTypeToPrimaryGoal(newGoals.goal)
-    if (pg && userId) {
-      pb.collection('users').update(userId, { primary_goal: pg }).catch(() => {})
-    }
+    void syncUserPrimaryGoal(userId, newGoals.goal)
     // Registra el cambio venga de donde venga (picker → Ajustar, o el propio wizard vía Recalcular).
     if (goals && newGoals.goal !== goals.goal) {
       op.track('goal_changed', { from: goals.goal, to: newGoals.goal, applied_recommended: false })
@@ -530,10 +527,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                           <Button
                             onClick={async () => {
                               await saveGoals({ ...preview, source: 'auto' })
-                              const pg = nutritionGoalTypeToPrimaryGoal(selectedGoal)
-                              if (pg && userId) {
-                                pb.collection('users').update(userId, { primary_goal: pg }).catch(() => {})
-                              }
+                              void syncUserPrimaryGoal(userId, selectedGoal)
                               op.track('goal_changed', { from: goals.goal, to: selectedGoal, applied_recommended: true })
                               setGoalPickerOpen(false)
                               setSelectedGoal(null)

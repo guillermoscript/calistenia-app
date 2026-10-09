@@ -11,14 +11,16 @@
  *   composición corporal, que estaba copiado en `apps/web/src/pages/ProfilePage.tsx`
  *   y en `apps/mobile/src/app/(tabs)/profile.tsx`.
  *
- * Lo que NO se unifica: el `users.update` completo. Web guarda los 12 campos de
- * una vez con un solo botón; móvil los parte en dos guardados independientes
- * (nombre / cuerpo). Son dos UX distintas y unificarlas sería un cambio de
- * comportamiento, así que cada app compone su propio update y solo comparte el
- * trozo de cuerpo vía `bodyUserPatch`.
+ * Lo que NO se unifica: qué campos de `users` entran en cada botón. Web guarda
+ * los 12 campos de una vez; móvil los parte en dos guardados independientes
+ * (nombre+cuerpo / entrenamiento). Son dos UX distintas, así que cada app pasa
+ * a `saveProfileBody` los campos propios en `patch`, y la secuencia común
+ * (update → edad/sexo → recálculo) vive aquí.
  */
 import { useCallback, useReducer } from 'react'
+import type { QueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
+import { recomputeAutoNutritionGoal } from './useNutrition'
 import { parseDecimal } from '../lib/bmi'
 import type {
   ActivityLevel, ConditionId, DayId, FocusAreaId, InjuryId, Intensity, Pace,
@@ -212,4 +214,38 @@ export function bodyFromUserRecord(rec: Record<string, unknown>): Pick<ProfileFo
     height: rec.height ? String(rec.height) : '',
     activityLevel: (rec.activity_level as ActivityLevel) || '',
   }
+}
+
+export interface SaveProfileBodyOptions {
+  userId: string
+  /**
+   * Campos de `users` que guarda esta pantalla además del cuerpo (nombre,
+   * nivel, zona horaria…). Se escriben en el mismo `users.update`.
+   */
+  patch?: Record<string, unknown>
+  body: Pick<ProfileFormState, 'weight' | 'height' | 'activityLevel'>
+  /** De `fetchProfileBody`; null si el usuario aún no tiene objetivo nutricional. */
+  bodyGoalId: string | null
+  age: string
+  sex: string
+  queryClient?: QueryClient
+  /** Fallos que NO abortan el guardado: edad/sexo y el recálculo del objetivo. */
+  onSoftError?: (step: 'age_sex' | 'recompute_goal', e: unknown) => void
+}
+
+/**
+ * La secuencia de guardado del cuerpo, igual en web y móvil:
+ *
+ * 1. `users.update` con `patch` + peso/altura/actividad. Si falla, LANZA.
+ * 2. Edad/sexo → `nutrition_goals` (ver `fetchProfileBody`). Nunca lanza.
+ * 3. Reactivo (#243 F3): si el objetivo nutricional es 'auto', recalcula
+ *    calorías/macros con el cuerpo recién guardado (no toca 'manual'). Es
+ *    best-effort y NO se espera: un fallo aquí no debe bloquear el feedback de
+ *    guardado.
+ */
+export async function saveProfileBody(opts: SaveProfileBodyOptions): Promise<void> {
+  const { userId, patch, body, bodyGoalId, age, sex, queryClient, onSoftError } = opts
+  await pb.collection('users').update(userId, { ...patch, ...bodyUserPatch(body) })
+  await saveBodyDemographics(bodyGoalId, age, sex, e => onSoftError?.('age_sex', e))
+  recomputeAutoNutritionGoal(userId, queryClient).catch(e => onSoftError?.('recompute_goal', e))
 }

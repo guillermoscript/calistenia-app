@@ -39,9 +39,8 @@ import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { usePrivateAccount } from '@calistenia/core/hooks/usePrivateAccount'
-import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 import {
-  fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
+  fetchProfileBody, saveProfileBody, bodyFromUserRecord,
 } from '@calistenia/core/hooks/useProfileForm'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
@@ -279,24 +278,20 @@ export default function ProfileScreen() {
     if (!user || bodySaveState === 'saving' || !bodyLoaded) return
     setBodySaveState('saving')
     try {
-      await pb.collection('users').update(user.id, {
-        display_name: name.trim(),
-        ...bodyUserPatch({ weight, height, activityLevel }),
-      })
-      // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
-      // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
-      // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
-      await saveBodyDemographics(bodyGoalId, age, sex, (e) => {
-        Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_age_sex' } })
+      await saveProfileBody({
+        userId: user.id,
+        patch: { display_name: name.trim() },
+        body: { weight, height, activityLevel },
+        bodyGoalId, age, sex,
+        queryClient,
+        onSoftError: (step, e) => {
+          Sentry.captureException(e, {
+            tags: { feature: 'profile', op: step === 'age_sex' ? 'update_body_age_sex' : 'recompute_auto_goal' },
+          })
+        },
       })
       setBodySaveState('saved')
       setTimeout(() => setBodySaveState('idle'), 2000)
-      // Reactivo (#243 F3): si el goal nutricional guardado es 'auto', refresca
-      // sus macros con los datos corporales recién guardados. Best-effort — un
-      // fallo aquí no debe bloquear el feedback de guardado de arriba.
-      recomputeAutoNutritionGoal(user.id, queryClient).catch((e) => {
-        Sentry.captureException(e, { tags: { feature: 'profile', op: 'recompute_auto_goal' } })
-      })
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_fields' } })
       setBodySaveState('idle')

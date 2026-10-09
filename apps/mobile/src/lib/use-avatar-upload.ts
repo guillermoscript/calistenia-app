@@ -22,7 +22,8 @@ import {
 } from '@/lib/avatar'
 import { haptics } from '@/lib/haptics'
 import { Sentry } from '@/lib/instrument'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { uploadAvatar, removeAvatar } from '@calistenia/core/lib/profile-avatar'
 
 /** Recorte cuadrado en el propio picker: un toque, y el thumb no corta la cabeza. */
 const PICKER_OPTIONS = {
@@ -57,15 +58,12 @@ export function useAvatarUpload(user: RecordModel | null): AvatarUpload {
     Alert.alert(t('profile.avatarError'))
   }
 
-  /** Escribe en `users` y sincroniza el authStore, que es de donde lee la app. */
-  const persist = async (body: FormData | Record<string, unknown>, op: string) => {
+  /** Ejecuta la escritura de core (que ya sincroniza el authStore) con feedback. */
+  const persist = async (write: (userId: string) => Promise<unknown>, op: string) => {
     if (!user) return
     setBusy(true)
     try {
-      await pb.collection('users').update(user.id, body)
-      // Sin esto la foto solo se vería tras cerrar sesión: el resto de la app
-      // lee al usuario del authStore, no de una query.
-      await pb.collection('users').authRefresh()
+      await write(user.id)
       haptics.success()
     } catch (e) {
       fail(e, op)
@@ -118,17 +116,14 @@ export function useAvatarUpload(user: RecordModel | null): AvatarUpload {
         return
       }
 
-      const form = new FormData()
       // Un Blob nativo no tiene `.name` y PocketBase valida por extensión.
-      form.append('avatar', blob, avatarFileName(mime))
-      await persist(form, 'upload_avatar')
+      await persist(id => uploadAvatar(id, blob, avatarFileName(mime)), 'upload_avatar')
     } catch (e) {
       fail(e, `pick_avatar_${source}`)
     }
   }
 
-  // null vacía el campo de archivo (convención de PocketBase).
-  const remove = () => persist({ avatar: null }, 'delete_avatar')
+  const remove = () => persist(removeAvatar, 'delete_avatar')
 
   return { avatarUrl, busy, pick, remove }
 }
