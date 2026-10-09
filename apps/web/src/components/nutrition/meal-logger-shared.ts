@@ -6,34 +6,22 @@
  * necesitan compartir. Lo específico del DOM (comprimir con canvas) vive aquí
  * porque es web-only y sigue siendo una función pura.
  */
-import { localHour } from '@calistenia/core/lib/dateUtils'
-import { storage } from '@calistenia/core/platform'
-import { migrateLegacyFood } from '@calistenia/core/lib/macro-calc'
-import type {
-  FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealType,
-  QualityScore, QualityBreakdown, QualitySuggestion,
-} from '@calistenia/core/types'
+import type { AnalysisQuality } from '@calistenia/core/lib/meal-logger/shared'
+import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal } from '@calistenia/core/types'
 
-export const MAX_PHOTOS = 5
+// Las piezas puras (tipos de comida, totales, migración de comidas antiguas) viven
+// en core y las comparte el registro de móvil; aquí se reexportan para no tocar
+// a los consumidores.
+export {
+  MAX_PHOTOS, MEAL_OPTIONS, getDefaultMealType, getSeedMealType, setLastMealType,
+  normalizeFoods, sumFoodTotals,
+} from '@calistenia/core/lib/meal-logger/shared'
+export type {
+  Step, MacroField, MealTotals, AnalysisQuality,
+} from '@calistenia/core/lib/meal-logger/shared'
 
-export type Step = 'capture' | 'analyzing' | 'review' | 'saving' | 'success'
 export type CaptureSubView = 'main' | 'repeatMeal' | 'templates'
-export type MacroField = 'calories' | 'protein' | 'carbs' | 'fat'
 export type EditingMacro = { index: number; field: keyof FoodItem } | null
-
-export interface MealTotals {
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-}
-
-export interface AnalysisQuality {
-  score: QualityScore
-  breakdown: QualityBreakdown
-  message: string
-  suggestion: QualitySuggestion | null
-}
 
 export interface AnalysisResult {
   foods: FoodItem[]
@@ -56,60 +44,6 @@ export interface MealLoggerContentProps {
   onSendToBackground?: (imageFiles: File[], mealType: string, description?: string) => void
   /** Pre-populated analysis from a completed background job */
   initialAnalysis?: AnalysisResult | null
-}
-
-export const MEAL_OPTIONS: { id: MealType; labelKey: string; icon: string }[] = [
-  { id: 'desayuno', labelKey: 'meal.desayuno', icon: '☀️' },
-  { id: 'almuerzo', labelKey: 'meal.almuerzo', icon: '🍽️' },
-  { id: 'cena', labelKey: 'meal.cena', icon: '🌙' },
-  { id: 'snack', labelKey: 'meal.snack', icon: '🍎' },
-]
-
-/** Auto-detect meal type based on current hour */
-export function getDefaultMealType(): MealType {
-  const hour = localHour()
-  if (hour < 10) return 'desayuno'
-  if (hour < 15) return 'almuerzo'
-  if (hour < 18) return 'snack'
-  return 'cena'
-}
-
-const LS_LAST_MEAL_TYPE = 'calistenia_last_meal_type'
-
-/** Prefer the user's last-used meal type so their choice sticks between logs. */
-export function getSeedMealType(): MealType {
-  try {
-    const v = storage.getItem(LS_LAST_MEAL_TYPE) as MealType | null
-    if (v && MEAL_OPTIONS.some(o => o.id === v)) return v
-  } catch { /* ignore */ }
-  return getDefaultMealType()
-}
-
-export function setLastMealType(mealType: MealType): void {
-  try { storage.setItem(LS_LAST_MEAL_TYPE, mealType) } catch { /* best-effort */ }
-}
-
-/** Migra al vuelo las comidas antiguas (sin `baseCal100`) que llegan de la IA,
- *  de una entrada guardada o de un job en background. */
-export function normalizeFoods(foods: NutritionEntry['foods'] | FoodItem[]): FoodItem[] {
-  return (foods || []).map(f => {
-    if (!('baseCal100' in f) || !(f as FoodItem).baseCal100) {
-      return migrateLegacyFood(f as Parameters<typeof migrateLegacyFood>[0])
-    }
-    return f as FoodItem
-  })
-}
-
-export function sumFoodTotals(foods: FoodItem[]): MealTotals {
-  return foods.reduce(
-    (acc, f) => ({
-      calories: acc.calories + (Number(f.calories) || 0),
-      protein: acc.protein + (Number(f.protein) || 0),
-      carbs: acc.carbs + (Number(f.carbs) || 0),
-      fat: acc.fat + (Number(f.fat) || 0),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  )
 }
 
 /**

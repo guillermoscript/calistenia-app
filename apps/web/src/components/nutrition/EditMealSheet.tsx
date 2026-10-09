@@ -9,6 +9,7 @@ import { isMidnightEatenAt } from '@calistenia/core/lib/meal-time'
 import { todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { toast } from 'sonner'
 import type { NutritionEntry, FoodItem, MealType } from '@calistenia/core/types'
+import { sumFoodTotals } from '@calistenia/core/lib/meal-logger/shared'
 
 interface EditMealSheetProps {
   entry: NutritionEntry | null
@@ -101,10 +102,7 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
     if (!entry?.id || saving) return
     setSaving(true)
 
-    const totalCalories = foods.reduce((s, f) => s + (Number(f.calories) || 0), 0)
-    const totalProtein = foods.reduce((s, f) => s + (Number(f.protein) || 0), 0)
-    const totalCarbs = foods.reduce((s, f) => s + (Number(f.carbs) || 0), 0)
-    const totalFat = foods.reduce((s, f) => s + (Number(f.fat) || 0), 0)
+    const { calories: totalCalories, protein: totalProtein, carbs: totalCarbs, fat: totalFat } = sumFoodTotals(foods)
 
     // Keep the finish time on the meal's own day; digits stored verbatim.
     const hNum = Math.min(23, Math.max(0, parseInt(eatenHour, 10) || 0))
@@ -136,10 +134,7 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
 
   if (!entry) return null
 
-  const totalCal = foods.reduce((s, f) => s + (Number(f.calories) || 0), 0)
-  const totalProt = foods.reduce((s, f) => s + (Number(f.protein) || 0), 0)
-  const totalCarbs = foods.reduce((s, f) => s + (Number(f.carbs) || 0), 0)
-  const totalFat = foods.reduce((s, f) => s + (Number(f.fat) || 0), 0)
+  const { calories: totalCal, protein: totalProt, carbs: totalCarbs, fat: totalFat } = sumFoodTotals(foods)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

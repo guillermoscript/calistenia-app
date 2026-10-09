@@ -27,6 +27,7 @@ import {
   getDefaultMealType,
   getLastMealType,
   normalizeEntryFoods,
+  sumFoodTotals,
 } from './meal-logger-shared'
 import { useMealCapture } from './use-meal-capture'
 import { useMealAnalysis } from './use-meal-analysis'
@@ -75,19 +76,7 @@ export function useMealLogger({
   const quickTextInputRef = useRef<TextInput>(null)
 
   // ── Derived ────────────────────────────────────────────────────────────────
-  const totals = useMemo(
-    () =>
-      foods.reduce(
-        (acc, f) => ({
-          calories: acc.calories + (Number(f.calories) || 0),
-          protein: acc.protein + (Number(f.protein) || 0),
-          carbs: acc.carbs + (Number(f.carbs) || 0),
-          fat: acc.fat + (Number(f.fat) || 0),
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 },
-      ),
-    [foods],
-  )
+  const totals = useMemo(() => sumFoodTotals(foods), [foods])
 
   const filteredRecentEntries = useMemo(() => {
     let entries = recentEntries
