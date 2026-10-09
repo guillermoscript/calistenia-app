@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AppState } from 'react-native'
-import { pb } from '@calistenia/core/lib/pocketbase'
-import { CARDIO_UNSAVED_KEY as UNSAVED_KEY } from '@calistenia/core/lib/storage-keys'
-import { saveCardioRoute, splitRoute } from '@calistenia/core/lib/cardioRoutes'
-import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
-
-import { syncStorage } from '@/lib/storage'
-import { onOnline } from '@/lib/connectivity'
-import { Sentry } from '@/lib/instrument'
+import { pb } from '../../lib/pocketbase'
+import { storage, lifecycle, getPlatform } from '../../platform'
+import { CARDIO_UNSAVED_KEY as UNSAVED_KEY } from '../../lib/storage-keys'
+import { saveCardioRoute, splitRoute } from '../../lib/cardioRoutes'
+import { isCardioSessionTooShort } from '../../lib/cardioMinimum'
 
 // Cola FIFO acotada: si el backend lleva caído varias sesiones, se prefiere
 // perder las más viejas antes que llenar el almacenamiento.
@@ -15,19 +11,19 @@ const MAX_UNSAVED = 5
 
 function readQueue(): Record<string, unknown>[] {
   try {
-    const raw = syncStorage.getItem(UNSAVED_KEY)
+    const raw = storage.getItem(UNSAVED_KEY)
     return raw ? JSON.parse(raw) : []
   } catch { return [] }
 }
 
 function writeQueue(queue: Record<string, unknown>[]) {
   try {
-    syncStorage.setItem(UNSAVED_KEY, JSON.stringify(queue))
-  } catch { /* ignorar */ }
+    storage.setItem(UNSAVED_KEY, JSON.stringify(queue))
+  } catch { /* almacenamiento lleno — ignorar */ }
 }
 
 function dropQueue() {
-  syncStorage.removeItem(UNSAVED_KEY)
+  storage.removeItem(UNSAVED_KEY)
 }
 
 interface Options {
@@ -45,10 +41,9 @@ export interface UnsavedCardioQueue {
 
 /**
  * Cola de reintento de las sesiones de cardio que no se pudieron guardar.
- *
- * Se vacía al montar, al volver a primer plano y al recuperar conexión. NetInfo
- * no se entera de que el PB de desarrollo (`adb reverse`) se cae al desenchufar
- * el USB, así que el reintento al volver a foreground es el que salva ese caso.
+ * Se vacía al montar, al volver a primer plano y al recuperar conexión. En
+ * móvil el reintento al volver a foreground salva el caso del PB de desarrollo
+ * (`adb reverse`) que NetInfo no detecta al desenchufar el USB.
  */
 export function useUnsavedCardioQueue({ userId, onFlushed }: Options): UnsavedCardioQueue {
   const [unsavedCount, setUnsavedCount] = useState(0)
@@ -83,7 +78,7 @@ export function useUnsavedCardioQueue({ userId, onFlushed }: Options): UnsavedCa
           const saved = await pb.collection('cardio_sessions').create(record)
           await saveCardioRoute(saved.id, userId, routePoints)
         } catch (e) {
-          Sentry.captureException(e, { tags: { feature: 'cardio', op: 'flush_unsaved_session' } })
+          getPlatform().reportError?.(e)
           remaining.push(session)
         }
       }
@@ -99,12 +94,10 @@ export function useUnsavedCardioQueue({ userId, onFlushed }: Options): UnsavedCa
   useEffect(() => {
     void flush()
 
-    const appStateSub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') void flush()
-    })
-    const offOnline = onOnline(() => void flush())
+    const offForeground = lifecycle.onForeground(() => void flush())
+    const offOnline = getPlatform().connectivity.onOnline(() => void flush())
     return () => {
-      appStateSub.remove()
+      offForeground()
       offOnline()
     }
   }, [flush])

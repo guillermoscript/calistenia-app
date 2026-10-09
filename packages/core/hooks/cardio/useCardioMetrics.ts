@@ -1,11 +1,7 @@
-// Copia literal de apps/web/src/hooks/cardio/useCardioMetrics.ts: no toca DOM ni
-// React Native, así que es candidato directo a `packages/core` — pero mover los
-// hooks a core es el #482, y este issue sólo parte los contextos. Mantener las
-// dos copias idénticas es lo que hará mecánico ese movimiento.
 import { useCallback, useRef, useState, type MutableRefObject } from 'react'
-import { processCardioFix, type CardioFixInput, type CardioFixState } from '@calistenia/core/lib/cardio-fix'
-import type { KalmanState } from '@calistenia/core/lib/geo'
-import type { CardioActivityType, GpsPoint } from '@calistenia/core/types'
+import { processCardioFix, type CardioFixInput, type CardioFixState } from '../../lib/cardio-fix'
+import type { KalmanState } from '../../lib/geo'
+import type { CardioActivityType, GpsPoint } from '../../types'
 
 /** Parte del pipeline que viaja en el snapshot persistido. */
 export interface CardioMetricsSnapshot {

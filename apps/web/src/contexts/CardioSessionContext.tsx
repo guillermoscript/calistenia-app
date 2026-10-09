@@ -11,11 +11,11 @@ import { retryTransient } from '@calistenia/core/lib/pocketbase-errors'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 import { useWakeLock } from '../hooks/useWakeLock'
-import { useCardioMetrics } from '../hooks/cardio/useCardioMetrics'
-import { useCardioPersistence, type PersistedCardioSession } from '../hooks/cardio/useCardioPersistence'
-import { useCardioTimer } from '../hooks/cardio/useCardioTimer'
+import { useCardioMetrics } from '@calistenia/core/hooks/cardio/useCardioMetrics'
+import { useCardioPersistence, type PersistedCardioSession } from '@calistenia/core/hooks/cardio/useCardioPersistence'
+import { useCardioTimer } from '@calistenia/core/hooks/cardio/useCardioTimer'
 import { useGeolocationWatch } from '../hooks/cardio/useGeolocationWatch'
-import { useUnsavedCardioQueue } from '../hooks/cardio/useUnsavedCardioQueue'
+import { useUnsavedCardioQueue } from '@calistenia/core/hooks/cardio/useUnsavedCardioQueue'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,6 +88,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const startTimeRef = useRef(0)
   const pausedDurationRef = useRef(0)
   const pauseStartRef = useRef(0)
+  const programIdRef = useRef<string | null>(null)
+  const programDayKeyRef = useRef<string | null>(null)
   const restoredRef = useRef(false)
 
   const setSessionState = useCallback((next: SessionState) => {
@@ -146,6 +148,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       lastSplitKm: m.lastSplitKm,
       lastSplitTime: m.lastSplitTime,
       maxSpeed: m.maxSpeed,
+      programId: programIdRef.current,
+      programDayKey: programDayKeyRef.current,
     }
   }, [snapshotMetrics])
 
@@ -186,6 +190,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setNote('')
     setProgramId(startProgramId || null)
     setProgramDayKey(startProgramDayKey || null)
+    programIdRef.current = startProgramId || null
+    programDayKeyRef.current = startProgramDayKey || null
     pausedDurationRef.current = 0
     startTimeRef.current = Date.now()
     setStartedAt(startTimeRef.current)
@@ -224,8 +230,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       pausedDuration: pausedDurationRef.current,
       note: finishNote,
       userWeight,
-      programId: programId,
-      programDayKey: programDayKey,
+      programId: programIdRef.current,
+      programDayKey: programDayKeyRef.current,
     })
     setDuration(finalDuration)
 
@@ -239,6 +245,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       setNote('')
       setProgramId(null)
       setProgramDayKey(null)
+      programIdRef.current = null
+      programDayKeyRef.current = null
       return null
     }
 
@@ -262,7 +270,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     return session
   }, [
     stopGps, stopTimer, setDuration, clearSnapshot, points, setSessionState, resetMetrics,
-    userId, userWeight, programId, programDayKey, queryClient, enqueue,
+    userId, userWeight, queryClient, enqueue,
   ])
 
   const discard = useCallback(() => {
@@ -276,6 +284,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setNote('')
     setProgramId(null)
     setProgramDayKey(null)
+    programIdRef.current = null
+    programDayKeyRef.current = null
   }, [stopGps, stopTimer, setDuration, clearSnapshot, resetMetrics, setSessionState])
 
   // ── CRUD de sesiones guardadas ──────────────────────────────────────────
@@ -350,9 +360,13 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     startTimeRef.current = saved.startTime
     setStartedAt(saved.startTime)
     pausedDurationRef.current = saved.pausedDuration
+    programIdRef.current = saved.programId ?? null
+    programDayKeyRef.current = saved.programDayKey ?? null
     restoreMetrics(saved)
     setActivityType(saved.activityType)
     activityTypeRef.current = saved.activityType
+    setProgramId(saved.programId ?? null)
+    setProgramDayKey(saved.programDayKey ?? null)
 
     if (saved.state === 'paused') {
       pauseStartRef.current = saved.pauseStart ?? Date.now()

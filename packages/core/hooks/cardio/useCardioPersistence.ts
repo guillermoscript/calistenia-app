@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { AppState } from 'react-native'
-import { CARDIO_ACTIVE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
-import type { CardioActivityType, GpsPoint } from '@calistenia/core/types'
+import { CARDIO_ACTIVE_KEY as STORAGE_KEY } from '../../lib/storage-keys'
+import type { CardioActivityType, GpsPoint } from '../../types'
 
-import { syncStorage } from '@/lib/storage'
+import { storage, lifecycle } from '../../platform'
 
 /**
  * Snapshot con el que se reconstruye una sesión si Android mata el proceso.
  *
- * A diferencia de la web, aquí viajan también `programId`/`programDayKey`: en
- * nativo la sesión sobrevive a que la app muera del todo, y sin ellos se
+ * Viajan también `programId`/`programDayKey`: la sesión sobrevive a que la app
+ * muera del todo (Android mata el proceso, la pestaña se recarga) y sin ellos se
  * perdería a qué día de programa pertenecía.
  */
 export interface PersistedCardioSession {
@@ -63,28 +62,28 @@ export function useCardioPersistence({ active, buildSnapshot }: Options): Cardio
     const data = buildRef.current()
     if (!data) return
     try {
-      syncStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      storage.setItem(STORAGE_KEY, JSON.stringify(data))
     } catch { /* ignorar */ }
   }, [])
 
   const load = useCallback((): PersistedCardioSession | null => {
     try {
-      const raw = syncStorage.getItem(STORAGE_KEY)
+      const raw = storage.getItem(STORAGE_KEY)
       if (!raw) return null
       const data: PersistedCardioSession = JSON.parse(raw)
       if (Date.now() - data.startTime > MAX_SESSION_AGE_MS) {
-        syncStorage.removeItem(STORAGE_KEY)
+        storage.removeItem(STORAGE_KEY)
         return null
       }
       return data
     } catch {
-      syncStorage.removeItem(STORAGE_KEY)
+      storage.removeItem(STORAGE_KEY)
       return null
     }
   }, [])
 
   const clear = useCallback(() => {
-    syncStorage.removeItem(STORAGE_KEY)
+    storage.removeItem(STORAGE_KEY)
   }, [])
 
   useEffect(() => {
@@ -94,10 +93,7 @@ export function useCardioPersistence({ active, buildSnapshot }: Options): Cardio
   }, [active, persist])
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next !== 'active') persist()
-    })
-    return () => sub.remove()
+    return lifecycle.onBackground(persist)
   }, [persist])
 
   return { persist, load, clear }

@@ -1,7 +1,7 @@
 /**
- * Hub de la sesión de cardio nativa. Port del de apps/web; los hooks de
- * `hooks/cardio/` llevan el mismo nombre y la misma firma en las dos apps, y
- * sólo cambia el sustrato de plataforma:
+ * Hub de la sesión de cardio nativa. Los hooks de cronómetro, métricas,
+ * copia de seguridad y cola de reintento viven en `core/hooks/cardio/` y se
+ * comparten con la web; aquí sólo cambia el sustrato de plataforma:
  *  - navigator.geolocation.watchPosition → cardio-tracker (expo-location + FGS)
  *  - localStorage → syncStorage (caché síncrona sobre AsyncStorage)
  *  - wake lock → expo-keep-awake
@@ -31,11 +31,11 @@ import {
 } from '@/lib/cardio-live'
 import { syncCardioWidget } from '@/lib/sync-cardio-widget'
 import { useKeepAwakeWhile } from '@/hooks/useKeepAwakeWhile'
-import { useCardioMetrics } from '@/hooks/cardio/useCardioMetrics'
-import { useCardioPersistence, type PersistedCardioSession } from '@/hooks/cardio/useCardioPersistence'
-import { useCardioTimer } from '@/hooks/cardio/useCardioTimer'
+import { useCardioMetrics } from '@calistenia/core/hooks/cardio/useCardioMetrics'
+import { useCardioPersistence, type PersistedCardioSession } from '@calistenia/core/hooks/cardio/useCardioPersistence'
+import { useCardioTimer } from '@calistenia/core/hooks/cardio/useCardioTimer'
 import { useCardioTracking } from '@/hooks/cardio/useCardioTracking'
-import { useUnsavedCardioQueue } from '@/hooks/cardio/useUnsavedCardioQueue'
+import { useUnsavedCardioQueue } from '@calistenia/core/hooks/cardio/useUnsavedCardioQueue'
 
 const KEEP_AWAKE_TAG = 'cardio-session'
 
