@@ -1,6 +1,6 @@
-import { utcToLocalDateStr } from './dateUtils'
+import { getTimezone, utcToLocalDateStr } from './dateUtils'
 import { getQueue } from './offlineQueue'
-import { streakDayOf } from './weeklyStreak'
+import { wallClockDayOf } from './wallClock'
 import type { ProgressMap, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 /** Fila de `sessions` (registro de PocketBase o payload aún encolado). */
@@ -80,7 +80,7 @@ export interface CircuitSessionDone extends SessionDone {
  * Solo `created` es un instante UTC real y sí se convierte.
  */
 function wallClockDay(stamp: string | undefined, created: string | undefined): string {
-  return streakDayOf(stamp) ?? utcToLocalDateStr(created!)
+  return wallClockDayOf(stamp, created, getTimezone()) ?? utcToLocalDateStr(created!)
 }
 
 /** Milisegundos de una marca de pared local (sin zona), o de un instante UTC real. */
