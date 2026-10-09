@@ -15,7 +15,8 @@ import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
-import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
+import { useActiveBattle } from '@/lib/use-active-battle'
 import { isHomeTabPath } from '@/lib/home-tab-path'
 
 export default function ActiveBattleBar() {

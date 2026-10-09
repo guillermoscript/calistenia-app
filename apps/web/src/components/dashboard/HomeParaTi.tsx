@@ -24,7 +24,8 @@ import { daysAgoStr, diffDays, todayStr } from '@calistenia/core/lib/dateUtils'
 import type { HomeStateKind } from '@calistenia/core/lib/homeState'
 import { useWorkoutState } from '../../contexts/WorkoutContext'
 import { useFriendsTrainedToday } from '@calistenia/core/hooks/useFriendsTrainedToday'
-import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
+import { useActiveBattle } from '@calistenia/core/hooks/useActiveBattle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
 
 const DESKTOP_QUERY = '(min-width: 1024px)'
 

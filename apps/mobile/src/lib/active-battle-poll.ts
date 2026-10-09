@@ -12,8 +12,6 @@
 /** Rutas (tal como las devuelve `usePathname`) con la batalla activa a la vista. */
 export const ACTIVE_BATTLE_POLL_PATHS: ReadonlySet<string> = new Set(['/', '/community'])
 
-export const ACTIVE_BATTLE_POLL_MS = 45_000
-
 export function shouldPollActiveBattle(pathname: string | null | undefined): boolean {
   return !!pathname && ACTIVE_BATTLE_POLL_PATHS.has(pathname)
 }

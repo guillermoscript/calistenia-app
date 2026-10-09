@@ -15,7 +15,8 @@ import { Camera, Flag, Swords, Trophy, Users, Utensils } from 'lucide-react-nati
 
 import { Text } from '@/components/ui/text'
 import { useWorkoutState } from '@/contexts/WorkoutContext'
-import { isBattleOngoing, useActiveBattle } from '@/lib/use-active-battle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
+import { useActiveBattle } from '@/lib/use-active-battle'
 import { useChallenges } from '@calistenia/core/hooks/useChallenges'
 import { useFeaturedChallenge } from '@calistenia/core/hooks/useFeaturedChallenge'
 import { useFollows } from '@calistenia/core/hooks/useFollows'

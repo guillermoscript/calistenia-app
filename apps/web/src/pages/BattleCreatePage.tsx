@@ -20,7 +20,8 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
 import type { BattleConfiguration } from '@calistenia/core/types/battle'
 
-import { useActiveBattle, isBattleOngoing } from '../hooks/useActiveBattle'
+import { useActiveBattle } from '@calistenia/core/hooks/useActiveBattle'
+import { isBattleOngoing } from '@calistenia/core/lib/battle'
 import { useBattleProgramDay } from '../hooks/useBattleProgramDay'
 import {
   BATTLE_ORIGINS, addCustomItem, customBattleConfig, parseOrigin, parsePhase, type BattleOrigin, type CustomItem,

@@ -115,9 +115,8 @@ vi.mock('@calistenia/core/hooks/useFeaturedChallenge', () => ({ useFeaturedChall
 vi.mock('@calistenia/core/hooks/useFollows', () => ({ useFollows: h.useFollows }))
 vi.mock('@calistenia/core/hooks/useCommunityPrograms', () => ({ useCommunityPrograms: h.useCommunityPrograms }))
 vi.mock('@calistenia/core/hooks/useNutrition', () => ({ useNutrition: h.useNutrition }))
-vi.mock('../hooks/useActiveBattle', () => ({
+vi.mock('@calistenia/core/hooks/useActiveBattle', () => ({
   useActiveBattle: () => ({ data: h.battle }),
-  isBattleOngoing: (b: { status?: string } | null | undefined) => !!b && ['lobby', 'ready', 'live'].includes(b.status ?? ''),
 }))
 vi.mock('@calistenia/core/hooks/useFriendsTrainedToday', () => ({ useFriendsTrainedToday: h.useFriendsTrainedToday }))
 
