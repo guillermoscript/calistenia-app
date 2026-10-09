@@ -11,6 +11,7 @@ import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
 import { TRAINING_FUNNEL_EVENTS, sessionFunnelProperties } from '../lib/session-funnel'
 import { persistOrQueue, newClientId, cancelLastQueuedByTempId } from '../lib/offlineQueue'
 import { emitProgramMilestoneIfCompleted } from '../lib/program-milestone'
+import { invalidateAfterWorkout } from '../lib/workout-cache'
 import { patchProgressData, patchSettingsData, type ProgressData } from '../lib/progress-cache'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
@@ -55,6 +56,9 @@ export function useProgressMutations(userId: string | null = null, activeProgram
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => {
     const d = date || todayStr()
     const k = `${d}_${workoutKey}_${exerciseId}`
+    // Un `loadFromPB` ya en vuelo resolvería DESPUÉS del parche y se lo llevaría
+    // por delante: la serie aún no está en el servidor ni en la cola.
+    await qc.cancelQueries({ queryKey: key })
     patchProgress(prev => {
       const existing = prev[k] as ExerciseLog | undefined || { sets: [], date: d, workoutKey, exerciseId }
       const updated = { ...existing, sets: [...existing.sets, { ...setData, timestamp: setData.timestamp ?? Date.now() }] } as ExerciseLog
@@ -85,12 +89,17 @@ export function useProgressMutations(userId: string | null = null, activeProgram
         getPlatform().reportError?.(e)
       }
     }
-  }, [usePB, userId, patchProgress])
+  }, [usePB, userId, patchProgress, qc, key])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
   const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     const d = date || todayStr()
     const k = `done_${d}_${workoutKey}`
+    // Cancelar ANTES del parche: un `loadFromPB` lanzado antes del create ya en
+    // vuelo resolvería después y pisaría el entreno optimista sin la sesión nueva
+    // (aún no está en el servidor ni en la cola, ver `pendingProgressRows`).
+    // `cancelQueries` resuelve rápido, la UI sigue viendo `done` al instante.
+    await qc.cancelQueries({ queryKey: key })
     patchProgress(prev => {
       // Repetir el mismo entrenamiento el mismo día reusa la clave done_; sumamos
       // al conteo previo para que getTotalSessions/getWeeklyDoneCount no lo pierdan.
@@ -154,9 +163,13 @@ export function useProgressMutations(userId: string | null = null, activeProgram
         // misma clave que usa el progreso local, para que deshacer el entreno
         // mientras sigue encolado pueda retirarlo (ver unmarkWorkoutDone) en vez
         // de dejar que resucite al reconectar.
-        await persistOrQueue(pb, {
+        const created = await persistOrQueue(pb, {
           collection: 'sessions', action: 'create', data: sessionData, tempId: k,
         })
+        // Con la fila ya en el servidor (y con la fecha bien leída, ver
+        // `buildProgressMap`) el refetch es seguro y deja al día Home, la racha y
+        // los totales. Si quedó encolada (`null`) lo reconcilia la cola.
+        if (created) invalidateAfterWorkout(qc, userId)
       } catch (e) {
         // #376: este catch se tragó durante meses un 400 que impedía guardar
         // TODA sesión libre. El progreso local sigue siendo autoritativo, así
@@ -258,6 +271,7 @@ export function useProgressMutations(userId: string | null = null, activeProgram
     const k = `done_${d}_${workoutKey}`
     // PB borra UNA sola sesión del día; el cache decrementa su conteo en 1 y
     // solo elimina la clave cuando llega a 0 (soporta repeticiones del día).
+    await qc.cancelQueries({ queryKey: key }) // mismo motivo que en markWorkoutDone
     patchProgress(prev => {
       const next = { ...prev }
       const entry = next[k] as SessionDone | undefined
@@ -290,13 +304,14 @@ export function useProgressMutations(userId: string | null = null, activeProgram
         })
         if (records.items.length > 0) {
           await pb.collection('sessions').delete(records.items[0].id)
+          invalidateAfterWorkout(qc, userId)
         }
       } catch (e) {
         console.warn('PB unmark session error:', e)
         getPlatform().reportError?.(e)
       }
     }
-  }, [usePB, userId, patchProgress])
+  }, [usePB, userId, patchProgress, qc, key])
 
   // ─── updateSettings ──────────────────────────────────────────────────────
   const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {

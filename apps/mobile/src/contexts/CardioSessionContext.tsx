@@ -17,6 +17,7 @@ import { lifecycle } from '@calistenia/core/platform'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { qk } from '@calistenia/core/lib/query-keys'
+import { invalidateAfterWorkout } from '@calistenia/core/lib/workout-cache'
 import {
   calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
@@ -338,10 +339,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         session.id = saved.id
         await saveCardioRoute(saved.id, userId, routePoints)
         void syncCardioWidget(userId)
-        // Refresca historial cardio, stats y actividad reciente de inmediato.
-        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
-        // El cardio libre no está en el ProgressMap: la racha semanal se entera aquí (#801).
-        void queryClient.invalidateQueries({ queryKey: qk.streakDays(userId) })
+        // Refresca historial, stats, actividad reciente, racha (#801) y, si el
+        // cardio es de un día de programa, el check del día y los totales.
+        invalidateAfterWorkout(queryClient, userId, { cardio: true })
       } catch (e) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
         enqueue(saveData)
