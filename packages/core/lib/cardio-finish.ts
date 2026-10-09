@@ -63,3 +63,8 @@ export function buildCardioSession(input: BuildCardioSessionInput): BuiltCardioS
 
   return { session, durationSeconds, tooShort: isCardioSessionTooShort(session) }
 }
+
+/** Registro tal cual se guarda o se encola: la sesión más el dueño. */
+export function buildCardioSaveData(userId: string, session: CardioSession): Record<string, unknown> {
+  return { user: userId, ...session }
+}

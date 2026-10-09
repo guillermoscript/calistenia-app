@@ -20,9 +20,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { lifecycle } from '../../platform'
 import { qk } from '../../lib/query-keys'
 import { invalidateAfterWorkout } from '../../lib/workout-cache'
-import { buildCardioSession } from '../../lib/cardio-finish'
+import { buildCardioSession, buildCardioSaveData } from '../../lib/cardio-finish'
 import {
-  buildCardioSaveData, saveCardioSession, deleteCardioSession,
+  saveCardioSession, deleteCardioSession,
   updateCardioSessionNote, fetchCardioHistory,
 } from '../../lib/cardio-session-api'
 import { CARDIO_HISTORY_PAGE_SIZE } from '../../lib/cardio-history'

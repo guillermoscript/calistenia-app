@@ -1,6 +1,7 @@
 /** Resultados de carrera — podio + ranking + guardar como entrenamiento. */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Pressable } from 'react-native'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
@@ -10,15 +11,15 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { haptics } from '@/lib/haptics'
 import * as sounds from '@/lib/sounds'
 import { Sentry } from '@/lib/instrument'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
-import { estimateCalories } from '@calistenia/core/lib/calories'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
-import { splitRoute, saveCardioRoute } from '@calistenia/core/lib/cardioRoutes'
+import { saveRaceAsWorkout } from '@calistenia/core/lib/race/raceApi'
+import { invalidateAfterWorkout } from '@calistenia/core/lib/workout-cache'
 import { fetchRaceRoute } from '@calistenia/core/lib/raceRoutes'
 
 export default function RaceResults({ celebrate = false }: { celebrate?: boolean }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const { race, participants, me } = useRaceContext()
   const user = useAuthUser()
   const [saved, setSaved] = useState(false)
@@ -47,22 +48,8 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
       // `race_routes`, owner-only. Se pide aquí y no al montar porque esta es la
       // única pantalla que lo usa y solo si se pulsa el botón.
       const track = await fetchRaceRoute(me.id)
-      const startMs = race.starts_at ? new Date(race.starts_at).getTime() : Date.now()
-      const { record, points } = splitRoute({
-        user: user.id,
-        activity_type: race.activity_type,
-        gps_points: track.map((p) => ({ lat: p.lat, lng: p.lng, timestamp: startMs + p.t })),
-        distance_km: me.distance_km,
-        duration_seconds: me.duration_seconds,
-        avg_pace: me.avg_pace,
-        elevation_gain: 0,
-        started_at: race.starts_at,
-        finished_at: me.finished_at || race.finished_at || new Date().toISOString(),
-        note: `Race: ${race.name}`,
-        calories_burned: estimateCalories(race.activity_type, me.duration_seconds),
-      })
-      const saved = await pb.collection('cardio_sessions').create(record)
-      await saveCardioRoute(saved.id, user.id, points)
+      await saveRaceAsWorkout(race, me, track, user.id)
+      invalidateAfterWorkout(queryClient, user.id, { cardio: true })
       setSaved(true)
       void haptics.success()
     } catch (e) {

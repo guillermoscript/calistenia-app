@@ -7,11 +7,6 @@ import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from './cardioRoutes
 import { CARDIO_HISTORY_PAGE_SIZE } from './cardio-history'
 import type { CardioActivityType, CardioSession, GpsPoint } from '../types'
 
-/** Registro tal cual se guarda o se encola: la sesión más el dueño. */
-export function buildCardioSaveData(userId: string, session: CardioSession): Record<string, unknown> {
-  return { user: userId, ...session }
-}
-
 /**
  * Crea la sesión y su ruta. Devuelve el id del registro. Lanza si PocketBase
  * rechaza la sesión o la ruta: quien llama decide si encolarla para reintento.
