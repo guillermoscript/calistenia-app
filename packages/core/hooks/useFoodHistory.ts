@@ -113,8 +113,8 @@ export function useFoodHistory(userId: string | null) {
     onSettled: () => {
       // Invalida ambas keys para forzar refresco tras cualquier resultado
       if (!userId) return
-      qc.invalidateQueries({ queryKey: ['food_history', 'recent', userId] })
-      qc.invalidateQueries({ queryKey: ['food_history', 'hour', userId] })
+      qc.invalidateQueries({ queryKey: qk.foodHistory.recentAll(userId) })
+      qc.invalidateQueries({ queryKey: qk.foodHistory.hourAll(userId) })
     },
   })
 

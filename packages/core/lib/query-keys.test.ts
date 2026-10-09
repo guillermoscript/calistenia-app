@@ -207,3 +207,21 @@ describe('qk.battles.all', () => {
     expect(qk.battles.history('u1').slice(0, 1)).toEqual(qk.battles.all)
   })
 })
+
+describe('qk — raíces de invalidación', () => {
+  const isPrefix = (root: readonly unknown[], key: readonly unknown[]) =>
+    root.every((seg, i) => key[i] === seg)
+
+  it('cada raíz es prefijo de la key que invalida', () => {
+    expect(isPrefix(qk.roots.reactions, qk.reactions('u1', ['s1']))).toBe(true)
+    expect(isPrefix(qk.roots.commentReactions, qk.commentReactions('c1', 'u1'))).toBe(true)
+    expect(isPrefix(qk.roots.leaderboard, qk.leaderboard('u1', '2026-10-05', '2026-10-01'))).toBe(true)
+    expect(isPrefix(qk.roots.challenges, qk.challenges('u1'))).toBe(true)
+    expect(isPrefix(qk.roots.challenge, qk.challenge('ch1'))).toBe(true)
+    expect(isPrefix(qk.roots.challengeLeaderboard, qk.challengeLeaderboard('ch1', 'u1'))).toBe(true)
+    expect(isPrefix(qk.roots.publicProfile, qk.publicProfile('u1', '2026-10'))).toBe(true)
+    expect(isPrefix(qk.foodHistory.recentAll('u1'), qk.foodHistory.recent('u1', 20))).toBe(true)
+    expect(isPrefix(qk.foodHistory.hourAll('u1'), qk.foodHistory.hour('u1', 9))).toBe(true)
+    expect(isPrefix(qk.pantry.spendAll, qk.pantry.spend('u1', '2026-10-05'))).toBe(true)
+  })
+})

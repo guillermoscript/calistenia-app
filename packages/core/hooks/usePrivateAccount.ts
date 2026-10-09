@@ -38,10 +38,10 @@ export function usePrivateAccount(userId: string | null) {
       await pb.collection('users').authRefresh()
       op.track('account_privacy_changed', { is_private: next })
       // Los rankings y perfiles leen `is_private` del expand de users.
-      // Prefijo de `qk.publicProfile` (todos los usuarios y meses). El literal
-      // anterior, ['publicProfile'], no coincidía con ninguna clave real.
-      qc.invalidateQueries({ queryKey: qk.publicProfile(userId, '').slice(0, 1) })
-      qc.invalidateQueries({ queryKey: ['challenge'] })
+      // Todos los usuarios y meses. El literal anterior, ['publicProfile'], no
+      // coincidía con ninguna clave real.
+      qc.invalidateQueries({ queryKey: qk.roots.publicProfile })
+      qc.invalidateQueries({ queryKey: qk.roots.challenge })
       return true
     } catch (e: any) {
       console.warn('Set private account error:', e?.status, e?.message)

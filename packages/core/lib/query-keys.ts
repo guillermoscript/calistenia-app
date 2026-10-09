@@ -282,6 +282,9 @@ export const qk = {
       ['food_history', 'recent', userId, limit] as const,
     hour: (userId: string | null, hour: number) =>
       ['food_history', 'hour', userId, hour] as const,
+    // Prefijos por usuario: todas las variantes de `limit` / `hour`.
+    recentAll: (userId: string | null) => ['food_history', 'recent', userId] as const,
+    hourAll: (userId: string | null) => ['food_history', 'hour', userId] as const,
   },
   mealTemplates: (userId: string | null) => ['meal_templates', userId] as const,
   freeSessionTemplates: (userId: string | null) =>
@@ -322,6 +325,8 @@ export const qk = {
     history: (userId: string | null) => ['pantry', 'history', userId] as const,
     spend: (userId: string | null, weekStart: string) =>
       ['pantry', 'spend', userId, weekStart] as const,
+    // Prefijo: el gasto de todas las semanas (y usuarios).
+    spendAll: ['pantry', 'spend'] as const,
     currency: (userId: string | null) => ['pantry', 'currency', userId] as const,
   },
 
@@ -351,5 +356,20 @@ export const qk = {
     all: ['battle'] as const,
     active: () => ['battle', 'active'] as const,
     history: (userId: string | null) => ['battle', 'history', userId] as const,
+  },
+
+  // — Raíces para invalidar por prefijo —
+  // Familias cuya key es una función de varios argumentos: invalidar «todas»
+  // exige su primer segmento, y escribirlo a mano en cada hook es lo que dejó
+  // `['publicProfile']` como un no-op (la key real es 'public-profile').
+  // `query-keys.test.ts` comprueba que cada raíz es prefijo de su factoría.
+  roots: {
+    reactions: ['reactions'] as const,
+    commentReactions: ['comment-reactions'] as const,
+    leaderboard: ['leaderboard'] as const,
+    challenges: ['challenges'] as const,
+    challenge: ['challenge'] as const,
+    challengeLeaderboard: ['challenge-leaderboard'] as const,
+    publicProfile: ['public-profile'] as const,
   },
 } as const
