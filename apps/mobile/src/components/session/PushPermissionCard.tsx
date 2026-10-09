@@ -23,7 +23,6 @@ import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { haptics } from '@/lib/haptics'
 import { COLORS } from '@/lib/theme'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import { getPushPermissionState, registerPushTokenAsync } from '@/lib/push-registration'
 import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
 import { summarizeReminderSchedule } from '@calistenia/core/lib/push-prompt-copy'
@@ -88,7 +87,7 @@ export default function PushPermissionCard({ userId, workoutKey, totalSessions }
 
   const handleAccept = async () => {
     haptics.light()
-    const token = await registerPushTokenAsync(pb, userId, { requestPermission: true })
+    const token = await registerPushTokenAsync(userId, { requestPermission: true })
     finish(token ? 'granted' : 'denied')
   }
 

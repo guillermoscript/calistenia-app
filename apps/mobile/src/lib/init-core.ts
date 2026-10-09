@@ -287,7 +287,7 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
         // requestPermission:false — el diálogo del SO ya no se pide al arrancar,
         // solo si el permiso ya estaba concedido se registra el token. La
         // petición ahora vive en la celebración post-entreno (#694).
-        registerPushTokenAsync(pb, user.id, { requestPermission: false }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
+        registerPushTokenAsync(user.id, { requestPermission: false }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
         // Zona horaria: el servidor la necesita para enviar los recordatorios a
         // la hora local correcta. Va AQUÍ y no en useAuth porque en móvil
         // useAuth solo se monta en la pantalla de login (mismo motivo que la

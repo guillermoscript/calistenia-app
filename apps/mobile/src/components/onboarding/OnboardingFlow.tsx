@@ -26,7 +26,6 @@ import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import { estimateFirstWorkoutMinutes, normalizeFirstWorkoutLevel } from '@calistenia/core/lib/first-workout'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import {
   DEFAULT_TRAINING_TIME_PRESET,
   findTrainingTimePreset,
@@ -273,7 +272,7 @@ export function OnboardingFlow() {
       await ensureAndroidChannel()
       const permission = await getReminderPermission()
       if (permission === 'granted' && userId) {
-        registerPushTokenAsync(pb, userId, { requestPermission: false }).catch((e) => {
+        registerPushTokenAsync(userId, { requestPermission: false }).catch((e) => {
           Sentry.captureException(e, { tags: { feature: 'onboarding_reminder', op: 'register_push_token' } })
         })
       }

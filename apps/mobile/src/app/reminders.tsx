@@ -59,7 +59,6 @@ import {
   parseMinute,
   clampPauseInterval,
 } from '@calistenia/core/lib/reminders'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import type { MealType } from '@calistenia/core/types'
 
 import { registerPushTokenAsync } from '@/lib/push-registration'
@@ -408,7 +407,7 @@ export default function RemindersScreen() {
       // `expo_push_tokens` el servidor no tiene a dónde enviar el push y el
       // recordatorio no llegaría hasta el siguiente login.
       if (userId) {
-        registerPushTokenAsync(pb, userId).catch((e) => {
+        registerPushTokenAsync(userId).catch((e) => {
           Sentry.captureException(e, { tags: { feature: 'reminders', op: 'register_push_token' } })
         })
       }

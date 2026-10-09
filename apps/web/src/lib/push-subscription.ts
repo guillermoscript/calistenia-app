@@ -1,4 +1,4 @@
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { upsertPushToken, removePushToken } from '@calistenia/core/lib/push-token'
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
 
@@ -61,24 +61,10 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
 
     // Save to PocketBase
     const subJson = subscription.toJSON()
-    try {
-      // Check if subscription already exists
-      await pb.collection('push_subscriptions').getFirstListItem(
-        pb.filter('user = {:uid} && subscription.endpoint = {:ep}', {
-          uid: userId,
-          ep: subJson.endpoint,
-        }),
-        { requestKey: null },
-      )
-      // Already exists
-    } catch {
-      // Not found — create
-      await pb.collection('push_subscriptions').create({
-        user: userId,
-        subscription: JSON.stringify(subJson),
-        user_agent: navigator.userAgent,
-      })
-    }
+    await upsertPushToken('push_subscriptions', subJson.endpoint ?? '', userId, {
+      subscription: JSON.stringify(subJson),
+      user_agent: navigator.userAgent,
+    })
 
     return true
   } catch (e) {
@@ -96,17 +82,7 @@ export async function unsubscribeFromPush(userId: string): Promise<void> {
       const endpoint = subscription.endpoint
       await subscription.unsubscribe()
 
-      // Remove from PocketBase
-      try {
-        const rec = await pb.collection('push_subscriptions').getFirstListItem(
-          pb.filter('user = {:uid} && subscription.endpoint = {:ep}', {
-            uid: userId,
-            ep: endpoint,
-          }),
-          { requestKey: null },
-        )
-        await pb.collection('push_subscriptions').delete(rec.id)
-      } catch { /* ignore */ }
+      await removePushToken('push_subscriptions', endpoint, userId)
     }
   } catch (e) {
     console.warn('Failed to unsubscribe from push:', e)
