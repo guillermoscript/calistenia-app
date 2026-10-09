@@ -5,7 +5,7 @@
  * testear» desde useProgress, extraídas a lib en #476): la reconstrucción del
  * `ProgressMap` y el filtrado de lo que sigue encolado.
  */
-import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { describe, expect, it, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest'
 
 const mem = new Map<string, string>()
 
@@ -21,7 +21,7 @@ vi.mock('../platform', () => ({
   }),
 }))
 
-import { utcToLocalDateStr } from './dateUtils'
+import { getTimezone, setTimezone } from './dateUtils'
 import { clearQueue, enqueue } from './offlineQueue'
 import {
   buildProgressMap,
@@ -35,7 +35,7 @@ const setRowsOf = (uid: string, server: any[] = []) =>
   pendingProgressRows(uid, null, [], server).sets
 
 const AT = '2026-08-15 09:00:00.000Z'
-const DAY = utcToLocalDateStr(AT)
+const DAY = '2026-08-15'
 
 /** Fila de `sessions` tal como la devuelve PocketBase. */
 function sessionRow(over: Record<string, unknown> = {}) {
@@ -46,6 +46,10 @@ function sessionRow(over: Record<string, unknown> = {}) {
 function setRow(over: Record<string, unknown> = {}) {
   return { id: 'x1', user: 'u1', exercise_id: 'pullups', workout_key: 'p1_lun', reps: '8', logged_at: AT, ...over }
 }
+
+let tz0: string
+beforeAll(() => { tz0 = getTimezone(); setTimezone('UTC') })
+afterAll(() => setTimezone(tz0))
 
 beforeEach(() => {
   mem.clear()
@@ -194,5 +198,38 @@ describe('pendingProgressRows · series', () => {
     const out = pendingProgressRows('u1', 'prog1', [], [])
     expect(out.sessions).toEqual([]) // el programa no casa
     expect(out.sets.map(r => r.exercise_id)).toEqual(['pullups']) // las series no se filtran por programa
+  })
+})
+
+describe('buildProgressMap: día de pared de sessions/sets_log', () => {
+  afterEach(() => setTimezone('UTC'))
+
+  it('Madrid: un entreno a las 23:30 se queda en su día (no pasa a mañana)', () => {
+    setTimezone('Europe/Madrid')
+    const at = '2026-10-09 23:30:00.000Z'
+    const prog = buildProgressMap([sessionRow({ completed_at: at })], [setRow({ logged_at: at })], [])
+    expect(prog['done_2026-10-09_p1_lun']).toMatchObject({ done: true, date: '2026-10-09' })
+    expect(prog['done_2026-10-10_p1_lun']).toBeUndefined()
+    expect(prog['2026-10-09_p1_lun_pullups']).toBeDefined()
+  })
+
+  it('Caracas: una sesión con fecha atrasada "YYYY-MM-DD 00:00:00" no retrocede un día', () => {
+    setTimezone('America/Caracas')
+    const prog = buildProgressMap([sessionRow({ completed_at: '2026-10-07 00:00:00.000Z' })], [], [])
+    expect(prog['done_2026-10-07_p1_lun']).toMatchObject({ done: true })
+    expect(prog['done_2026-10-06_p1_lun']).toBeUndefined()
+  })
+
+  it('sin completed_at cae a created, que sí es un instante UTC real', () => {
+    setTimezone('Europe/Madrid')
+    const prog = buildProgressMap([sessionRow({ completed_at: undefined, created: '2026-10-09 22:30:00.000Z' })], [], [])
+    expect(prog['done_2026-10-10_p1_lun']).toBeDefined()
+  })
+
+  it('el timestamp de la serie es la hora de pared local, igual con o sin Z', () => {
+    const a = buildProgressMap([], [setRow({ logged_at: '2026-10-09 23:30:00.000Z' })], [])
+    const b = buildProgressMap([], [setRow({ logged_at: '2026-10-09 23:30:00' })], [])
+    const ts = (p: any) => p['2026-10-09_p1_lun_pullups'].sets[0].timestamp
+    expect(ts(a)).toBe(ts(b))
   })
 })

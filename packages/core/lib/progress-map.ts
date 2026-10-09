@@ -1,5 +1,6 @@
 import { utcToLocalDateStr } from './dateUtils'
 import { getQueue } from './offlineQueue'
+import { streakDayOf } from './weeklyStreak'
 import type { ProgressMap, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 /** Fila de `sessions` (registro de PocketBase o payload aún encolado). */
@@ -67,6 +68,29 @@ export interface CircuitSessionDone extends SessionDone {
 }
 
 /**
+ * Día de una fila de `sessions` / `sets_log`.
+ *
+ * `completed_at` y `logged_at` los escribe la app con la hora de PARED local del
+ * usuario (`nowLocalForPB()` / `localDateForPB()`), que PocketBase guarda como
+ * si fuera UTC ("2026-10-09 23:30:00.000Z"). Convertirla con `utcToLocalDateStr`
+ * la trataba como un instante real: en Madrid un entreno de después de las 22:00
+ * caía en MAÑANA y en Caracas una sesión con fecha atrasada ("… 00:00:00") caía
+ * en el día anterior, así que tras el refetch el día de hoy salía sin hacer. Se
+ * lee igual que el hook del servidor (`streakDayOf`, 10 primeros caracteres).
+ * Solo `created` es un instante UTC real y sí se convierte.
+ */
+function wallClockDay(stamp: string | undefined, created: string | undefined): string {
+  return streakDayOf(stamp) ?? utcToLocalDateStr(created!)
+}
+
+/** Milisegundos de una marca de pared local (sin zona), o de un instante UTC real. */
+function wallClockMs(stamp: string | undefined, created: string | undefined): number {
+  const m = stamp ? /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(stamp) : null
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
+  return new Date((stamp || created)!).getTime()
+}
+
+/**
  * Reconstruye el `ProgressMap` a partir de las filas de `sessions`, `sets_log`,
  * `cardio_sessions` y `circuit_sessions`.
  *
@@ -89,7 +113,7 @@ export function buildProgressMap(
   const prog: ProgressMap = {}
 
   sessionRows.forEach((s) => {
-    const date = utcToLocalDateStr((s.completed_at || s.created)!)
+    const date = wallClockDay(s.completed_at, s.created)
     const entry: SessionDone = { done: true, date, workoutKey: s.workout_key, note: s.note || '' }
     if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
       entry.warmupCompleted = !!s.warmup_completed
@@ -122,7 +146,7 @@ export function buildProgressMap(
   })
 
   setRows.forEach((s) => {
-    const date = utcToLocalDateStr((s.logged_at || s.created)!)
+    const date = wallClockDay(s.logged_at, s.created)
     const k = `${date}_${s.workout_key}_${s.exercise_id}`
     if (!prog[k]) prog[k] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
     const entry = prog[k] as ExerciseLog
@@ -131,7 +155,7 @@ export function buildProgressMap(
       note: s.note!,
       weight: s.weight_kg || undefined,
       rpe: s.rpe || undefined,
-      timestamp: new Date(s.logged_at || s.created!).getTime(),
+      timestamp: wallClockMs(s.logged_at, s.created),
     })
   })
 
