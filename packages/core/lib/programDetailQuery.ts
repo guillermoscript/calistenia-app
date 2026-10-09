@@ -14,7 +14,8 @@
 
 import type { RecordModel } from 'pocketbase'
 import { pb } from './pocketbase'
-import { utcToLocalDateStr } from './dateUtils'
+import { getTimezone } from './dateUtils'
+import { wallClockDayOf } from './wallClock'
 
 export interface ProgramDetailRows {
   phases: RecordModel[]
@@ -99,8 +100,7 @@ export async function fetchRelatedPrograms(programId: string, limit = 6): Promis
  * `getFullList` en vez de `getList(1, 200)` (#614).
  *
  * `completed_at` guarda la HORA DE PARED del usuario con una Z de adorno, no un
- * instante: el día es su `slice(0, 10)`. `created` (el reloj de PB) sí es UTC
- * real y se pasa por `utcToLocalDateStr`.
+ * instante (ver `wallClockDayOf`). `created` (el reloj de PB) sí es UTC real.
  */
 export async function fetchProgramLastSessionDays(
   userId: string,
@@ -124,7 +124,7 @@ export function lastSessionDays(
   for (const s of rows) {
     const key = s.workout_key
     if (!key || out[key]) continue
-    const day = s.completed_at ? s.completed_at.slice(0, 10) : s.created ? utcToLocalDateStr(s.created) : ''
+    const day = wallClockDayOf(s.completed_at, s.created, getTimezone())
     if (day) out[key] = day
   }
   return out
