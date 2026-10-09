@@ -633,6 +633,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     queryKey: qk.programs.enrollment(userId),
     enabled: authReady,
     staleTime: 5 * 60 * 1000,
+    // Alimenta Home: al volver la app a primer plano se relee si ya caducó el
+    // staleTime (focusManager: AppState en móvil, visibilidad en web), así un
+    // cambio de programa hecho en otro dispositivo se ve sin reiniciar. Las
+    // escrituras locales de esta query ocurren DESPUÉS del servidor, sin
+    // parche optimista que pisar.
+    refetchOnWindowFocus: true,
     queryFn: () => fetchActiveEnrollment(userId!),
   })
 

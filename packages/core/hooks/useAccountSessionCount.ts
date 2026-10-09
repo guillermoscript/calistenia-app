@@ -17,6 +17,9 @@ export function accountSessionsQueryOptions(userId: string | null, stamp?: strin
     queryKey: qk.accountSessions(userId, stamp),
     enabled: !!userId,
     staleTime: 30_000,
+    // Home (etapa de la cuenta): se recuenta al volver a primer plano si ya
+    // caducó el staleTime. Solo lectura de `totalItems`, sin parche optimista.
+    refetchOnWindowFocus: true,
     queryFn: () => countAccountSessions(pb as never, userId!),
   })
 }

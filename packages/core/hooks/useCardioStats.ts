@@ -108,6 +108,10 @@ export function useCardioSessions(userId: string | null) {
   const query = useQuery({
     queryKey: qk.cardioSessions(userId),
     staleTime: 30_000,
+    // Home: se relee al volver a primer plano si ya caducó el staleTime. El
+    // guardado/borrado de cardio no parchea esta caché: invalida tras el
+    // servidor (`invalidateAfterWorkout`), así que no hay optimista que pisar.
+    refetchOnWindowFocus: true,
     enabled: !!userId,
     queryFn: () => fetchCardioSessions(userId!),
   })
@@ -129,6 +133,10 @@ export function useCardioStats(userId: string | null) {
   const query = useQuery({
     queryKey: qk.cardioSessions(userId),
     staleTime: 30_000,
+    // Home: se relee al volver a primer plano si ya caducó el staleTime. El
+    // guardado/borrado de cardio no parchea esta caché: invalida tras el
+    // servidor (`invalidateAfterWorkout`), así que no hay optimista que pisar.
+    refetchOnWindowFocus: true,
     enabled: !!userId,
     queryFn: () => fetchCardioSessions(userId!),
   })

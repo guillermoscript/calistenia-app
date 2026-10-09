@@ -89,6 +89,9 @@ export function useWorkoutStreak({
     queryKey: qk.streakDays(userId, stamp),
     enabled: !!userId,
     staleTime: 60_000,
+    // Home: al volver a primer plano se relee si pasó el staleTime. Es una
+    // lectura derivada, sin escritura optimista que pueda pisar.
+    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
     queryFn: () => fetchStreakDays(userId!),
   })
