@@ -13,7 +13,8 @@ import { persistOrQueue, newClientId, cancelLastQueuedByTempId } from '../lib/of
 import { emitProgramMilestoneIfCompleted } from '../lib/program-milestone'
 import { invalidateAfterWorkout } from '../lib/workout-cache'
 import { patchProgressData, patchSettingsData, type ProgressData } from '../lib/progress-cache'
-import { WorkoutNotSavedError, removeOneWorkoutDone, wallClockDayBounds } from '../lib/workout-done'
+import { WorkoutNotSavedError, removeOneWorkoutDone } from '../lib/workout-done'
+import { wallClockDayRange } from '../lib/wallClock'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 export interface UseProgressMutationsReturn {
@@ -295,11 +296,11 @@ export function useProgressMutations(userId: string | null = null, activeProgram
 
     if (usePB && userId) {
       try {
-        // `completed_at` es hora de PARED (ver `wallClockDayBounds`): los
+        // `completed_at` es hora de PARED (ver `wallClockDayRange`): los
         // límites en UTC desplazaban la ventana el offset de la zona y podían
         // borrar el mismo entreno de un día vecino. El más reciente del día es
         // el que se deshace.
-        const { from, to } = wallClockDayBounds(d)
+        const { from, to } = wallClockDayRange(d, d)
         const records = await pb.collection('sessions').getList(1, 1, {
           requestKey: null,
           sort: '-completed_at',
