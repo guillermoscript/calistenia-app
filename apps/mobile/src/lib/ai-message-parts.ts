@@ -1,7 +1,7 @@
 /**
- * Tipado y parsing de los UIMessage parts del coach IA (AI SDK **v6**).
+ * Tipado y parsing de los UIMessage parts del coach IA (AI SDK v7).
  *
- * En v6 las tool-parts son `{ type: 'tool-<toolName>', state, input, output }`
+ * En v7 las tool-parts son `{ type: 'tool-<toolName>', state, input, output }`
  * (NO la API vieja `tool-invocation`/`result`). Definimos el tool set que emite
  * el backend (`POST /api/generate-free-session`) para que `useChat` devuelva
  * mensajes tipados y el render no necesite `as any`.

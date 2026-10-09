@@ -96,3 +96,15 @@ describe('fetchProgramDetailRows', () => {
     expect(rows.exercises).toHaveLength(1)
   })
 })
+
+describe('lastSessionDays', () => {
+  it('toma el día de pared de completed_at (no un instante) y cae a created', async () => {
+    const { lastSessionDays } = await import('./programDetailQuery')
+    expect(lastSessionDays([
+      { workout_key: 'p1_lun', completed_at: '2026-09-02 23:30:00.000Z', created: '2026-09-03 05:30:00.000Z' },
+      { workout_key: 'p1_lun', completed_at: '2026-08-01 10:00:00.000Z' },
+      { workout_key: 'p1_mar', created: '2026-09-04 12:00:00.000Z' },
+      { completed_at: '2026-09-04 12:00:00.000Z' },
+    ])).toMatchObject({ p1_lun: '2026-09-02' })
+  })
+})

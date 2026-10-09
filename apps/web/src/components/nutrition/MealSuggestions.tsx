@@ -2,46 +2,19 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { fetchTopFoodsByCategory, type CatalogTopFood } from '@calistenia/core/hooks/useFoodCatalog'
 
 interface MealSuggestionsProps {
   remaining: { calories: number; protein: number; carbs: number; fat: number }
 }
 
-interface CatalogFood {
-  name: string
-  portionLabel: string
-  protein: number
-  carbs: number
-  fat: number
-  calories: number
-}
+type CatalogFood = CatalogTopFood
 
 // Hardcoded fallback when catalog is empty
 const FALLBACK: Record<'proteinas' | 'carbohidratos' | 'grasas', string> = {
   proteinas: 'pechuga de pollo (31g/100g), huevos (13g/2 unid), atún en lata (26g/lata), yogur griego (10g/150g)',
   carbohidratos: 'arroz (28g/100g cocido), avena (66g/100g), pan integral (49g/100g), banana (23g/unid)',
   grasas: 'aguacate (15g/100g), aceite de oliva (14g/cda), almendras (14g/30g), maní (14g/30g)',
-}
-
-async function fetchTopFoodsByCategory(category: string, limit = 4): Promise<CatalogFood[]> {
-  try {
-    const res = await pb.collection('foods').getList(1, limit, {
-      filter: pb.filter('category.slug = {:cat}', { cat: category }),
-      sort: '-calories',
-      expand: 'category',
-    })
-    return res.items.map(r => ({
-      name: r.name_display,
-      portionLabel: r.portion || '100g',
-      protein: r.protein,
-      carbs: r.carbs,
-      fat: r.fat,
-      calories: r.calories,
-    }))
-  } catch {
-    return []
-  }
 }
 
 function formatCatalogFoods(foods: CatalogFood[], macro: 'protein' | 'carbs' | 'fat'): string {

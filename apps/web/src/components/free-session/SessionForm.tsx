@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthState } from '../../contexts/AuthContext'
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { fetchProfileBody } from '@calistenia/core/hooks/useProfileForm'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import type { NutritionGoal, Sex } from '@calistenia/core/types'
@@ -76,16 +76,12 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
     if (user.fitness_level) setLevel(user.fitness_level)
 
     const loadGoals = async () => {
-      try {
-        const rec = await pb.collection('nutrition_goals').getFirstListItem(
-          pb.filter('user = {:uid}', { uid: user.id }),
-          { requestKey: null },
-        )
-        if (rec.age) setAge(String(rec.age))
-        if (rec.weight) setWeight(String(rec.weight))
-        if (rec.height) setHeight(String(rec.height))
-        if (rec.sex) setSex(rec.sex as Sex)
-      } catch { /* no goals saved yet */ }
+      // Sin objetivo guardado todo viene vacío y no se prerrellena nada.
+      const body = await fetchProfileBody(user.id)
+      if (body.age) setAge(body.age)
+      if (body.weight) setWeight(body.weight)
+      if (body.height) setHeight(body.height)
+      if (body.sex) setSex(body.sex as Sex)
     }
     loadGoals()
   }, [user])

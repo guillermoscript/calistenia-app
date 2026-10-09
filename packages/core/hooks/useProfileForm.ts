@@ -133,6 +133,9 @@ export interface ProfileBody {
   bodyGoalId: string | null
   age: string
   sex: string
+  /** Peso/altura que snapshotea el objetivo (vacíos si no hay). Los usa quien prerrellena formularios. */
+  weight: string
+  height: string
 }
 
 /**
@@ -156,9 +159,11 @@ export async function fetchProfileBody(userId: string): Promise<ProfileBody> {
       bodyGoalId: rec.id,
       age: rec.age ? String(rec.age) : '',
       sex: (rec.sex as string) || '',
+      weight: rec.weight ? String(rec.weight) : '',
+      height: rec.height ? String(rec.height) : '',
     }
   } catch {
-    return { bodyGoalId: null, age: '', sex: '' }
+    return { bodyGoalId: null, age: '', sex: '', weight: '', height: '' }
   }
 }
 

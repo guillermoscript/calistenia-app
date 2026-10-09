@@ -14,6 +14,7 @@
 
 import type { RecordModel } from 'pocketbase'
 import { pb } from './pocketbase'
+import { utcToLocalDateStr } from './dateUtils'
 
 export interface ProgramDetailRows {
   phases: RecordModel[]
@@ -60,4 +61,71 @@ export async function fetchProgramDetailRows(programId: string): Promise<Program
   ])
 
   return { phases, exercises, dayConfigs }
+}
+
+// ── Resto de lecturas de la ficha de programa ────────────────────────────────
+
+/**
+ * El registro del programa con el crédito del remix (#620): de qué programa
+ * salió esta copia y quién lo escribió, en la misma petición.
+ */
+export function fetchProgramRecord(programId: string): Promise<RecordModel> {
+  return pb.collection('programs').getOne(programId, {
+    expand: 'forked_from,forked_from.created_by',
+    $autoCancel: false,
+  })
+}
+
+/**
+ * Programas recomendados bajo la ficha. Solo públicos (#603): es una
+ * recomendación hacia fuera, no la lista del autor, así que no entran los
+ * borradores propios.
+ */
+export async function fetchRelatedPrograms(programId: string, limit = 6): Promise<RecordModel[]> {
+  const res = await pb.collection('programs').getList(1, limit, {
+    filter: pb.filter('is_active = true && visibility = "public" && id != {:pid}', { pid: programId }),
+    sort: 'name',
+  })
+  return res.items
+}
+
+/**
+ * Cuándo se entrenó por última vez cada día (`workout_key`) del programa, como
+ * día local YYYY-MM-DD.
+ *
+ * El filtro es el mismo que el de `useProgress` (`program = pid || program = ""`):
+ * las sesiones antiguas se guardaron sin programa y son del programa activo, así
+ * que filtrar solo por `pid` perdía su historial. `fields` acotado y
+ * `getFullList` en vez de `getList(1, 200)` (#614).
+ *
+ * `completed_at` guarda la HORA DE PARED del usuario con una Z de adorno, no un
+ * instante: el día es su `slice(0, 10)`. `created` (el reloj de PB) sí es UTC
+ * real y se pasa por `utcToLocalDateStr`.
+ */
+export async function fetchProgramLastSessionDays(
+  userId: string,
+  programId: string,
+): Promise<Record<string, string>> {
+  const sessions = await pb.collection('sessions').getFullList({
+    batch: PAGE_SIZE,
+    filter: pb.filter('user = {:uid} && (program = {:pid} || program = "")', { uid: userId, pid: programId }),
+    sort: '-completed_at',
+    fields: 'workout_key,completed_at,created',
+    $autoCancel: false,
+  })
+  return lastSessionDays(sessions as unknown as Parameters<typeof lastSessionDays>[0])
+}
+
+/** Parte pura de `fetchProgramLastSessionDays`: filas (más recientes primero) → día por `workout_key`. */
+export function lastSessionDays(
+  rows: Array<{ workout_key?: string; completed_at?: string; created?: string }>,
+): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const s of rows) {
+    const key = s.workout_key
+    if (!key || out[key]) continue
+    const day = s.completed_at ? s.completed_at.slice(0, 10) : s.created ? utcToLocalDateStr(s.created) : ''
+    if (day) out[key] = day
+  }
+  return out
 }
