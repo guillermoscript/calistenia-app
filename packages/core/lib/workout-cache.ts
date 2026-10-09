@@ -6,8 +6,9 @@ import { qk } from './query-keys'
  * delete) que YA llegó al servidor.
  *
  * Antes cada sitio invalidaba lo suyo (el cardio dos claves, el circuito ninguna,
- * la fuerza ninguna) y `lifetimeSessions` no se invalidaba en ningún lado: la
- * etapa «cuenta» de Home iba un entreno por detrás hasta que expiraba el stale.
+ * la fuerza ninguna) y el total de la cuenta de Home no se invalidaba en ningún
+ * lado: la etapa «cuenta» iba un entreno por detrás hasta que expiraba el
+ * stale. Ahora Home y Progreso comparten `qk.accountSessions`.
  *
  * `sessions` (el ProgressMap) solo es seguro invalidarlo DESPUÉS de que el
  * servidor tiene la fila: antes, el refetch se llevaba por delante el entreno
@@ -27,7 +28,6 @@ export function invalidateAfterWorkout(
   if (!userId) return
   const sessionsRoot = qk.sessions(userId, null).slice(0, 2)
   void qc.invalidateQueries({ queryKey: sessionsRoot })
-  void qc.invalidateQueries({ queryKey: qk.lifetimeSessions(userId) })
   void qc.invalidateQueries({ queryKey: qk.accountSessions(userId) })
   void qc.invalidateQueries({ queryKey: qk.streakDays(userId) })
   if (opts.cardio) void qc.invalidateQueries({ queryKey: qk.cardioSessions(userId) })

@@ -10,11 +10,11 @@ const stale = (qc: QueryClient, k: readonly unknown[]) => qc.getQueryState(k)!.i
 describe('invalidateAfterWorkout', () => {
   const uid = 'u1'
 
-  it('invalida sesiones (cualquier programa), vida entera, cuenta y racha', () => {
+  it('invalida sesiones (cualquier programa), cuenta (con y sin sello) y racha', () => {
     const qc = new QueryClient()
     const keys = [
       qk.sessions(uid, 'p1'), qk.sessions(uid, null),
-      qk.lifetimeSessions(uid), qk.accountSessions(uid, 's1'), qk.streakDays(uid, 's1'),
+      qk.accountSessions(uid), qk.accountSessions(uid, 's1'), qk.streakDays(uid, 's1'),
     ]
     seed(qc, keys)
     invalidateAfterWorkout(qc, uid)
@@ -23,11 +23,11 @@ describe('invalidateAfterWorkout', () => {
 
   it('no toca el cardio salvo que se pida, ni las claves de otro usuario', () => {
     const qc = new QueryClient()
-    seed(qc, [qk.cardioSessions(uid), qk.sessions('u2', 'p1'), qk.lifetimeSessions('u2')])
+    seed(qc, [qk.cardioSessions(uid), qk.sessions('u2', 'p1'), qk.accountSessions('u2')])
     invalidateAfterWorkout(qc, uid)
     expect(stale(qc, qk.cardioSessions(uid))).toBe(false)
     expect(stale(qc, qk.sessions('u2', 'p1'))).toBe(false)
-    expect(stale(qc, qk.lifetimeSessions('u2'))).toBe(false)
+    expect(stale(qc, qk.accountSessions('u2'))).toBe(false)
     invalidateAfterWorkout(qc, uid, { cardio: true })
     expect(stale(qc, qk.cardioSessions(uid))).toBe(true)
   })

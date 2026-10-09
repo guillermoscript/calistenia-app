@@ -53,7 +53,7 @@ const KEPT: [string, readonly unknown[]][] = [
   ['programs.enrollment', qk.programs.enrollment(U)],
   ['programs.detail', qk.programs.detail('p1')],
   ['programs.overrides', qk.programs.overrides(U, 'p1')],
-  ['lifetimeSessions/accountSessions', qk.accountSessions(U)],
+  ['accountSessions', qk.accountSessions(U)],
   ['accountSessions con sello', qk.accountSessions(U, '3')],
   ['streakDays', qk.streakDays(U, 's')],
   ['appConfig', qk.appConfig],

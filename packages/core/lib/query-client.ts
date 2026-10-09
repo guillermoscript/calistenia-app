@@ -174,7 +174,7 @@ export function trimPersistedCache(value: string): string | null {
  *    búsquedas de comida, nutrición por fecha/rango, detalle de reto y de
  *    programa de comunidad, PRs de carreras, usuarios sugeridos).
  * Se conservan, entre otras: programs.catalog / enrollment / detail /
- * overrides, lifetime/streak/account sessions, app-config, feed.meta y
+ * overrides, streak-days / account-sessions, app-config, feed.meta y
  * nutrition today / goals.
  *
  * Cada prefijo sale de un constructor de `qk` (nada de strings sueltos): si se
