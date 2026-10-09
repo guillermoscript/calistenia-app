@@ -19,7 +19,6 @@ import { Sentry } from './instrument'
 import { syncStorage } from './storage'
 import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { isForeground, onForeground, onBackground } from './lifecycle'
-import { registerPushTokenAsync } from './push-registration'
 import { attachInstallAttribution, currentInstallAttribution, pathWithAttribution } from './install-referrer'
 import { CANONICAL_ANALYTICS_EVENTS, setActiveAnalyticsProfileId, shouldSendAnalytics, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
@@ -287,7 +286,13 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
         // requestPermission:false — el diálogo del SO ya no se pide al arrancar,
         // solo si el permiso ya estaba concedido se registra el token. La
         // petición ahora vive en la celebración post-entreno (#694).
-        registerPushTokenAsync(user.id, { requestPermission: false }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
+        // Import dinámico, como el de `pocketbase` de arriba: push-registration
+        // importa `core/lib/push-token`, que importa `pocketbase.ts`, y este lee
+        // `getEnv()` al evaluarse. Importado arriba del todo se evaluaba ANTES
+        // de `initCore()` y la app se quedaba en la splash.
+        import('./push-registration').then(({ registerPushTokenAsync }) =>
+          registerPushTokenAsync(user.id, { requestPermission: false }),
+        ).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
         // Zona horaria: el servidor la necesita para enviar los recordatorios a
         // la hora local correcta. Va AQUÍ y no en useAuth porque en móvil
         // useAuth solo se monta en la pantalla de login (mismo motivo que la
