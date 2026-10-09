@@ -76,4 +76,24 @@ describe('fetchActiveEnrollment', () => {
     getFirstListItem.mockRejectedValue(Object.assign(new Error('not found'), { status: 404 }))
     await expect(fetchActiveEnrollment('user_1')).resolves.toBeNull()
   })
+
+  it.each([500, 503, 0, 401])('relanza un fallo %s en vez de resolver a null', async (status) => {
+    // Resolver a null pisaba la inscripción cacheada y Home mostraba «sin programa».
+    const err = Object.assign(new Error('boom'), { status })
+    getFirstListItem.mockRejectedValue(err)
+    await expect(fetchActiveEnrollment('user_1')).rejects.toBe(err)
+  })
+
+  it('relanza un error sin status (p. ej. de red)', async () => {
+    getFirstListItem.mockRejectedValue(new TypeError('Failed to fetch'))
+    await expect(fetchActiveEnrollment('user_1')).rejects.toThrow('Failed to fetch')
+  })
+
+  it('guarda el programa expandido como ProgramMeta de respaldo', async () => {
+    getFirstListItem.mockResolvedValue(enrollment({
+      expand: { program: { id: 'prog_vivo_1', name: 'Full body', duration_weeks: 8, is_official: true } },
+    }))
+    const e = await fetchActiveEnrollment('user_1')
+    expect(e?.programMeta).toMatchObject({ id: 'prog_vivo_1', name: 'Full body', duration_weeks: 8, is_official: true })
+  })
 })
