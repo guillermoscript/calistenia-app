@@ -18,7 +18,8 @@ export interface ExpressProgressStats {
  * Progreso diario de un reto express: suma de reps del ejercicio por día local
  * contra el objetivo diario.
  *
- * `sets` llegan ya con la fecha local resuelta (sets_log.logged_at es UTC; la
+ * `sets` llegan ya con la fecha local resuelta (sets_log.logged_at es hora de
+ * pared local, no UTC: el día son sus 10 primeros caracteres; la
  * conversión con timezone vive en el hook). `reps` es texto libre en el
  * esquema, se parsea con parseRepsForPR. `today` se inyecta para que la
  * función sea pura y testeable.

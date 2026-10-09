@@ -54,6 +54,17 @@ export function wallClockDayOf(
 }
 
 /**
+ * Milisegundos de una marca de pared local (interpretada en la zona del
+ * DISPOSITIVO, que es la del usuario en cliente), o del instante UTC real
+ * `fallbackUtc` si la marca no tiene forma de fecha-hora.
+ */
+export function wallClockMs(stamp: string | undefined | null, fallbackUtc?: string | null): number {
+  const m = stamp ? /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(stamp) : null
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
+  return new Date((stamp || fallbackUtc)!).getTime()
+}
+
+/**
  * Cotas de un filtro de PocketBase sobre un campo de hora de pared local, para
  * los días locales `fromDay`..`toDay` (ambos incluidos). NO usar
  * `localMidnightAsUTC*`: esos valen para instantes UTC reales.

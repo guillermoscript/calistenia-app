@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
-import { startOfWeekStr, localMidnightAsUTC } from '../lib/dateUtils'
+import { startOfWeekStr } from '../lib/dateUtils'
+import { wallClockDayRange } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import { authorDisplayName } from '../lib/author-name'
 import { countWorkoutSessionsSince, fetchRankingUserIds } from './useLeaderboard'
@@ -54,7 +55,9 @@ export function rankWeekly(counts: Count[], userId: string, topN = TOP_N): { top
  * 3 primeras y el mío. El ranking completo se carga solo al abrir su pestaña.
  */
 export function useWeeklyRanking(userId: string | null) {
-  const weekStartStr = localMidnightAsUTC(startOfWeekStr())
+  // `sessions.completed_at` es hora de pared local: cota de día sin pasar a UTC.
+  const weekStartDay = startOfWeekStr()
+  const weekStartStr = wallClockDayRange(weekStartDay, weekStartDay).from
   const key = useMemo(() => qk.weeklyRanking(userId, weekStartStr), [userId, weekStartStr])
 
   const query = useQuery({

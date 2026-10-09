@@ -16,6 +16,7 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { toIsoTextDatetime } from '../lib/pbTextDatetime'
 import { CANONICAL_ANALYTICS_EVENTS, emitOnce, trackCanonicalEvent } from '../lib/analytics'
 import { addDays, localMidnightAsUTC, nowLocalForPB, todayStr, utcToLocalDateStr } from '../lib/dateUtils'
+import { wallClockDayRange } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import { findExistingPresetChallenge, getBeginnerChallengePreset, type PresetParticipantRecord } from '../lib/challenge-presets'
 import {
@@ -368,14 +369,17 @@ export function useCommunityProgramDetail(programId: string, userId: string | nu
       const { startDay, endDay } = getProgramQueryRange(membership.started_at, program.duration_days)
       // Una sola consulta por TODO el programa; plegar por semanas se hace en
       // memoria. Una consulta por semana serían N idas y vueltas por pantalla.
+      // Cardio: `started_at` es un instante UTC real → medianoche local en UTC.
       const startFilter = localMidnightAsUTC(startDay)
       const endFilter = localMidnightAsUTC(addDays(endDay, 1))
+      // Sesiones: `completed_at` es hora de pared local → cotas de día sin convertir.
+      const wall = wallClockDayRange(startDay, endDay)
 
       const [sessions, cardio] = await Promise.all([
         pb.collection('sessions').getFullList({
           requestKey: null,
-          filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at < {:end}', {
-            uid: userId, start: startFilter, end: endFilter,
+          filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', {
+            uid: userId, start: wall.from, end: wall.to,
           }),
           fields: 'workout_key,completed_at',
           $autoCancel: false,

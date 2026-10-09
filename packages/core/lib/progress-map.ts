@@ -1,6 +1,6 @@
 import { getTimezone, utcToLocalDateStr } from './dateUtils'
 import { getQueue } from './offlineQueue'
-import { wallClockDayOf } from './wallClock'
+import { wallClockDayOf, wallClockMs } from './wallClock'
 import type { ProgressMap, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 /** Fila de `sessions` (registro de PocketBase o payload aún encolado). */
@@ -83,12 +83,6 @@ function wallClockDay(stamp: string | undefined, created: string | undefined): s
   return wallClockDayOf(stamp, created, getTimezone()) ?? utcToLocalDateStr(created!)
 }
 
-/** Milisegundos de una marca de pared local (sin zona), o de un instante UTC real. */
-function wallClockMs(stamp: string | undefined, created: string | undefined): number {
-  const m = stamp ? /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(stamp) : null
-  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
-  return new Date((stamp || created)!).getTime()
-}
 
 /**
  * Reconstruye el `ProgressMap` a partir de las filas de `sessions`, `sets_log`,

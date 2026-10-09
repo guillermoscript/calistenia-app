@@ -96,11 +96,11 @@ describe('computeMilestoneProgress — week boundaries in the viewer timezone', 
   const milestones = [milestone({ id: 'm1', week: 1, target: 3 })]
 
   it('counts a 23:30 local workout on the last day of the week for that week', () => {
-    // 2026-08-07 23:30 en Madrid (UTC+2) = 2026-08-07 21:30Z.
+    // `completed_at` es hora de pared local: 2026-08-07 23:30 es el dia 7 tal cual.
     const progress = computeMilestoneProgress({
       milestones,
       windows,
-      sessions: [{ workout_key: 'w1', completed_at: '2026-08-07 21:30:00.000Z' }],
+      sessions: [{ workout_key: 'w1', completed_at: '2026-08-07 23:30:00.000Z' }],
       cardio: [],
       utcToLocalDay: localDay,
       today: '2026-08-08',
@@ -109,12 +109,12 @@ describe('computeMilestoneProgress — week boundaries in the viewer timezone', 
   })
 
   it('does not count a 00:10 local workout on the first day of the next week', () => {
-    // 2026-08-08 00:10 en Madrid = 2026-08-07 22:10Z: mismo día UTC, semana
-    // distinta. Si dedujéramos el día en UTC, esto contaría en la semana 1.
+    // `completed_at` es hora de pared local: 2026-08-08 00:10 ya es el día 8, la
+    // semana siguiente. Convertirlo como UTC lo dejaria en el dia 7 (semana 1).
     const progress = computeMilestoneProgress({
       milestones,
       windows,
-      sessions: [{ workout_key: 'w1', completed_at: '2026-08-07 22:10:00.000Z' }],
+      sessions: [{ workout_key: 'w1', completed_at: '2026-08-08 00:10:00.000Z' }],
       cardio: [],
       utcToLocalDay: localDay,
       today: '2026-08-08',

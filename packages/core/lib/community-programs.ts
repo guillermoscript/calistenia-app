@@ -24,6 +24,7 @@
  */
 
 import { addDays } from './dateUtils'
+import { wallClockDay } from './wallClock'
 import { countWorkouts, type CardioRowForTotal, type SessionRowForTotal } from './cumulative-scoring'
 import type {
   CommunityProgram,
@@ -118,7 +119,7 @@ export interface MilestoneProgressInput {
   sessions: SessionRowForTotal[]
   /** Filas de `cardio_sessions` del miembro. */
   cardio: CardioRowForTotal[]
-  /** Convierte un timestamp UTC de PB al día local del espectador. */
+  /** Convierte un instante UTC real de PB (cardio) al día local del espectador. NO se usa para `sessions.completed_at`. */
   utcToLocalDay: (utc: string) => string
   /** Día local de hoy, `YYYY-MM-DD`. */
   today: string
@@ -143,15 +144,13 @@ export function countWorkoutsInWindow(
   cardio: CardioRowForTotal[],
   utcToLocalDay: (utc: string) => string,
 ): number {
-  const inWindow = (timestamp?: string) => {
-    if (!timestamp) return false
-    const day = utcToLocalDay(timestamp)
-    return day >= window.startDay && day <= window.endDay
-  }
+  const inWindow = (day: string | null) => !!day && day >= window.startDay && day <= window.endDay
   return countWorkouts(
-    sessions.filter(s => inWindow(s.completed_at)),
-    cardio.filter(c => inWindow(c.started_at)),
-    utcToLocalDay,
+    // `sessions.completed_at` es hora de pared local: su día son los 10
+    // primeros caracteres, sin convertir. Solo el cardio (`started_at`, UTC
+    // real) pasa por `utcToLocalDay`.
+    sessions.filter(s => inWindow(wallClockDay(s.completed_at))),
+    cardio.filter(c => inWindow(c.started_at ? utcToLocalDay(c.started_at) : null)),
   )
 }
 

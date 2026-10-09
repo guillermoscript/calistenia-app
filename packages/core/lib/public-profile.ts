@@ -13,7 +13,8 @@
  * cinco consultas del perfil.
  */
 
-import { utcToLocalDateStr } from './dateUtils'
+import { getTimezone } from './dateUtils'
+import { wallClockDayOf } from './wallClock'
 import { authorDisplayName } from './author-name'
 import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from './session-key'
 import { WORKOUTS } from '../data/workouts'
@@ -111,8 +112,9 @@ export function daysInMonth(yearMonth: string): number {
  * que tienen sesión. Denso y no disperso porque la cuadrícula pinta el mes
  * entero, incluidos los huecos.
  *
- * El día se deriva con `utcToLocalDateStr`, así que una sesión cerrada de noche
- * cae en el día local del usuario y no en el UTC.
+ * `completed_at` es hora de pared local del usuario (no UTC): el día son sus 10
+ * primeros caracteres, así que una sesión cerrada de noche cae en el día local
+ * del usuario. Solo el respaldo `created` (instante UTC real) se convierte.
  */
 export function buildMonthActivity(
   yearMonth: string,
@@ -125,9 +127,8 @@ export function buildMonthActivity(
   }
 
   sessions.forEach(s => {
-    const raw = s.completed_at || s.created
-    if (!raw) return
-    const date = utcToLocalDateStr(raw)
+    if (!s.completed_at && !s.created) return
+    const date = wallClockDayOf(s.completed_at, s.created, getTimezone())
     // Solo marca días de ESTE mes: la consulta pide desde el día 1, pero una
     // sesión del último día del mes anterior puede colarse por zona horaria.
     if (date && Object.prototype.hasOwnProperty.call(activity, date)) {

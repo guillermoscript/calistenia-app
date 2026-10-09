@@ -2,7 +2,8 @@ import { useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
-import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
+import { localMidnightAsUTC, addDays } from '../lib/dateUtils'
+import { wallClockDay, wallClockDayRange } from '../lib/wallClock'
 import { parseRepsForPR } from '../lib/pr-utils'
 import { sumExerciseTotal, countWorkouts, sumDistanceKm, compareLeaderboardEntries } from '../lib/cumulative-scoring'
 import { toIsoTextDatetime } from '../lib/pbTextDatetime'
@@ -75,6 +76,10 @@ export async function fetchLeaderboard(
   // Calcular scores en paralelo (N+1 intencional, se mantiene como en el original)
   const startStr = localMidnightAsUTC(challenge.starts_at)
   const endStr = localMidnightAsUTC(addDays(challenge.ends_at, 1))
+  // `sessions.completed_at` y `sets_log.logged_at` son hora de pared local: su
+  // ventana va en días locales sin convertir. startStr/endStr (UTC) quedan
+  // solo para el cardio/circuitos, cuyo `started_at` sí es un instante UTC.
+  const wall = wallClockDayRange(challenge.starts_at, challenge.ends_at)
 
   // Las cuentas privadas no compiten en público: fuera del ranking salvo para
   // sí mismas. Se decide ANTES de pedir los scores: para un espectador sin
@@ -96,7 +101,7 @@ export async function fetchLeaderboard(
 
       let value = 0
       try {
-        value = await getScore(uid, challenge.metric, startStr, endStr, challenge.exercise_slug)
+        value = await getScore(uid, challenge.metric, startStr, endStr, wall, challenge.exercise_slug)
       } catch { /* valor por defecto 0 */ }
 
       return {
@@ -222,7 +227,14 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
 
 // ── Cálculo de score por métrica ──────────────────────────────────────────────
 
-async function getScore(uid: string, metric: ChallengeMetric, startStr: string, endStr: string, exerciseSlug?: string): Promise<number> {
+async function getScore(
+  uid: string,
+  metric: ChallengeMetric,
+  startStr: string,
+  endStr: string,
+  wall: { from: string; to: string },
+  exerciseSlug?: string,
+): Promise<number> {
   switch (metric) {
     case 'exercise': {
       // Mejor set del ejercicio del reto dentro de la ventana. Los scores se
@@ -233,7 +245,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
       const sets = await pb.collection('public_sets_log').getFullList({
         filter: pb.filter(
           'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
-          { uid, eid: exerciseSlug, start: startStr, end: endStr },
+          { uid, eid: exerciseSlug, start: wall.from, end: wall.to },
         ),
         fields: 'reps',
         $autoCancel: false,
@@ -247,7 +259,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
     }
     case 'most_sessions': {
       const res = await pb.collection('public_sessions').getList(1, 1, {
-        filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
+        filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: wall.from, end: wall.to }),
         $autoCancel: false,
       })
       return res.totalItems
@@ -276,7 +288,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
       const sets = await pb.collection('public_sets_log').getFullList({
         filter: pb.filter(
           'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
-          { uid, eid: exerciseSlug, start: startStr, end: endStr },
+          { uid, eid: exerciseSlug, start: wall.from, end: wall.to },
         ),
         // `id` es imprescindible: es la clave de dedupe de sumExerciseTotal.
         fields: 'id,reps',
@@ -287,7 +299,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
     case 'total_workouts': {
       const [sessions, cardio] = await Promise.all([
         pb.collection('public_sessions').getFullList({
-          filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
+          filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: wall.from, end: wall.to }),
           fields: 'workout_key,completed_at',
           $autoCancel: false,
         }),
@@ -301,7 +313,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
           $autoCancel: false,
         }).catch(() => []),
       ])
-      return countWorkouts(sessions as any, cardio as any, utcToLocalDateStr)
+      return countWorkouts(sessions as any, cardio as any)
     }
     case 'total_distance': {
       const cardio = await pb.collection('public_cardio_sessions').getFullList({
@@ -317,11 +329,11 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
     }
     case 'longest_streak': {
       const sessions = await pb.collection('public_sessions').getFullList({
-        filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
+        filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: wall.from, end: wall.to }),
         sort: 'completed_at',
         $autoCancel: false,
       })
-      const dates = [...new Set(sessions.map((s: any) => s.completed_at ? utcToLocalDateStr(s.completed_at) : ''))]
+      const dates = [...new Set(sessions.map((s: any) => wallClockDay(s.completed_at) ?? ''))]
         .filter(Boolean)
         .sort()
       if (dates.length === 0) return 0

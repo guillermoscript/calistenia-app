@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr, utcToLocalDateStr, localMidnightAsUTC, addDays } from '../lib/dateUtils'
+import { getTimezone, todayStr, toLocalDateStr } from '../lib/dateUtils'
+import { wallClockDayOf, wallClockDayRange } from '../lib/wallClock'
 import { localize } from '../lib/i18n-db'
 import { computeExpressProgress, type ExpressProgressStats } from '../lib/express-progress'
 import { qk } from '../lib/query-keys'
@@ -109,8 +110,9 @@ async function fetchExpressProgress(challenge: Challenge): Promise<ExpressProgre
     $autoCancel: false,
   })
 
-  const startStr = localMidnightAsUTC(challenge.starts_at)
-  const endStr = localMidnightAsUTC(addDays(challenge.ends_at, 1))
+  // `sets_log.logged_at` es hora de pared local (no UTC): cotas del primer al
+  // último día del reto sin pasar por `localMidnightAsUTC`.
+  const { from: startStr, to: endStr } = wallClockDayRange(challenge.starts_at, challenge.ends_at)
   // ends_at = starts_at + duration_days (createExpress); el diff es el
   // fallback para retos antiguos sin duration_days.
   const durationDays = challenge.duration_days
@@ -138,7 +140,7 @@ async function fetchExpressProgress(challenge: Challenge): Promise<ExpressProgre
           fields: 'reps,logged_at',
           $autoCancel: false,
         })
-        sets = rows.map((s: any) => ({ date: utcToLocalDateStr(s.logged_at), reps: s.reps || null }))
+        sets = rows.map((s: any) => ({ date: wallClockDayOf(s.logged_at, s.created, getTimezone()) || '', reps: s.reps || null }))
       } catch { /* sin sets */ }
 
       return {
