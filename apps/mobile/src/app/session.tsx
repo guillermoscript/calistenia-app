@@ -50,25 +50,34 @@ export default function SessionScreen() {
   // guarda respondería con un `replace('/(tabs)')` que se come el destino.
   const leavingTo = useRef(false)
 
-  // Sin sesión activa → volver al dashboard
+  // Sin sesión activa → volver al dashboard. Solo cubre abrir /session sin
+  // sesión (deep link, arranque en frío, restauración): la salida deliberada
+  // la hacen los handlers con UNA sola navegación y `leavingTo` ya marcado, así
+  // que cerrar la sesión (isActive → false) no dispara aquí una segunda.
   useEffect(() => {
     if (leavingTo.current) return
     if (!isActive || !workout) {
+      leavingTo.current = true
       router.replace('/(tabs)')
     }
   }, [isActive, workout, router])
 
+  // Salida deliberada: marca antes de cerrar la sesión para que la guarda no
+  // compita con `router.back()` (doble navegación y remontaje del Home).
   const goHome = useCallback(() => {
+    leavingTo.current = true
     if (router.canGoBack()) router.back()
     else router.replace('/(tabs)')
   }, [router])
 
   const handleGoToDashboard = useCallback(() => {
+    leavingTo.current = true
     endSession()
     goHome()
   }, [endSession, goHome])
 
   const handleExitSession = useCallback(() => {
+    leavingTo.current = true
     saveFreeTemplate()
     endSession()
     goHome()
