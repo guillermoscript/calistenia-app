@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
+import { qk } from '../lib/query-keys'
 
 /**
  * Interruptor «cuenta privada» (#422).
@@ -37,7 +38,9 @@ export function usePrivateAccount(userId: string | null) {
       await pb.collection('users').authRefresh()
       op.track('account_privacy_changed', { is_private: next })
       // Los rankings y perfiles leen `is_private` del expand de users.
-      qc.invalidateQueries({ queryKey: ['publicProfile'] })
+      // Prefijo de `qk.publicProfile` (todos los usuarios y meses). El literal
+      // anterior, ['publicProfile'], no coincidía con ninguna clave real.
+      qc.invalidateQueries({ queryKey: qk.publicProfile(userId, '').slice(0, 1) })
       qc.invalidateQueries({ queryKey: ['challenge'] })
       return true
     } catch (e: any) {
