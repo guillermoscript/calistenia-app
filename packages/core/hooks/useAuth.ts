@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser } from '../lib/pocketbase'
+import { joinChallenge } from '../lib/challenge-join'
 import { setTimezone } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, analyticsPlatform, op, trackCanonicalEvent } from '../lib/analytics'
 import { syncUserTimezone } from '../lib/timezone-sync'
@@ -255,19 +256,16 @@ export function useAuth(): UseAuthReturn {
     const challengeId = consumeChallengeId()
     if (!challengeId) return
 
-    const joinChallenge = async () => {
+    const joinFromInvite = async () => {
       try {
         const challenge = await pb.collection('challenges').getOne(challengeId, { $autoCancel: false })
         if (challenge.status !== 'active') return
-        await pb.collection('challenge_participants').create({
-          challenge: challengeId,
-          user: user.id,
-        }).catch(() => {}) // ya inscrito (índice único challenge+user)
+        await joinChallenge(challengeId, user.id) // idempotente si ya estaba inscrito
         op.track('challenge_joined', { challenge_id: challengeId, source: 'invite' })
         qc.invalidateQueries({ queryKey: qk.challenges(user.id) })
       } catch { /* reto borrado o inaccesible: no bloquear el login */ }
     }
-    joinChallenge()
+    joinFromInvite()
   }, [user, qc])
 
   // ── signInWithGoogle ───────────────────────────────────────────────────

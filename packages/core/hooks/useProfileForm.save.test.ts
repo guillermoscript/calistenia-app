@@ -32,14 +32,14 @@ beforeEach(() => { calls.log = []; calls.forms = []; calls.failUsers = false; ca
 const base = {
   userId: 'u1',
   patch: { display_name: 'Ana' },
-  body: { weight: '70,5', height: '170', activityLevel: 'moderate' as const },
+  body: { weight: '70,5', height: '170', activityLevel: 'active' as const },
   bodyGoalId: 'g1', age: '30', sex: 'female',
 }
 
 describe('saveProfileBody', () => {
   it('actualiza users con patch + cuerpo, luego edad/sexo y recalcula', async () => {
     await saveProfileBody(base)
-    expect(calls.forms[0]).toMatchObject({ display_name: 'Ana', weight: 70.5, height: 170, activity_level: 'moderate' })
+    expect(calls.forms[0]).toMatchObject({ display_name: 'Ana', weight: 70.5, height: 170, activity_level: 'active' })
     await Promise.resolve()
     expect(calls.log).toEqual(['users.update', 'nutrition_goals.update', 'recompute'])
   })

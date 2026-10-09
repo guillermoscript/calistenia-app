@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { joinChallenge } from '@calistenia/core/lib/challenge-join'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { ShareButton } from '../components/ShareButton'
@@ -125,14 +126,11 @@ export default function InviteLandingPage() {
     if (isLoggedIn && challengeId && currentUserId) {
       setJoining(true)
       try {
-        await pb.collection('challenge_participants').create({
-          challenge: challengeId,
-          user: currentUserId,
+        await joinChallenge(challengeId, currentUserId)
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
+          surface: 'invite_landing', source: 'invite', result: 'joined', challenge_id: challengeId,
         })
-      } catch { /* ya inscrito (índice único challenge+user) */ }
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
-        surface: 'invite_landing', source: 'invite', result: 'joined', challenge_id: challengeId,
-      })
+      } catch { /* sin fila no hay unión: el detalle ofrece volver a intentarlo */ }
       navigate(`/challenges/${challengeId}`)
       return
     }

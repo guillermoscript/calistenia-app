@@ -6,6 +6,7 @@
 import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { joinChallenge } from '../lib/challenge-join'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
@@ -93,10 +94,8 @@ export function useFeaturedChallenge(userId: string | null) {
   const joinMutation = useMutation({
     mutationFn: async (challengeId: string) => {
       if (!userId) throw new Error('Usuario no autenticado')
-      // Idempotente: el índice único (challenge, user) convierte duplicados en 400.
-      await pb.collection('challenge_participants')
-        .create({ challenge: challengeId, user: userId })
-        .catch(() => {})
+      // Idempotente: el duplicado del índice único (challenge, user) no es error.
+      await joinChallenge(challengeId, userId)
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
         surface: FEATURED_CHALLENGE_SURFACE,
         source: FEATURED_CHALLENGE_SOURCE,

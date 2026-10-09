@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { joinChallenge } from '../lib/challenge-join'
 import { getTimezone, todayStr, toLocalDateStr } from '../lib/dateUtils'
 import { wallClockDayOf, wallClockDayRange } from '../lib/wallClock'
 import { localize } from '../lib/i18n-db'
@@ -60,10 +61,7 @@ export function useChallengeExpress(userId: string | null) {
         duration_days: durationDays,
       })
 
-      await pb.collection('challenge_participants').create({
-        challenge: challenge.id,
-        user: userId,
-      }).catch(() => {}) // ignorar si duplicado
+      await joinChallenge(challenge.id, userId).catch(() => {}) // el reto ya existe: no se aborta
 
       return challenge.id
     },

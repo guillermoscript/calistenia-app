@@ -34,7 +34,7 @@ import {
   resolvePresetChallengeDescription,
   resolvePresetChallengeTitle,
 } from '@calistenia/core/lib/challenge-presets'
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { joinChallenge } from '@calistenia/core/lib/challenge-join'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
@@ -145,7 +145,7 @@ export default function ChallengeDetailScreen() {
     if (!userId || !id) return
     setJoining(true)
     try {
-      await pb.collection('challenge_participants').create({ challenge: id, user: userId })
+      await joinChallenge(id, userId)
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
         surface: 'challenge_detail',
         source: 'challenge_detail',

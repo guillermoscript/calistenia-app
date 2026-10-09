@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { joinChallenge } from '../lib/challenge-join'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
@@ -59,24 +60,6 @@ async function findOwnedPresetChallenge(userId: string, presetId: string) {
     ) as any
   } catch {
     return null
-  }
-}
-
-/**
- * Garantiza la fila de participante. Un create duplicado es benigno (otra
- * pestaña/dispositivo ganó la carrera), pero solo podemos ignorarlo si la fila
- * existe de verdad: tragarse el error a ciegas deja al usuario "unido" a un reto
- * en el que no participa y sin progreso posible.
- */
-async function ensureParticipant(challengeId: string, userId: string) {
-  try {
-    await pb.collection('challenge_participants').create({ challenge: challengeId, user: userId })
-  } catch (error) {
-    const existing = await pb.collection('challenge_participants').getList(1, 1, {
-      filter: pb.filter('challenge = {:cid} && user = {:uid}', { cid: challengeId, uid: userId }),
-      $autoCancel: false,
-    }).catch(() => null)
-    if (!existing?.totalItems) throw error
   }
 }
 
@@ -191,10 +174,7 @@ export function useChallenges(userId: string | null) {
       const allParticipants = [userId, ...createData.invitedUserIds]
       await Promise.all(
         allParticipants.map(uid =>
-          pb.collection('challenge_participants').create({
-            challenge: challenge.id,
-            user: uid,
-          }, { requestKey: null }).catch(() => {}) // ignorar duplicados
+          joinChallenge(challenge.id, uid).catch(() => {}) // ignorar duplicados
         )
       )
 
@@ -241,7 +221,7 @@ export function useChallenges(userId: string | null) {
       // if another device repaired it first.
       const owned = await findOwnedPresetChallenge(userId, preset.id)
       if (owned) {
-        await ensureParticipant(owned.id, userId)
+        await joinChallenge(owned.id, userId)
         return {
           challengeId: owned.id,
           alreadyJoined: true,
@@ -272,7 +252,7 @@ export function useChallenges(userId: string | null) {
         // the participant list and turn that race into an idempotent result.
         const raced = await findUserPresetChallenge(userId, preset.id) || await findOwnedPresetChallenge(userId, preset.id)
         if (raced) {
-          await ensureParticipant(raced.id, userId)
+          await joinChallenge(raced.id, userId)
           return {
             challengeId: raced.id,
             alreadyJoined: true,
@@ -284,7 +264,7 @@ export function useChallenges(userId: string | null) {
       }
 
       try {
-        await ensureParticipant(challenge.id, userId)
+        await joinChallenge(challenge.id, userId)
       } catch (error) {
         // Avoid leaving a user-owned orphan when the participant write fails.
         await pb.collection('challenges').delete(challenge.id).catch(() => {})
