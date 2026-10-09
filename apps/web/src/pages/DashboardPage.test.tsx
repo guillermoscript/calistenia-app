@@ -119,7 +119,7 @@ vi.mock('../hooks/useActiveBattle', () => ({
   useActiveBattle: () => ({ data: h.battle }),
   isBattleOngoing: (b: { status?: string } | null | undefined) => !!b && ['lobby', 'ready', 'live'].includes(b.status ?? ''),
 }))
-vi.mock('../hooks/useFriendsTrainedToday', () => ({ useFriendsTrainedToday: h.useFriendsTrainedToday }))
+vi.mock('@calistenia/core/hooks/useFriendsTrainedToday', () => ({ useFriendsTrainedToday: h.useFriendsTrainedToday }))
 
 vi.mock('@calistenia/core/lib/home-analytics', async importOriginal => {
   const actual = await importOriginal<typeof import('@calistenia/core/lib/home-analytics')>()

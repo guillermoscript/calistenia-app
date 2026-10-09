@@ -191,3 +191,12 @@ describe('qk — unicidad de prefijos raíz entre dominios', () => {
     expect(unique.size).toBe(prefixes.length)
   })
 })
+
+describe('qk.home.friendsTrainedToday', () => {
+  it('cambia con el día y con los seguidos, para no servir el de ayer', () => {
+    const k = qk.home.friendsTrainedToday('u1', '2026-10-09', 'a,b')
+    expect(k).toEqual(['home', 'friendsToday', 'u1', '2026-10-09', 'a,b'])
+    expect(k).not.toEqual(qk.home.friendsTrainedToday('u1', '2026-10-10', 'a,b'))
+    expect(k).not.toEqual(qk.home.friendsTrainedToday('u1', '2026-10-09', 'a'))
+  })
+})

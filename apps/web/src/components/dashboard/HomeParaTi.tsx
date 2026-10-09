@@ -23,7 +23,7 @@ import { weekInPhase } from '@calistenia/core/lib/programProgress'
 import { daysAgoStr, diffDays, todayStr } from '@calistenia/core/lib/dateUtils'
 import type { HomeStateKind } from '@calistenia/core/lib/homeState'
 import { useWorkoutState } from '../../contexts/WorkoutContext'
-import { useFriendsTrainedToday } from '../../hooks/useFriendsTrainedToday'
+import { useFriendsTrainedToday } from '@calistenia/core/hooks/useFriendsTrainedToday'
 import { isBattleOngoing, useActiveBattle } from '../../hooks/useActiveBattle'
 
 const DESKTOP_QUERY = '(min-width: 1024px)'

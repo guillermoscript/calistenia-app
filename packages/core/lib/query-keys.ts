@@ -337,6 +337,13 @@ export const qk = {
     list: (userId: string | null) => ['savedRecipes', 'list', userId] as const,
   },
 
+  // — Inicio —
+  home: {
+    // Amigos que han entrenado hoy («Para ti»). `idsKey` = ids unidos con coma.
+    friendsTrainedToday: (userId: string | null, today: string, idsKey: string) =>
+      ['home', 'friendsToday', userId, today, idsKey] as const,
+  },
+
   // — Batallas de circuito (issue #356) —
   battles: {
     // La barra flotante de las tabs; se invalida al terminar o salir de una batalla.
