@@ -1,16 +1,13 @@
-import { lazy, Suspense, useState, useEffect, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
-import { authorDisplayName } from '@calistenia/core/lib/author-name'
 import { assessTrackQuality } from '@calistenia/core/lib/geo'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
-import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
+import { useCardioSessionDetail } from '@calistenia/core/hooks/useCardioSessionDetail'
 import { useAuthState } from '../contexts/AuthContext'
 import CardioSessionStatsPanel from '../components/cardio/CardioSessionStatsPanel'
 import ElevationProfile from '../components/cardio/ElevationProfile'
 import CardioShareCard from '../components/cardio/CardioShareCard'
-import type { CardioSession } from '@calistenia/core/types'
 
 // Leaflet + RouteMap is ~150kb gzipped — split into its own chunk
 const RouteMap = lazy(() => import('../components/cardio/RouteMap'))
@@ -22,64 +19,11 @@ export default function CardioSessionDetailPage() {
   const { user, userId } = useAuthState()
   const referralCode = user?.referral_code || null
 
-  const [session, setSession] = useState<CardioSession | null>(null)
-  const [authorName, setAuthorName] = useState('')
-  const [authorAvatarUrl, setAuthorAvatarUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!id) return
-    setLoading(true)
-    setError(null)
-    // View `public_*` y no la tabla base (#386): la página se abre sobre la
-    // sesión de otra persona desde el muro, y la base es owner-only. Esta vista
-    // no pinta FC ni calorías del reloj, así que no necesita la tabla base.
-    pb.collection('public_cardio_sessions')
-      .getOne(id, { expand: 'user', $autoCancel: false })
-      .then(record => {
-        const s: CardioSession = {
-          id: record.id,
-          user: record.user,
-          program: record.program,
-          program_day_key: record.program_day_key,
-          activity_type: record.activity_type,
-          // La ruta llega aparte (#299): `cardio_sessions` ya no la lleva.
-          gps_points: [],
-          splits: Array.isArray(record.splits) ? record.splits : undefined,
-          distance_km: record.distance_km,
-          duration_seconds: record.duration_seconds,
-          avg_pace: record.avg_pace,
-          elevation_gain: record.elevation_gain,
-          started_at: record.started_at,
-          finished_at: record.finished_at,
-          note: record.note,
-          calories_burned: record.calories_burned,
-          max_pace: record.max_pace,
-          avg_speed_kmh: record.avg_speed_kmh,
-          max_speed_kmh: record.max_speed_kmh,
-        }
-        setSession(s)
-        const expandedUser = record.expand?.user
-        if (expandedUser) {
-          setAuthorName(authorDisplayName(expandedUser))
-          setAuthorAvatarUrl(getUserAvatarUrl(expandedUser, '200x200'))
-        }
-        // Solo el dueño puede leer su ruta, así que ni se pide para una
-        // sesión ajena abierta desde el muro: ahorra un 404 por visita.
-        if (record.user === userId) {
-          void fetchCardioRoute(record.id).then(points => {
-            if (points.length) setSession(prev => (prev && prev.id === record.id ? { ...prev, gps_points: points } : prev))
-          })
-        }
-      })
-      .catch(() => setError(t('common.error', 'Error loading session')))
-      .finally(() => setLoading(false))
-    // `userId` entra en las dependencias porque decide si se pide la ruta:
-    // si la sesión se restaura antes que el auth, hay que reintentar.
-  }, [id, userId]) // eslint-disable-line react-hooks/exhaustive-deps -- `t` solo compone el mensaje de error; no hay que recargar la sesión al cambiar de idioma
-
-  const isOwn = session?.user === userId
+  const {
+    session, authorName: loadedAuthorName, authorAvatarUrl, loading, error: loadFailed, isOwn,
+  } = useCardioSessionDetail(id, userId)
+  const authorName = loadedAuthorName ?? ''
+  const error = loadFailed ? t('common.error', 'Error loading session') : null
 
   const trackQuality = useMemo(() => {
     if (!session || session.gps_points.length < 2) return null

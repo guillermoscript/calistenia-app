@@ -184,6 +184,13 @@ export const qk = {
   // Lista cruda de sesiones cardio (por usuario). Fuente única que comparten
   // useCardioStats, useCardioSessions y las invalidaciones tras guardar/borrar.
   cardioSessions: (userId: string | null) => ['cardio-sessions', userId] as const,
+  // Detalle de UNA sesión cardio (pública + extras del dueño). Raíz propia y no
+  // colgada de `cardioSessions` para que ninguna lectura por prefijo de la lista
+  // cruda se tropiece con una entrada de forma distinta.
+  cardioSessionDetail: (sessionId: string | null, viewerId: string | null) =>
+    ['cardio-session-detail', sessionId, viewerId] as const,
+  cardioSessionOwnerExtras: (sessionId: string | null, viewerId: string | null) =>
+    ['cardio-session-detail', sessionId, viewerId, 'owner'] as const,
   // Días con entreno de las tres colecciones, para la racha semanal (#801).
   // `stamp` cambia al marcar un entreno y fuerza la relectura; invalidar
   // `streakDays(uid)` (sin stamp) alcanza a todas por prefijo.
