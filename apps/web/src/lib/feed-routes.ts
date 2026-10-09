@@ -6,7 +6,7 @@
  * react-router.
  */
 import i18n from './i18n'
-import { describeFeedItem, feedItemTarget, type FeedItemTarget } from '@calistenia/core/lib/feed-item'
+import { describeFeedItem, feedItemTarget, feedPublicPath, type FeedItemTarget } from '@calistenia/core/lib/feed-item'
 import type { FeedItem } from '@calistenia/core/types'
 import { localizedWebUrl } from '@calistenia/core/lib/app-urls'
 import { shareContent } from './share'
@@ -32,24 +32,13 @@ export function feedItemHref(item: FeedItem, isOwnPost: boolean): string | null 
 }
 
 /**
- * Enlace público de una actividad, o `''` si no lo tiene.
- *
- * Una sesión de fuerza se comparte por `/s/:id` y NO por
- * `/session/:date/:workoutKey`: esa segunda ruta pinta el ProgressMap del
- * usuario logueado, así que el enlace que compartías de tu entreno abría el
- * de quien lo recibía —o nada—. `/s/:id` reconstruye la sesión desde PocketBase
- * y funciona para cualquiera.
+ * Enlace público de una actividad, o `''` si no lo tiene. La tabla de rutas es
+ * de core (`feedPublicPath`); `localizedWebUrl` solo antepone el origen y deja
+ * estas rutas SIN `/es|/en` (solo marketing lo lleva).
  */
 function publicUrlFor(item: FeedItem): string {
-  switch (item.type) {
-    case 'workout': return localizedWebUrl(`/s/${item.id}`, i18n.language)
-    case 'cardio': return localizedWebUrl(`/cardio/session/${item.id}`, i18n.language)
-    case 'challenge': return item.challenge ? localizedWebUrl(`/challenges/${item.challenge.challengeId}`, i18n.language) : ''
-    case 'race': return item.race ? localizedWebUrl(`/race/${item.race.raceId}`, i18n.language) : ''
-    // Circuito y batalla no tienen vista pública: se comparte solo el texto en
-    // lugar de un enlace que al receptor le daría un error.
-    default: return ''
-  }
+  const path = feedPublicPath(item)
+  return path ? localizedWebUrl(path, i18n.language) : ''
 }
 
 /** Compartir una tarjeta del muro, con el texto que ya usa la propia tarjeta. */

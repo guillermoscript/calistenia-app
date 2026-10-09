@@ -6,7 +6,7 @@
  * expo-router, más lo que esta app todavía no tiene pantalla para enseñar.
  */
 import type { useRouter } from 'expo-router'
-import { describeFeedItem, feedItemTarget } from '@calistenia/core/lib/feed-item'
+import { describeFeedItem, feedItemTarget, feedPublicPath } from '@calistenia/core/lib/feed-item'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import type { FeedItem } from '@calistenia/core/types'
 import { shareText } from './share'
@@ -48,21 +48,10 @@ export function openFeedItem(router: Router, item: FeedItem, isOwnPost: boolean)
   if (href) router.push(href)
 }
 
-/**
- * Enlace público de una actividad, o `''` si no lo tiene.
- *
- * Una sesión de fuerza se comparte por `/s/:id` y NO por
- * `/session/:date/:workoutKey`: esa segunda ruta pinta el progreso del usuario
- * logueado, así que el enlace de tu entreno abría el de quien lo recibía.
- */
+/** Enlace público de una actividad, o `''` si no lo tiene (la tabla es de core). */
 function publicUrlFor(item: FeedItem): string {
-  switch (item.type) {
-    case 'workout': return `${WEB_BASE_URL}/s/${item.id}`
-    case 'cardio': return `${WEB_BASE_URL}/cardio/session/${item.id}`
-    case 'challenge': return item.challenge ? `${WEB_BASE_URL}/challenges/${item.challenge.challengeId}` : ''
-    case 'race': return item.race ? `${WEB_BASE_URL}/race/${item.race.raceId}` : ''
-    default: return ''
-  }
+  const path = feedPublicPath(item)
+  return path ? `${WEB_BASE_URL}${path}` : ''
 }
 
 /** Compartir una tarjeta del muro, con el mismo texto que enseña la tarjeta. */
