@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type MutableRefObject } from 'react'
-import { updateProgress, type ProgressUpdate } from '@/lib/race/raceApi'
-import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '@/lib/race/raceTracker'
-import { loadRaceSnapshot, saveRaceSnapshot } from '@/lib/race/raceSnapshot'
-import { RaceAuthError } from '@/lib/race/errors'
-import { Sentry } from '@/lib/instrument'
-import type { Race } from '@calistenia/core/types/race'
+import { updateProgress, type ProgressUpdate } from '../../lib/race/raceApi'
+import type { RaceTracker, RaceTrackerOptions, RaceTrackerStats } from '../../lib/race/raceTrack'
+import { loadRaceSnapshot, saveRaceSnapshot } from '../../lib/race/raceSnapshot'
+import { RaceAuthError } from '../../lib/race/errors'
+import { getPlatform } from '../../platform'
+import type { Race } from '../../types/race'
 import type { RaceErrorKind } from './useRaceErrors'
 
 const PUSH_INTERVAL_MS = 3000
@@ -27,15 +27,20 @@ interface Options {
   onError: (kind: RaceErrorKind, message: string) => void
   /** Entró un fix: limpiar un banner de GPS ya obsoleto. */
   onGpsFix: () => void
+  /**
+   * Crea el tracker con el GPS de la plataforma (`navigator.geolocation` en web,
+   * expo-location en móvil). Debe ser estable entre renders.
+   */
+  createTracker: (opts: RaceTrackerOptions) => RaceTracker
 }
 
 /**
  * Ciclo de vida del tracker de la carrera: GPS, empuje periódico del progreso
- * al servidor con backoff, y snapshot local para sobrevivir a un reinicio.
+ * al servidor con backoff, y snapshot local para sobrevivir a una recarga o reinicio.
  */
 export function useRaceTracker({
   raceId, active, meId, startsAt, trackerRef, latestStatsRef,
-  getRace, hasFinishedSelf, onTargetReached, onStop, onError, onGpsFix,
+  getRace, hasFinishedSelf, onTargetReached, onStop, onError, onGpsFix, createTracker,
 }: Options): { myStats: RaceTrackerStats | null } {
   const [myStats, setMyStats] = useState<RaceTrackerStats | null>(null)
 
@@ -54,11 +59,11 @@ export function useRaceTracker({
 
     const startAtMs = new Date(startsAt).getTime()
 
-    // Rehidratar desde el snapshot si esto es una reapertura a mitad de carrera.
+    // Rehidratar desde el snapshot si esto es una recarga a mitad de carrera.
     const snap = loadRaceSnapshot(raceId)
     const rehydrate = snap && snap.participantId === meId ? snap : null
 
-    const tracker = createRaceTracker({
+    const tracker = createTracker({
       startAtMs,
       initialDistanceKm: rehydrate?.distanceKm,
       initialGpsTrack: rehydrate?.gpsTrack,
@@ -84,6 +89,7 @@ export function useRaceTracker({
       const stats = latestStatsRef.current
       if (!stats || cbRef.current.hasFinishedSelf()) return
 
+      // Snapshot barato en cada tick de empuje.
       saveRaceSnapshot({
         raceId,
         participantId: meId,
@@ -113,7 +119,7 @@ export function useRaceTracker({
         const backoff = PUSH_RETRY_BACKOFF_MS[Math.min(count - 1, PUSH_RETRY_BACKOFF_MS.length - 1)]
         setTimeout(() => {
           updateProgress(meId, payload).catch((e) => {
-            Sentry.captureException(e, { tags: { feature: 'race', op: 'push_progress_retry' } })
+            getPlatform().reportError?.(e, { tags: { feature: 'race', op: 'push_progress_retry' } })
           })
         }, backoff)
         if (count >= 3) {
@@ -131,7 +137,7 @@ export function useRaceTracker({
       setMyStats(null)
       cbRef.current.onStop()
     }
-  }, [active, meId, startsAt, raceId, trackerRef, latestStatsRef])
+  }, [active, meId, startsAt, raceId, trackerRef, latestStatsRef, createTracker])
 
   // Cleanup duro al desmontar: el efecto de arriba ya libera en su camino
   // normal, pero si el provider muere a mitad de carrera hay que soltar el GPS.

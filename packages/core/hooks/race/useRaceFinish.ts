@@ -1,7 +1,7 @@
 import { useCallback, useRef, type MutableRefObject } from 'react'
-import { finishParticipant, finishRace as apiFinishRace, markDnf } from '@/lib/race/raceApi'
-import type { RaceTracker, RaceTrackerStats } from '@/lib/race/raceTracker'
-import type { Race, RaceParticipant } from '@calistenia/core/types/race'
+import { finishParticipant, finishRace as apiFinishRace, markDnf } from '../../lib/race/raceApi'
+import type { RaceTracker, RaceTrackerStats } from '../../lib/race/raceTrack'
+import type { Race, RaceParticipant } from '../../types/race'
 import type { RaceErrorKind } from './useRaceErrors'
 
 /**

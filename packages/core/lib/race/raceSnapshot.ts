@@ -1,11 +1,15 @@
+import { sessionScopedStorage as store } from '../../platform'
+import type { RaceGpsPoint } from '../../types/race'
+
 /**
- * Snapshot de carrera en curso para rehidratar el tracker si la app se
- * reinicia a mitad de race (distancia, gps_track, startAtMs) en vez de
- * arrancar de cero y pisar el servidor con 0 km.
- * Port del raceSnapshot web: sessionStorage → syncStorage (AsyncStorage).
+ * Snapshot de la carrera en curso, para rehidratar el tracker si la página se
+ * recarga o la app se reinicia a mitad de carrera (distancia, gps_track,
+ * startAtMs) en vez de arrancar de cero y pisar el servidor con 0 km.
+ *
+ * Usa el almacenamiento con alcance de sesión de la plataforma (web:
+ * `sessionStorage`, porque una carrera es de una sola sesión: cerrar la
+ * pestaña es abandonar, pero F5 no lo es; móvil: el almacenamiento normal).
  */
-import { syncStorage } from '@/lib/storage'
-import type { RaceGpsPoint } from '@calistenia/core/types/race'
 
 const KEY = 'calistenia_race_snapshot'
 const MAX_AGE_MS = 6 * 60 * 60 * 1000 // 6h — techo duro de rehidratación
@@ -22,18 +26,18 @@ export interface RaceSnapshot {
 export function saveRaceSnapshot(snap: Omit<RaceSnapshot, 'savedAt'>): void {
   try {
     const payload: RaceSnapshot = { ...snap, savedAt: Date.now() }
-    syncStorage.setItem(KEY, JSON.stringify(payload))
-  } catch { /* ignore */ }
+    store.setItem(KEY, JSON.stringify(payload))
+  } catch { /* cuota / modo privado — ignorar */ }
 }
 
 export function loadRaceSnapshot(raceId: string): RaceSnapshot | null {
   try {
-    const raw = syncStorage.getItem(KEY)
+    const raw = store.getItem(KEY)
     if (!raw) return null
     const snap: RaceSnapshot = JSON.parse(raw)
     if (snap.raceId !== raceId) return null
     if (Date.now() - snap.savedAt > MAX_AGE_MS) {
-      syncStorage.removeItem(KEY)
+      store.removeItem(KEY)
       return null
     }
     return snap
@@ -43,5 +47,5 @@ export function loadRaceSnapshot(raceId: string): RaceSnapshot | null {
 }
 
 export function clearRaceSnapshot(): void {
-  try { syncStorage.removeItem(KEY) } catch { /* ignore */ }
+  try { store.removeItem(KEY) } catch { /* ignore */ }
 }

@@ -209,11 +209,11 @@ initCore({
       if (!__DEV__) op.clear()
     },
   },
-  reportError: (e) => {
+  reportError: (e, context) => {
     // Sentry primero: captureException devuelve el event id y ese id viaja en
     // el `page_error` de OpenPanel — es el puente entre una sesión del panel
     // y el evento exacto en Sentry (antes cruzar era dispositivo + hora).
-    const sentryEventId = __DEV__ ? undefined : Sentry.captureException(e)
+    const sentryEventId = __DEV__ ? undefined : Sentry.captureException(e, context)
     if (__DEV__) console.error('[core]', e)
     // Paridad con el `page_error` de web (#636 §5): hasta ahora el móvil solo
     // lo mandaba a Sentry, así que la tasa de errores por plataforma no se

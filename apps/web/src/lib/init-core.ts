@@ -45,6 +45,8 @@ if (typeof window !== 'undefined') {
 
 initCore({
   storage: localStorage,
+  // Estado de una sola sesión (snapshot de carrera): F5 lo conserva, cerrar la pestaña no.
+  sessionStorage,
   env: {
     // Vacío en prod → la web se sirve desde el propio PocketBase
     pbUrl: import.meta.env.VITE_POCKETBASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8090' : window.location.origin),
@@ -74,7 +76,7 @@ initCore({
       Sentry.setUser(null)
     },
   },
-  reportError: (e) => Sentry.captureException(e),
+  reportError: (e, context) => Sentry.captureException(e, context),
   lifecycle: {
     isForeground: () => document.visibilityState === 'visible',
     onForeground: (handler) => {

@@ -78,7 +78,7 @@ export function useUnsavedCardioQueue({ userId, onFlushed }: Options): UnsavedCa
           const saved = await pb.collection('cardio_sessions').create(record)
           await saveCardioRoute(saved.id, userId, routePoints)
         } catch (e) {
-          getPlatform().reportError?.(e)
+          getPlatform().reportError?.(e, { tags: { feature: 'cardio', op: 'flush_unsaved_session' } })
           remaining.push(session)
         }
       }
