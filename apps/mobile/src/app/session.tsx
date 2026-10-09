@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useKeepAwake } from 'expo-keep-awake'
+import { useTranslation } from 'react-i18next'
 
 import type { ExerciseTiming, Workout } from '@calistenia/core/types'
 import { useFreeSessionTemplates } from '@calistenia/core/hooks/useFreeSessionTemplates'
@@ -31,6 +33,7 @@ export default function SessionScreen() {
   } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const router = useRouter()
+  const { t } = useTranslation()
   const authUser = useAuthUser()
   const { saveTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
 
@@ -107,7 +110,11 @@ export default function SessionScreen() {
       cooldownSkipped: wcData.cooldownSkipped,
       cooldownDurationSeconds: wcData.cooldownDurationSeconds,
     }, undefined, undefined, timing ? { durationSeconds: timing.durationSeconds, exerciseTimings: timing.exerciseTimings } : undefined)
-  }, [saveFreeTemplate, onMarkDone, getWarmupCooldownData])
+      // Solo rechaza si el servidor no aceptó el entreno (sin red queda en la
+      // cola y no llega aquí). Core ya lo ha quitado del progreso y reportado:
+      // la celebración sigue, pero el usuario tiene que saber que no contó.
+      .catch(() => Alert.alert(t('session.saveFailedTitle'), t('session.saveFailedBody')))
+  }, [saveFreeTemplate, onMarkDone, getWarmupCooldownData, t])
 
   if (!isActive || !workout) return null
 

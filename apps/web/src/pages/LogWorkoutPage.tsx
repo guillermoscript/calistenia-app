@@ -8,6 +8,7 @@ import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exe
 import { getCatalogIndexSync, loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import dayjs from 'dayjs'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
+import { isWorkoutNotSavedError } from '@calistenia/core/lib/workout-done'
 import { cn } from '../lib/utils'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { Button } from '../components/ui/button'
@@ -256,7 +257,10 @@ export default function LogWorkoutPage() {
       navigate(-1)
     } catch (e) {
       console.error(e)
-      toast.error(t('common.error'))
+      // Rechazado por el servidor: no se guardó nada (las series ni se
+      // intentan), así que se dice claro en vez del «error» genérico.
+      if (isWorkoutNotSavedError(e)) toast.error(t('session.saveFailedTitle'), { description: t('session.saveFailedBody') })
+      else toast.error(t('common.error'))
     } finally {
       setSaving(false)
     }

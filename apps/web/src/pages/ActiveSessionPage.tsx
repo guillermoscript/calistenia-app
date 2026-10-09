@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { buildFirstWorkout, firstWorkoutKey, takeFirstWorkoutPending, trackFirstWorkoutStarted } from '@calistenia/core/lib/first-workout'
 import { loadCatalogIndex } from '@calistenia/core/lib/catalogIndex'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
@@ -12,7 +13,7 @@ export default function ActiveSessionPage() {
   const { isActive, workout, workoutKey, source, startSession, endSession, getWarmupCooldownData, resumeEpoch } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const { userId } = useSessionIdentity()
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   // Repetir reinicia la misma rutina: hay que remontar SessionView para que
   // vuelva al primer paso, igual que hace `resumeEpoch` al adoptar una sesión.
   const [repeatEpoch, setRepeatEpoch] = useState(0)
@@ -82,7 +83,11 @@ export default function ActiveSessionPage() {
       cooldownSkipped: wcData.cooldownSkipped,
       cooldownDurationSeconds: wcData.cooldownDurationSeconds,
     }, undefined, undefined, timing)
-  }, [onMarkDone, getWarmupCooldownData])
+      // Solo rechaza si el servidor no aceptó el entreno (sin red queda en la
+      // cola y no llega aquí). Core ya lo ha quitado del progreso y reportado:
+      // la celebración sigue, pero el usuario tiene que saber que no contó.
+      .catch(() => toast.error(t('session.saveFailedTitle'), { description: t('session.saveFailedBody') }))
+  }, [onMarkDone, getWarmupCooldownData, t])
 
   if (!isActive || !workout) {
     return null

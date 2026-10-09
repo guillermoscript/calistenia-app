@@ -2841,6 +2841,8 @@
   "session.discardWithSets": "Llevas {{count}} serie(s) registrada(s). Se guardarán pero la sesión quedará marcada como incompleta.",
   "session.discardEmpty": "La sesión se descartará sin guardar nada.",
   "session.discardButton": "DESCARTAR SESIÓN",
+  "session.saveFailedTitle": "No se pudo guardar el entreno",
+  "session.saveFailedBody": "El servidor lo rechazó y no cuenta en tu progreso. Ya nos ha llegado el aviso del error.",
   "session.lastSetTitle": "¡Último set listo!",
   "session.noteCardTitle": "Nota de sesión",
   "session.noteCardSubtitle": "¿Cómo fue? ¿Algo que destacar?",

@@ -13,10 +13,17 @@ import { persistOrQueue, newClientId, cancelLastQueuedByTempId } from '../lib/of
 import { emitProgramMilestoneIfCompleted } from '../lib/program-milestone'
 import { invalidateAfterWorkout } from '../lib/workout-cache'
 import { patchProgressData, patchSettingsData, type ProgressData } from '../lib/progress-cache'
+import { WorkoutNotSavedError, removeOneWorkoutDone } from '../lib/workout-done'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, SessionDone } from '../types'
 
 export interface UseProgressMutationsReturn {
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<void>
+  /**
+   * Rechaza con `WorkoutNotSavedError` si el servidor rechazó el entreno de
+   * forma determinista: el optimista ya está deshecho y el fallo reportado, el
+   * llamador solo tiene que avisar al usuario. Red caída y errores transitorios
+   * NO rechazan: el entreno queda en la cola offline y cuenta como hecho.
+   */
   markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   /**
@@ -82,10 +89,11 @@ export function useProgressMutations(userId: string | null = null, activeProgram
           },
         })
       } catch (e) {
-        // Solo llega aquí un 4xx/5xx del servidor (lo de red ya está encolado).
-        // El progreso local sigue siendo autoritativo, así que el usuario no ve
-        // nada raro: si esto no se reporta, nadie se entera — es exactamente
-        // como el #376 estuvo meses tirando toda sesión libre.
+        // Solo llega aquí un rechazo determinista del servidor (4xx): la red y
+        // los 5xx/429/408 ya están encolados. El progreso local sigue siendo
+        // autoritativo, así que el usuario no ve nada raro: si esto no se
+        // reporta, nadie se entera — es exactamente como el #376 estuvo meses
+        // tirando toda sesión libre.
         getPlatform().reportError?.(e)
       }
     }
@@ -171,12 +179,16 @@ export function useProgressMutations(userId: string | null = null, activeProgram
         // los totales. Si quedó encolada (`null`) lo reconcilia la cola.
         if (created) invalidateAfterWorkout(qc, userId)
       } catch (e) {
-        // #376: este catch se tragó durante meses un 400 que impedía guardar
-        // TODA sesión libre. El progreso local sigue siendo autoritativo, así
-        // que el usuario no ve nada raro — por eso el fallo tiene que llegar al
-        // monitoreo o nadie se entera. Los fallos de red ya no pasan por aquí:
-        // los absorbe la cola.
+        // Solo llega aquí un rechazo determinista (4xx): la red y los errores
+        // transitorios del servidor los absorbe la cola. Dejar el optimista era
+        // mentir: la celebración decía «hecho» y el siguiente refetch borraba
+        // el entreno sin avisar. Se deshace igual que `unmarkWorkoutDone` (una
+        // sola marca, por si es una repetición del día) y el llamador avisa.
+        // #376: el reporte se queda — este catch se tragó durante meses un 400
+        // que impedía guardar TODA sesión libre.
+        patchProgress(prev => removeOneWorkoutDone(prev, k))
         getPlatform().reportError?.(e)
+        throw new WorkoutNotSavedError(workoutKey, e)
       }
     }
 
@@ -272,16 +284,7 @@ export function useProgressMutations(userId: string | null = null, activeProgram
     // PB borra UNA sola sesión del día; el cache decrementa su conteo en 1 y
     // solo elimina la clave cuando llega a 0 (soporta repeticiones del día).
     await qc.cancelQueries({ queryKey: key }) // mismo motivo que en markWorkoutDone
-    patchProgress(prev => {
-      const next = { ...prev }
-      const entry = next[k] as SessionDone | undefined
-      if (entry?.done && (entry.count ?? 1) > 1) {
-        next[k] = { ...entry, count: (entry.count ?? 1) - 1 }
-      } else {
-        delete next[k]
-      }
-      return next
-    })
+    patchProgress(prev => removeOneWorkoutDone(prev, k))
 
     // #301: si la sesión que se deshace todavía está en la cola, nunca llegó al
     // servidor: se retira de la cola y no hay nada que borrar. Sin esto, marcar
