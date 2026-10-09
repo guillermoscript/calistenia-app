@@ -9,6 +9,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.14.1] - 2026-10-09
+
+_Al terminar un entreno, el inicio lo marca como hecho al momento, el aviso de récord ya no vibra sin parar, y llega el registro de ayunos en Nutrición._
+
+### Añadido
+
+- **Ayunos en Nutrición** — Registra ayunos de 12 a 48 h o con tu propio objetivo, con cronómetro, objetivo semanal e historial editable.
+- **Batallas en la web** — La web estrena batallas, elegir día en Hoy y «Hecho hoy» con tus minutos y series, como en el móvil.
+
+### Corregido
+
+- **El inicio, al día tras entrenar** — Al volver de un entreno, el día ya sale como hecho y tu programa no desaparece, aunque entrenes de noche o falle la red.
+- **Aviso de récord sin vibración infinita** — Al batir un récord el móvil vibra una sola vez y el aviso se cierra solo.
+
 ## [1.14.0] - 2026-10-02
 
 _Un inicio nuevo que te dice qué hacer hoy, pestaña Comunidad, racha semanal, logros, retos y batallas con tus propios días, y la app completa en inglés._
@@ -441,7 +455,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.1...HEAD
+[1.14.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...mobile-v1.14.1
 [1.14.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...mobile-v1.14.0
 [1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
 [1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1

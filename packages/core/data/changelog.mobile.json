@@ -1,6 +1,110 @@
 {
-  "generated": "2026-10-01T22:10:10.022Z",
+  "generated": "2026-10-09T16:40:58.537Z",
   "versions": [
+    {
+      "version": "1.14.1",
+      "date": "2026-10-09",
+      "summary": {
+        "es": "Al terminar un entreno, el inicio lo marca como hecho al momento, el aviso de récord ya no vibra sin parar, y llega el registro de ayunos en Nutrición.",
+        "en": "Finishing a workout now marks it done on Home right away, the new-record toast no longer vibrates nonstop, and fasting tracking arrives in Nutrition."
+      },
+      "highlights": [
+        {
+          "icon": "✅",
+          "type": "fix",
+          "title": {
+            "es": "El inicio, al día tras entrenar",
+            "en": "Home up to date after training"
+          },
+          "body": {
+            "es": "Al volver de un entreno, el día ya sale como hecho y tu programa no desaparece, aunque entrenes de noche o falle la red.",
+            "en": "When you come back from a workout, the day shows as done and your program stays put, even late at night or on a flaky connection."
+          }
+        },
+        {
+          "icon": "📳",
+          "type": "fix",
+          "title": {
+            "es": "Aviso de récord sin vibración infinita",
+            "en": "New-record toast stops vibrating"
+          },
+          "body": {
+            "es": "Al batir un récord el móvil vibra una sola vez y el aviso se cierra solo.",
+            "en": "Beating a record vibrates once and the toast closes on its own."
+          }
+        },
+        {
+          "icon": "⏱️",
+          "type": "feat",
+          "title": {
+            "es": "Ayunos en Nutrición",
+            "en": "Fasting in Nutrition"
+          },
+          "body": {
+            "es": "Registra ayunos de 12 a 48 h o con tu propio objetivo, con cronómetro, objetivo semanal e historial editable.",
+            "en": "Track 12–48 h fasts or set your own target, with a timer, weekly goal and editable history."
+          }
+        },
+        {
+          "icon": "⚔️",
+          "type": "feat",
+          "title": {
+            "es": "Batallas en la web",
+            "en": "Battles on the web"
+          },
+          "body": {
+            "es": "La web estrena batallas, elegir día en Hoy y «Hecho hoy» con tus minutos y series, como en el móvil.",
+            "en": "The web gets battles, picking a day on Today and a «Done today» card with your minutes and sets, like the app."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Add fasting tracking to web and native (#911)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "67d6578"
+            },
+            {
+              "description": "Batallas, elegir día en Hoy y «Hecho hoy» de fuerza, como en el móvil (#852) (#908)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "03274b0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Terminar un entreno deja el inicio al día + lógica compartida en core (#916)",
+              "scope": null,
+              "breaking": false,
+              "hash": "353874b"
+            },
+            {
+              "description": "El aviso de nuevo PR vibraba sin parar (#913)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "3dfdc1d"
+            },
+            {
+              "description": "Etiqueta de la pestaña de ayunos en web (#912)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "2bf852a"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.14.0",
       "date": "2026-10-02",

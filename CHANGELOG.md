@@ -9,6 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.14.1] - 2026-10-09
+
+_Finishing a workout now marks it done on Home right away, the new-record toast no longer vibrates nonstop, and fasting tracking arrives in Nutrition._
+
+### Added
+
+- **Fasting in Nutrition** — Track 12–48 h fasts or set your own target, with a timer, weekly goal and editable history.
+- **Battles on the web** — The web gets battles, picking a day on Today and a «Done today» card with your minutes and sets, like the app.
+
+### Fixed
+
+- **Home up to date after training** — When you come back from a workout, the day shows as done and your program stays put, even late at night or on a flaky connection.
+- **New-record toast stops vibrating** — Beating a record vibrates once and the toast closes on its own.
+
 ## [1.14.0] - 2026-10-02
 
 _A new home that tells you what to do today, a Community tab, weekly streaks, achievements, challenges and battles with your own days, and the whole app in English._
@@ -441,7 +455,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.1...HEAD
+[1.14.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...mobile-v1.14.1
 [1.14.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...mobile-v1.14.0
 [1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
 [1.13.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.0...mobile-v1.13.1
