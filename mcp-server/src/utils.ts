@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nowWallClockIn, wallClockDayOf, wallClockForPBIn } from "@calistenia/core/lib/wallClock";
 
 export enum ResponseFormat {
   MARKDOWN = "markdown",
@@ -54,6 +55,29 @@ export function toDateStr(d: Date | string, tz?: string): string {
     return date.toLocaleDateString("sv-SE", { timeZone: tz });
   }
   return date.toLocaleDateString("sv-SE", { timeZone: "UTC" });
+}
+
+/**
+ * Day (YYYY-MM-DD) of a `sessions.completed_at` / `sets_log.logged_at` value.
+ *
+ * Those fields hold the user's LOCAL WALL-CLOCK time (the app writes
+ * `nowLocalForPB()`, PocketBase appends "Z"), not a UTC instant, so the day is
+ * the first 10 characters. Passing them through `toDateStr(x, tz)` shifts the
+ * day by the tz offset. Falls back to `toDateStr` only for unparseable input.
+ * Do NOT use for nutrition/water `logged_at` or cardio/circuit `started_at`
+ * (real UTC instants).
+ */
+export function wallClockDayStr(stamp: string | undefined | null, tz?: string): string {
+  return wallClockDayOf(stamp) ?? (stamp ? toDateStr(stamp, tz) : "");
+}
+
+/**
+ * Value to WRITE into `sessions.completed_at` / `sets_log.logged_at`: the user's
+ * wall-clock time in `tz`. With an explicit ISO datetime that carries a zone the
+ * instant is converted to `tz`; one without a zone is already wall-clock.
+ */
+export function wallClockStamp(input: string | undefined | null, tz: string): string {
+  return input ? wallClockForPBIn(input, tz) : nowWallClockIn(tz);
 }
 
 /** Today as YYYY-MM-DD in the given timezone */

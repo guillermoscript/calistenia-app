@@ -60,6 +60,7 @@ import {
   type ProgramProgress,
 } from "@calistenia/core/lib/programProgress";
 import { utcToLocalDateStrIn } from "@calistenia/core/lib/tzDate";
+import { wallClockDay } from "@calistenia/core/lib/wallClock";
 import type { DayType, Phase, WeekDay } from "@calistenia/core/types";
 import { localize } from "../lib/i18n.js";
 import {
@@ -147,7 +148,10 @@ export async function resolveActiveProgramProgress(
     durationWeeks: Number(program.duration_weeks ?? 0),
     phases,
     completed,
-    utcToLocalDay: (utc: string) => utcToLocalDateStrIn(utc, tz),
+    // `user_programs.started_at` es hora de pared local (la app escribe
+    // `nowLocalForPB()`): su día son los 10 primeros caracteres, no una
+    // conversión de instante UTC a `tz`.
+    utcToLocalDay: (stamp: string) => wallClockDay(stamp) ?? utcToLocalDateStrIn(stamp, tz),
     today,
     phaseOverride: (userProgram.current_phase as number) ?? null,
   };
@@ -207,7 +211,8 @@ async function listCompletedWorkouts(
     if (!completedAt || !workoutKey) continue;
     progressMap[`done_${s.id}`] = {
       done: true,
-      date: utcToLocalDateStrIn(completedAt, tz),
+      // `completed_at` es hora de pared local: el día son sus 10 primeros caracteres.
+      date: wallClockDay(completedAt) ?? utcToLocalDateStrIn(completedAt, tz),
       workoutKey,
     };
   }

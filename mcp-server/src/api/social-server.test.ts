@@ -11,7 +11,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PB, RecordModel } from "./repos/pb.js";
 import { countChallengeParticipants, listMyOpenBattles } from "./repos/social.js";
-import { buildChallengeLeaderboard, challengeWindow, metricUnit } from "./challenge-score-server.js";
+import { buildChallengeLeaderboard, challengeWallWindow, challengeWindow, metricUnit } from "./challenge-score-server.js";
 import { fetchBattleSnapshot, toClosedBattleView, type PBWithSend } from "./battle-server.js";
 
 type Rows = Record<string, unknown>[];
@@ -73,6 +73,14 @@ describe("challengeWindow", () => {
   it("la ventana es la del espectador: en Madrid la medianoche local cae antes en UTC", () => {
     const { start } = challengeWindow(CHALLENGE, "Europe/Madrid");
     expect(start).toBe("2026-07-31 22:00:00");
+  });
+});
+
+describe("challengeWallWindow", () => {
+  it("sessions/sets_log guardan hora de pared: cotas de día, sin pasar a UTC", () => {
+    const { start, end } = challengeWallWindow(CHALLENGE);
+    expect(start).toBe("2026-08-01 00:00:00");
+    expect(end).toBe("2026-08-07 23:59:59.999");
   });
 });
 

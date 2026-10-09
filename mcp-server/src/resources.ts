@@ -1,5 +1,6 @@
 import type { AppServer } from "./mcpuse/auth-bridge.js";
 import { getAuthManager } from "./mcpuse/auth-bridge.js";
+import { addDaysIn, localMidnightAsUTCIn } from "@calistenia/core/lib/tzDate";
 import { today, startOfWeek } from "./utils.js";
 import { resolveActiveProgramProgress } from "./api/program-progress-server.js";
 import { resolvePersonalRecords } from "./api/prs-server.js";
@@ -111,14 +112,17 @@ export function registerResources(server: AppServer, pbUrl: string) {
       const auth = getAuthManager(ctx.auth, pbUrl);
       const pb = auth.getClient();
       const userId = auth.getUserId();
-      const todayStr = today();
+      const tz = auth.getTimezone();
+      const todayStr = today(tz);
 
       const [entries, goals] = await Promise.all([
         pb.collection("nutrition_entries").getFullList({
-          filter: pb.filter("user = {:userId} && logged_at >= {:from} && logged_at <= {:to}", {
+          // `nutrition_entries.logged_at` es un instante UTC real (autodate):
+          // el "hoy" del usuario es [medianoche local, medianoche siguiente) en UTC.
+          filter: pb.filter("user = {:userId} && logged_at >= {:from} && logged_at < {:to}", {
             userId,
-            from: todayStr,
-            to: `${todayStr} 23:59:59`,
+            from: localMidnightAsUTCIn(todayStr, tz),
+            to: localMidnightAsUTCIn(addDaysIn(todayStr, 1, tz), tz),
           }),
           sort: "logged_at",
         }),

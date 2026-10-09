@@ -1,7 +1,7 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, viewResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr, wallClockDayStr, wallClockStamp } from "../utils.js";
 import { sessionTrackerPropsSchema } from "../views/session-tracker.schema.js";
 import { readinessCheckPropsSchema } from "../views/readiness-check.schema.js";
 import { gapAnalysisPropsSchema } from "../views/gap-analysis.schema.js";
@@ -78,7 +78,8 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
-        const now = completed_at ?? new Date().toISOString();
+        // `completed_at`/`logged_at` store the user's wall-clock time, not UTC.
+        const now = wallClockStamp(completed_at, auth.getTimezone());
 
         // 1. Create session
         const session = await pb.collection("sessions").create({
@@ -211,7 +212,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         // Days since last workout (0-2 deduction for overtraining, 0-1 bonus for rest)
         let daysSinceLastWorkout = 999;
         if (lastSession?.completed_at) {
-          const lastDate = new Date(toDateStr(lastSession.completed_at as string, tz));
+          const lastDate = new Date(wallClockDayStr(lastSession.completed_at as string, tz));
           daysSinceLastWorkout = Math.floor(
             (new Date(todayStr).getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
           );
@@ -301,7 +302,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
 
         // Already done today's workout?
         const alreadyDoneToday = weekSessions.some(
-          (s) => toDateStr(s.completed_at as string, tz) === todayStr
+          (s) => wallClockDayStr(s.completed_at as string, tz) === todayStr
         );
 
         // Recommendation
@@ -430,7 +431,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         // Group by session date, take max reps per session
         const bySession = new Map<string, number>();
         for (const s of sets) {
-          const date = toDateStr(s.logged_at as string, tz);
+          const date = wallClockDayStr(s.logged_at as string, tz);
           const reps = parseInt(s.reps as string, 10);
           if (!isNaN(reps)) {
             bySession.set(date, Math.max(bySession.get(date) ?? 0, reps));
@@ -871,7 +872,7 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         const weeks = Math.ceil(period_days / 7);
         const startMs = new Date(`${fromStr}T00:00:00`).getTime();
         const bucketOf = (dateStr: string) => {
-          const ms = new Date(`${toDateStr(dateStr, tz)}T00:00:00`).getTime();
+          const ms = new Date(`${wallClockDayStr(dateStr, tz)}T00:00:00`).getTime();
           const b = Math.floor((ms - startMs) / (7 * 86400000));
           return Math.min(Math.max(b, 0), weeks - 1);
         };

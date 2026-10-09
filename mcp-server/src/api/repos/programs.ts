@@ -5,6 +5,7 @@
  * per-program phase/exercise listings.
  */
 
+import { nowWallClockIn } from "@calistenia/core/lib/wallClock";
 import type { PB, RecordModel } from "./pb.js";
 
 export interface CurrentProgram {
@@ -40,7 +41,12 @@ export async function getCurrentProgram(pb: PB, userId: string): Promise<Current
  * cal_set_current_program tool already did; the "create + set current" flows
  * always created, which could leave duplicate rows for the same program.
  */
-export async function setCurrentProgram(pb: PB, userId: string, programId: string): Promise<RecordModel> {
+export async function setCurrentProgram(
+  pb: PB,
+  userId: string,
+  programId: string,
+  tz: string = "UTC",
+): Promise<RecordModel> {
   const current = await pb.collection("user_programs").getFullList({
     filter: pb.filter("user = {:userId} && is_current = true", { userId }),
     fields: "id,program,is_current",
@@ -57,7 +63,9 @@ export async function setCurrentProgram(pb: PB, userId: string, programId: strin
     })
     .catch(() => null);
 
-  const startedAt = new Date().toISOString();
+  // `started_at` es hora de pared local del usuario (la app escribe
+  // `nowLocalForPB()`), no un instante UTC: se escribe en su zona.
+  const startedAt = nowWallClockIn(tz);
   if (existing) {
     return pb.collection("user_programs").update(existing.id, { is_current: true, started_at: startedAt });
   }

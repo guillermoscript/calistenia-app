@@ -1,7 +1,7 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr, wallClockDayStr, wallClockStamp } from "../utils.js";
 import { exerciseHistoryPropsSchema } from "../views/exercise-history.schema.js";
 import { exerciseIdFilter, listExerciseSets } from "../api/repos/index.js";
 import { groupSetsByIdentity, loadUserExerciseResolver } from "../api/exercise-identity-server.js";
@@ -93,7 +93,7 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
           for (const s of sessions) {
             // phase 0 = sesión libre/manual: no tiene fase que enseñar (#376).
             const phaseLabel = Number(s.phase) > 0 ? `Phase ${s.phase}, ` : "";
-            lines.push(`- **${toDateStr(s.completed_at, tz)}** — ${s.workout_key} (${phaseLabel}${s.day})`);
+            lines.push(`- **${wallClockDayStr(s.completed_at, tz)}** — ${s.workout_key} (${phaseLabel}${s.day})`);
             if (s.note) lines.push(`  > ${s.note}`);
           }
           text = lines.join("\n");
@@ -150,7 +150,8 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
           workout_key,
           phase,
           day,
-          completed_at: completed_at ?? new Date().toISOString(),
+          // Wall-clock del usuario (no UTC): ver wallClockStamp.
+          completed_at: wallClockStamp(completed_at, tz),
           note: note ?? "",
         };
         if (warmup_completed !== undefined) data.warmup_completed = warmup_completed;
@@ -166,7 +167,7 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
           content: [
             {
               type: "text",
-              text: `Session logged! **${workout_key}** completed on ${toDateStr(record.completed_at, tz)} (Phase ${phase})`,
+              text: `Session logged! **${workout_key}** completed on ${wallClockDayStr(record.completed_at, tz)} (Phase ${phase})`,
             },
           ],
           structuredContent: { id: record.id, workout_key, phase, day, completed_at: record.completed_at },
@@ -305,7 +306,7 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
             const ids = g.exercise_ids.length > 1 || g.exercise_ids[0] !== g.key ? ` _(${g.exercise_ids.join(", ")})_` : "";
             lines.push(`\n## ${g.name}${ids}`);
             for (const s of g.sets) {
-              lines.push(`- **${toDateStr(s.logged_at, tz)}** — ${s.reps}${g.is_timer ? " s" : " reps"}${s.note ? ` _(${s.note})_` : ""}`);
+              lines.push(`- **${wallClockDayStr(s.logged_at, tz)}** — ${s.reps}${g.is_timer ? " s" : " reps"}${s.note ? ` _(${s.note})_` : ""}`);
             }
           }
           text = lines.join("\n");
@@ -349,13 +350,15 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const record = await pb.collection("sets_log").create({
           user: userId,
           exercise_id,
           workout_key,
           reps,
           note: note ?? "",
-          logged_at: logged_at ?? new Date().toISOString(),
+          // Wall-clock del usuario (no UTC): ver wallClockStamp.
+          logged_at: wallClockStamp(logged_at, tz),
         });
 
         return {
@@ -431,7 +434,7 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         // Group by date — keep reps and note separate for the widget
         const byDate: Record<string, Array<{ reps: string; note?: string }>> = {};
         for (const s of result) {
-          const date = toDateStr(s.logged_at, tz);
+          const date = wallClockDayStr(s.logged_at, tz);
           if (!byDate[date]) byDate[date] = [];
           byDate[date].push({ reps: s.reps as string, ...(s.note ? { note: s.note as string } : {}) });
         }

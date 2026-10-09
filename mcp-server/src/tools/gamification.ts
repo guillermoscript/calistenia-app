@@ -1,7 +1,7 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, viewResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, today, daysAgo, toDateStr, wallClockDayStr } from "../utils.js";
 import { achievementsGridPropsSchema } from "../views/achievements-grid.schema.js";
 import { localize } from "../lib/i18n.js";
 import {
@@ -122,7 +122,7 @@ async function computeAllStats(pb: PocketBase, userId: string, tz?: string): Pro
     getUserStats(pb, userId),
   ]);
 
-  const sessionDates = sessions.map((s) => toDateStr(s.completed_at as string, tz));
+  const sessionDates = sessions.map((s) => wallClockDayStr(s.completed_at as string, tz));
   const nutritionDates = nutritionEntries.map((n) => toDateStr(n.logged_at as string, tz));
 
   // The workout streak is weekly and PocketBase owns it: it recomputes it from
