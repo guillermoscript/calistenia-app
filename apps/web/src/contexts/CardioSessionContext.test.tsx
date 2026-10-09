@@ -48,7 +48,16 @@ vi.mock('@calistenia/core/platform', () => ({
       return () => lifecycleBus.background.delete(handler)
     },
   },
-  getPlatform: () => ({ reportError: vi.fn() }),
+  getPlatform: () => ({
+    reportError: vi.fn(),
+    connectivity: {
+      isOnline: () => true,
+      onOnline: (handler: () => void) => {
+        window.addEventListener('online', handler)
+        return () => window.removeEventListener('online', handler)
+      },
+    },
+  }),
 }))
 
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -187,7 +196,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       expect(result.current.state).toBe('tracking')
       expect(result.current.activityType).toBe('running')
@@ -199,7 +208,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('cycling', 'prog-1', 'day-3'))
+      act(() => { void result.current.start('cycling', 'prog-1', 'day-3') })
 
       expect(result.current.activityType).toBe('cycling')
       expect(result.current.programId).toBe('prog-1')
@@ -211,7 +220,7 @@ describe('CardioSessionContext', () => {
     it('el primer fix agrega el punto pero no suma distancia (no hay punto previo)', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 1_000)))
 
@@ -222,7 +231,7 @@ describe('CardioSessionContext', () => {
     it('fixes subsecuentes válidos suman distancia y cuentan puntos', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       // ~111m entre cada fix (0.001° lat), 10s de separación → ~11 m/s, por
       // debajo del límite de 14 m/s y sin ser "gap" (<30s).
@@ -239,7 +248,7 @@ describe('CardioSessionContext', () => {
     it('descarta un fix con accuracy peor que el máximo, pero igual actualiza gpsAccuracy', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0, { accuracy: 25 })))
 
@@ -250,7 +259,7 @@ describe('CardioSessionContext', () => {
     it('filtro de jitter: descarta un fix a menos de 3m del anterior', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
       // ~1.1m de diferencia — por debajo del piso de ruido.
@@ -263,7 +272,7 @@ describe('CardioSessionContext', () => {
     it('descarta un salto de velocidad implausible sin ser gap (>14 m/s)', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
       // ~222m en 5s → ~44 m/s, imposible corriendo y no es gap (<30s).
@@ -276,7 +285,7 @@ describe('CardioSessionContext', () => {
     it('un salto >30s plausible se marca como gap y suma distancia', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
       // ~55m en 35s → ~1.6 m/s, plausible para "running" (límite 6 m/s).
@@ -292,7 +301,7 @@ describe('CardioSessionContext', () => {
     it('pause detiene el watch de GPS y cambia el estado', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
 
       act(() => result.current.pause())
 
@@ -306,7 +315,7 @@ describe('CardioSessionContext', () => {
       // stateRef y fuera de 'tracking' no muta distancia ni puntos.
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
       act(() => result.current.pause())
 
@@ -320,7 +329,7 @@ describe('CardioSessionContext', () => {
     it('resume vuelve a tracking y reinicia el watch de GPS', () => {
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
       act(() => result.current.pause())
 
       act(() => result.current.resume())
@@ -352,7 +361,7 @@ describe('CardioSessionContext', () => {
       const { wrapper, invalidateSpy } = makeWrapper('user1', 80)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
       elapse(2_000)
 
       let saved: unknown
@@ -375,7 +384,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper('user1', 80)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('walking'))
+      act(() => { void result.current.start('walking') })
       elapse(60_000)
       await act(async () => { await result.current.finish() })
 
@@ -390,7 +399,7 @@ describe('CardioSessionContext', () => {
       const { wrapper, invalidateSpy } = makeWrapper('user1', 80)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
       act(() => lastWatchCallback().success(makePosition(40.001, -3.0, 10_000)))
 
@@ -428,7 +437,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper('user1', 80)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
       act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
       elapse(120_000)
       act(() => lastWatchCallback().success(makePosition(40.001, -3.0, 10_000)))
@@ -452,7 +461,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper('user1', 80)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('walking'))
+      act(() => { void result.current.start('walking') })
       elapse(120_000)
       await act(async () => { await result.current.finish() })
 
@@ -464,7 +473,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper(null)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('walking'))
+      act(() => { void result.current.start('walking') })
 
       let saved: unknown
       elapse(120_000)
@@ -482,7 +491,7 @@ describe('CardioSessionContext', () => {
       const { wrapper } = makeWrapper('user1')
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
-      act(() => result.current.start('running'))
+      act(() => { void result.current.start('running') })
       elapse(120_000)
       await act(async () => {
         await result.current.finish()
@@ -498,7 +507,7 @@ describe('CardioSessionContext', () => {
   it('discard resetea la sesión a idle y detiene el GPS', () => {
     const { wrapper } = makeWrapper()
     const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
-    act(() => result.current.start('running'))
+    act(() => { void result.current.start('running') })
     act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
 
     act(() => result.current.discard())
@@ -571,6 +580,23 @@ describe('CardioSessionContext', () => {
       expect(result.current.pointsCount).toBe(1)
       // Al restaurar como "tracking" retoma el GPS.
       expect(watchPositionMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('persiste el día de programa y lo recupera al restaurar', () => {
+      const { wrapper } = makeWrapper()
+      const first = renderHook(() => useCardioSessionContext(), { wrapper })
+      act(() => { void first.result.current.start('running', 'prog-1', 'day-3') })
+      act(() => first.result.current.pause())
+      first.unmount()
+
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) as string)
+      expect(saved.programId).toBe('prog-1')
+      expect(saved.programDayKey).toBe('day-3')
+
+      const second = renderHook(() => useCardioSessionContext(), { wrapper: makeWrapper().wrapper })
+      expect(second.result.current.state).toBe('paused')
+      expect(second.result.current.programId).toBe('prog-1')
+      expect(second.result.current.programDayKey).toBe('day-3')
     })
 
     it('descarta una sesión guardada de más de 24h (zombie) y no la restaura', () => {

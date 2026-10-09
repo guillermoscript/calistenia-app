@@ -45,7 +45,16 @@ vi.mock('@calistenia/core/platform', () => ({
     onForeground: () => () => {},
     onBackground: () => () => {},
   },
-  getPlatform: () => ({ reportError: vi.fn() }),
+  getPlatform: () => ({
+    reportError: vi.fn(),
+    connectivity: {
+      isOnline: () => true,
+      onOnline: (handler: () => void) => {
+        window.addEventListener('online', handler)
+        return () => window.removeEventListener('online', handler)
+      },
+    },
+  }),
 }))
 
 import { CardioSessionProvider, useCardioSessionContext } from './CardioSessionContext'
