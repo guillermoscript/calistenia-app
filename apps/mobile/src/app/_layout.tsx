@@ -22,6 +22,7 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
+import { setupFocusManager } from '@/lib/setup-focus-manager'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHandoff'
 
@@ -55,6 +56,7 @@ SplashScreen.preventAutoHideAsync()
 // Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
 // init-core ya corrió (primer import del archivo), así que el adapter está listo.
 setupOnlineManager()
+setupFocusManager()
 const queryClient = createQueryClient()
 const persister = createCorePersister()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
