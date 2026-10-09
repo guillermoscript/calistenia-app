@@ -5,13 +5,8 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { lifecycle } from '@calistenia/core/platform'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { invalidateAfterWorkout } from '@calistenia/core/lib/workout-cache'
-import {
-  calculateElevationGain,
-  calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
-} from '@calistenia/core/lib/geo'
-import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
-import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
+import { buildCardioSession } from '@calistenia/core/lib/cardio-finish'
 import { retryTransient } from '@calistenia/core/lib/pocketbase-errors'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
@@ -221,37 +216,22 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setSessionState('finished')
     clearSnapshot()
 
-    const finalDuration = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
-    setDuration(finalDuration)
-
-    const finalPoints = points.current
-    const { splits, totalDistanceKm: totalDistance } = calculateSplitsAndDistance(finalPoints)
-    const elevationGain = calculateElevationGain(finalPoints)
-    const avgPace = finalDuration > 0 && totalDistance > 0 ? (finalDuration / 60) / totalDistance : 0
-    const currentActivity = activityTypeRef.current
-
-    const session: CardioSession = {
-      activity_type: currentActivity,
-      gps_points: finalPoints,
-      distance_km: Math.round(totalDistance * 100) / 100,
-      duration_seconds: finalDuration,
-      avg_pace: Math.round(avgPace * 100) / 100,
-      elevation_gain: Math.round(elevationGain),
-      started_at: new Date(startTimeRef.current).toISOString(),
-      finished_at: new Date().toISOString(),
+    const { session, durationSeconds: finalDuration, tooShort } = buildCardioSession({
+      activityType: activityTypeRef.current,
+      points: points.current,
+      startTime: startTimeRef.current,
+      now: Date.now(),
+      pausedDuration: pausedDurationRef.current,
       note: finishNote,
-      calories_burned: estimateCalories(currentActivity, finalDuration, userWeight),
-      max_pace: calculateMaxPace(finalPoints),
-      avg_speed_kmh: calculateAvgSpeed(totalDistance, finalDuration),
-      max_speed_kmh: calculateMaxSpeed(finalPoints),
-      splits,
-      program: programId || undefined,
-      program_day_key: programDayKey || undefined,
-    }
+      userWeight,
+      programId: programId,
+      programDayKey: programDayKey,
+    })
+    setDuration(finalDuration)
 
     // Un start/stop accidental (2 s, 0 km) no se guarda ni se encola: tapaba
     // la sesión real en «ÚLTIMA SESIÓN» y sumaba a los totales (#562).
-    if (isCardioSessionTooShort(session)) {
+    if (tooShort) {
       setSessionState('idle')
       resetMetrics()
       setDuration(0)
@@ -264,8 +244,6 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     if (userId) {
       const saveData: Record<string, unknown> = { user: userId, ...session }
-      if (programId) saveData.program = programId
-      if (programDayKey) saveData.program_day_key = programDayKey
       try {
         // La ruta va a `cardio_routes`, owner-only (#299).
         const { record, points: routePoints } = splitRoute(saveData)

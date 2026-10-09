@@ -18,13 +18,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { invalidateAfterWorkout } from '@calistenia/core/lib/workout-cache'
-import {
-  calculateElevationGain,
-  calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
-} from '@calistenia/core/lib/geo'
-import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
-import { isCardioSessionTooShort } from '@calistenia/core/lib/cardioMinimum'
+import { buildCardioSession } from '@calistenia/core/lib/cardio-finish'
 import { retryTransient } from '@calistenia/core/lib/pocketbase-errors'
 import { CARDIO_HISTORY_PAGE_SIZE } from '@calistenia/core/lib/cardio-history'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
@@ -295,37 +290,22 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     void haptics.success()
     clearSnapshot()
 
-    const finalDuration = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
-    setDuration(finalDuration)
-
-    const finalPoints = points.current
-    const { splits, totalDistanceKm: totalDistance } = calculateSplitsAndDistance(finalPoints)
-    const elevationGain = calculateElevationGain(finalPoints)
-    const avgPace = finalDuration > 0 && totalDistance > 0 ? (finalDuration / 60) / totalDistance : 0
-    const currentActivity = activityTypeRef.current
-
-    const session: CardioSession = {
-      activity_type: currentActivity,
-      gps_points: finalPoints,
-      distance_km: Math.round(totalDistance * 100) / 100,
-      duration_seconds: finalDuration,
-      avg_pace: Math.round(avgPace * 100) / 100,
-      elevation_gain: Math.round(elevationGain),
-      started_at: new Date(startTimeRef.current).toISOString(),
-      finished_at: new Date().toISOString(),
+    const { session, durationSeconds: finalDuration, tooShort } = buildCardioSession({
+      activityType: activityTypeRef.current,
+      points: points.current,
+      startTime: startTimeRef.current,
+      now: Date.now(),
+      pausedDuration: pausedDurationRef.current,
       note: finishNote,
-      calories_burned: estimateCalories(currentActivity, finalDuration, userWeight),
-      max_pace: calculateMaxPace(finalPoints),
-      avg_speed_kmh: calculateAvgSpeed(totalDistance, finalDuration),
-      max_speed_kmh: calculateMaxSpeed(finalPoints),
-      splits,
-      program: programIdRef.current || undefined,
-      program_day_key: programDayKeyRef.current || undefined,
-    }
+      userWeight,
+      programId: programIdRef.current,
+      programDayKey: programDayKeyRef.current,
+    })
+    setDuration(finalDuration)
 
     // Un start/stop accidental (2 s, 0 km) no se guarda ni se encola: tapaba
     // la sesión real en «ÚLTIMA SESIÓN» y sumaba a los totales (#562).
-    if (isCardioSessionTooShort(session)) {
+    if (tooShort) {
       setSessionState('idle')
       resetMetrics()
       setDuration(0)
