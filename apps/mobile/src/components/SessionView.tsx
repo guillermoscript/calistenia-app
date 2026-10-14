@@ -48,6 +48,7 @@ import NoteScreen from '@/components/session/NoteScreen'
 import CelebrateScreen from '@/components/session/CelebrateScreen'
 import SectionTransitionScreen from '@/components/session/SectionTransitionScreen'
 import SessionTopBar from '@/components/session/SessionTopBar'
+import ExerciseListSheet from '@/components/session/ExerciseListSheet'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 
@@ -114,6 +115,8 @@ export default function SessionView({
   // Ref mirror para que el guard one-shot y handleNoteSaved nunca lean estado obsoleto.
   const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
 
+  const [listOpen, setListOpen] = useState(false)
+
   const sessionUser = useAuthUser()
   const [sessionStartTime] = useState<number>(() => startedAt || Date.now())
 
@@ -176,6 +179,22 @@ export default function SessionView({
   const goToNextExercise = useCallback(() => {
     if (currentExerciseIndex >= exerciseBoundaries.length - 1) return
     dispatch({ type: 'goto-exercise', stepIdx: exerciseBoundaries[currentExerciseIndex + 1] })
+  }, [currentExerciseIndex, exerciseBoundaries])
+
+  const listItems = useMemo(
+    () => exerciseBoundaries.map(b => ({
+      id: steps[b].exercise.id,
+      name: steps[b].exercise.name,
+      totalSets: steps[b].totalSets,
+      section: steps[b].section,
+    })),
+    [exerciseBoundaries, steps],
+  )
+
+  const handleSelectFromList = useCallback((index: number) => {
+    setListOpen(false)
+    if (index === currentExerciseIndex) return
+    dispatch({ type: 'goto-exercise', stepIdx: exerciseBoundaries[index] })
   }, [currentExerciseIndex, exerciseBoundaries])
 
   // ── Swipe-to-navigate ────────────────────────────────────────────────────────
@@ -366,6 +385,7 @@ export default function SessionView({
           stepTotal={steps.length}
           onBack={onBack}
           onDiscard={confirmDiscard}
+          onOpenList={phase === 'exercise' || phase === 'rest' ? () => setListOpen(true) : undefined}
           onSkipWarmup={isInWarmup ? handleSkipWarmup : undefined}
           onSkipCooldown={isInCooldown ? handleSkipCooldown : undefined}
         />
@@ -453,6 +473,14 @@ export default function SessionView({
           onNavigateAway={onNavigateAway}
         />
       )}
+
+      <ExerciseListSheet
+        visible={listOpen && (phase === 'exercise' || phase === 'rest')}
+        items={listItems}
+        currentIndex={currentExerciseIndex}
+        onSelect={handleSelectFromList}
+        onClose={() => setListOpen(false)}
+      />
 
       {prCelebration && (
         <PRCelebration
