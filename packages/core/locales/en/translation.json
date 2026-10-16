@@ -2862,6 +2862,7 @@
   "session.exerciseListNow": "Now",
   "session.exerciseListSets_one": "{{count}} set",
   "session.exerciseListSets_other": "{{count}} sets",
+  "session.exerciseListSetsProgress": "{{done}} of {{total}} sets",
   "session.exerciseListRemaining_one": "{{count}} exercise left",
   "session.exerciseListRemaining_other": "{{count}} exercises left",
   "session.prevExercise": "Previous exercise",

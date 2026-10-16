@@ -32,6 +32,7 @@ import { ExerciseTimingTracker } from '@calistenia/core/lib/exerciseTiming'
 import { TRAINING_FUNNEL_EVENTS } from '@calistenia/core/lib/session-funnel'
 import { canAskPermissionOnSessionStart } from '@calistenia/core/lib/push-prompt'
 import { quickReps } from '@calistenia/core/lib/exercise-format'
+import { toLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import {
   buildSteps,
   computeExerciseBoundaries,
@@ -181,14 +182,26 @@ export default function SessionView({
     dispatch({ type: 'goto-exercise', stepIdx: exerciseBoundaries[currentExerciseIndex + 1] })
   }, [currentExerciseIndex, exerciseBoundaries])
 
+  // «Hecho» sale de las series registradas en ESTA sesión, no de la posición:
+  // saltar un ejercicio desde la lista no lo da por hecho. Los logs se guardan
+  // por día + workout, así que cuentan los de este workout desde el día en que
+  // empezó la sesión (cubre un entreno que cruza la medianoche).
+  const sessionStartDate = useMemo(() => toLocalDateStr(new Date(sessionStartTime)), [sessionStartTime])
   const listItems = useMemo(
-    () => exerciseBoundaries.map(b => ({
-      id: steps[b].exercise.id,
-      name: steps[b].exercise.name,
-      totalSets: steps[b].totalSets,
-      section: steps[b].section,
-    })),
-    [exerciseBoundaries, steps],
+    () => exerciseBoundaries.map(b => {
+      const exercise = steps[b].exercise
+      const loggedSets = getExerciseLogs(exercise.id)
+        .filter(log => log.workoutKey === workoutKey && log.date >= sessionStartDate)
+        .reduce((n, log) => n + log.sets.length, 0)
+      return {
+        id: exercise.id,
+        name: exercise.name,
+        totalSets: steps[b].totalSets,
+        loggedSets,
+        section: steps[b].section,
+      }
+    }),
+    [exerciseBoundaries, steps, getExerciseLogs, workoutKey, sessionStartDate],
   )
 
   const handleSelectFromList = useCallback((index: number) => {
