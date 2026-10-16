@@ -11,7 +11,7 @@ import { cn } from '../lib/utils'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
-import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
+import { getTimezone, utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
 import { buildSkills, programWeek } from '@calistenia/core/lib/athlete-card'
 import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId } from '../components/onboarding/StepHealth'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
@@ -85,12 +85,11 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
   // no cambie; lo único que cambia es cómo se escriben (`set`/`toggle`).
   const { form, set, toggle, hydrate } = useProfileForm({
     displayName: user?.display_name || user?.name || '',
-    timezone: getTimezone(),
   })
   const {
     displayName, weight, height, age, sex, level, goal, goalWeight,
     activityLevel, pace, medicalConditions, injuries, focusAreas,
-    trainingDays, intensity, timezone,
+    trainingDays, intensity,
   } = form
   // Edad/sexo son PII ocultos en `users` (fix GHSA-wwj3-9h95-wcpf): no se
   // serializan ni se pueden escribir con token de usuario. Su fuente fiable es
@@ -104,7 +103,6 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [tzSearch, setTzSearch] = useState('')
   const [deleteOpen, setDeleteOpen] = useState(false)
   // `?open=weeklyGoal` (desde la tarjeta de racha de Progreso) abre esa fila.
   const [openSection, setOpenSection] = useState<SettingsSection | null>(() => {
@@ -178,8 +176,6 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
             focusAreas: Array.isArray(rec.focus_areas) ? rec.focus_areas : [],
             trainingDays: Array.isArray(rec.training_days) ? rec.training_days : [],
             intensity: rec.intensity || '',
-            // Sin zona horaria guardada se conserva la detectada del navegador.
-            ...(rec.timezone ? { timezone: rec.timezone } : {}),
           })
           // Edad/sexo desde la fila de `nutrition_goals` (PII protegida). Si el
           // usuario aún no tiene objetivo, quedan vacíos y solo se fijarán al
@@ -244,27 +240,6 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
 
   const healthCount = medicalConditions.length + injuries.length
 
-  // La lista de zonas horarias no depende de nada del formulario salvo el
-  // filtro, así que se calcula una vez por búsqueda y no en cada render.
-  const timezoneOptions = useMemo(() => {
-    let all: string[]
-    try {
-      // `supportedValuesOf` es ES2022 y el `lib` de web sigue en ES2020.
-      all = (Intl as typeof Intl & { supportedValuesOf(key: string): string[] }).supportedValuesOf('timeZone')
-    } catch {
-      all = [
-        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
-        'America/Bogota', 'America/Lima', 'America/Santiago', 'America/Buenos_Aires',
-        'America/Mexico_City', 'America/Sao_Paulo',
-        'Europe/Madrid', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
-        'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Asia/Dubai',
-        'Australia/Sydney', 'Pacific/Auckland',
-      ]
-    }
-    const q = tzSearch.trim().toLowerCase()
-    return q ? all.filter(tz => tz.toLowerCase().includes(q)) : all
-  }, [tzSearch])
-
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user?.id) return
@@ -305,7 +280,6 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
             focus_areas: focusAreas,
             training_days: trainingDays,
             intensity: intensity || '',
-            timezone,
           },
           body: form,
           bodyGoalId, age, sex,
@@ -320,7 +294,6 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
           medical_conditions: medicalConditions,
           injuries,
         }).catch((e) => console.warn('Failed to save health:', e))
-        setGlobalTimezone(timezone)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
       }
@@ -761,26 +734,9 @@ export default function ProfilePage({ user, dark, toggleDark }: ProfilePageProps
 
           <Field
             label={t('profile.timezone')}
-            htmlFor="profile-timezone"
-            hint={`${t('profile.currentTimezone')}: ${timezone.replace(/_/g, ' ')}`}
+            hint={t('profile.timezoneFromDevice')}
           >
-            <UnitInput
-              id="profile-tz-search"
-              value={tzSearch}
-              onChange={(e) => setTzSearch(e.target.value)}
-              placeholder={t('profile.searchTimezone')}
-              className="h-9 text-xs"
-            />
-            <select
-              id="profile-timezone"
-              value={timezone}
-              onChange={(e) => set('timezone', e.target.value)}
-              className="mt-2 flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {timezoneOptions.map(tz => (
-                <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
+            <p className="text-sm">{getTimezone().replace(/_/g, ' ')}</p>
           </Field>
           {saveBar}
         </SettingsRow>

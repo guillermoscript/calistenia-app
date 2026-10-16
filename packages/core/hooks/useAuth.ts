@@ -6,7 +6,7 @@ import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser
 import { joinChallenge } from '../lib/challenge-join'
 import { setTimezone } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, analyticsPlatform, op, trackCanonicalEvent } from '../lib/analytics'
-import { syncUserTimezone } from '../lib/timezone-sync'
+import { detectDeviceTimezone, syncUserTimezone } from '../lib/timezone-sync'
 import { clearUserStorage } from '../lib/storage-keys'
 import { saveInvitedProgram, trackReferralProgramMatched } from '../lib/invited-program'
 import { qk } from '../lib/query-keys'
@@ -186,8 +186,8 @@ export function useAuth(): UseAuthReturn {
       await tryRefreshAuth()
       if (!cancelled) {
         const u = getCurrentUser()
-        if (u?.timezone) setTimezone(u.timezone)
-        else setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        // La zona de la app es la del dispositivo, no la guardada (ver timezone-sync).
+        setTimezone(detectDeviceTimezone())
         if (u) {
           identifyUser(u)
           // Persistir la zona en el registro: el servidor la necesita para
@@ -217,8 +217,7 @@ export function useAuth(): UseAuthReturn {
   // ── Escuchar cambios del authStore (login/logout/token expirado) ─────────
   useEffect(() => {
     const unsub = pb.authStore.onChange((_token: string, record: RecordModel | null) => {
-      if (record?.timezone) setTimezone(record.timezone)
-      else if (record) setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+      if (record) setTimezone(detectDeviceTimezone())
       // Login (incl. OAuth) / refresh: asegurar que el servidor conoce la zona.
       if (record) void syncUserTimezone(record.id, record.timezone as string | undefined)
       // Login de un usuario EXISTENTE: el arranque corrió con u=null y solo

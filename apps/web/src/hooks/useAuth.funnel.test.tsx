@@ -47,7 +47,7 @@ vi.mock('@calistenia/core/lib/pocketbase', () => ({
   verifyAuth: vi.fn(async () => null),
 }))
 
-vi.mock('@calistenia/core/lib/timezone-sync', () => ({ syncUserTimezone: vi.fn() }))
+vi.mock('@calistenia/core/lib/timezone-sync', () => ({ syncUserTimezone: vi.fn(), detectDeviceTimezone: () => 'UTC' }))
 
 import { useAuth } from '@calistenia/core/hooks/useAuth'
 

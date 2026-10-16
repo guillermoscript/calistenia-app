@@ -43,7 +43,6 @@ export interface ProfileFormState {
   focusAreas: FocusAreaId[]
   trainingDays: DayId[]
   intensity: Intensity | ''
-  timezone: string
 }
 
 /** Campos que son listas y por tanto admiten `toggle`. */
@@ -72,7 +71,6 @@ export const EMPTY_PROFILE_FORM: ProfileFormState = {
   focusAreas: [],
   trainingDays: [],
   intensity: '',
-  timezone: '',
 }
 
 export function profileFormReducer(state: ProfileFormState, action: ProfileFormAction): ProfileFormState {
