@@ -4,7 +4,7 @@ import { ChevronLeft, ListChecks, X } from 'lucide-react-native'
 import type { SessionPhase } from '@calistenia/core/lib/session-machine'
 
 import { Text } from '@/components/ui/text'
-import { MUTED } from '@/components/session/constants'
+import { LIME, MUTED } from '@/components/session/constants'
 
 interface SessionTopBarProps {
   phase: SessionPhase
@@ -62,12 +62,23 @@ export default function SessionTopBar({
               : phase === 'note' ? t('warmupCooldown.history.completed').toUpperCase()
               : ''}
           </Text>
-          <View className="flex-row items-center gap-1">
+          {onOpenList ? (
+            // Chip en lima (= interactivo): con texto de 9 px gris nadie veía
+            // que el contador abre la lista de ejercicios.
+            <View className="mt-1 flex-row items-center gap-1.5 rounded-full border border-lime/40 bg-lime/10 px-2.5 py-[3px]">
+              <ListChecks size={13} color={LIME} />
+              <Text className="font-mono text-[11px] tabular-nums text-lime">
+                {exerciseIndex}/{exerciseTotal}
+              </Text>
+              <Text className="font-mono text-[10px] tabular-nums text-muted-foreground">
+                · {stepIndex}/{stepTotal}
+              </Text>
+            </View>
+          ) : (
             <Text className="font-mono text-[9px] tabular-nums text-muted-foreground/60">
               {exerciseIndex}/{exerciseTotal} · {stepIndex}/{stepTotal}
             </Text>
-            {onOpenList && <ListChecks size={11} color={MUTED} />}
-          </View>
+          )}
         </Pressable>
 
         <Pressable onPress={onDiscard} hitSlop={8} className="min-h-[44px] min-w-[44px] items-center justify-center" accessibilityLabel={t('session.discardTitle')}>
