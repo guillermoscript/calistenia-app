@@ -9,6 +9,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.14.2] - 2026-10-16
+
+_El día de la app ya cambia a medianoche de tu hora, estés donde estés, y durante el entreno puedes ver de un vistazo los ejercicios que te faltan._
+
+### Añadido
+
+- **Ejercicios que faltan** — Toca el contador de la cabecera durante el entreno para ver los hechos, el actual y los que faltan, y salta a cualquiera.
+
+### Corregido
+
+- **El día cambia a tu medianoche** — «Hoy» sigue la hora de tu móvil: ya no pasa al día siguiente antes de tiempo si tu cuenta tenía guardada otra zona horaria.
+
 ## [1.14.1] - 2026-10-09
 
 _Al terminar un entreno, el inicio lo marca como hecho al momento, el aviso de récord ya no vibra sin parar, y llega el registro de ayunos en Nutrición._
@@ -455,7 +467,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.2...HEAD
+[1.14.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.1...mobile-v1.14.2
 [1.14.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...mobile-v1.14.1
 [1.14.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...mobile-v1.14.0
 [1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2

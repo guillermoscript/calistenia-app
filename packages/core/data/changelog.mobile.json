@@ -1,6 +1,68 @@
 {
-  "generated": "2026-10-09T16:40:58.537Z",
+  "generated": "2026-10-16T01:35:28.423Z",
   "versions": [
+    {
+      "version": "1.14.2",
+      "date": "2026-10-16",
+      "summary": {
+        "es": "El día de la app ya cambia a medianoche de tu hora, estés donde estés, y durante el entreno puedes ver de un vistazo los ejercicios que te faltan.",
+        "en": "The app’s day now changes at midnight your time, wherever you are, and during a workout you can see at a glance which exercises are left."
+      },
+      "highlights": [
+        {
+          "icon": "🕛",
+          "type": "fix",
+          "title": {
+            "es": "El día cambia a tu medianoche",
+            "en": "The day changes at your midnight"
+          },
+          "body": {
+            "es": "«Hoy» sigue la hora de tu móvil: ya no pasa al día siguiente antes de tiempo si tu cuenta tenía guardada otra zona horaria.",
+            "en": "«Today» follows your phone’s clock: it no longer jumps to tomorrow early if your account had another time zone saved."
+          }
+        },
+        {
+          "icon": "📋",
+          "type": "feat",
+          "title": {
+            "es": "Ejercicios que faltan",
+            "en": "Exercises left"
+          },
+          "body": {
+            "es": "Toca el contador de la cabecera durante el entreno para ver los hechos, el actual y los que faltan, y salta a cualquiera.",
+            "en": "Tap the counter in the header during a workout to see done, current and remaining exercises, and jump to any of them."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Quick list of exercises left during a workout (#919)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "d646f75"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "The app’s “today” follows the device time zone, not the saved one (#920)",
+              "scope": "time",
+              "breaking": false,
+              "hash": "f4dff11"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.14.1",
       "date": "2026-10-09",

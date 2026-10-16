@@ -9,6 +9,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.14.2] - 2026-10-16
+
+_The app’s day now changes at midnight your time, wherever you are, and during a workout you can see at a glance which exercises are left._
+
+### Added
+
+- **Exercises left** — Tap the counter in the header during a workout to see done, current and remaining exercises, and jump to any of them.
+
+### Fixed
+
+- **The day changes at your midnight** — «Today» follows your phone’s clock: it no longer jumps to tomorrow early if your account had another time zone saved.
+
 ## [1.14.1] - 2026-10-09
 
 _Finishing a workout now marks it done on Home right away, the new-record toast no longer vibrates nonstop, and fasting tracking arrives in Nutrition._
@@ -455,7 +467,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.2...HEAD
+[1.14.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.1...mobile-v1.14.2
 [1.14.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.14.0...mobile-v1.14.1
 [1.14.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.2...mobile-v1.14.0
 [1.13.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.13.1...mobile-v1.13.2
