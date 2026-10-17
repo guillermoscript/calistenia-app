@@ -183,7 +183,7 @@ export async function analyzeMealImage({
   userContext,
 }: MealAnalysisInput) {
   const { model, name: modelName, provider } = resolveModel(tier);
-  const webSearchTools = resolveWebSearchTool(provider);
+  const webSearchTools = resolveWebSearchTool(provider, modelName);
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("meal-analyzer");
 
   let userText: string;
