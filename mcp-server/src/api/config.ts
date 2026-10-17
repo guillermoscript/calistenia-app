@@ -10,6 +10,7 @@ export interface AppConfig {
   defaultProvider: string;
   defaultModelFree: string;
   defaultModelPro: string;
+  webSearchProvider: string;
 }
 
 const config: AppConfig = {
@@ -31,6 +32,7 @@ const config: AppConfig = {
   defaultProvider: process.env.DEFAULT_AI_PROVIDER ?? "",
   defaultModelFree: process.env.DEFAULT_MODEL_FREE ?? "",
   defaultModelPro: process.env.DEFAULT_MODEL_PRO ?? "",
+  webSearchProvider: process.env.WEB_SEARCH_PROVIDER?.trim() || "parallel",
 };
 
 export default config;

@@ -71,7 +71,7 @@ const searchFoodDatabase = tool({
 
 export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
   const { model, name: modelName, provider } = resolveModel(tier);
-  const webSearchTools = resolveWebSearchTool(provider);
+  const webSearchTools = resolveWebSearchTool(provider, modelName);
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("food-lookup");
 
   const { output, steps } = await generateText({
