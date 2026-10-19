@@ -5,7 +5,7 @@
  * time, and connect/sync actions. Android-only in Fase 1; on iOS/web the
  * bridge reports 'unsupported' and the screen renders a graceful prompt.
  */
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppState } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { storage } from '@calistenia/core/platform'
@@ -45,6 +45,11 @@ export function useHealthSync() {
   const user = useAuthUser()
   const userId = user?.id ?? null
   const lastAutoSync = useRef(0)
+  // Leído UNA vez al montar; tras sincronizar manda `syncMutation.data`. Antes se
+  // llamaba a getLastSync() en el return: nada reactivo cambiaba (y React
+  // Compiler lo puede memorizar), así que «Última sync» no se movía hasta
+  // salir y volver a entrar en /health.
+  const [storedLastSync] = useState(getLastSync)
 
   const statusQuery = useQuery({
     queryKey: qk.health.status(userId),
@@ -122,7 +127,7 @@ export function useHealthSync() {
     isConnected: statusQuery.data?.connected ?? false,
     isLoadingStatus: statusQuery.isLoading,
     summary: summaryQuery.data ?? null,
-    lastSyncedAt: getLastSync(),
+    lastSyncedAt: syncMutation.data?.syncedAt ?? storedLastSync,
     connect: connectMutation.mutate,
     isConnecting: connectMutation.isPending,
     sync: syncMutation.mutate,

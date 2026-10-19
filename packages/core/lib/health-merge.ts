@@ -12,6 +12,9 @@
 
 export const HEALTH_SOURCE = 'health_connect'
 
+/** ¿La fila de `sleep_entries` vino del reloj? Entonces sus despertares no se conocen. */
+export const isWatchSleep = (e: { source?: string }): boolean => e.source === HEALTH_SOURCE
+
 export interface ExistingDatedRow { id: string; date: string; source?: string }
 
 export type MergeOp<P> =
@@ -75,21 +78,71 @@ export const dateKey = (raw: string): string => String(raw).split(' ')[0].split(
 export interface SleepSampleLike { startTime: string; endTime: string; awakeMinutes: number; id?: string }
 export interface SleepDay { start: string; end: string; asleep: number; awake: number; id?: string }
 
-/** Junta las sesiones de sueño en una por día de despertar (acuesta más temprano, despierta más tarde). */
-export function collapseSleepByDay(sleep: SleepSampleLike[]): Record<string, SleepDay> {
+/** Una sesión más corta que esto, empezada y acabada de día, es una siesta. */
+const NAP_MAX_MINUTES = 4 * 60
+/** Franja «de día» (hora local) para reconocer una siesta: [09:00, 21:00]. */
+const DAYTIME_FROM_H = 9
+const DAYTIME_TO_H = 21
+
+/**
+ * ¿Es una siesta? Corta (< 4 h), empieza y acaba el mismo día local, y entre
+ * las 09:00 y las 21:00. Las siestas NO entran en `sleep_entries`: la app
+ * registra noches, y sumarla a la noche estiraba el despertar (00:30–16:10).
+ */
+export function isDaytimeNap(s: { startTime: string; endTime: string }): boolean {
+  if (localDay(s.startTime) !== localDay(s.endTime)) return false
+  if (minutesBetween(s.startTime, s.endTime) >= NAP_MAX_MINUTES) return false
+  const start = new Date(s.startTime)
+  const end = new Date(s.endTime)
+  const endMin = end.getHours() * 60 + end.getMinutes()
+  return start.getHours() >= DAYTIME_FROM_H && endMin <= DAYTIME_TO_H * 60
+}
+
+/**
+ * Noche a la que pertenece una sesión: el día local en que te ACUESTAS, que es
+ * la fecha que usa la app para un registro de sueño («anoche» = ayer). Se resta
+ * medio día al inicio, así que acostarse a las 23:40 o a la 01:45 del día
+ * siguiente cuenta para la misma noche.
+ */
+export function nightOf(startTime: string): string {
+  return localDay(new Date(new Date(startTime).getTime() - 12 * 3_600_000).toISOString())
+}
+
+/**
+ * Junta las sesiones de sueño en una por NOCHE (clave = día en que te acuestas),
+ * descartando las siestas: acuesta más temprano, despierta más tarde, suma lo
+ * dormido. Un sueño partido (23:00–02:00 + 04:00–07:00) es una sola noche.
+ */
+export function collapseSleepByNight(sleep: SleepSampleLike[]): Record<string, SleepDay> {
   const out: Record<string, SleepDay> = {}
   for (const s of sleep) {
-    const day = localDay(s.endTime) // se atribuye al día en que se despierta
+    if (isDaytimeNap(s)) continue
+    const night = nightOf(s.startTime)
     const asleep = Math.max(0, minutesBetween(s.startTime, s.endTime) - s.awakeMinutes)
-    const cur = out[day]
+    const cur = out[night]
     if (!cur) {
-      out[day] = { start: s.startTime, end: s.endTime, asleep, awake: s.awakeMinutes, id: s.id }
+      out[night] = { start: s.startTime, end: s.endTime, asleep, awake: s.awakeMinutes, id: s.id }
     } else {
       if (new Date(s.startTime) < new Date(cur.start)) cur.start = s.startTime
       if (new Date(s.endTime) > new Date(cur.end)) cur.end = s.endTime
       cur.asleep += asleep
       cur.awake += s.awakeMinutes
     }
+  }
+  return out
+}
+
+/**
+ * Minutos dormidos por día de DESPERTAR, para `daily_health_cache.sleep_minutes`:
+ * la pantalla /health enseña el resumen de HOY, y el sueño de hoy es el de la
+ * noche que acabó esta mañana. Sale de las mismas noches que `sleep_entries`
+ * (sin siestas), así que la cifra coincide con la fila de la noche anterior.
+ */
+export function sleepMinutesByWakeDay(nights: Record<string, SleepDay>): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const night of Object.values(nights)) {
+    const day = localDay(night.end)
+    out[day] = (out[day] ?? 0) + Math.round(night.asleep)
   }
   return out
 }
@@ -110,13 +163,16 @@ export interface SleepEntryPayload {
   wake_time: string
   duration_minutes: number
   awake_minutes: number
-  awakenings: number
   quality: number
   source: string
   external_id: string
 }
 
-/** Qué escribir en `sleep_entries`: un create/update por día, saltando los días con datos manuales. */
+/**
+ * Qué escribir en `sleep_entries`: un create/update por noche (`collapseSleepByNight`),
+ * saltando las noches con datos manuales. `awakenings` no se manda: Health Connect
+ * no lo da y la UI lo oculta en las filas con `source = 'health_connect'`.
+ */
 export function planSleepMerge(
   userId: string,
   days: Record<string, SleepDay>,
@@ -135,7 +191,6 @@ export function planSleepMerge(
       wake_time: hhmm(info.end),
       duration_minutes: Math.round(info.asleep),
       awake_minutes: Math.round(info.awake),
-      awakenings: 0,
       quality: sleepQualityFromMinutes(info.asleep),
       source: HEALTH_SOURCE,
       external_id: info.id ?? '',

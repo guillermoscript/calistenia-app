@@ -5,6 +5,7 @@ import { pb } from '../lib/pocketbase'
 import { daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
 import { makeOptimisticListHandlers } from '../lib/optimistic'
+import { isWatchSleep } from '../lib/health-merge'
 import type { SleepEntry } from '../types'
 
 const LS_KEY = 'calistenia_sleep_entries'
@@ -60,7 +61,9 @@ const computeStats = (entries: SleepEntry[]): SleepStats => {
   const n = entries.length
   const avgDuration = entries.reduce((s, e) => s + e.duration_minutes, 0) / n
   const avgQuality = entries.reduce((s, e) => s + e.quality, 0) / n
-  const avgAwakenings = entries.reduce((s, e) => s + e.awakenings, 0) / n
+  // Las noches del reloj no saben los despertares: no cuentan para la media.
+  const known = entries.filter(e => !isWatchSleep(e))
+  const avgAwakenings = known.length > 0 ? known.reduce((s, e) => s + e.awakenings, 0) / known.length : 0
 
   // Promedio de minutos despierto — solo sobre entradas que tienen el campo
   const awakeEntries = entries.filter(e => e.awake_minutes && e.awake_minutes > 0)
@@ -140,6 +143,7 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
         screen_before_bed: r.screen_before_bed ?? undefined,
         stress_level: r.stress_level || undefined,
         note: r.note || undefined,
+        source: r.source || undefined,
         created: r.created,
         updated: r.updated,
       }))
@@ -238,7 +242,8 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
     (prev, { id, input }) => {
       return prev.map(entry => {
         if (entry.id !== id) return entry
-        const merged = { ...entry, ...input, updated: nowLocalForPB() }
+        // Editar una noche del reloj la hace manual: la próxima sync ya no la pisa.
+        const merged = { ...entry, ...input, ...(isWatchSleep(entry) ? { source: 'manual' } : {}), updated: nowLocalForPB() }
         if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
           const totalInBed = calculateDurationMinutes(merged.bedtime, merged.wake_time)
           merged.duration_minutes = Math.max(0, totalInBed - (merged.awake_minutes ?? 0))
@@ -253,6 +258,10 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
     mutationFn: async ({ id, input }: { id: string; input: Partial<SleepEntryInput> }) => {
       if (!userId || id.startsWith('local_')) return
       const data: Record<string, any> = { ...input }
+      const editing = (qc.getQueryData<SleepEntry[]>(key) ?? []).find(e => e.id === id)
+      // Editar una noche del reloj la hace manual: la próxima sync ya no la pisa
+      // y sus despertares pasan a verse.
+      if (editing && isWatchSleep(editing)) data.source = 'manual'
       // Recalcular duration_minutes si cambian bedtime, wake_time o awake_minutes
       if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
         const current = (qc.getQueryData<SleepEntry[]>(key) ?? []).find(e => e.id === id)

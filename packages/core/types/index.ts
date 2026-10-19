@@ -745,6 +745,8 @@ export interface SleepEntry {
   screen_before_bed?: boolean
   stress_level?: number
   note?: string
+  /** 'health_connect' = importada del reloj (sin despertares); vacío/'manual' = apuntada a mano. */
+  source?: string
   created: string
   updated: string
 }
