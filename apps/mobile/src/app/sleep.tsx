@@ -19,7 +19,8 @@ import { View, ScrollView, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, Moon, Plus, Trash2 } from 'lucide-react-native'
+import { ChevronLeft, Moon, Plus, Trash2, Watch } from 'lucide-react-native'
+import { isWatchSleep } from '@calistenia/core/lib/health-merge'
 
 import { Text } from '@/components/ui/text'
 import { Kicker } from '@/components/ui/kicker'
@@ -65,6 +66,17 @@ function useDateLabel() {
 }
 
 // ── Fila de historial ────────────────────────────────────────────────────────
+/** Marca de las noches importadas del reloj (Health Connect). */
+function WatchBadge() {
+  const { t } = useTranslation()
+  return (
+    <View className="flex-row items-center gap-1 rounded border border-indigo-400/30 bg-indigo-400/10 px-1.5 py-px">
+      <Watch size={11} color="rgb(165 180 252)" />
+      <Text className="font-mono text-[10px] text-indigo-300">{t('sleep.fromWatch')}</Text>
+    </View>
+  )
+}
+
 function SleepEntryRow({ entry, label, onEdit, onDelete }: {
   entry: SleepEntry
   label: string
@@ -84,7 +96,10 @@ function SleepEntryRow({ entry, label, onEdit, onDelete }: {
         <Text className="font-bebas text-lg" style={{ color: qualityColor(entry.quality) }}>{entry.quality}</Text>
       </View>
       <View className="flex-1">
-        <Text className="font-sans-medium capitalize text-foreground">{label}</Text>
+        <View className="flex-row items-center gap-2">
+          <Text className="font-sans-medium capitalize text-foreground">{label}</Text>
+          {isWatchSleep(entry) && <WatchBadge />}
+        </View>
         <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground">
           {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)}
           {entry.awake_minutes ? ` (${formatDuration(entry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()})` : ''}
@@ -207,9 +222,12 @@ export default function SleepScreen() {
                   )}
                 >
                   <CardContent className="gap-1 py-5">
-                    <Kicker>
-                      {isLastNight ? t('sleep.lastNight') : dateLabel(targetDate)}
-                    </Kicker>
+                    <View className="flex-row items-center gap-2">
+                      <Kicker>
+                        {isLastNight ? t('sleep.lastNight') : dateLabel(targetDate)}
+                      </Kicker>
+                      {isWatchSleep(targetEntry) && <WatchBadge />}
+                    </View>
                     <View className="flex-row items-center justify-between gap-4">
                       {/* flex-1 + shrink-0: en RN `flexShrink` es 0 por defecto, así que sin
                           esto la columna izquierda se queda con todo el ancho y empuja la
@@ -219,7 +237,7 @@ export default function SleepScreen() {
                         <Text className="mt-1 text-sm text-muted-foreground">
                           {targetEntry.bedtime} - {targetEntry.wake_time}
                           {targetEntry.awake_minutes ? ` · ${formatDuration(targetEntry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()}` : ''}
-                          {targetEntry.awakenings > 0 ? ` · ${t('sleep.awakeningsCount', { count: targetEntry.awakenings })}` : ''}
+                          {targetEntry.awakenings > 0 && !isWatchSleep(targetEntry) ? ` · ${t('sleep.awakeningsCount', { count: targetEntry.awakenings })}` : ''}
                         </Text>
                       </View>
                       <Text className="shrink-0 font-mono text-xs" style={{ color: qualityColor(targetEntry.quality) }}>
