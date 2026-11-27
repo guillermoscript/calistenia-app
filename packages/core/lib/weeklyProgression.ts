@@ -236,11 +236,19 @@ export function applyProgressionToExercise(
     case 'reps': {
       const shifted = shiftReps(exercise.reps, delta)
       if (shifted === null) return exercise
-      return setField(exercise, 'reps', shifted)
+      // `min`/`max` acotan cada número del texto («4-6» → «5-7» → …). Hasta
+      // #939 las reps eran la única forma lineal sin acotar; con las vueltas la
+      // rampa sigue más allá de la fase y el techo pasa a importar.
+      return setField(exercise, 'reps', clampRepsText(shifted, prog.min, prog.max))
     }
     default:
       return exercise
   }
+}
+
+/** Acota cada número de un `reps` «6» o «4-6» a `[min, max]`. */
+function clampRepsText(reps: string, min: number | undefined, max: number | undefined): string {
+  return reps.replace(/\d+/g, n => String(clamp(Number(n), min, max)))
 }
 
 /**

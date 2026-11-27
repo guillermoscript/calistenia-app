@@ -7,22 +7,32 @@
 
 import { storage } from '../platform'
 
-const key = (enrollmentId: string) => `calistenia_program_recap_seen_${enrollmentId}`
+import { normalizeCycle } from './programCycle'
 
-export function hasSeenProgramRecap(enrollmentId: string | null | undefined): boolean {
+/**
+ * Por inscripción Y vuelta (#939): repetir reabre la MISMA inscripción, y el
+ * resumen de la vuelta 2 también tiene que abrirse solo. La vuelta 1 conserva la
+ * clave de siempre para no reabrir resúmenes ya vistos.
+ */
+const key = (enrollmentId: string, cycle?: number | null) => {
+  const c = normalizeCycle(cycle)
+  return `calistenia_program_recap_seen_${enrollmentId}${c > 1 ? `_c${c}` : ''}`
+}
+
+export function hasSeenProgramRecap(enrollmentId: string | null | undefined, cycle?: number | null): boolean {
   if (!enrollmentId) return true
   try {
-    return storage.getItem(key(enrollmentId)) === 'true'
+    return storage.getItem(key(enrollmentId, cycle)) === 'true'
   } catch {
     // Sin storage no se puede recordar: mejor no abrirla sola en cada visita.
     return true
   }
 }
 
-export function markProgramRecapSeen(enrollmentId: string | null | undefined): void {
+export function markProgramRecapSeen(enrollmentId: string | null | undefined, cycle?: number | null): void {
   if (!enrollmentId) return
   try {
-    storage.setItem(key(enrollmentId), 'true')
+    storage.setItem(key(enrollmentId, cycle), 'true')
   } catch {
     // Sin storage, nada que guardar.
   }

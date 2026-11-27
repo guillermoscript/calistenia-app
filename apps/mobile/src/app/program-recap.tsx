@@ -26,6 +26,7 @@ import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
 import { useProgramRecap } from '@calistenia/core/hooks/useProgramRecap'
 import { programAdherencePct } from '@calistenia/core/lib/programProgress'
 import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { canRepeatProgram } from '@calistenia/core/lib/programCycle'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import { formatRecapNumber } from '@calistenia/core/lib/programRecap'
 import { markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
@@ -40,7 +41,7 @@ export default function ProgramRecapScreen() {
   const router = useRouter()
   const user = useAuthUser()
   const { activeProgram, activeEnrollment, programs, programProgress, progress } = useWorkoutState()
-  const { getWorkout, selectProgram, extendProgram } = useWorkoutActions()
+  const { getWorkout, selectProgram, extendProgram, repeatProgram } = useWorkoutActions()
   const { photos } = useBodyPhotos(user?.id ?? null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +51,8 @@ export default function ProgramRecapScreen() {
   const finished = programOutcome(programProgress) === 'finished'
   const extendable = canExtendProgram(programProgress, activeEnrollment?.extended_weeks)
   const adherence = programAdherencePct(programProgress)
+  // #939: repetir con más carga, solo si lo completó y queda vuelta.
+  const repeatable = programProgress.isCompleted && !finished && canRepeatProgram(activeEnrollment?.cycle)
   const next = recommendNextPrograms(programs, { completed: activeProgram, level: user?.level as string | undefined })[0] ?? null
   const name = activeProgram?.name ?? ''
   const title = finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })
@@ -65,7 +68,7 @@ export default function ProgramRecapScreen() {
   useEffect(() => {
     if (!ended || trackedRef.current) return
     trackedRef.current = true
-    markProgramRecapSeen(activeEnrollment?.id)
+    markProgramRecapSeen(activeEnrollment?.id, activeEnrollment?.cycle)
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programRecapViewed, {
       surface: 'program_recap',
       source: 'program_complete',
@@ -75,7 +78,7 @@ export default function ProgramRecapScreen() {
       comparisons: recap.comparisons.length,
       records: recap.records.length,
     })
-  }, [ended, activeEnrollment?.id, activeProgram?.id, programProgress, adherence, recap])
+  }, [ended, activeEnrollment?.id, activeEnrollment?.cycle, activeProgram?.id, programProgress, adherence, recap])
 
   const run = async (fn: () => Promise<boolean>, errorKey: string) => {
     if (busy) return
@@ -235,6 +238,16 @@ export default function ProgramRecapScreen() {
                   onPress={() => { trackProgramNextChosen('recommended', activeProgram?.id, next.id, 'program_recap'); void run(() => selectProgram(next.id), 'programs.switchError') }}
                 >
                   <Text className={extendable ? 'font-sans-medium' : 'font-bebas text-xl'} numberOfLines={1}>{t('home.action.startProgram', { name: next.name })}</Text>
+                </Button>
+              ) : null}
+              {repeatable ? (
+                <Button
+                  variant={next ? 'outline' : 'default'}
+                  className="min-h-14"
+                  disabled={busy}
+                  onPress={() => { trackProgramNextChosen('repeat', activeProgram?.id, activeProgram?.id, 'program_recap'); void run(repeatProgram, 'programs.repeatError') }}
+                >
+                  <Text className={next ? 'font-sans-medium' : 'font-bebas text-xl'}>{t('home.action.repeatProgram')}</Text>
                 </Button>
               ) : null}
               {error ? <Text className="font-sans text-sm text-destructive">{error}</Text> : null}

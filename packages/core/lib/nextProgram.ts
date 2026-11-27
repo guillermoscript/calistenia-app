@@ -101,7 +101,7 @@ export function recommendNextPrograms(
 }
 
 /** Qué salida eligió en la tarjeta de programa terminado (#934). */
-export type ProgramNextChoice = 'recommended' | 'recommended_detail' | 'other' | 'summary' | 'extend'
+export type ProgramNextChoice = 'recommended' | 'recommended_detail' | 'other' | 'summary' | 'extend' | 'repeat'
 
 /** Desde dónde se eligió: la tarjeta del inicio o la pantalla de cierre (#941). */
 export type ProgramNextSource = 'program_complete' | 'program_recap'

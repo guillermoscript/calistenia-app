@@ -245,3 +245,13 @@ describe('applyWeeklyProgression', () => {
     expect(out.rest).toBe(90)
   })
 })
+
+describe('rampa lineal de reps con techo (#939)', () => {
+  it('acota cada número del texto a min/max', () => {
+    const w = applyWeeklyProgression(
+      { phase: 1, day: 'lun', title: 't', exercises: [ex({ id: 'a', reps: '4-6', weeklyProgression: { field: 'reps', step: 2, max: 9 } })] },
+      4,
+    )
+    expect(w.exercises[0].reps).toBe('9-9')
+  })
+})

@@ -27,6 +27,7 @@ import { wallClockDay } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 import { extensionWeeksFor, programOutcome } from '../lib/programOutcome'
+import { applyCycleProgression, normalizeCycle } from '../lib/programCycle'
 import {
   completedWorkoutsFromProgress,
   computeProgramProgress,
@@ -37,7 +38,6 @@ import {
   type ProgramProgress,
 } from '../lib/programProgress'
 import { applyDeload } from '../lib/deload'
-import { applyWeeklyProgression } from '../lib/weeklyProgression'
 import type { ActiveEnrollment } from './usePrograms'
 import type { Phase, ProgramMeta, ProgressMap, WeekDay, Workout } from '../types'
 
@@ -72,6 +72,12 @@ export interface UseProgramProgressReturn {
    * dos desde hoy. Quien llama comprueba antes `canExtendProgram`.
    */
   extendProgram: () => Promise<boolean>
+  /**
+   * Repite el programa terminado con más carga (#939): reabre la MISMA
+   * inscripción con `started_at` de hoy y `cycle + 1`. Quien llama comprueba
+   * antes `canRepeatProgram`.
+   */
+  repeatProgram: () => Promise<boolean>
 }
 
 export function useProgramProgress({
@@ -209,7 +215,43 @@ export function useProgramProgress({
     }
   }, [userId, activeEnrollment, activeProgram, programProgress, today, qc])
 
-  return { programProgress, setPhaseOverride, extendProgram }
+  const repeatProgram = useCallback(async (): Promise<boolean> => {
+    if (!userId || !activeEnrollment) return false
+    const cycle = normalizeCycle(activeEnrollment.cycle) + 1
+    const startedAt = nowLocalForPB()
+    try {
+      await pb.collection('user_programs').update(activeEnrollment.id, {
+        status: 'active',
+        ended_at: '',
+        started_at: startedAt,
+        current_phase: 0,
+        extended_weeks: 0,
+        cycle,
+      })
+      closedRef.current = null
+      qc.setQueryData<ActiveEnrollment | null>(
+        qk.programs.enrollment(userId),
+        (old) => (old && old.id === activeEnrollment.id
+          ? { ...old, status: 'active', started_at: startedAt, current_phase: 0, extended_weeks: 0, cycle }
+          : old),
+      )
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programRepeated, {
+        surface: 'home',
+        source: 'program_complete',
+        result: 'repeated',
+        program_id: activeProgram?.id,
+        program_slug: activeProgram?.slug,
+        cycle,
+        adherence_pct: programAdherencePct(programProgress) ?? undefined,
+      })
+      return true
+    } catch (e) {
+      console.error('useProgramProgress: no se pudo repetir el programa', e)
+      return false
+    }
+  }, [userId, activeEnrollment, activeProgram, programProgress, qc])
+
+  return { programProgress, setPhaseOverride, extendProgram, repeatProgram }
 }
 
 /**
@@ -237,9 +279,11 @@ export function useWeekAwareGetWorkout(
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null,
   phases: Phase[],
   programProgress: Pick<ProgramProgress, 'currentWeek' | 'isCompleted' | 'hasStarted'>,
+  /** `user_programs.cycle` (#939): en la vuelta 2+ todo arranca más arriba. */
+  cycle: number = 1,
 ): (phaseNumber: number, dayId: string) => Workout | null {
   const week = programProgress.hasStarted && !programProgress.isCompleted ? programProgress.currentWeek : null
-  const cache = useMemo(() => new Map<string, Workout | null>(), [getWorkout, phases, week])
+  const cache = useMemo(() => new Map<string, Workout | null>(), [getWorkout, phases, week, cycle])
   return useCallback((phaseNumber: number, dayId: string) => {
     const key = `p${phaseNumber}_${dayId}`
     if (cache.has(key)) return cache.get(key)!
@@ -247,10 +291,12 @@ export function useWeekAwareGetWorkout(
     let out = raw
     if (out) {
       const deload = isDeloadWeek(phases, phaseNumber, week)
-      out = applyWeeklyProgression(out, weekInPhase(phases, phaseNumber, week), deload)
+      // Rampa (desplazada en la vuelta 2+) y escalón de vuelta (#939), y
+      // después la descarga, que parte de lo que toca ESA semana.
+      out = applyCycleProgression(out, phases, phaseNumber, weekInPhase(phases, phaseNumber, week), deload, cycle)
       if (deload) out = applyDeload(out)
     }
     cache.set(key, out)
     return out
-  }, [cache, getWorkout, phases, week])
+  }, [cache, getWorkout, phases, week, cycle])
 }

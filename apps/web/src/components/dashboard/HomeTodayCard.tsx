@@ -38,6 +38,7 @@ import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { canRepeatProgram, normalizeCycle } from '@calistenia/core/lib/programCycle'
 import { hasSeenProgramRecap, markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
 import {
   buildFirstWorkout,
@@ -237,7 +238,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { activeProgram, activeEnrollment, programs, phases, weekDays, programProgress, progress } = useWorkoutState()
-  const { selectProgram, getTotalSessions, extendProgram } = useWorkoutActions()
+  const { selectProgram, getTotalSessions, extendProgram, repeatProgram } = useWorkoutActions()
   const { user, userId } = useAuthState()
   const strength = useActiveSession()
   const cardio = useCardioSessionContext()
@@ -256,11 +257,12 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
   // La pantalla de cierre se abre SOLA una vez por inscripción (#941): la
   // primera vez que el inicio llega a «programa terminado».
   const enrollmentId = activeEnrollment?.id
+  const enrollmentCycle = activeEnrollment?.cycle
   useEffect(() => {
-    if (kind !== 'program_complete' || hasSeenProgramRecap(enrollmentId)) return
-    markProgramRecapSeen(enrollmentId)
+    if (kind !== 'program_complete' || hasSeenProgramRecap(enrollmentId, enrollmentCycle)) return
+    markProgramRecapSeen(enrollmentId, enrollmentCycle)
     navigate('/program-recap')
-  }, [kind, enrollmentId, navigate])
+  }, [kind, enrollmentId, enrollmentCycle, navigate])
 
   const primary = (fn: () => void) => () => {
     trackHomePrimaryCta({ state: kind })
@@ -356,6 +358,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
       <div className="flex justify-between gap-3">
         <Meta className="truncate text-[10px]">
           {t('home.training.programPhase', { program: activeProgram.name, phase: programProgress.currentPhase, phases: phases.length || 1 })}
+          {normalizeCycle(activeEnrollment?.cycle) > 1 && ` · ${t('home.training.cycle', { cycle: normalizeCycle(activeEnrollment?.cycle) })}`}
         </Meta>
         <Meta className="shrink-0 text-[10px]">
           {t('home.training.programWeek', { week: programProgress.currentWeek ?? 1, weeks: programProgress.totalWeeks })}
@@ -654,6 +657,15 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
         else navigate('/programs')
       }
       const seeOthers = () => { trackProgramNextChosen('other', activeProgram?.id); navigate('/programs') }
+      // #939: repetir con más carga, solo si lo COMPLETÓ (≥ 70 %) y no ha
+      // llegado a la última vuelta. Sin siguiente en su ruta (avanzados,
+      // Planche) es la salida principal.
+      const repeatable = programProgress.isCompleted && !finished && canRepeatProgram(activeEnrollment?.cycle)
+      const repeat = async () => {
+        trackProgramNextChosen('repeat', activeProgram?.id, activeProgram?.id)
+        if (!(await repeatProgram())) toast.error(t('programs.repeatError'))
+      }
+      const summary = () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/program-recap') }
       const extend = async () => {
         trackProgramNextChosen('extend', activeProgram?.id)
         if (!(await extendProgram())) toast.error(t('programs.extendError'))
@@ -694,12 +706,17 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
             </>
           ) : (
             <>
-              <PrimaryAction onClick={primary(startNext)}>
-                {next ? t('home.action.startProgram', { name: next.name }) : t('home.action.seeOthers')}
-              </PrimaryAction>
-              <div className="flex gap-2">
-                {next && <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>}
-                <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/program-recap') })}>{t('home.programComplete.summary')}</SecondaryAction>
+              {!next && repeatable ? (
+                <PrimaryAction icon={false} onClick={primary(() => { void repeat() })}>{t('home.action.repeatProgram')}</PrimaryAction>
+              ) : (
+                <PrimaryAction onClick={primary(startNext)}>
+                  {next ? t('home.action.startProgram', { name: next.name }) : t('home.action.seeOthers')}
+                </PrimaryAction>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {next && repeatable && <SecondaryAction onClick={secondary('repeat', () => { void repeat() })}>{t('home.action.repeatProgram')}</SecondaryAction>}
+                {(next || repeatable) && <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>}
+                <SecondaryAction onClick={secondary('summary', summary)}>{t('home.programComplete.summary')}</SecondaryAction>
               </div>
             </>
           )}

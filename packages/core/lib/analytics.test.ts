@@ -26,7 +26,8 @@ describe('canonical analytics contract', () => {
   it('defines the versioned growth-loop event set without duplicate names', () => {
     const events = Object.values(CANONICAL_ANALYTICS_EVENTS)
 
-    expect(events).toHaveLength(73)
+    expect(events).toHaveLength(74)
+    expect(events).toContain('program_repeated')
     expect(events).toContain('program_recap_viewed')
     expect(events).toContain('program_extended')
     // #934: el cierre del programa y la salida elegida en su tarjeta.
@@ -99,8 +100,8 @@ describe('canonical analytics contract', () => {
     const training = events.filter(e => e.startsWith('program_'))
     expect(community).toHaveLength(5)
     // #636 §4/§5 sumó `program_viewed` y `program_editor_saved` al currículo;
-    // #934, `program_completed` y `program_next_chosen`; #938, `program_extended`; #941, `program_recap_viewed`.
-    expect(training).toHaveLength(8)
+    // #934, `program_completed` y `program_next_chosen`; #938, `program_extended`; #941, `program_recap_viewed`; #939, `program_repeated`.
+    expect(training).toHaveLength(9)
     expect(community.some(e => training.includes(e))).toBe(false)
   })
 
