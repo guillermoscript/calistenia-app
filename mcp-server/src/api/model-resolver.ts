@@ -3,6 +3,7 @@ import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import type { LanguageModel, ToolSet } from "ai";
 import config from "./config.js";
+import { createParallelSearchTools } from "./parallel-search.js";
 
 export type Tier = "free" | "pro";
 export type Provider = "anthropic" | "google" | "openai";
@@ -81,10 +82,16 @@ export function resolveModel(tier: Tier = "free"): ResolvedModel {
 }
 
 /**
- * Returns the web search tool for the active provider.
- * Each provider has its own web search implementation.
+ * Search selection is independent of the model provider. Native search remains
+ * available explicitly, including its provider-specific grounding features.
  */
-export function resolveWebSearchTool(provider: Provider): ToolSet {
+export function resolveWebSearchTool(provider: Provider, modelName?: string): ToolSet {
+  const selection = config.webSearchProvider ?? "parallel";
+  if (selection === "none") return {};
+  if (selection === "parallel") return createParallelSearchTools(modelName);
+  if (selection !== "native") {
+    throw new Error("WEB_SEARCH_PROVIDER must be parallel, native, or none.");
+  }
   switch (provider) {
     case "anthropic":
       return { web_search: anthropic.tools.webSearch_20260209({ maxUses: 3 }) };

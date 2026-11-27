@@ -158,6 +158,36 @@ auth works.
 ---
 
 ## Development
+
+### Nutrition web search
+
+Food lookup and meal analysis first use Open Food Facts. When the model needs
+additional sources, an unconfigured `WEB_SEARCH_PROVIDER` now uses
+[Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) for web
+search and page excerpts. Anonymous search uses Fast mode and needs no Parallel
+account or API key. An AI model provider key is still required to run the model.
+
+Set `WEB_SEARCH_PROVIDER` in the AI API environment and restart the server:
+
+| Value | Behavior |
+|-------|----------|
+| `parallel` (default, including an unset or empty value) | Search and fetch through `https://search.parallel.ai/mcp`, without authentication. |
+| `native` | Keep the previous Anthropic, OpenAI or Google search/grounding tools for the selected model provider. |
+| `none` | Disable web search and page fetching; Open Food Facts remains available. |
+
+Model keys, `DEFAULT_AI_PROVIDER` and model overrides continue to select the model;
+they do not select the search service. Existing installations that want to retain
+provider-native search should set `WEB_SEARCH_PROVIDER=native` before upgrading.
+Unknown values fail explicitly. Search errors never switch to another provider.
+
+Queries and page URLs chosen by the model are sent to the selected search service.
+Parallel calls use a random identifier shared only within one nutrition request;
+PocketBase tokens and user IDs are not forwarded. Each call, including connection
+and discovery, has a 15-second deadline and respects tool cancellation. The free
+anonymous service has usage limits; failed or unavailable searches remain tool
+errors for the model to handle. Source URLs stay available to the model, while
+the app's existing nutrition text sanitization keeps citations out of food fields.
+
 ```bash
 npm run dev        # mcp-use dev: HTTP server + Views with hot reload (Inspector at /mcp)
 npm run dev:simple # plain tsx process, no Views (API/OAuth/tool work)
