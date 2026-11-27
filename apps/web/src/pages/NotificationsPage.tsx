@@ -104,6 +104,8 @@ function getNotificationMessage(
       return t(n.data?.segment === 'trained_then_stopped' ? 'notif.inactivity14dStopped' : 'notif.inactivity14d')
     case 'inactivity_new_start':
       return t('notif.inactivityNewStart')
+    case 'program_complete_nudge':
+      return t('notif.programCompleteNudge', { program: n.data?.program || '' })
     default:
       return t('notif.default', { name: n.actorName })
   }
@@ -152,6 +154,9 @@ function getNotificationRoute(n: AppNotification): string {
     case 'inactivity_new_start':
       // La acción útil es entrenar: el entreno de hoy (#695, #870).
       return workoutTodayUrl(localDay())
+    case 'program_complete_nudge':
+      // El inicio enseña «programa terminado» con todas las salidas (#940).
+      return '/'
     default:
       return '/'
   }

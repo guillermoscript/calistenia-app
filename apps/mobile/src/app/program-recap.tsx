@@ -41,7 +41,7 @@ export default function ProgramRecapScreen() {
   const router = useRouter()
   const user = useAuthUser()
   const { activeProgram, activeEnrollment, programs, programProgress, progress } = useWorkoutState()
-  const { getWorkout, selectProgram, extendProgram, repeatProgram } = useWorkoutActions()
+  const { getWorkout, selectProgram, extendProgram, repeatProgram, enterFreeMode } = useWorkoutActions()
   const { photos } = useBodyPhotos(user?.id ?? null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -257,6 +257,15 @@ export default function ProgramRecapScreen() {
                 onPress={() => { trackProgramNextChosen('other', activeProgram?.id, null, 'program_recap'); router.push('/programs') }}
               >
                 <Text>{t('home.action.seeOthers')}</Text>
+              </Button>
+              {/* #940: salir sin elegir otro programa; el historial se queda. */}
+              <Button
+                variant="ghost"
+                className="min-h-12"
+                disabled={busy}
+                onPress={() => { trackProgramNextChosen('free', activeProgram?.id, null, 'program_recap'); void run(enterFreeMode, 'programs.freeModeError') }}
+              >
+                <Text>{t('home.action.freeMode')}</Text>
               </Button>
             </View>
           </View>

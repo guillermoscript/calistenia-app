@@ -36,7 +36,7 @@ export default function ProgramRecapPage() {
   const navigate = useNavigate()
   const { user, userId } = useAuthState()
   const { activeProgram, activeEnrollment, programs, programProgress, progress } = useWorkoutState()
-  const { getWorkout, selectProgram, extendProgram, repeatProgram } = useWorkoutActions()
+  const { getWorkout, selectProgram, extendProgram, repeatProgram, enterFreeMode } = useWorkoutActions()
   const { photos } = useBodyPhotos(userId || null)
   const [busy, setBusy] = useState(false)
 
@@ -235,6 +235,15 @@ export default function ProgramRecapPage() {
             onClick={() => { trackProgramNextChosen('other', activeProgram?.id, null, 'program_recap'); navigate('/programs') }}
           >
             {t('home.action.seeOthers')}
+          </Button>
+          {/* #940: salir sin elegir otro programa; el historial se queda. */}
+          <Button
+            variant="ghost"
+            className="h-12"
+            disabled={busy}
+            onClick={() => { trackProgramNextChosen('free', activeProgram?.id, null, 'program_recap'); void run(enterFreeMode, 'programs.freeModeError') }}
+          >
+            {t('home.action.freeMode')}
           </Button>
         </div>
       </section>

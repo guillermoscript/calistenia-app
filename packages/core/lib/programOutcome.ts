@@ -60,3 +60,18 @@ export function extensionWeeksFor(endDay: string | null, today: string): number 
   const late = daysPastProgramEnd(endDay, today)
   return Math.ceil(late / 7) + EXTENSION_WEEKS
 }
+
+/**
+ * Días en «programa terminado» sin elegir nada a partir de los cuales la
+ * tarjeta ofrece entrenar igualmente (#940). Antes de eso la tarjeta es solo la
+ * decisión; después, que el inicio no se quede sin nada que hacer hoy.
+ */
+export const STALE_PROGRAM_COMPLETE_DAYS = 7
+
+/** ¿Lleva el programa terminado `STALE_PROGRAM_COMPLETE_DAYS` o más sin elegir? */
+export function isStaleProgramComplete(
+  p: Pick<ProgramProgress, 'isCompleted' | 'endDay'>,
+  today: string,
+): boolean {
+  return p.isCompleted && daysPastProgramEnd(p.endDay, today) >= STALE_PROGRAM_COMPLETE_DAYS
+}

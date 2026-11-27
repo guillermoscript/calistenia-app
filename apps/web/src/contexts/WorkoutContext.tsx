@@ -70,6 +70,8 @@ interface WorkoutActions {
   extendProgram: () => Promise<boolean>
   /** Repite el programa terminado con más carga (#939). */
   repeatProgram: () => Promise<boolean>
+  /** Deja el programa terminado y pasa a «sin programa» (#940). */
+  enterFreeMode: () => Promise<boolean>
 }
 
 interface WorkoutContextValue {
@@ -128,7 +130,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const getLongestStreak = useCallback(() => weeklyStreak.best, [weeklyStreak])
   const getCurrentStreak = useCallback(() => weeklyStreak.current, [weeklyStreak])
 
-  const { programProgress, setPhaseOverride, extendProgram, repeatProgram } = useProgramProgress({
+  const { programProgress, setPhaseOverride, extendProgram, repeatProgram, enterFreeMode } = useProgramProgress({
     userId, activeProgram, activeEnrollment, phases, weekDays, progress,
     settingsPhase: settings.phase,
   })
@@ -159,14 +161,14 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
-    setPhaseOverride, extendProgram, repeatProgram,
+    setPhaseOverride, extendProgram, repeatProgram, enterFreeMode,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
-    setPhaseOverride, extendProgram, repeatProgram,
+    setPhaseOverride, extendProgram, repeatProgram, enterFreeMode,
   ])
 
   const value = useMemo(() => ({ state, actions }), [state, actions])
