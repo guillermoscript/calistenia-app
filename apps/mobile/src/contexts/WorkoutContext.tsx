@@ -72,6 +72,8 @@ interface WorkoutActions {
   refreshPrograms: () => Promise<void>
   /** Override manual de fase, guardado en `user_programs` (no en settings). */
   setPhaseOverride: (phase: number | null) => Promise<boolean>
+  /** Extiende el programa «finalizado» para ponerse al día (#938). */
+  extendProgram: () => Promise<boolean>
 }
 
 interface WorkoutContextValue {
@@ -127,7 +129,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const getLongestStreak = useCallback(() => weeklyStreak.best, [weeklyStreak])
   const getCurrentStreak = useCallback(() => weeklyStreak.current, [weeklyStreak])
 
-  const { programProgress, setPhaseOverride } = useProgramProgress({
+  const { programProgress, setPhaseOverride, extendProgram } = useProgramProgress({
     userId, activeProgram, activeEnrollment, phases, weekDays, progress,
     settingsPhase: settings.phase,
   })
@@ -157,13 +159,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride, extendProgram,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride, extendProgram,
   ])
 
   const { i18n } = useTranslation()

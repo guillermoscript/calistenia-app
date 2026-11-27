@@ -37,6 +37,7 @@ import type { HomeActiveActivity, HomeDayRef, HomeState } from '@calistenia/core
 import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
 import type { Exercise, ProgramMeta, SessionDone } from '@calistenia/core/types'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
+import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
 import {
   ChangeDayAction,
   LinkRow,
@@ -585,64 +586,102 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
   const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
-  const { activeProgram, programProgress, programs } = useWorkoutState()
-  const { getTotalSessions, selectProgram } = useWorkoutActions()
-  const [starting, setStarting] = useState(false)
-  const [error, setError] = useState(false)
+  const { activeProgram, activeEnrollment, programProgress, programs } = useWorkoutState()
+  const { getTotalSessions, selectProgram, extendProgram } = useWorkoutActions()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const name = activeProgram?.name ?? ''
   // La misma elección que la web (#933): ruta del programa (#935) y, si no
   // hay, cercanía por objetivo y nivel.
   const next = recommendNextPrograms(programs, { completed: activeProgram, level: user?.level as string | undefined })[0] ?? null
+  // #938: con menos del 70 % de entrenos hechos es «finalizado», y se ofrece
+  // extender una vez para ponerse al día.
+  const finished = programOutcome(programProgress) === 'finished'
+  const extendable = canExtendProgram(programProgress, activeEnrollment?.extended_weeks)
+  const counts = { done: programProgress.programSessionsDone, planned: programProgress.programSessionsPlanned }
 
-  const start = async (program: ProgramMeta) => {
-    if (starting) return
-    setStarting(true)
-    setError(false)
-    const ok = await selectProgram(program.id)
-    setStarting(false)
-    if (!ok) setError(true)
+  const run = async (fn: () => Promise<boolean>, errorKey: string) => {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    const ok = await fn()
+    setBusy(false)
+    if (!ok) setError(t(errorKey))
   }
 
+  const recommendedRow = next ? (
+    <View className="border-t border-border">
+      <LinkRow
+        kicker={t('home.programComplete.nextRecommended')}
+        title={next.name}
+        hint={nextProgramMeta(t, next)}
+        onPress={() => onSecondary('other_program', () => {
+          trackProgramNextChosen('recommended_detail', activeProgram?.id, next.id)
+          router.push(`/program/${next.id}`)
+        })}
+      />
+    </View>
+  ) : null
+
+  const seeOthers = (
+    <TextAction
+      label={t('home.action.seeOthers')}
+      onPress={() => onSecondary('other_program', () => {
+        trackProgramNextChosen('other', activeProgram?.id)
+        router.push('/programs')
+      })}
+      className="self-center"
+    />
+  )
+
+  const title = finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })
+
   return (
-    <TodayCard label={t('home.programComplete.title', { name })}>
-      <TodayKicker>{t('home.kicker.programComplete')}</TodayKicker>
-      <TodayTitle>{t('home.programComplete.title', { name })}</TodayTitle>
+    <TodayCard label={title}>
+      <TodayKicker>{finished ? t('home.kicker.programFinished') : t('home.kicker.programComplete')}</TodayKicker>
+      <View className="gap-1.5">
+        <TodayTitle>{title}</TodayTitle>
+        {finished ? (
+          <TodayBody>
+            {extendable ? t('home.programComplete.finishedBody', counts) : t('home.programComplete.finishedBodyNoExtend', counts)}
+          </TodayBody>
+        ) : null}
+      </View>
       <TodayStats
         items={[
           { key: 'weeks', value: String(programProgress.totalWeeks), label: t('home.programComplete.weeks') },
-          { key: 'workouts', value: String(getTotalSessions()), label: t('home.programComplete.workouts') },
+          counts.planned > 0
+            ? { key: 'done', value: `${counts.done}/${counts.planned}`, label: t('home.programComplete.adherence') }
+            : { key: 'workouts', value: String(getTotalSessions()), label: t('home.programComplete.workouts') },
         ]}
       />
-      {next ? (
+      {extendable ? (
         <>
-          <View className="border-t border-border">
-            <LinkRow
-              kicker={t('home.programComplete.nextRecommended')}
-              title={next.name}
-              hint={nextProgramMeta(t, next)}
-              onPress={() => onSecondary('other_program', () => {
-                trackProgramNextChosen('recommended_detail', activeProgram?.id, next.id)
-                router.push(`/program/${next.id}`)
-              })}
-            />
-          </View>
+          <PrimaryAction
+            icon={false}
+            label={t('home.action.extendProgram')}
+            onPress={() => onPrimary(() => {
+              trackProgramNextChosen('extend', activeProgram?.id)
+              void run(extendProgram, 'programs.extendError')
+            })}
+          />
+          {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
+          {recommendedRow}
+          {seeOthers}
+        </>
+      ) : next ? (
+        <>
+          {recommendedRow}
           <PrimaryAction
             icon={false}
             label={t('home.action.startProgram', { name: next.name })}
             onPress={() => onPrimary(() => {
               trackProgramNextChosen('recommended', activeProgram?.id, next.id)
-              void start(next)
+              void run(() => selectProgram(next.id), 'programs.switchError')
             })}
           />
-          {error && <TodayMeta className="text-destructive">{t('programs.switchError')}</TodayMeta>}
-          <TextAction
-            label={t('home.action.seeOthers')}
-            onPress={() => onSecondary('other_program', () => {
-              trackProgramNextChosen('other', activeProgram?.id)
-              router.push('/programs')
-            })}
-            className="self-center"
-          />
+          {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
+          {seeOthers}
         </>
       ) : (
         <PrimaryAction

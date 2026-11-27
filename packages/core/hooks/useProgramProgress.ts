@@ -26,6 +26,7 @@ import { nowLocalForPB, todayStr, utcToLocalDateStr } from '../lib/dateUtils'
 import { wallClockDay } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
+import { extensionWeeksFor, programOutcome } from '../lib/programOutcome'
 import {
   completedWorkoutsFromProgress,
   computeProgramProgress,
@@ -65,6 +66,12 @@ export interface UseProgramProgressReturn {
    * activo. Sin inscripción activa no hace nada y devuelve `false`.
    */
   setPhaseOverride: (phase: number | null) => Promise<boolean>
+  /**
+   * Extiende el programa terminado para ponerse al día (#938): reabre la
+   * inscripción y le suma las semanas que hagan falta para que queden al menos
+   * dos desde hoy. Quien llama comprueba antes `canExtendProgram`.
+   */
+  extendProgram: () => Promise<boolean>
 }
 
 export function useProgramProgress({
@@ -82,6 +89,7 @@ export function useProgramProgress({
   const computed = useMemo(() => computeProgramProgress({
     startedAt: activeEnrollment?.started_at ?? '',
     durationWeeks: activeProgram?.duration_weeks ?? 0,
+    extendedWeeks: activeEnrollment?.extended_weeks ?? 0,
     phases,
     weekDays,
     completed,
@@ -134,7 +142,9 @@ export function useProgramProgress({
     const completedProps = {
       surface: 'program',
       source: 'program_progress',
-      result: 'completed',
+      // #938: `completed` con adherencia ≥ 70 %, `finished` por debajo.
+      result: programOutcome(programProgress),
+      extended_weeks: activeEnrollment?.extended_weeks ?? 0,
       program_id: activeProgram?.id,
       program_slug: activeProgram?.slug,
       difficulty: activeProgram?.difficulty,
@@ -165,7 +175,41 @@ export function useProgramProgress({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, enrollmentId, shouldClose, qc])
 
-  return { programProgress, setPhaseOverride }
+  const extendProgram = useCallback(async (): Promise<boolean> => {
+    if (!userId || !activeEnrollment) return false
+    const weeks = extensionWeeksFor(programProgress.endDay, today)
+    try {
+      await pb.collection('user_programs').update(activeEnrollment.id, {
+        status: 'active',
+        ended_at: '',
+        extended_weeks: weeks,
+      })
+      // El efecto de cierre lleva un ref por inscripción para no reintentar en
+      // bucle; tras extender, el MISMO id tiene que poder cerrarse otra vez al
+      // acabar la extensión.
+      closedRef.current = null
+      qc.setQueryData<ActiveEnrollment | null>(
+        qk.programs.enrollment(userId),
+        (old) => (old && old.id === activeEnrollment.id ? { ...old, status: 'active', extended_weeks: weeks } : old),
+      )
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programExtended, {
+        surface: 'home',
+        source: 'program_complete',
+        result: 'extended',
+        program_id: activeProgram?.id,
+        program_slug: activeProgram?.slug,
+        extended_weeks: weeks,
+        sessions_done: programProgress.programSessionsDone,
+        sessions_planned: programProgress.programSessionsPlanned,
+      })
+      return true
+    } catch (e) {
+      console.error('useProgramProgress: no se pudo extender el programa', e)
+      return false
+    }
+  }, [userId, activeEnrollment, activeProgram, programProgress, today, qc])
+
+  return { programProgress, setPhaseOverride, extendProgram }
 }
 
 /**

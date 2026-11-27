@@ -37,6 +37,7 @@ import { plannedSetCount } from '@calistenia/core/lib/session-funnel'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
+import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
 import {
   buildFirstWorkout,
   estimateFirstWorkoutMinutes,
@@ -73,10 +74,12 @@ function PrimaryAction({ onClick, children, icon = true }: { onClick: () => void
     <Button
       onClick={onClick}
       data-testid="home-primary"
-      className="h-14 w-full max-w-full gap-2.5 rounded-[10px] font-bebas text-2xl tracking-wide lg:w-auto lg:shrink-0 lg:px-8 [&_svg]:size-[18px]"
+      className="h-14 w-full max-w-full gap-2.5 rounded-[10px] font-bebas text-2xl tracking-wide lg:w-auto lg:shrink-0 lg:px-6 [&_svg]:size-[18px]"
     >
       {icon && <Play fill="currentColor" aria-hidden="true" />}
-      {/* `truncate`: con «Empezar {programa}» el nombre largo se salía del botón. */}
+      {/* `truncate`: con «Empezar {programa}» el nombre largo se salía del botón.
+          `lg:px-6` y no `px-8`: en la columna estrecha del inicio (1024 px) con
+          `px-8` no cabía ni «Extender 2 semanas» y se recortaba (#938). */}
       <span className="min-w-0 truncate pt-[3px]">{children}</span>
     </Button>
   )
@@ -232,8 +235,8 @@ interface HomeTodayCardProps {
 export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCardProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { activeProgram, programs, phases, weekDays, programProgress, progress } = useWorkoutState()
-  const { selectProgram, getTotalSessions } = useWorkoutActions()
+  const { activeProgram, activeEnrollment, programs, phases, weekDays, programProgress, progress } = useWorkoutState()
+  const { selectProgram, getTotalSessions, extendProgram } = useWorkoutActions()
   const { user, userId } = useAuthState()
   const strength = useActiveSession()
   const cardio = useCardioSessionContext()
@@ -629,13 +632,38 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
     // ── Programa terminado ──────────────────────────────────────────────────
     case 'program_complete': {
       const next = recommendNextPrograms(programs, { completed: activeProgram, level: user?.level })[0] ?? null
+      // #938: con menos del 70 % de entrenos hechos es «finalizado», no
+      // «completado», y se ofrece extender una vez para ponerse al día.
+      const finished = programOutcome(programProgress) === 'finished'
+      const extendable = canExtendProgram(programProgress, activeEnrollment?.extended_weeks)
+      const counts = { done: programProgress.programSessionsDone, planned: programProgress.programSessionsPlanned }
+      const name = activeProgram?.name ?? ''
+      const startNext = () => {
+        trackProgramNextChosen(next ? 'recommended' : 'other', activeProgram?.id, next?.id)
+        if (next) void activate(next)
+        else navigate('/programs')
+      }
+      const seeOthers = () => { trackProgramNextChosen('other', activeProgram?.id); navigate('/programs') }
+      const extend = async () => {
+        trackProgramNextChosen('extend', activeProgram?.id)
+        if (!(await extendProgram())) toast.error(t('programs.extendError'))
+      }
       return (
-        <Shell label={t('home.kicker.programComplete')} accent testState="program_complete">
-          <Kicker>{t('home.kicker.programComplete')}</Kicker>
-          <Title>{t('home.programComplete.title', { name: activeProgram?.name ?? '' })}</Title>
+        <Shell label={finished ? t('home.kicker.programFinished') : t('home.kicker.programComplete')} accent testState="program_complete">
+          <Kicker>{finished ? t('home.kicker.programFinished') : t('home.kicker.programComplete')}</Kicker>
+          <div className="flex flex-col gap-1.5">
+            <Title>{finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })}</Title>
+            {finished && (
+              <p className="m-0 text-sm text-muted-foreground" data-testid="home-program-finished">
+                {extendable ? t('home.programComplete.finishedBody', counts) : t('home.programComplete.finishedBodyNoExtend', counts)}
+              </p>
+            )}
+          </div>
           <Stats items={[
             { value: programProgress.totalWeeks || activeProgram?.duration_weeks || 0, label: t('home.programComplete.weeks') },
-            { value: getTotalSessions(), label: t('home.programComplete.workouts') },
+            counts.planned > 0
+              ? { value: `${counts.done}/${counts.planned}`, label: t('home.programComplete.adherence') }
+              : { value: getTotalSessions(), label: t('home.programComplete.workouts') },
             { value: phases.length || 1, label: t('home.table.phases') },
           ]} />
           {next && (
@@ -645,17 +673,25 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
               <Meta className="text-[10px]">{programMeta(t, next)}</Meta>
             </div>
           )}
-          <PrimaryAction onClick={primary(() => {
-            trackProgramNextChosen(next ? 'recommended' : 'other', activeProgram?.id, next?.id)
-            if (next) void activate(next)
-            else navigate('/programs')
-          })}>
-            {next ? t('home.action.startProgram', { name: next.name }) : t('home.action.seeOthers')}
-          </PrimaryAction>
-          <div className="flex gap-2">
-            {next && <SecondaryAction onClick={secondary('other_program', () => { trackProgramNextChosen('other', activeProgram?.id); navigate('/programs') })}>{t('home.action.seeOthers')}</SecondaryAction>}
-            <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/progress') })}>{t('home.programComplete.summary')}</SecondaryAction>
-          </div>
+          {extendable ? (
+            <>
+              <PrimaryAction icon={false} onClick={primary(() => { void extend() })}>{t('home.action.extendProgram')}</PrimaryAction>
+              <div className="flex flex-wrap gap-2">
+                {next && <SecondaryAction onClick={secondary('other_program', startNext)}>{t('home.action.startProgram', { name: next.name })}</SecondaryAction>}
+                <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>
+              </div>
+            </>
+          ) : (
+            <>
+              <PrimaryAction onClick={primary(startNext)}>
+                {next ? t('home.action.startProgram', { name: next.name }) : t('home.action.seeOthers')}
+              </PrimaryAction>
+              <div className="flex gap-2">
+                {next && <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>}
+                <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/progress') })}>{t('home.programComplete.summary')}</SecondaryAction>
+              </div>
+            </>
+          )}
         </Shell>
       )
     }

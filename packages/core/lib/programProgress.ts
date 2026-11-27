@@ -143,6 +143,12 @@ export interface ProgramProgressInput {
   startedAt: string
   /** `programs.duration_weeks`. `0` en programas sin duración declarada. */
   durationWeeks: number
+  /**
+   * `user_programs.extended_weeks` (#938): semanas añadidas al final para
+   * ponerse al día. Alargan el calendario pero NO lo que el programa pedía
+   * (`programSessionsPlanned` sigue siendo el de las semanas base).
+   */
+  extendedWeeks?: number
   /** `program_phases` ya mapeadas (`weeks` es el rango, p. ej. `"1-6"`). */
   phases: readonly Phase[]
   /** Días de la semana del programa; los `type: 'rest'` no cuentan como planificados. */
@@ -262,8 +268,16 @@ export interface ProgramProgress {
    * (#934). Junto con `programSessionsPlanned` da la adherencia.
    */
   programSessionsDone: number
-  /** Días entrenables × semanas: lo que el programa pedía entero (#934). */
+  /**
+   * Días entrenables × semanas BASE: lo que el programa pedía entero (#934).
+   * La extensión de #938 no lo sube: es tiempo para ponerse al día, no más
+   * trabajo.
+   */
   programSessionsPlanned: number
+  /** Semanas del programa sin la extensión (`duration_weeks`). */
+  baseWeeks: number
+  /** La semana en curso es una de las extendidas (#938). */
+  inExtension: boolean
 }
 
 const EMPTY: ProgramProgress = {
@@ -283,6 +297,8 @@ const EMPTY: ProgramProgress = {
   endDay: null,
   programSessionsDone: 0,
   programSessionsPlanned: 0,
+  baseWeeks: 0,
+  inExtension: false,
 }
 
 /** Fase válida fijada a mano, o `null`. */
@@ -324,17 +340,23 @@ export function dayIdFromWorkoutKey(workoutKey: string | undefined): DayId | nul
 // ─── Cálculo ─────────────────────────────────────────────────────────────────
 
 export function computeProgramProgress(input: ProgramProgressInput): ProgramProgress {
-  const { startedAt, durationWeeks, phases, weekDays, completed, utcToLocalDay, today, phaseOverride } = input
+  const { startedAt, durationWeeks, extendedWeeks, phases, weekDays, completed, utcToLocalDay, today, phaseOverride } = input
 
   const startDay = startedAt ? utcToLocalDay(startedAt) : ''
-  const totalWeeks = Number.isFinite(durationWeeks) ? Math.max(0, Math.floor(durationWeeks)) : 0
+  const baseWeeks = Number.isFinite(durationWeeks) ? Math.max(0, Math.floor(durationWeeks)) : 0
+  // Sin semanas base no hay programa que extender: la extensión solo cuenta
+  // sobre una duración declarada.
+  const extraWeeks = baseWeeks > 0 && typeof extendedWeeks === 'number' && Number.isFinite(extendedWeeks)
+    ? Math.max(0, Math.floor(extendedWeeks))
+    : 0
+  const totalWeeks = baseWeeks + extraWeeks
   const windows = startDay ? buildWeekWindows(startDay, totalWeeks * 7) : []
 
   if (!windows.length || !today) {
     // Sin ventanas no hay semana ni barra, pero la fase sigue haciendo falta
     // para construir las claves `p{fase}_{día}` de la pantalla de entreno.
     const { phase, source } = resolvePhase(phases, null, phaseOverride)
-    return { ...EMPTY, totalWeeks, currentPhase: phase, phaseSource: source }
+    return { ...EMPTY, totalWeeks, baseWeeks, currentPhase: phase, phaseSource: source }
   }
 
   const firstDay = windows[0].startDay
@@ -407,7 +429,7 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
       .filter(c => !!c.day && c.day >= firstDay && c.day <= lastDay)
       .map(c => `${c.workoutKey}|${c.day}`),
   ).size
-  const programSessionsPlanned = plannedDays.length * windows.length
+  const programSessionsPlanned = plannedDays.length * baseWeeks
 
   return {
     hasStarted,
@@ -426,6 +448,8 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
     endDay: lastDay,
     programSessionsDone,
     programSessionsPlanned,
+    baseWeeks,
+    inExtension: hasStarted && !isCompleted && activeWindow.week > baseWeeks,
   }
 }
 
