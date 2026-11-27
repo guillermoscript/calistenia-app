@@ -261,6 +261,8 @@ export interface ProgramProgress {
    * terminar y con duración declarada. Es la que enseña el aviso del inicio.
    */
   isFinalWeek: boolean
+  /** Primer día del programa (`YYYY-MM-DD`), o `null` sin ventanas (#941). */
+  startDay: string | null
   /** Último día del programa (`YYYY-MM-DD`), o `null` sin ventanas. */
   endDay: string | null
   /**
@@ -294,6 +296,7 @@ const EMPTY: ProgramProgress = {
   percent: 0,
   nextDay: null,
   isFinalWeek: false,
+  startDay: null,
   endDay: null,
   programSessionsDone: 0,
   programSessionsPlanned: 0,
@@ -445,6 +448,7 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
     percent,
     nextDay,
     isFinalWeek: hasStarted && !isCompleted && activeWindow.week === windows.length,
+    startDay: firstDay,
     endDay: lastDay,
     programSessionsDone,
     programSessionsPlanned,

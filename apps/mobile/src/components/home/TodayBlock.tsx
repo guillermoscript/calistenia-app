@@ -7,7 +7,7 @@
  * Los toques pasan por `onPrimary` / `onSecondary`, que pone la pantalla con
  * la analítica (#854) delante.
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -38,6 +38,7 @@ import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
 import type { Exercise, ProgramMeta, SessionDone } from '@calistenia/core/types'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { hasSeenProgramRecap, markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
 import {
   ChangeDayAction,
   LinkRow,
@@ -600,6 +601,14 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
   const extendable = canExtendProgram(programProgress, activeEnrollment?.extended_weeks)
   const counts = { done: programProgress.programSessionsDone, planned: programProgress.programSessionsPlanned }
 
+  // La pantalla de cierre se abre SOLA una vez por inscripción (#941).
+  const enrollmentId = activeEnrollment?.id
+  useEffect(() => {
+    if (hasSeenProgramRecap(enrollmentId)) return
+    markProgramRecapSeen(enrollmentId)
+    router.push('/program-recap')
+  }, [enrollmentId, router])
+
   const run = async (fn: () => Promise<boolean>, errorKey: string) => {
     if (busy) return
     setBusy(true)
@@ -624,14 +633,22 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
   ) : null
 
   const seeOthers = (
-    <TextAction
-      label={t('home.action.seeOthers')}
-      onPress={() => onSecondary('other_program', () => {
-        trackProgramNextChosen('other', activeProgram?.id)
-        router.push('/programs')
-      })}
-      className="self-center"
-    />
+    <View className="flex-row flex-wrap justify-center">
+      <TextAction
+        label={t('home.action.seeOthers')}
+        onPress={() => onSecondary('other_program', () => {
+          trackProgramNextChosen('other', activeProgram?.id)
+          router.push('/programs')
+        })}
+      />
+      <TextAction
+        label={t('home.programComplete.summary')}
+        onPress={() => onSecondary('summary', () => {
+          trackProgramNextChosen('summary', activeProgram?.id)
+          router.push('/program-recap')
+        })}
+      />
+    </View>
   )
 
   const title = finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })

@@ -21,6 +21,7 @@ const BattlePage = lazy(() => import('./pages/BattlePage'))
 const BattleCreatePage = lazy(() => import('./pages/BattleCreatePage'))
 const BattleHistoryPage = lazy(() => import('./pages/BattleHistoryPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
+const ProgramRecapPage = lazy(() => import('./pages/ProgramRecapPage'))
 const NutritionPage = lazy(() => import('./pages/NutritionPage'))
 const MealLoggerPage = lazy(() => import('./pages/MealLoggerPage'))
 const PantryPage = lazy(() => import('./pages/PantryPage'))
@@ -529,6 +530,7 @@ function AuthenticatedApp({
             <Route path="/pantry/shopping" element={<ShoppingListPage userId={userId!} />} />
             <Route path="/pantry/recipes" element={<SavedRecipesPage userId={userId!} />} />
             <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/program-recap" element={<ProgramRecapPage />} />
             <Route path="/progress/free" element={<FreeProgressPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/profile" element={<ProfilePage user={user!} dark={dark} toggleDark={toggleDark} />} />
