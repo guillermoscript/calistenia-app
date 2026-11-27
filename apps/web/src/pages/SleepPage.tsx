@@ -19,6 +19,8 @@ import {
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import type { SleepEntry } from '@calistenia/core/types'
+import { isWatchSleep } from '@calistenia/core/lib/health-merge'
+import { Watch } from 'lucide-react'
 
 
 // ── Quality helpers ─────────────────────────────────────────────────────────
@@ -62,6 +64,17 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
 
 // ── Sleep Entry Row ─────────────────────────────────────────────────────────
 
+/** Marca de las noches importadas del reloj (Health Connect). */
+function WatchBadge() {
+  const { t } = useTranslation()
+  return (
+    <span className="inline-flex items-center gap-1 rounded border border-indigo-400/30 bg-indigo-400/10 px-1.5 py-px text-[10px] text-indigo-600 dark:text-indigo-300">
+      <Watch className="size-3" aria-hidden />
+      {t('sleep.fromWatch')}
+    </span>
+  )
+}
+
 interface SleepEntryRowProps {
   entry: SleepEntry
   onEdit: (entry: SleepEntry) => void
@@ -97,11 +110,15 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-foreground capitalize">{dateLabel}</div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground capitalize">{dateLabel}</span>
+          {isWatchSleep(entry) && <WatchBadge />}
+        </div>
         <div className="text-[11px] text-muted-foreground">
           {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)}
           {entry.awake_minutes ? ` (${formatDuration(entry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()})` : ''}
-          {' · '}{t('sleep.awakeningsCount', { count: entry.awakenings })}
+          {/* El reloj no sabe los despertares: su 0 no es un dato. */}
+          {!isWatchSleep(entry) && <>{' · '}{t('sleep.awakeningsCount', { count: entry.awakenings })}</>}
         </div>
       </div>
 
@@ -241,7 +258,10 @@ export default function SleepPage({ userId }: SleepPageProps) {
           onClick={() => handleOpenEdit(todayEntry)}
         >
           <CardContent className="p-4 md:p-5">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-2">{t('sleep.lastNight')}</div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('sleep.lastNight')}</span>
+              {isWatchSleep(todayEntry) && <WatchBadge />}
+            </div>
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="font-bebas text-2xl leading-none mb-1">
@@ -250,7 +270,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
                 <div className="text-sm text-muted-foreground">
                   {todayEntry.bedtime} - {todayEntry.wake_time}
                   {todayEntry.awake_minutes ? ` · ${formatDuration(todayEntry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()}` : ''}
-                  {todayEntry.awakenings > 0 && ` · ${t('sleep.awakeningsCount', { count: todayEntry.awakenings })}`}
+                  {todayEntry.awakenings > 0 && !isWatchSleep(todayEntry) && ` · ${t('sleep.awakeningsCount', { count: todayEntry.awakenings })}`}
                 </div>
               </div>
               <div className="text-right">

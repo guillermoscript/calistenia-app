@@ -46,6 +46,7 @@ import { addDaysIn, diffDaysIn, todayStrIn, utcToLocalDateStrIn } from './tzDate
 import { wallClockDayOf, wallClockDayRange } from './wallClock'
 import { bedtimeConsistencyMinutes, pctTrue, avgDefined } from './sleepStats'
 import { estimateBodyFatNavy } from './body-composition'
+import { isWatchSleep } from './health-merge'
 import type { DailyHealthSummary, Sex } from '../types'
 
 // ─── Tipos (contrato fijado por #124/#125; declarados UNA vez, aquí) ────────
@@ -288,7 +289,8 @@ export function buildDayRows(input: BuildDayRowsInput): InsightDayRow[] {
     const row = ensure(date)
     row.sleepMinutes = s.duration_minutes
     row.sleepQuality = s.quality
-    row.awakenings = s.awakenings
+    // El reloj no sabe los despertares: su 0 no es un dato.
+    row.awakenings = isWatchSleep(s) ? undefined : s.awakenings
     row.caffeine = s.caffeine
     row.screenBeforeBed = s.screen_before_bed
     row.stressLevel = s.stress_level

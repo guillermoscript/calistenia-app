@@ -2597,6 +2597,7 @@
   "sleep.awakenings": "Despertares nocturnos",
   "sleep.awakeningsCount_one": "{{count}} despertar",
   "sleep.awakeningsCount_other": "{{count}} despertares",
+  "sleep.fromWatch": "Del reloj",
   "sleep.none": "Ninguno",
   "sleep.times": "{{count}} vez",
   "sleep.times_other": "{{count}} veces",

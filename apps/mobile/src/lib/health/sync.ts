@@ -11,8 +11,8 @@
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { DailyHealthSummary, HealthDataType, HealthSyncResult } from '@calistenia/core/types'
 import {
-  collapseSleepByDay, dropUndefined, earliestDay, latestByDay, localDay, minutesBetween,
-  planSleepMerge, planWeightMerge, type ExistingDatedRow as DatedRow,
+  collapseSleepByNight, dropUndefined, earliestDay, latestByDay, localDay,
+  planSleepMerge, planWeightMerge, sleepMinutesByWakeDay, type ExistingDatedRow as DatedRow, type SleepDay,
 } from '@calistenia/core/lib/health-merge'
 import * as hc from './bridge'
 import { Sentry } from '@/lib/instrument'
@@ -38,8 +38,7 @@ const DAY_MS = 86_400_000
  * aquí solo se leen las filas existentes y se ejecuta el plan. Best-effort:
  * errors here never fail the sync.
  */
-async function mergeSleepEntries(userId: string, sleep: hc.SleepSample[]): Promise<number> {
-  const days = collapseSleepByDay(sleep)
+async function mergeSleepEntries(userId: string, days: Record<string, SleepDay>): Promise<number> {
   const minDay = earliestDay(Object.keys(days))
   if (!minDay) return 0
   const existing = await pb.collection('sleep_entries').getFullList({
@@ -103,12 +102,11 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     const weightByDay = latestByDay(weight, (s) => s.kg)
     const bodyFatByDay = latestByDay(bodyFat, (s) => s.pct)
 
-    const sleepByDay: Record<string, number> = {}
-    for (const s of sleep) {
-      const day = localDay(s.endTime) // attribute to the wake day
-      const mins = Math.max(0, minutesBetween(s.startTime, s.endTime) - s.awakeMinutes)
-      sleepByDay[day] = (sleepByDay[day] ?? 0) + mins
-    }
+    // Una entrada por NOCHE (día en que te acuestas), sin siestas: la misma
+    // fecha que usa el registro manual. El cache va por día de despertar (el
+    // sueño de «hoy» en /health es el de anoche), sacado de esas mismas noches.
+    const nights = collapseSleepByNight(sleep)
+    const sleepByDay = sleepMinutesByWakeDay(nights)
 
     const dates = new Set<string>([
       ...Object.keys(weightByDay),
@@ -132,7 +130,7 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
           date,
           weight_kg: weightByDay[date],
           body_fat_pct: bodyFatByDay[date],
-          sleep_minutes: sleepByDay[date] != null ? Math.round(sleepByDay[date]) : undefined,
+          sleep_minutes: sleepByDay[date],
         })
         const found = byDate.get(date)
         if (found) await pb.collection('daily_health_cache').update(found.id, row)
@@ -143,7 +141,7 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     // Fase 2: volcar sueño/peso a sus colecciones reales (calendario + tracking).
     // No-fatal: el cache (arriba) ya quedó guardado aunque esto falle.
     try {
-      await mergeSleepEntries(opts.userId, sleep)
+      await mergeSleepEntries(opts.userId, nights)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_sleep_entries' } })
       /* merge sueño best-effort */
