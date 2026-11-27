@@ -8,6 +8,8 @@ import {
   phaseForWeek,
   resolvePhase,
   completedWorkoutsFromProgress,
+  daysPastProgramEnd,
+  programAdherencePct,
   type CompletedWorkout,
   type ProgramProgressInput,
 } from './programProgress'
@@ -399,5 +401,53 @@ describe('weekInPhase (#755)', () => {
     expect(weekInPhase(PHASES, 1, null)).toBeNull()
     expect(weekInPhase(PHASES, 9, 3)).toBeNull()
     expect(weekInPhase([{ ...PHASES[0], weeks: 'todas' }], 1, 3)).toBeNull()
+  })
+})
+
+describe('última semana y adherencia (#934, #936)', () => {
+  it('isFinalWeek solo en la semana 12: ni en la 11 ni con el programa terminado', () => {
+    expect(computeProgramProgress(input({ today: '2026-08-18' })).isFinalWeek).toBe(false) // W11
+    expect(computeProgramProgress(input({ today: '2026-08-19' })).isFinalWeek).toBe(true)  // W12, 1er día
+    expect(computeProgramProgress(input({ today: '2026-08-25' })).isFinalWeek).toBe(true)  // W12, último día
+    expect(computeProgramProgress(input({ today: '2026-08-26' })).isFinalWeek).toBe(false) // terminado
+  })
+
+  it('isFinalWeek es false antes de empezar y sin duración', () => {
+    expect(computeProgramProgress(input({ today: '2026-06-01' })).isFinalWeek).toBe(false)
+    expect(computeProgramProgress(input({ durationWeeks: 0, today: '2026-06-10' })).isFinalWeek).toBe(false)
+  })
+
+  it('un programa de una semana arranca ya en su última semana', () => {
+    expect(computeProgramProgress(input({ durationWeeks: 1, today: '2026-06-03' })).isFinalWeek).toBe(true)
+  })
+
+  it('cuenta los entrenos de TODO el programa, deduplicados y solo dentro de sus fechas', () => {
+    const r = computeProgramProgress(input({
+      today: '2026-08-30',
+      completed: [
+        done('2026-06-02', 'mar'),        // antes de empezar: fuera
+        done('2026-06-04', 'jue'),
+        done('2026-06-04', 'jue'),        // duplicado
+        done('2026-07-10', 'vie', 2),
+        done('2026-08-25', 'mar', 3),     // último día: dentro
+        done('2026-08-26', 'mar', 3),     // ya terminado: fuera
+      ],
+    }))
+    expect(r.endDay).toBe('2026-08-25')
+    expect(r.programSessionsDone).toBe(3)
+    expect(r.programSessionsPlanned).toBe(48) // 4 días × 12 semanas
+    expect(programAdherencePct(r)).toBe(6)
+  })
+
+  it('programAdherencePct: null si no se pedía nada, recortada a 100', () => {
+    expect(programAdherencePct({ programSessionsDone: 3, programSessionsPlanned: 0 })).toBeNull()
+    expect(programAdherencePct({ programSessionsDone: 60, programSessionsPlanned: 48 })).toBe(100)
+  })
+
+  it('daysPastProgramEnd: días desde el último día, 0 si no ha pasado', () => {
+    expect(daysPastProgramEnd('2026-08-25', '2026-08-25')).toBe(0)
+    expect(daysPastProgramEnd('2026-08-25', '2026-08-26')).toBe(1)
+    expect(daysPastProgramEnd('2026-08-25', '2026-09-04')).toBe(10)
+    expect(daysPastProgramEnd(null, '2026-09-04')).toBe(0)
   })
 })

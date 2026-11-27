@@ -25,9 +25,12 @@ import { pb } from '../lib/pocketbase'
 import { nowLocalForPB, todayStr, utcToLocalDateStr } from '../lib/dateUtils'
 import { wallClockDay } from '../lib/wallClock'
 import { qk } from '../lib/query-keys'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 import {
   completedWorkoutsFromProgress,
   computeProgramProgress,
+  daysPastProgramEnd,
+  programAdherencePct,
   isDeloadWeek,
   weekInPhase,
   type ProgramProgress,
@@ -126,9 +129,29 @@ export function useProgramProgress({
     if (!userId || !enrollmentId || !shouldClose) return
     if (closedRef.current === enrollmentId) return
     closedRef.current = enrollmentId
+    // Se fotografía ANTES de escribir: tras el `update` la inscripción cambia y
+    // el progreso podría recalcularse con otro programa.
+    const completedProps = {
+      surface: 'program',
+      source: 'program_progress',
+      result: 'completed',
+      program_id: activeProgram?.id,
+      program_slug: activeProgram?.slug,
+      difficulty: activeProgram?.difficulty,
+      goal_type: activeProgram?.goal_type,
+      duration_weeks: programProgress.totalWeeks,
+      sessions_done: programProgress.programSessionsDone,
+      sessions_planned: programProgress.programSessionsPlanned,
+      adherence_pct: programAdherencePct(programProgress) ?? undefined,
+      days_late: daysPastProgramEnd(programProgress.endDay, today),
+    }
     pb.collection('user_programs')
       .update(enrollmentId, { status: 'completed', ended_at: nowLocalForPB() })
       .then(() => {
+        // Una vez por inscripción: solo el cliente cuya escritura pasó de
+        // `active` a `completed` llega aquí (el ref evita el reintento local, y
+        // en el siguiente arranque `status` ya no es `active`).
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programCompleted, completedProps)
         qc.setQueryData<ActiveEnrollment | null>(
           qk.programs.enrollment(userId),
           (old) => (old && old.id === enrollmentId ? { ...old, status: 'completed' } : old),
@@ -137,6 +160,9 @@ export function useProgramProgress({
       .catch((e) => {
         console.error('useProgramProgress: no se pudo cerrar el programa', e)
       })
+    // `activeProgram`/`programProgress`/`today` solo se leen para el evento; el
+    // ref impide que un cambio suyo vuelva a cerrar la inscripción.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, enrollmentId, shouldClose, qc])
 
   return { programProgress, setPhaseOverride }

@@ -76,6 +76,14 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   programJoined: 'program_joined',
   programMilestoneCompleted: 'program_milestone_completed',
   /**
+   * La inscripción se cerró al pasar la última semana (#934). Una vez por
+   * inscripción, con la adherencia: es lo que dice si «terminado» significa
+   * «hecho» o solo «caducado».
+   */
+  programCompleted: 'program_completed',
+  /** Qué eligió en la tarjeta de programa terminado del inicio (#934). */
+  programNextChosen: 'program_next_chosen',
+  /**
    * Community programs with weekly milestones (#353, `community_programs`).
    * They got their own event family instead of reusing `program_*` with a
    * different `surface`: overloading the existing names would have entangled

@@ -36,7 +36,7 @@ import {
 import type { HomeActiveActivity, HomeDayRef, HomeState } from '@calistenia/core/lib/homeState'
 import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
 import type { Exercise, ProgramMeta, SessionDone } from '@calistenia/core/types'
-import { recommendNextPrograms } from '@calistenia/core/lib/nextProgram'
+import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import {
   ChangeDayAction,
   LinkRow,
@@ -127,9 +127,16 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
   const { t, i18n } = useTranslation()
   const l = useLocalize()
   const dayName = useDayName()
-  const { activeProgram, phases, programProgress, cardioDayConfigs, circuitDayConfigs, weekDays } = useWorkoutState()
+  const { activeProgram, phases, programProgress, cardioDayConfigs, circuitDayConfigs, weekDays, programs } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
+  const user = useAuthUser()
   const inactive = view.state.modifiers.inactiveDays
+  // Aviso de última semana (#936): lo que queda de ESTA semana y qué viene
+  // después, sin culpar a nadie si va atrasado.
+  const finalWeekLeft = Math.max(0, programProgress.plannedThisWeek - programProgress.sessionsThisWeek)
+  const finalWeekNext = activeProgram && programProgress.isFinalWeek
+    ? recommendNextPrograms(programs, { completed: activeProgram, level: user?.level as string | undefined })[0] ?? null
+    : null
   const battleDay = useBattleProgramDay()
   const router = useRouter()
 
@@ -196,6 +203,16 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
       ) : null}
       {deload && !chosen ? (
         <TodayMeta>{t('home.deload.banner')}</TodayMeta>
+      ) : null}
+      {activeProgram && programProgress.isFinalWeek && !chosen ? (
+        <View className="gap-0.5">
+          <TodayBody>
+            {finalWeekLeft > 0
+              ? t('home.finalWeek.left', { count: finalWeekLeft, program: activeProgram.name })
+              : t('home.finalWeek.allDone', { program: activeProgram.name })}
+          </TodayBody>
+          {finalWeekNext ? <TodayMeta>{t('home.finalWeek.next', { name: finalWeekNext.name })}</TodayMeta> : null}
+        </View>
       ) : null}
       <View className="gap-1.5">
         <TodayTitle>{title}</TodayTitle>
@@ -603,23 +620,39 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
               kicker={t('home.programComplete.nextRecommended')}
               title={next.name}
               hint={nextProgramMeta(t, next)}
-              onPress={() => onSecondary('other_program', () => router.push(`/program/${next.id}`))}
+              onPress={() => onSecondary('other_program', () => {
+                trackProgramNextChosen('recommended_detail', activeProgram?.id, next.id)
+                router.push(`/program/${next.id}`)
+              })}
             />
           </View>
           <PrimaryAction
             icon={false}
             label={t('home.action.startProgram', { name: next.name })}
-            onPress={() => onPrimary(() => { void start(next) })}
+            onPress={() => onPrimary(() => {
+              trackProgramNextChosen('recommended', activeProgram?.id, next.id)
+              void start(next)
+            })}
           />
           {error && <TodayMeta className="text-destructive">{t('programs.switchError')}</TodayMeta>}
           <TextAction
             label={t('home.action.seeOthers')}
-            onPress={() => onSecondary('other_program', () => router.push('/programs'))}
+            onPress={() => onSecondary('other_program', () => {
+              trackProgramNextChosen('other', activeProgram?.id)
+              router.push('/programs')
+            })}
             className="self-center"
           />
         </>
       ) : (
-        <PrimaryAction icon={false} label={t('home.action.choosePrograms')} onPress={() => onPrimary(() => router.push('/programs'))} />
+        <PrimaryAction
+          icon={false}
+          label={t('home.action.choosePrograms')}
+          onPress={() => onPrimary(() => {
+            trackProgramNextChosen('other', activeProgram?.id)
+            router.push('/programs')
+          })}
+        />
       )}
     </TodayCard>
   )

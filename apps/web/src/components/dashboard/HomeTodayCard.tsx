@@ -36,7 +36,7 @@ import { WEEK_ORDER, isTrainableDay } from '@calistenia/core/lib/training-day'
 import { plannedSetCount } from '@calistenia/core/lib/session-funnel'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
-import { recommendNextPrograms } from '@calistenia/core/lib/nextProgram'
+import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import {
   buildFirstWorkout,
   estimateFirstWorkoutMinutes,
@@ -354,6 +354,23 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
     </div>
   ) : null
 
+  // Aviso de última semana (#936): cuántos entrenos quedan y qué viene después.
+  // No culpa a nadie si va atrasado: solo cuenta lo que queda de ESTA semana.
+  const finalWeekLeft = Math.max(0, programProgress.plannedThisWeek - programProgress.sessionsThisWeek)
+  const finalWeekNext = activeProgram && programProgress.isFinalWeek
+    ? recommendNextPrograms(programs, { completed: activeProgram, level: user?.level })[0] ?? null
+    : null
+  const finalWeekLine = activeProgram && programProgress.isFinalWeek ? (
+    <div className="flex flex-col gap-0.5" data-testid="home-final-week">
+      <p className="m-0 text-[13px] font-medium text-foreground">
+        {finalWeekLeft > 0
+          ? t('home.finalWeek.left', { count: finalWeekLeft, program: activeProgram.name })
+          : t('home.finalWeek.allDone', { program: activeProgram.name })}
+      </p>
+      {finalWeekNext && <Meta className="text-[10px]">{t('home.finalWeek.next', { name: finalWeekNext.name })}</Meta>}
+    </div>
+  ) : null
+
   const inactive = state.modifiers.inactiveDays != null ? (
     <p className="m-0 text-[13px] font-medium text-foreground" data-testid="home-inactive">
       {t('home.inactive', { count: state.modifiers.inactiveDays })}
@@ -482,6 +499,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
               : t('home.deload.bodyLastPhase', { phase: programProgress.currentPhase })}
           </p>
         )}
+        {!chosen && finalWeekLine}
         <div className="flex flex-col gap-3.5">
           {programLine}
           <PrimaryAction onClick={primary(() => startDay(day))}>{startLabel}</PrimaryAction>
@@ -627,12 +645,16 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
               <Meta className="text-[10px]">{programMeta(t, next)}</Meta>
             </div>
           )}
-          <PrimaryAction onClick={primary(() => (next ? activate(next) : navigate('/programs')))}>
+          <PrimaryAction onClick={primary(() => {
+            trackProgramNextChosen(next ? 'recommended' : 'other', activeProgram?.id, next?.id)
+            if (next) void activate(next)
+            else navigate('/programs')
+          })}>
             {next ? t('home.action.startProgram', { name: next.name }) : t('home.action.seeOthers')}
           </PrimaryAction>
           <div className="flex gap-2">
-            {next && <SecondaryAction onClick={secondary('other_program', () => navigate('/programs'))}>{t('home.action.seeOthers')}</SecondaryAction>}
-            <SecondaryAction onClick={secondary('summary', () => navigate('/progress'))}>{t('home.programComplete.summary')}</SecondaryAction>
+            {next && <SecondaryAction onClick={secondary('other_program', () => { trackProgramNextChosen('other', activeProgram?.id); navigate('/programs') })}>{t('home.action.seeOthers')}</SecondaryAction>}
+            <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/progress') })}>{t('home.programComplete.summary')}</SecondaryAction>
           </div>
         </Shell>
       )
@@ -747,6 +769,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
             <Title>{t('home.comeback.title')}</Title>
             <p className="m-0 text-sm text-muted-foreground">{t('home.comeback.body', { count: daysSinceLast })}</p>
           </div>
+          {finalWeekLine}
           {day && (
             <div className="flex flex-col gap-1 border-t border-border pt-3">
               <Meta className="text-[10px]">{day.date === today ? weekdayOf(day.date, locale) : dayLabel(day)}</Meta>

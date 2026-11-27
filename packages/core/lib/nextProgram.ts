@@ -24,6 +24,7 @@
 
 import type { ProgramMeta } from '../types'
 import { normalizeFirstWorkoutLevel } from './first-workout'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from './analytics'
 
 const DIFFICULTY_RANK: Record<string, number> = {
   beginner: 0, principiante: 0,
@@ -97,4 +98,25 @@ export function recommendNextPrograms(
     .map(x => x.p)
 
   return [...route, ...rest]
+}
+
+/** Qué salida eligió en la tarjeta de programa terminado (#934). */
+export type ProgramNextChoice = 'recommended' | 'recommended_detail' | 'other' | 'summary'
+
+/**
+ * `program_next_chosen`: lo emiten las tarjetas de programa terminado de web y
+ * móvil. `to_program_id` solo en las salidas que apuntan a un programa concreto.
+ */
+export function trackProgramNextChosen(
+  choice: ProgramNextChoice,
+  fromProgramId: string | null | undefined,
+  toProgramId?: string | null,
+): void {
+  trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programNextChosen, {
+    surface: 'home',
+    source: 'program_complete',
+    action: choice,
+    from_program_id: fromProgramId ?? undefined,
+    to_program_id: toProgramId ?? undefined,
+  })
 }
