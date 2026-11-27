@@ -151,6 +151,10 @@ describe('mobile share outcomes', () => {
       progressPhoto: {
         surface: 'progress', source: 'progress_photo', share_type: 'progress_photo', card_type: 'progress_photo',
       },
+      // #941: la pantalla de cierre del programa.
+      programRecap: {
+        surface: 'program_recap', source: 'program_complete', share_type: 'program_recap', card_type: 'program_recap',
+      },
       battleResult: {
         surface: 'battle', source: 'battle_results', share_type: 'result_card', card_type: 'battle_result',
       },

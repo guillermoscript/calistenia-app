@@ -38,6 +38,7 @@ import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { hasSeenProgramRecap, markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
 import {
   buildFirstWorkout,
   estimateFirstWorkoutMinutes,
@@ -251,6 +252,15 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
   const { state, today, workoutFor, phase } = home
   const locale = i18n.language
   const kind = state.kind
+
+  // La pantalla de cierre se abre SOLA una vez por inscripción (#941): la
+  // primera vez que el inicio llega a «programa terminado».
+  const enrollmentId = activeEnrollment?.id
+  useEffect(() => {
+    if (kind !== 'program_complete' || hasSeenProgramRecap(enrollmentId)) return
+    markProgramRecapSeen(enrollmentId)
+    navigate('/program-recap')
+  }, [kind, enrollmentId, navigate])
 
   const primary = (fn: () => void) => () => {
     trackHomePrimaryCta({ state: kind })
@@ -679,6 +689,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
               <div className="flex flex-wrap gap-2">
                 {next && <SecondaryAction onClick={secondary('other_program', startNext)}>{t('home.action.startProgram', { name: next.name })}</SecondaryAction>}
                 <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>
+                <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/program-recap') })}>{t('home.programComplete.summary')}</SecondaryAction>
               </div>
             </>
           ) : (
@@ -688,7 +699,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
               </PrimaryAction>
               <div className="flex gap-2">
                 {next && <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>}
-                <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/progress') })}>{t('home.programComplete.summary')}</SecondaryAction>
+                <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/program-recap') })}>{t('home.programComplete.summary')}</SecondaryAction>
               </div>
             </>
           )}

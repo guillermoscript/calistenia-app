@@ -91,6 +91,10 @@ export const MOBILE_SHARE_CARD_CONTEXTS = {
   progressPhoto: {
     surface: 'progress', source: 'progress_photo', share_type: 'progress_photo', card_type: 'progress_photo',
   },
+  /** Pantalla de cierre del programa (#941). */
+  programRecap: {
+    surface: 'program_recap', source: 'program_complete', share_type: 'program_recap', card_type: 'program_recap',
+  },
   /**
    * El resultado de una batalla de circuito (#357). `share_type: 'result_card'` es lo
    * que separa esta compartición de la del enlace de invitación del lobby, que sigue

@@ -103,6 +103,9 @@ export function recommendNextPrograms(
 /** Qué salida eligió en la tarjeta de programa terminado (#934). */
 export type ProgramNextChoice = 'recommended' | 'recommended_detail' | 'other' | 'summary' | 'extend'
 
+/** Desde dónde se eligió: la tarjeta del inicio o la pantalla de cierre (#941). */
+export type ProgramNextSource = 'program_complete' | 'program_recap'
+
 /**
  * `program_next_chosen`: lo emiten las tarjetas de programa terminado de web y
  * móvil. `to_program_id` solo en las salidas que apuntan a un programa concreto.
@@ -111,10 +114,11 @@ export function trackProgramNextChosen(
   choice: ProgramNextChoice,
   fromProgramId: string | null | undefined,
   toProgramId?: string | null,
+  source: ProgramNextSource = 'program_complete',
 ): void {
   trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programNextChosen, {
     surface: 'home',
-    source: 'program_complete',
+    source,
     action: choice,
     from_program_id: fromProgramId ?? undefined,
     to_program_id: toProgramId ?? undefined,
