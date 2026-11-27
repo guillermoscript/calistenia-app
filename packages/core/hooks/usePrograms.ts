@@ -392,6 +392,8 @@ function toProgramMeta(
     days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
     equipment_required: Array.isArray(p.equipment_required) ? p.equipment_required : undefined,
     contraindications:  Array.isArray(p.contraindications) ? p.contraindications : undefined,
+    slug:           p.slug || undefined,
+    next_programs:  Array.isArray(p.next_programs) ? p.next_programs.filter((s: unknown): s is string => typeof s === 'string') : undefined,
   }
 }
 

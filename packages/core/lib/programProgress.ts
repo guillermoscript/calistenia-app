@@ -250,6 +250,20 @@ export interface ProgramProgress {
    * o si el programa no ha empezado / ya terminó.
    */
   nextDay: DayId | null
+  /**
+   * La semana en curso es la última del programa (#936): ya empezado, sin
+   * terminar y con duración declarada. Es la que enseña el aviso del inicio.
+   */
+  isFinalWeek: boolean
+  /** Último día del programa (`YYYY-MM-DD`), o `null` sin ventanas. */
+  endDay: string | null
+  /**
+   * Entrenos hechos dentro de TODO el programa, deduplicados por (día, clave)
+   * (#934). Junto con `programSessionsPlanned` da la adherencia.
+   */
+  programSessionsDone: number
+  /** Días entrenables × semanas: lo que el programa pedía entero (#934). */
+  programSessionsPlanned: number
 }
 
 const EMPTY: ProgramProgress = {
@@ -265,6 +279,10 @@ const EMPTY: ProgramProgress = {
   plannedThisWeek: 0,
   percent: 0,
   nextDay: null,
+  isFinalWeek: false,
+  endDay: null,
+  programSessionsDone: 0,
+  programSessionsPlanned: 0,
 }
 
 /** Fase válida fijada a mano, o `null`. */
@@ -383,6 +401,14 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
     percent = Math.max(0, Math.min(100, Math.round((elapsed / totalDays) * 100)))
   }
 
+  // ── Programa entero (#934) ─────────────────────────────────────────────────
+  const programSessionsDone = new Set(
+    completed
+      .filter(c => !!c.day && c.day >= firstDay && c.day <= lastDay)
+      .map(c => `${c.workoutKey}|${c.day}`),
+  ).size
+  const programSessionsPlanned = plannedDays.length * windows.length
+
   return {
     hasStarted,
     isCompleted,
@@ -396,7 +422,29 @@ export function computeProgramProgress(input: ProgramProgressInput): ProgramProg
     plannedThisWeek,
     percent,
     nextDay,
+    isFinalWeek: hasStarted && !isCompleted && activeWindow.week === windows.length,
+    endDay: lastDay,
+    programSessionsDone,
+    programSessionsPlanned,
   }
+}
+
+/**
+ * Adherencia al programa en %, 0..100 entero (#934). `null` si el programa no
+ * pedía nada (sin días entrenables o sin duración): un 0 ahí sería mentira.
+ * Se recorta a 100 porque repetir días puede dar más hechos que pedidos.
+ */
+export function programAdherencePct(
+  p: Pick<ProgramProgress, 'programSessionsDone' | 'programSessionsPlanned'>,
+): number | null {
+  if (p.programSessionsPlanned <= 0) return null
+  return Math.min(100, Math.round((p.programSessionsDone / p.programSessionsPlanned) * 100))
+}
+
+/** Días completos desde el último día del programa hasta `today` (0 si no ha pasado). */
+export function daysPastProgramEnd(endDay: string | null, today: string): number {
+  if (!endDay || !today || today <= endDay) return 0
+  return countDaysInclusive(endDay, today) - 1
 }
 
 /** Días transcurridos de `from` a `to`, ambos incluidos. 0 si `to` < `from`. */
