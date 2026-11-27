@@ -451,3 +451,42 @@ describe('última semana y adherencia (#934, #936)', () => {
     expect(daysPastProgramEnd(null, '2026-09-04')).toBe(0)
   })
 })
+
+describe('extensión del programa (#938)', () => {
+  it('las semanas extendidas alargan el calendario pero no lo pedido', () => {
+    const r = computeProgramProgress(input({ extendedWeeks: 2, today: '2026-08-30' }))
+    expect(r.totalWeeks).toBe(14)
+    expect(r.baseWeeks).toBe(12)
+    expect(r.isCompleted).toBe(false)
+    expect(r.inExtension).toBe(true)
+    expect(r.currentWeek).toBe(13)
+    expect(r.endDay).toBe('2026-09-08')
+    expect(r.programSessionsPlanned).toBe(48)
+  })
+
+  it('en la extensión la fase es la última y no hay descarga', () => {
+    const phases = PHASES.map(p => (p.id === 3 ? { ...p, deloadLastWeek: true } : p))
+    const r = computeProgramProgress(input({ phases, extendedWeeks: 2, today: '2026-08-30' }))
+    expect(r.currentPhase).toBe(3)
+    expect(r.isDeloadWeek).toBe(false)
+  })
+
+  it('cuenta los entrenos hechos durante la extensión', () => {
+    const r = computeProgramProgress(input({
+      extendedWeeks: 2,
+      today: '2026-09-04',
+      completed: [done('2026-08-31', 'lun', 3), done('2026-09-01', 'mar', 3)],
+    }))
+    expect(r.programSessionsDone).toBe(2)
+  })
+
+  it('la última semana es la de la extensión, no la 12', () => {
+    expect(computeProgramProgress(input({ extendedWeeks: 2, today: '2026-08-20' })).isFinalWeek).toBe(false)
+    expect(computeProgramProgress(input({ extendedWeeks: 2, today: '2026-09-05' })).isFinalWeek).toBe(true)
+  })
+
+  it('una extensión rota o sin duración base se ignora', () => {
+    expect(computeProgramProgress(input({ extendedWeeks: Number.NaN, today: '2026-08-30' })).isCompleted).toBe(true)
+    expect(computeProgramProgress(input({ durationWeeks: 0, extendedWeeks: 2, today: '2026-06-10' })).totalWeeks).toBe(0)
+  })
+})

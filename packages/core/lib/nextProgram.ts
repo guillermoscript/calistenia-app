@@ -101,7 +101,7 @@ export function recommendNextPrograms(
 }
 
 /** Qué salida eligió en la tarjeta de programa terminado (#934). */
-export type ProgramNextChoice = 'recommended' | 'recommended_detail' | 'other' | 'summary'
+export type ProgramNextChoice = 'recommended' | 'recommended_detail' | 'other' | 'summary' | 'extend'
 
 /**
  * `program_next_chosen`: lo emiten las tarjetas de programa terminado de web y

@@ -529,6 +529,8 @@ export interface ActiveEnrollment {
   current_phase: number
   /** Opt-in de la progresión automática (#617). Apagado salvo que se pida. */
   auto_progress: boolean
+  /** Semanas añadidas al final para ponerse al día (#938). 0 = sin extender. */
+  extended_weeks: number
   /**
    * Programa expandido, ya mapeado a `ProgramMeta`: respaldo de `activeProgram`
    * cuando el catálogo no lo trae (falló, aún no cargó o el filtro de
@@ -548,6 +550,7 @@ function toEnrollment(rec: RecordModel): ActiveEnrollment {
     status: (rec.status as ActiveEnrollment['status']) || '',
     current_phase: typeof rec.current_phase === 'number' ? rec.current_phase : 0,
     auto_progress: rec.auto_progress === true,
+    extended_weeks: typeof rec.extended_weeks === 'number' ? rec.extended_weeks : 0,
   }
 }
 
