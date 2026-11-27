@@ -98,6 +98,9 @@ export const HOME_SECONDARY_TARGETS = [
   'repeat',
   'next_day',
   'other_program',
+  // #940: salir del programa terminado sin elegir otro, o entrenar igualmente.
+  'free_mode',
+  'free_session',
 ] as const
 
 export type HomeSecondaryTarget = typeof HOME_SECONDARY_TARGETS[number]

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  STALE_PROGRAM_COMPLETE_DAYS,
+  isStaleProgramComplete,
   COMPLETION_ADHERENCE_THRESHOLD,
   EXTENSION_WEEKS,
   canExtendProgram,
@@ -66,5 +68,16 @@ describe('extensionWeeksFor', () => {
 
   it('sin final conocido da las 2 semanas', () => {
     expect(extensionWeeksFor(null, '2026-08-26')).toBe(EXTENSION_WEEKS)
+  })
+})
+
+describe('isStaleProgramComplete (#940)', () => {
+  it('a partir de 7 días tras el final sin elegir', () => {
+    expect(STALE_PROGRAM_COMPLETE_DAYS).toBe(7)
+    expect(isStaleProgramComplete({ isCompleted: true, endDay: '2026-08-25' }, '2026-08-31')).toBe(false) // 6
+    expect(isStaleProgramComplete({ isCompleted: true, endDay: '2026-08-25' }, '2026-09-01')).toBe(true)  // 7
+  })
+  it('nunca con el programa en curso', () => {
+    expect(isStaleProgramComplete({ isCompleted: false, endDay: '2026-08-25' }, '2026-10-01')).toBe(false)
   })
 })

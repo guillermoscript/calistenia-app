@@ -87,6 +87,10 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
       // La acción útil es entrenar: Home arranca el entreno de hoy (#695).
       return '/(tabs)?autostart=1'
 
+    case 'program_complete_nudge':
+      // Hoy enseña «programa terminado» con todas las salidas (#940).
+      return '/(tabs)'
+
     default:
       // Tipo desconocido: al menos abrir la lista en vez de no hacer nada.
       return '/notifications'

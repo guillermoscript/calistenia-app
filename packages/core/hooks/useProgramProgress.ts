@@ -78,6 +78,12 @@ export interface UseProgramProgressReturn {
    * antes `canRepeatProgram`.
    */
   repeatProgram: () => Promise<boolean>
+  /**
+   * Modo libre (#940): deja el programa terminado sin elegir otro. La
+   * inscripción conserva su `status: completed`; solo deja de ser la actual, y
+   * el inicio pasa a «sin programa» (sesión libre, retos, programas).
+   */
+  enterFreeMode: () => Promise<boolean>
 }
 
 export function useProgramProgress({
@@ -251,7 +257,21 @@ export function useProgramProgress({
     }
   }, [userId, activeEnrollment, activeProgram, programProgress, qc])
 
-  return { programProgress, setPhaseOverride, extendProgram, repeatProgram }
+  const enterFreeMode = useCallback(async (): Promise<boolean> => {
+    if (!userId || !activeEnrollment) return false
+    try {
+      await pb.collection('user_programs').update(activeEnrollment.id, { is_current: false })
+      // `fetchActiveEnrollment` filtra por `is_current = true`: sin inscripción
+      // actual, el inicio cae en `no_program`.
+      qc.setQueryData<ActiveEnrollment | null>(qk.programs.enrollment(userId), null)
+      return true
+    } catch (e) {
+      console.error('useProgramProgress: no se pudo pasar a modo libre', e)
+      return false
+    }
+  }, [userId, activeEnrollment, qc])
+
+  return { programProgress, setPhaseOverride, extendProgram, repeatProgram, enterFreeMode }
 }
 
 /**

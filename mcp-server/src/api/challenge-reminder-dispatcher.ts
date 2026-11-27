@@ -33,7 +33,7 @@
 import { getAdminPB } from "./admin-pb.js";
 import { sendPushToUser, normalizePushLanguage, type LocalizedText } from "./push-sender.js";
 import { localParts, safeTimeZone, loadTimezones } from "./reminder-dispatcher.js";
-import { INACTIVITY_FAMILY } from "./reactivation-dispatcher.js";
+import { DAILY_CAP_TYPES } from "./reactivation-dispatcher.js";
 import { scoreParticipant, type ScorableChallenge } from "./challenge-score-server.js";
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
@@ -121,7 +121,8 @@ export function evaluateChallengeReminder(input: {
   if (today.some((s) => s.type === CHALLENGE_REMINDER_TYPE)) {
     return { send: false, reason: "already_sent_today" };
   }
-  if (today.some((s) => INACTIVITY_FAMILY.includes(s.type))) {
+  // Tope diario: familia `inactivity_*` y el de fin de programa (#940).
+  if (today.some((s) => DAILY_CAP_TYPES.includes(s.type))) {
     return { send: false, reason: "inactivity_sent_today" };
   }
   return { send: true };
@@ -222,7 +223,7 @@ async function loadLastWorkoutDate(pb: any, userId: string): Promise<string | nu
 
 /** Marcas recientes (48 h bastan para cubrir «hoy» en cualquier huso). */
 async function loadRecentMarks(pb: any, userId: string, now: Date) {
-  const types = [CHALLENGE_REMINDER_TYPE, ...INACTIVITY_FAMILY];
+  const types = [...new Set([CHALLENGE_REMINDER_TYPE, ...DAILY_CAP_TYPES])];
   const params: Record<string, string> = {
     uid: userId,
     since: new Date(now.getTime() - 2 * DAY_MS).toISOString().replace("T", " "),

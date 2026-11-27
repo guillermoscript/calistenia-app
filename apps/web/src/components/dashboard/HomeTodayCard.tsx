@@ -37,7 +37,7 @@ import { plannedSetCount } from '@calistenia/core/lib/session-funnel'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
-import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { canExtendProgram, isStaleProgramComplete, programOutcome } from '@calistenia/core/lib/programOutcome'
 import { canRepeatProgram, normalizeCycle } from '@calistenia/core/lib/programCycle'
 import { hasSeenProgramRecap, markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
 import {
@@ -238,7 +238,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { activeProgram, activeEnrollment, programs, phases, weekDays, programProgress, progress } = useWorkoutState()
-  const { selectProgram, getTotalSessions, extendProgram, repeatProgram } = useWorkoutActions()
+  const { selectProgram, getTotalSessions, extendProgram, repeatProgram, enterFreeMode } = useWorkoutActions()
   const { user, userId } = useAuthState()
   const strength = useActiveSession()
   const cardio = useCardioSessionContext()
@@ -670,6 +670,21 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
         trackProgramNextChosen('extend', activeProgram?.id)
         if (!(await extendProgram())) toast.error(t('programs.extendError'))
       }
+      // #940: sin decidir no se queda bloqueado. «Entrenar sin programa» suelta
+      // la inscripción (el inicio pasa a «sin programa», el historial se
+      // queda) y, pasada una semana, se le ofrece la sesión libre de hoy.
+      const stale = isStaleProgramComplete(programProgress, today)
+      const freeMode = async () => {
+        trackProgramNextChosen('free', activeProgram?.id)
+        if (!(await enterFreeMode())) toast.error(t('programs.freeModeError'))
+      }
+      const trainAnyway = () => { trackProgramNextChosen('train_anyway', activeProgram?.id); navigate('/free-session') }
+      const freeActions = (
+        <>
+          {stale && <SecondaryAction onClick={secondary('free_session', trainAnyway)}>{t('home.programComplete.trainAnyway')}</SecondaryAction>}
+          <SecondaryAction onClick={secondary('free_mode', () => { void freeMode() })}>{t('home.action.freeMode')}</SecondaryAction>
+        </>
+      )
       return (
         <Shell label={finished ? t('home.kicker.programFinished') : t('home.kicker.programComplete')} accent testState="program_complete">
           <Kicker>{finished ? t('home.kicker.programFinished') : t('home.kicker.programComplete')}</Kicker>
@@ -695,6 +710,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
               <Meta className="text-[10px]">{programMeta(t, next)}</Meta>
             </div>
           )}
+          {stale && <p className="m-0 text-sm text-muted-foreground" data-testid="home-program-stale">{t('home.programComplete.staleBody')}</p>}
           {extendable ? (
             <>
               <PrimaryAction icon={false} onClick={primary(() => { void extend() })}>{t('home.action.extendProgram')}</PrimaryAction>
@@ -702,6 +718,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
                 {next && <SecondaryAction onClick={secondary('other_program', startNext)}>{t('home.action.startProgram', { name: next.name })}</SecondaryAction>}
                 <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>
                 <SecondaryAction onClick={secondary('summary', () => { trackProgramNextChosen('summary', activeProgram?.id); navigate('/program-recap') })}>{t('home.programComplete.summary')}</SecondaryAction>
+                {freeActions}
               </div>
             </>
           ) : (
@@ -717,6 +734,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
                 {next && repeatable && <SecondaryAction onClick={secondary('repeat', () => { void repeat() })}>{t('home.action.repeatProgram')}</SecondaryAction>}
                 {(next || repeatable) && <SecondaryAction onClick={secondary('other_program', seeOthers)}>{t('home.action.seeOthers')}</SecondaryAction>}
                 <SecondaryAction onClick={secondary('summary', summary)}>{t('home.programComplete.summary')}</SecondaryAction>
+                {freeActions}
               </div>
             </>
           )}

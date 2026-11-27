@@ -65,9 +65,12 @@ export const INACTIVITY_FAMILY: readonly string[] = [
 /**
  * Tipos que cuentan para el tope de UN push diario. Además de la familia de
  * inactividad, el aviso diario de los retos en solitario (#805): si hoy ya salió
- * ese, no se manda un push de recuperación encima.
+ * ese, no se manda un push de recuperación encima. Y el de fin de programa (#940).
  */
-export const DAILY_CAP_TYPES: readonly string[] = [...INACTIVITY_FAMILY, "challenge_reminder"];
+/** Push único de «terminaste tu programa» (#940, program-complete-dispatcher.ts). */
+export const PROGRAM_COMPLETE_NUDGE_TYPE = "program_complete_nudge";
+
+export const DAILY_CAP_TYPES: readonly string[] = [...INACTIVITY_FAMILY, "challenge_reminder", PROGRAM_COMPLETE_NUDGE_TYPE];
 
 /** Días sin entrenar a partir de los que se deja de insistir. */
 export const REACTIVATION_MAX_DAYS = 42;

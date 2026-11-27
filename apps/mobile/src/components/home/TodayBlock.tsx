@@ -37,7 +37,7 @@ import type { HomeActiveActivity, HomeDayRef, HomeState } from '@calistenia/core
 import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
 import type { Exercise, ProgramMeta, SessionDone } from '@calistenia/core/types'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
-import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { canExtendProgram, isStaleProgramComplete, programOutcome } from '@calistenia/core/lib/programOutcome'
 import { canRepeatProgram, normalizeCycle } from '@calistenia/core/lib/programCycle'
 import { hasSeenProgramRecap, markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
 import {
@@ -588,12 +588,12 @@ function NoProgramToday({ onPrimary }: TodayBlockProps) {
   )
 }
 
-function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
+function ProgramCompleteToday({ view, onPrimary, onSecondary }: TodayBlockProps) {
   const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const { activeProgram, activeEnrollment, programProgress, programs } = useWorkoutState()
-  const { getTotalSessions, selectProgram, extendProgram, repeatProgram } = useWorkoutActions()
+  const { getTotalSessions, selectProgram, extendProgram, repeatProgram, enterFreeMode } = useWorkoutActions()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const name = activeProgram?.name ?? ''
@@ -657,6 +657,34 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
     </View>
   )
 
+  // #940: sin decidir no se queda bloqueado. Pasada una semana se le ofrece
+  // la sesión libre de hoy, y siempre puede soltar el programa (el inicio
+  // pasa a «sin programa», el historial se queda).
+  const stale = isStaleProgramComplete(programProgress, view.today)
+  const staleRow = stale ? (
+    <View className="border-t border-border">
+      <LinkRow
+        title={t('home.programComplete.trainAnyway')}
+        hint={t('home.programComplete.staleBody')}
+        onPress={() => onSecondary('free_session', () => {
+          trackProgramNextChosen('train_anyway', activeProgram?.id)
+          router.push('/free-session')
+        })}
+      />
+    </View>
+  ) : null
+  const freeAction = (
+    <View className="flex-row flex-wrap justify-center">
+      <TextAction
+        label={t('home.action.freeMode')}
+        onPress={() => onSecondary('free_mode', () => {
+          trackProgramNextChosen('free', activeProgram?.id)
+          void run(enterFreeMode, 'programs.freeModeError')
+        })}
+      />
+    </View>
+  )
+
   const title = finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })
 
   // #939: repetir con más carga, solo si lo completó y queda vuelta. Sin
@@ -707,6 +735,8 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
           {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
           {recommendedRow}
           {seeOthers}
+          {staleRow}
+          {freeAction}
         </>
       ) : next ? (
         <>
@@ -722,6 +752,8 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
           {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
           {repeatRow}
           {seeOthers}
+          {staleRow}
+          {freeAction}
         </>
       ) : repeatable ? (
         <>
@@ -736,16 +768,23 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
           <TodayMeta>{t('home.programComplete.repeatHint', { cycle: normalizeCycle(activeEnrollment?.cycle) + 1 })}</TodayMeta>
           {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
           {seeOthers}
+          {staleRow}
+          {freeAction}
         </>
       ) : (
-        <PrimaryAction
-          icon={false}
-          label={t('home.action.choosePrograms')}
-          onPress={() => onPrimary(() => {
-            trackProgramNextChosen('other', activeProgram?.id)
-            router.push('/programs')
-          })}
-        />
+        <>
+          <PrimaryAction
+            icon={false}
+            label={t('home.action.choosePrograms')}
+            onPress={() => onPrimary(() => {
+              trackProgramNextChosen('other', activeProgram?.id)
+              router.push('/programs')
+            })}
+          />
+          {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
+          {staleRow}
+          {freeAction}
+        </>
       )}
     </TodayCard>
   )

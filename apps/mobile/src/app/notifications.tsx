@@ -113,6 +113,8 @@ function getNotificationMessage(
       return t(n.data?.segment === 'trained_then_stopped' ? 'notif.inactivity14dStopped' : 'notif.inactivity14d')
     case 'inactivity_new_start':
       return t('notif.inactivityNewStart')
+    case 'program_complete_nudge':
+      return t('notif.programCompleteNudge', { program: n.data?.program || '' })
     default:
       return t('notif.default', { name })
   }

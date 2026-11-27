@@ -123,6 +123,9 @@ function categoryForType(type) {
     // se mapea aquí para que cualquier camino futuro respete «Retos».
     case "challenge_complete":
     case "challenge_reminder": return "challenges"
+    // program_complete_nudge (#940): el push único de «terminaste tu programa».
+    // Lo crea el dispatcher de mcp-server, que ya consulta esta categoría.
+    case "program_complete_nudge": return "own_milestones"
     case "achievement":
     case "streak": return "own_milestones"
     case "referral_signup":
