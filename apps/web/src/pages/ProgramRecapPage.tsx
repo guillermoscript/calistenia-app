@@ -21,6 +21,7 @@ import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
 import { useProgramRecap } from '@calistenia/core/hooks/useProgramRecap'
 import { programAdherencePct } from '@calistenia/core/lib/programProgress'
 import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { canRepeatProgram } from '@calistenia/core/lib/programCycle'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import { formatRecapNumber } from '@calistenia/core/lib/programRecap'
 import { markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
@@ -35,7 +36,7 @@ export default function ProgramRecapPage() {
   const navigate = useNavigate()
   const { user, userId } = useAuthState()
   const { activeProgram, activeEnrollment, programs, programProgress, progress } = useWorkoutState()
-  const { getWorkout, selectProgram, extendProgram } = useWorkoutActions()
+  const { getWorkout, selectProgram, extendProgram, repeatProgram } = useWorkoutActions()
   const { photos } = useBodyPhotos(userId || null)
   const [busy, setBusy] = useState(false)
 
@@ -44,6 +45,8 @@ export default function ProgramRecapPage() {
   const finished = programOutcome(programProgress) === 'finished'
   const extendable = canExtendProgram(programProgress, activeEnrollment?.extended_weeks)
   const adherence = programAdherencePct(programProgress)
+  // #939: repetir con más carga, solo si lo completó y queda vuelta.
+  const repeatable = programProgress.isCompleted && !finished && canRepeatProgram(activeEnrollment?.cycle)
   const next = recommendNextPrograms(programs, { completed: activeProgram, level: user?.level as string | undefined })[0] ?? null
   const name = activeProgram?.name ?? ''
   const title = finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })
@@ -59,7 +62,7 @@ export default function ProgramRecapPage() {
   useEffect(() => {
     if (!ended || trackedRef.current) return
     trackedRef.current = true
-    markProgramRecapSeen(activeEnrollment?.id)
+    markProgramRecapSeen(activeEnrollment?.id, activeEnrollment?.cycle)
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programRecapViewed, {
       surface: 'program_recap',
       source: 'program_complete',
@@ -69,7 +72,7 @@ export default function ProgramRecapPage() {
       comparisons: recap.comparisons.length,
       records: recap.records.length,
     })
-  }, [ended, activeEnrollment?.id, activeProgram?.id, programProgress, adherence, recap])
+  }, [ended, activeEnrollment?.id, activeEnrollment?.cycle, activeProgram?.id, programProgress, adherence, recap])
 
   if (!ended) {
     return (
@@ -214,6 +217,16 @@ export default function ProgramRecapPage() {
               onClick={() => { trackProgramNextChosen('recommended', activeProgram?.id, next.id, 'program_recap'); void run(() => selectProgram(next.id), 'programs.switchError') }}
             >
               {t('home.action.startProgram', { name: next.name })}
+            </Button>
+          )}
+          {repeatable && (
+            <Button
+              variant={next ? 'outline' : 'default'}
+              className={next ? 'h-12' : 'h-12 font-bebas text-xl tracking-wide'}
+              disabled={busy}
+              onClick={() => { trackProgramNextChosen('repeat', activeProgram?.id, activeProgram?.id, 'program_recap'); void run(repeatProgram, 'programs.repeatError') }}
+            >
+              {t('home.action.repeatProgram')}
             </Button>
           )}
           <Button

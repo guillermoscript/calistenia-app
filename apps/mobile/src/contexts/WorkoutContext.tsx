@@ -74,6 +74,8 @@ interface WorkoutActions {
   setPhaseOverride: (phase: number | null) => Promise<boolean>
   /** Extiende el programa «finalizado» para ponerse al día (#938). */
   extendProgram: () => Promise<boolean>
+  /** Repite el programa terminado con más carga (#939). */
+  repeatProgram: () => Promise<boolean>
 }
 
 interface WorkoutContextValue {
@@ -129,7 +131,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const getLongestStreak = useCallback(() => weeklyStreak.best, [weeklyStreak])
   const getCurrentStreak = useCallback(() => weeklyStreak.current, [weeklyStreak])
 
-  const { programProgress, setPhaseOverride, extendProgram } = useProgramProgress({
+  const { programProgress, setPhaseOverride, extendProgram, repeatProgram } = useProgramProgress({
     userId, activeProgram, activeEnrollment, phases, weekDays, progress,
     settingsPhase: settings.phase,
   })
@@ -139,7 +141,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   // `deload_last_week`, la mitad de series y `workout.deload`. Se envuelve
   // AQUÍ, después de saber la semana, y es lo que reciben todos los
   // consumidores del día.
-  const getWorkout = useWeekAwareGetWorkout(rawGetWorkout, phases, programProgress)
+  const getWorkout = useWeekAwareGetWorkout(rawGetWorkout, phases, programProgress, activeEnrollment?.cycle ?? 1)
 
   // Wrap logSet to auto-detect PRs
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string): Promise<PREvent | null> => {
@@ -159,13 +161,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride, extendProgram,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride, extendProgram, repeatProgram,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getCurrentStreak, getWeeklyStreak, getMonthActivity,
     getLastSessionDate, getDoneDates, checkAndUpdatePR,
-    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride, extendProgram,
+    getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms, setPhaseOverride, extendProgram, repeatProgram,
   ])
 
   const { i18n } = useTranslation()

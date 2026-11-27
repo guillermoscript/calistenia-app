@@ -38,6 +38,7 @@ import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
 import type { Exercise, ProgramMeta, SessionDone } from '@calistenia/core/types'
 import { recommendNextPrograms, trackProgramNextChosen } from '@calistenia/core/lib/nextProgram'
 import { canExtendProgram, programOutcome } from '@calistenia/core/lib/programOutcome'
+import { canRepeatProgram, normalizeCycle } from '@calistenia/core/lib/programCycle'
 import { hasSeenProgramRecap, markProgramRecapSeen } from '@calistenia/core/lib/programRecapSeen'
 import {
   ChangeDayAction,
@@ -129,7 +130,8 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
   const { t, i18n } = useTranslation()
   const l = useLocalize()
   const dayName = useDayName()
-  const { activeProgram, phases, programProgress, cardioDayConfigs, circuitDayConfigs, weekDays, programs } = useWorkoutState()
+  const { activeProgram, activeEnrollment, phases, programProgress, cardioDayConfigs, circuitDayConfigs, weekDays, programs } = useWorkoutState()
+  const cycle = normalizeCycle(activeEnrollment?.cycle)
   const { getWorkout } = useWorkoutActions()
   const user = useAuthUser()
   const inactive = view.state.modifiers.inactiveDays
@@ -242,7 +244,10 @@ function TrainingToday({ view, day, chosen, deload, actions, onChangeDay, onBack
             <TodayMeta numberOfLines={1} className="flex-1">
               {t('home.training.programPhase', { program: activeProgram.name, phase: view.phase, phases: phaseCount })}
             </TodayMeta>
-            <TodayMeta className="shrink-0">{t('home.training.programWeek', { week, weeks: programProgress.totalWeeks })}</TodayMeta>
+            <TodayMeta className="shrink-0">
+              {t('home.training.programWeek', { week, weeks: programProgress.totalWeeks })}
+              {cycle > 1 ? ` · ${t('home.training.cycle', { cycle })}` : ''}
+            </TodayMeta>
           </View>
           <TodayBar percent={programProgress.percent} />
         </View>
@@ -588,7 +593,7 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
   const router = useRouter()
   const user = useAuthUser()
   const { activeProgram, activeEnrollment, programProgress, programs } = useWorkoutState()
-  const { getTotalSessions, selectProgram, extendProgram } = useWorkoutActions()
+  const { getTotalSessions, selectProgram, extendProgram, repeatProgram } = useWorkoutActions()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const name = activeProgram?.name ?? ''
@@ -603,11 +608,12 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
 
   // La pantalla de cierre se abre SOLA una vez por inscripción (#941).
   const enrollmentId = activeEnrollment?.id
+  const enrollmentCycle = activeEnrollment?.cycle
   useEffect(() => {
-    if (hasSeenProgramRecap(enrollmentId)) return
-    markProgramRecapSeen(enrollmentId)
+    if (hasSeenProgramRecap(enrollmentId, enrollmentCycle)) return
+    markProgramRecapSeen(enrollmentId, enrollmentCycle)
     router.push('/program-recap')
-  }, [enrollmentId, router])
+  }, [enrollmentId, enrollmentCycle, router])
 
   const run = async (fn: () => Promise<boolean>, errorKey: string) => {
     if (busy) return
@@ -653,6 +659,22 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
 
   const title = finished ? t('home.programComplete.titleFinished', { name }) : t('home.programComplete.title', { name })
 
+  // #939: repetir con más carga, solo si lo completó y queda vuelta. Sin
+  // siguiente en la ruta es la acción principal; si hay, una fila más.
+  const repeatable = programProgress.isCompleted && !finished && canRepeatProgram(activeEnrollment?.cycle)
+  const repeatRow = repeatable ? (
+    <View className="border-t border-border">
+      <LinkRow
+        title={t('home.action.repeatProgram')}
+        hint={t('home.programComplete.repeatHint', { cycle: normalizeCycle(activeEnrollment?.cycle) + 1 })}
+        onPress={() => onSecondary('repeat', () => {
+          trackProgramNextChosen('repeat', activeProgram?.id, activeProgram?.id)
+          void run(repeatProgram, 'programs.repeatError')
+        })}
+      />
+    </View>
+  ) : null
+
   return (
     <TodayCard label={title}>
       <TodayKicker>{finished ? t('home.kicker.programFinished') : t('home.kicker.programComplete')}</TodayKicker>
@@ -697,6 +719,21 @@ function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
               void run(() => selectProgram(next.id), 'programs.switchError')
             })}
           />
+          {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
+          {repeatRow}
+          {seeOthers}
+        </>
+      ) : repeatable ? (
+        <>
+          <PrimaryAction
+            icon={false}
+            label={t('home.action.repeatProgram')}
+            onPress={() => onPrimary(() => {
+              trackProgramNextChosen('repeat', activeProgram?.id, activeProgram?.id)
+              void run(repeatProgram, 'programs.repeatError')
+            })}
+          />
+          <TodayMeta>{t('home.programComplete.repeatHint', { cycle: normalizeCycle(activeEnrollment?.cycle) + 1 })}</TodayMeta>
           {error ? <TodayMeta className="text-destructive">{error}</TodayMeta> : null}
           {seeOthers}
         </>

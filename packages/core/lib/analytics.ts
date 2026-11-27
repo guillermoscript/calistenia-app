@@ -87,6 +87,8 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   programExtended: 'program_extended',
   /** Se abrió la pantalla de cierre del programa (#941). */
   programRecapViewed: 'program_recap_viewed',
+  /** Repitió el programa terminado con más carga (#939). */
+  programRepeated: 'program_repeated',
   /**
    * Community programs with weekly milestones (#353, `community_programs`).
    * They got their own event family instead of reusing `program_*` with a

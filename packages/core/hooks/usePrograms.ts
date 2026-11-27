@@ -531,6 +531,8 @@ export interface ActiveEnrollment {
   auto_progress: boolean
   /** Semanas añadidas al final para ponerse al día (#938). 0 = sin extender. */
   extended_weeks: number
+  /** Vuelta del programa (#939). 0 o 1 = primera; ver `normalizeCycle`. */
+  cycle: number
   /**
    * Programa expandido, ya mapeado a `ProgramMeta`: respaldo de `activeProgram`
    * cuando el catálogo no lo trae (falló, aún no cargó o el filtro de
@@ -551,6 +553,7 @@ function toEnrollment(rec: RecordModel): ActiveEnrollment {
     current_phase: typeof rec.current_phase === 'number' ? rec.current_phase : 0,
     auto_progress: rec.auto_progress === true,
     extended_weeks: typeof rec.extended_weeks === 'number' ? rec.extended_weeks : 0,
+    cycle: typeof rec.cycle === 'number' ? rec.cycle : 0,
   }
 }
 
