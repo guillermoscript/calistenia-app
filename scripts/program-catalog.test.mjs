@@ -725,3 +725,136 @@ describe.skipIf(!HAS_PB)('1790760000_reseed_intermedio-balance-total sobre Pocke
     expect(s.despues2.map(r => r.id)).toEqual(s.despues.map(r => r.id))
   })
 })
+
+// ─── Rutas entre programas (#935) ────────────────────────────────────────────
+
+const NEXT_MIGRATION = '1792500000_programs_next_programs_935.js'
+const DIFFICULTY_RANK = { beginner: 0, intermediate: 1, advanced: 2 }
+
+describe('rutas next_programs en SKELETONS (#935)', () => {
+  const bySlug = new Map(SKELETONS.map(s => [s.slug, s]))
+
+  it('todos declaran next_programs como lista', () => {
+    for (const s of SKELETONS) expect(Array.isArray(s.next_programs), s.slug).toBe(true)
+  })
+
+  it('cada slug existe, sin repetidos ni autorreferencias', () => {
+    for (const s of SKELETONS) {
+      expect(new Set(s.next_programs).size, s.slug).toBe(s.next_programs.length)
+      for (const n of s.next_programs) {
+        expect(bySlug.has(n), `${s.slug} → ${n} no existe`).toBe(true)
+        expect(n, `${s.slug} se apunta a sí mismo`).not.toBe(s.slug)
+      }
+    }
+  })
+
+  it('nunca lleva a un programa más fácil', () => {
+    for (const s of SKELETONS) {
+      for (const n of s.next_programs) {
+        expect(DIFFICULTY_RANK[bySlug.get(n).difficulty], `${s.slug} (${s.difficulty}) → ${n}`)
+          .toBeGreaterThanOrEqual(DIFFICULTY_RANK[s.difficulty])
+      }
+    }
+  })
+
+  it('solo los avanzados pueden quedarse sin ruta', () => {
+    for (const s of SKELETONS) {
+      if (s.difficulty !== 'advanced') expect(s.next_programs.length, s.slug).toBeGreaterThan(0)
+    }
+  })
+
+  it('no hay ciclos', () => {
+    const state = new Map()
+    const visit = (slug, path) => {
+      if (state.get(slug) === 'done') return
+      expect(state.get(slug), `ciclo: ${[...path, slug].join(' → ')}`).not.toBe('open')
+      state.set(slug, 'open')
+      for (const n of bySlug.get(slug).next_programs) visit(n, [...path, slug])
+      state.set(slug, 'done')
+    }
+    for (const s of SKELETONS) visit(s.slug, [])
+  })
+
+  it('las rutas de habilidad: dominada → muscle-up y pino → plancha', () => {
+    expect(bySlug.get('pull-up-roadmap').next_programs[0]).toBe('muscle-up-roadmap')
+    expect(bySlug.get('handstand-roadmap').next_programs[0]).toBe('planche-roadmap')
+  })
+
+  it('la tabla de la migración es espejo de SKELETONS', () => {
+    const src = readFileSync(join(REPO_MIGRATIONS, NEXT_MIGRATION), 'utf8')
+    const body = src.slice(src.indexOf('const NEXT_PROGRAMS = ['), src.indexOf(']\n\nmigrate('))
+    const rows = [...body.matchAll(/\["([a-z0-9-]+)",\s*(\[[^\]]*\])\]/g)].map(m => [m[1], JSON.parse(m[2])])
+    expect(Object.fromEntries(rows)).toEqual(Object.fromEntries(SKELETONS.map(s => [s.slug, s.next_programs])))
+  })
+})
+
+describe.skipIf(!HAS_PB)('1792500000_programs_next_programs_935 sobre PocketBase real', () => {
+  const s = {}
+  const readNext = db => Object.fromEntries(
+    sqlQuery(db, "SELECT slug, next_programs FROM programs WHERE is_official = 1 AND slug != '' ORDER BY slug")
+      .map(r => [r.slug, JSON.parse(r.next_programs || 'null')]),
+  )
+
+  beforeAll(() => {
+    s.tmp = mkdtempSync(join(tmpdir(), 'next-programs-935-'))
+    s.dataDir = join(s.tmp, 'pb_data')
+    s.db = join(s.dataDir, 'data.db')
+    s.migDir = join(s.tmp, 'pb_migrations')
+    mkdirSync(s.dataDir, { recursive: true })
+    mkdirSync(s.migDir, { recursive: true })
+
+    // 1 ── Instalación limpia: esquema + siembra + todas las migraciones.
+    for (const f of readdirSync(REPO_MIGRATIONS)) cpSync(join(REPO_MIGRATIONS, f), join(s.migDir, f))
+    s.salida1 = migrateUp(s.dataDir, s.migDir)
+    s.next1 = readNext(s.db)
+
+    // 2 ── Una copia de usuario del Pull-up Roadmap: la migración no la toca.
+    const cols = sqlQuery(s.db, 'PRAGMA table_info(programs)').map(c => c.name)
+    s.copyId = 'copia935_' + Date.now().toString(36)
+    const select = cols.map(c => {
+      if (c === 'id') return sqlStr(s.copyId)
+      if (c === 'is_official' || c === 'is_featured') return '0'
+      if (c === 'slug' || c === 'content_hash') return "''"
+      if (c === 'next_programs') return "'[]'"
+      return `\`${c}\``
+    }).join(', ')
+    sqlExec(s.db, `INSERT INTO programs (${cols.map(c => `\`${c}\``).join(', ')}) SELECT ${select} FROM programs WHERE slug = 'pull-up-roadmap' AND is_official = 1;`)
+
+    // 3 ── Una fila oficial estropeada a mano: la segunda pasada la repara.
+    sqlExec(s.db, "UPDATE programs SET next_programs = 'no-json' WHERE is_official = 1 AND slug = 'handstand-roadmap';")
+
+    // 4 ── Segunda pasada: el mismo cuerpo bajo otro timestamp.
+    writeFileSync(join(s.migDir, '1792500001_next_again.js'), readFileSync(join(REPO_MIGRATIONS, NEXT_MIGRATION), 'utf8'), 'utf8')
+    s.salida2 = migrateUp(s.dataDir, s.migDir)
+    s.next2 = readNext(s.db)
+    s.copia = sqlQuery(s.db, `SELECT next_programs FROM programs WHERE id = ${sqlStr(s.copyId)}`)[0]
+
+    // 5 ── Tercera pasada: ya no hay nada que tocar.
+    writeFileSync(join(s.migDir, '1792500002_next_third.js'), readFileSync(join(REPO_MIGRATIONS, NEXT_MIGRATION), 'utf8'), 'utf8')
+    s.salida3 = migrateUp(s.dataDir, s.migDir)
+  }, 300_000)
+
+  afterAll(() => {
+    if (s.tmp) rmSync(s.tmp, { recursive: true, force: true })
+  })
+
+  const expected = () => Object.fromEntries(SKELETONS.map(k => [k.slug, k.next_programs]))
+
+  it('en una instalación limpia deja los 16 oficiales como SKELETONS', () => {
+    expect(s.next1).toEqual(expected())
+    expect(s.salida1).toMatch(/\[programs_next_programs_935\] 16 rutas escritas de 16/)
+  })
+
+  it('la segunda pasada solo repara la fila estropeada', () => {
+    expect(s.salida2).toMatch(/\[programs_next_programs_935\] 1 rutas escritas de 16/)
+    expect(s.next2).toEqual(expected())
+  })
+
+  it('la tercera pasada no toca nada', () => {
+    expect(s.salida3).toMatch(/\[programs_next_programs_935\] 0 rutas escritas de 16/)
+  })
+
+  it('la copia de usuario queda intacta', () => {
+    expect(JSON.parse(s.copia.next_programs)).toEqual([])
+  })
+})

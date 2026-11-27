@@ -396,6 +396,13 @@ export interface ProgramMeta {
   days_per_week?: number
   equipment_required?: string[]
   contraindications?: string[]
+  /** Clave estable del catálogo oficial (#712); vacía en programas de usuario. */
+  slug?: string
+  /**
+   * Ruta al terminar (#935): slugs en orden de preferencia. Solo la llevan los
+   * oficiales; `lib/nextProgram.ts` la usa antes que el nivel.
+   */
+  next_programs?: string[]
   /**
    * «Cómo seguir este programa» (#618) — ya localizado. `undefined` significa
    * «no se ha cargado», que no es lo mismo que `''` («el autor no escribió

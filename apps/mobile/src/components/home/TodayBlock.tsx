@@ -35,7 +35,8 @@ import {
 } from '@calistenia/core/lib/first-workout'
 import type { HomeActiveActivity, HomeDayRef, HomeState } from '@calistenia/core/lib/homeState'
 import type { HomeSecondaryTarget } from '@calistenia/core/lib/home-analytics'
-import type { Exercise, SessionDone } from '@calistenia/core/types'
+import type { Exercise, ProgramMeta, SessionDone } from '@calistenia/core/types'
+import { recommendNextPrograms } from '@calistenia/core/lib/nextProgram'
 import {
   ChangeDayAction,
   LinkRow,
@@ -563,12 +564,28 @@ function NoProgramToday({ onPrimary }: TodayBlockProps) {
   )
 }
 
-function ProgramCompleteToday({ onPrimary }: TodayBlockProps) {
+function ProgramCompleteToday({ onPrimary, onSecondary }: TodayBlockProps) {
   const { t } = useTranslation()
   const router = useRouter()
-  const { activeProgram, programProgress } = useWorkoutState()
-  const { getTotalSessions } = useWorkoutActions()
+  const user = useAuthUser()
+  const { activeProgram, programProgress, programs } = useWorkoutState()
+  const { getTotalSessions, selectProgram } = useWorkoutActions()
+  const [starting, setStarting] = useState(false)
+  const [error, setError] = useState(false)
   const name = activeProgram?.name ?? ''
+  // La misma elección que la web (#933): ruta del programa (#935) y, si no
+  // hay, cercanía por objetivo y nivel.
+  const next = recommendNextPrograms(programs, { completed: activeProgram, level: user?.level as string | undefined })[0] ?? null
+
+  const start = async (program: ProgramMeta) => {
+    if (starting) return
+    setStarting(true)
+    setError(false)
+    const ok = await selectProgram(program.id)
+    setStarting(false)
+    if (!ok) setError(true)
+  }
+
   return (
     <TodayCard label={t('home.programComplete.title', { name })}>
       <TodayKicker>{t('home.kicker.programComplete')}</TodayKicker>
@@ -579,7 +596,40 @@ function ProgramCompleteToday({ onPrimary }: TodayBlockProps) {
           { key: 'workouts', value: String(getTotalSessions()), label: t('home.programComplete.workouts') },
         ]}
       />
-      <PrimaryAction icon={false} label={t('home.action.choosePrograms')} onPress={() => onPrimary(() => router.push('/programs'))} />
+      {next ? (
+        <>
+          <View className="border-t border-border">
+            <LinkRow
+              kicker={t('home.programComplete.nextRecommended')}
+              title={next.name}
+              hint={nextProgramMeta(t, next)}
+              onPress={() => onSecondary('other_program', () => router.push(`/program/${next.id}`))}
+            />
+          </View>
+          <PrimaryAction
+            icon={false}
+            label={t('home.action.startProgram', { name: next.name })}
+            onPress={() => onPrimary(() => { void start(next) })}
+          />
+          {error && <TodayMeta className="text-destructive">{t('programs.switchError')}</TodayMeta>}
+          <TextAction
+            label={t('home.action.seeOthers')}
+            onPress={() => onSecondary('other_program', () => router.push('/programs'))}
+            className="self-center"
+          />
+        </>
+      ) : (
+        <PrimaryAction icon={false} label={t('home.action.choosePrograms')} onPress={() => onPrimary(() => router.push('/programs'))} />
+      )}
     </TodayCard>
   )
+}
+
+/** «12 semanas · 4 días por semana», como la meta de la web. */
+function nextProgramMeta(t: (k: string, o?: Record<string, unknown>) => string, p: ProgramMeta): string | undefined {
+  const weeks = p.duration_weeks || 0
+  const days = p.days_per_week || 0
+  if (weeks && days) return t('home.noProgram.weeksDays', { weeks, days })
+  if (weeks) return t('home.training.programWeek', { week: weeks, weeks })
+  return undefined
 }

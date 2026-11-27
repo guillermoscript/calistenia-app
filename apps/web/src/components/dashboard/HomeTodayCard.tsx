@@ -36,6 +36,7 @@ import { WEEK_ORDER, isTrainableDay } from '@calistenia/core/lib/training-day'
 import { plannedSetCount } from '@calistenia/core/lib/session-funnel'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { formatPace } from '@calistenia/core/lib/geo'
+import { recommendNextPrograms } from '@calistenia/core/lib/nextProgram'
 import {
   buildFirstWorkout,
   estimateFirstWorkoutMinutes,
@@ -72,10 +73,11 @@ function PrimaryAction({ onClick, children, icon = true }: { onClick: () => void
     <Button
       onClick={onClick}
       data-testid="home-primary"
-      className="h-14 w-full gap-2.5 rounded-[10px] font-bebas text-2xl tracking-wide lg:w-auto lg:shrink-0 lg:px-8 [&_svg]:size-[18px]"
+      className="h-14 w-full max-w-full gap-2.5 rounded-[10px] font-bebas text-2xl tracking-wide lg:w-auto lg:shrink-0 lg:px-8 [&_svg]:size-[18px]"
     >
       {icon && <Play fill="currentColor" aria-hidden="true" />}
-      <span className="pt-[3px]">{children}</span>
+      {/* `truncate`: con «Empezar {programa}» el nombre largo se salía del botón. */}
+      <span className="min-w-0 truncate pt-[3px]">{children}</span>
     </Button>
   )
 }
@@ -608,7 +610,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
 
     // ── Programa terminado ──────────────────────────────────────────────────
     case 'program_complete': {
-      const next = pickRecommended(programs, activeProgram?.id, user?.level)[0] ?? null
+      const next = recommendNextPrograms(programs, { completed: activeProgram, level: user?.level })[0] ?? null
       return (
         <Shell label={t('home.kicker.programComplete')} accent testState="program_complete">
           <Kicker>{t('home.kicker.programComplete')}</Kicker>
@@ -638,7 +640,7 @@ export default function HomeTodayCard({ home, cardioLastSession }: HomeTodayCard
 
     // ── Sin programa ────────────────────────────────────────────────────────
     case 'no_program': {
-      const options = pickRecommended(programs, null, user?.level).slice(0, 3)
+      const options = recommendNextPrograms(programs, { level: user?.level }).slice(0, 3)
       const first = options[0] ?? null
       return (
         <Shell label={t('home.noProgram.title')} accent testState="no_program">
@@ -919,21 +921,4 @@ function programMeta(t: (k: string, o?: Record<string, unknown>) => string, p: P
   return weeks && days ? t('home.noProgram.weeksDays', { weeks, days }) : weeks ? t('home.training.programWeek', { week: weeks, weeks }) : ''
 }
 
-const LEVEL_DIFFICULTY: Record<string, string[]> = {
-  principiante: ['beginner', 'principiante'],
-  intermedio: ['intermediate', 'intermedio'],
-  avanzado: ['advanced', 'avanzado'],
-}
-
-/**
- * Programas que recomendar: primero los de tu nivel, luego el resto, sin el
- * programa que acabas de terminar. Solo oficiales o tuyos (ya vienen así de
- * `programs`).
- */
-function pickRecommended(programs: readonly ProgramMeta[] | null | undefined, excludeId: string | null | undefined, level: string | null | undefined): ProgramMeta[] {
-  const list = (programs ?? []).filter(p => p.id !== excludeId)
-  const wanted = LEVEL_DIFFICULTY[normalizeFirstWorkoutLevel(level)] ?? []
-  const matches = list.filter(p => p.difficulty && wanted.includes(String(p.difficulty).toLowerCase()))
-  return [...matches, ...list.filter(p => !matches.includes(p))]
-}
 
